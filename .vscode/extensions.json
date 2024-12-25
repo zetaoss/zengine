@@ -1,0 +1,10 @@
+{
+    "recommendations": [
+        "bradlc.vscode-tailwindcss",
+        "dbaeumer.vscode-eslint",
+        "editorconfig.editorconfig",
+        "kokororin.vscode-phpfmt",
+        "shufo.vscode-blade-formatter",
+        "vue.volar",
+    ]
+}
