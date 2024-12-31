@@ -18,6 +18,7 @@ coverage
 /cypress/screenshots/
 
 # Editor directories and files
+.vite/
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -26,8 +27,6 @@ coverage
 *.njsproj
 *.sln
 *.sw?
-
-*.tsbuildinfo
 
 test-results/
 playwright-report/

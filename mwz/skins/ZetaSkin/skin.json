@@ -1,0 +1,35 @@
+{
+  "name": "ZetaSkin",
+  "version": "0.1.0",
+  "author": [
+    "jmnote"
+  ],
+  "url": "https://www.mediawiki.org/wiki/Skin:ZetaSkin",
+  "description": "Zetawiki skin",
+  "type": "skin",
+  "requires": {
+    "MediaWiki": ">= 1.37.0"
+  },
+  "license-name": "Apache-2.0",
+  "AutoloadNamespaces": {
+    "ZetaSkin\\": "includes/"
+  },
+  "Hooks": {
+    "BeforePageDisplay": "ZetaSkin\\SkinZetaSkin::onBeforePageDisplay",
+    "MakeGlobalVariablesScript": "ZetaSkin\\SkinZetaSkin::onMakeGlobalVariablesScript",
+    "SidebarBeforeOutput": "ZetaSkin\\SkinZetaSkin::onSidebarBeforeOutput",
+    "SkinTemplateNavigation::Universal": "ZetaSkin\\SkinZetaSkin::onSkinTemplateNavigation__Universal"
+  },
+  "ValidSkinNames": {
+    "zetaskin": {
+      "class": "ZetaSkin\\SkinZetaSkin",
+      "args": [
+        {
+          "name": "zetaskin",
+          "responsive": true
+        }
+      ]
+    }
+  },
+  "manifest_version": 2
+}

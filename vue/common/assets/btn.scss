@@ -1,0 +1,39 @@
+// default
+.btn {
+  @apply rounded mx-0.5 text-xs p-2 px-4;
+  background-color: var(--z-btn);
+  color: var(--z-text);
+  transition: 80ms cubic-bezier(0.33, 1, 0.68, 1);
+  transition-property: color, background-color, box-shadow, border-color;
+
+  &:hover {
+    @apply no-underline brightness-90 dark:brightness-150 text-inherit;
+  }
+
+  &:disabled,
+  &.disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+}
+
+// override size
+.btn-xs {
+  @apply rounded mr-1 text-[.7rem] p-[.05rem] px-3 leading-[.9rem];
+}
+
+.btn-sm {
+  @apply rounded mr-1 text-[.9rem] p-1 px-3 leading-[.9rem];
+}
+
+// override color
+.btn-primary {
+  @apply bg-blue-400 dark:bg-blue-600 text-white hover:text-white;
+}
+
+.btn-secondary {
+  @apply bg-gray-400 dark:bg-gray-900;
+}
+
+.btn-danger {
+  @apply bg-orange-300 dark:bg-yellow-950 text-white hover:text-white;
+}

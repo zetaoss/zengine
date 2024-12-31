@@ -1,0 +1,45 @@
+@layer base {
+
+  *,
+  ::before,
+  ::after {
+    @apply border-z-border;
+  }
+}
+
+:root {
+  --z-link: #09d;
+  --z-text2: theme('colors.neutral.400');
+}
+
+:root {
+  color-scheme: light;
+  --z-bg: theme('colors.neutral.100');
+  --z-border: theme('colors.neutral.300');
+  --z-card: theme('colors.white');
+  --z-card-hover: theme('colors.neutral.100');
+  --z-head: theme('colors.slate.200');
+  --z-scrollbar: theme('colors.gray.200');
+  --z-text: theme('colors.zinc.700');
+
+  --z-btn: theme('colors.gray.200');
+  --z-primary: theme('colors.blue.400');
+  --z-secondary: theme('colors.gray.400');
+  --z-danger: theme('colors.orange.300');
+}
+
+.dark {
+  color-scheme: dark;
+  --z-bg: theme('colors.black');
+  --z-border: theme('colors.neutral.700');
+  --z-card: theme('colors.neutral.900');
+  --z-card-hover: theme('colors.neutral.800');
+  --z-head: theme('colors.zinc.800');
+  --z-scrollbar: theme('colors.gray.700');
+  --z-text: theme('colors.zinc.300');
+
+  --z-btn: theme('colors.gray.800');
+  --z-primary: theme('colors.blue.600');
+  --z-secondary: theme('colors.gray.900');
+  --z-danger: theme('colors.yellow.950');
+}

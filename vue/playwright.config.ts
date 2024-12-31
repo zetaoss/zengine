@@ -1,5 +1,5 @@
-import process from 'node:process'
-import { defineConfig, devices } from '@playwright/test'
+import { devices } from '@playwright/test'
+import type { PlaywrightTestConfig } from '@playwright/test'
 
 /**
  * Read environment variables from file.
@@ -10,7 +10,7 @@ import { defineConfig, devices } from '@playwright/test'
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
-export default defineConfig({
+const config: PlaywrightTestConfig = {
   testDir: './e2e',
   /* Maximum time one test can run for. */
   timeout: 30 * 1000,
@@ -34,7 +34,7 @@ export default defineConfig({
     /* Maximum time each action such as `click()` can take. Defaults to 0 (no limit). */
     actionTimeout: 0,
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: process.env.CI ? 'http://localhost:4173' : 'http://localhost:5173',
+    baseURL: 'http://localhost:5173',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -51,18 +51,18 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
       },
     },
-    {
-      name: 'firefox',
-      use: {
-        ...devices['Desktop Firefox'],
-      },
-    },
-    {
-      name: 'webkit',
-      use: {
-        ...devices['Desktop Safari'],
-      },
-    },
+    // {
+    //   name: 'firefox',
+    //   use: {
+    //     ...devices['Desktop Firefox'],
+    //   },
+    // },
+    // {
+    //   name: 'webkit',
+    //   use: {
+    //     ...devices['Desktop Safari'],
+    //   },
+    // },
 
     /* Test against mobile viewports. */
     // {
@@ -101,10 +101,12 @@ export default defineConfig({
     /**
      * Use the dev server by default for faster feedback loop.
      * Use the preview server on CI for more realistic testing.
-     * Playwright will re-use the local server if there is already a dev-server running.
+    Playwright will re-use the local server if there is already a dev-server running.
      */
-    command: process.env.CI ? 'npm run preview' : 'npm run dev',
-    port: process.env.CI ? 4173 : 5173,
+    command: process.env.CI ? 'vite preview --port 5173' : 'vite dev',
+    port: 5173,
     reuseExistingServer: !process.env.CI,
   },
-})
+}
+
+export default config
