@@ -1,0 +1,56 @@
+.mw-highlight-header {
+  display: table;
+  border-left: 4px solid #59b;
+  padding: 0 12px;
+  margin-bottom: -5px;
+  word-break: break-all;
+  background: #cee;
+  border-radius: 5px 5px 0 0;
+}
+
+.mw-highlight {
+
+  &.mw-highlight-lang-console,
+  &.mw-highlight-lang-doscon {
+    @apply bg-black text-white;
+  }
+}
+
+.mw-highlight-lang-console,
+.mw-highlight-lang-doscon {
+
+  .m {
+    color: #ccc !important;
+  }
+
+  .o {
+    color: #ccc !important;
+  }
+
+  .gp {
+    color: #aaf !important;
+  }
+
+  .go {
+    color: #ddd !important;
+  }
+
+  .nv {
+    color: #ffc !important;
+  }
+
+  .c1 {
+    color: #cff !important;
+    font-style: normal !important;
+  }
+
+  .s1,
+  .s2 {
+    color: #fcc !important;
+  }
+
+  .nb,
+  .k {
+    color: #cfc !important;
+  }
+}

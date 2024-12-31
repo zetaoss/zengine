@@ -1,0 +1,79 @@
+{
+  "name": "ZetaExtension",
+  "author": [
+    "jmnote"
+  ],
+  "license-name": "Apache-2.0",
+  "type": "other",
+  "requires": {
+    "MediaWiki": ">= 1.34",
+    "platform": {
+      "php": ">= 7.2"
+    }
+  },
+  "config": {
+    "ZetaAllowHosts": {
+      "value": []
+    }
+  },
+  "AutoloadNamespaces": {
+    "ZetaExtension\\": "includes/"
+  },
+  "AuthManagerAutoConfig": {
+    "primaryauth": {
+      "OTPAuthProvider": {
+        "class": "ZetaExtension\\Auth\\OTPAuthProvider"
+      }
+    }
+  },
+  "ExtensionMessagesFiles": {
+    "TagMagic": "magic/TagMagic.php"
+  },
+  "Hooks": {
+    "ArticleDelete": "ZetaExtension\\Binder\\Hooks::onArticleDelete",
+    "ArticleUndelete": "ZetaExtension\\Binder\\Hooks::onArticleUndelete",
+    "InternalParseBeforeLinks": "ZetaExtension\\Toc\\Toc::onInternalParseBeforeLinks",
+    "PageSaveComplete": "ZetaExtension\\Binder\\Hooks::onPageSaveComplete",
+    "ParserFirstCallInit": [
+      "ZetaExtension\\Map\\Map::onParserFirstCallInit",
+      "ZetaExtension\\Tag\\Tag::onParserFirstCallInit"
+    ],
+    "PostLoginRedirect": "ZetaExtension\\Auth\\Hooks::onPostLoginRedirect",
+    "SpecialPageBeforeExecute": "ZetaExtension\\Auth\\Hooks::onSpecialPageBeforeExecute",
+    "UserLogoutComplete": "ZetaExtension\\Auth\\Hooks::onUserLogoutComplete"
+  },
+  "RestRoutes": [
+    {
+      "path": "/auth/{code}",
+      "method": "GET",
+      "class": "ZetaExtension\\Auth\\Rest"
+    },
+    {
+      "path": "/binder",
+      "method": "GET",
+      "class": "ZetaExtension\\Binder\\RestList"
+    },
+    {
+      "path": "/binder/{pageid}",
+      "method": "GET",
+      "class": "ZetaExtension\\Binder\\RestGet"
+    }
+  ],
+  "ResourceModules": {
+    "map1": {
+      "scripts": [
+        "modules/map1.js"
+      ]
+    },
+    "map2": {
+      "scripts": [
+        "modules/map2.js"
+      ]
+    }
+  },
+  "ResourceFileModulePaths": {
+    "localBasePath": "",
+    "remoteExtPath": "ZetaExtension"
+  },
+  "manifest_version": 2
+}

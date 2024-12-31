@@ -1,18 +1,30 @@
-import { fileURLToPath, URL } from 'node:url'
+import { URL, fileURLToPath } from 'node:url'
 
-import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import vueDevTools from 'vite-plugin-vue-devtools'
+import { defineConfig } from 'vite'
+import FullReload from 'vite-plugin-full-reload'
 
-// https://vite.dev/config/
+// https://vitejs.dev/config/
 export default defineConfig({
+  clearScreen: false,
   plugins: [
     vue(),
-    vueDevTools(),
+    FullReload('../mediawiki/ZetaSkin/resources/dist/*'),
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@common': fileURLToPath(new URL('./common', import.meta.url)),
     },
+  },
+  server: {
+    hmr: {
+      protocol: 'wss',
+    },
+    host: true,
+  },
+  test: {
+    globals: true,
+    environment: 'happy-dom',
   },
 })

@@ -1,0 +1,557 @@
+.mw-rcfilters-ui-filterTagMultiselectWidget.oo-ui-widget-enabled .oo-ui-tagMultiselectWidget-handle {
+  background-color: var(--uc-f8f9fa);
+  border: 1px solid var(--uc-a2a9b1);
+}
+
+.mw-rcfilters-collapsed .mw-rcfilters-ui-filterTagMultiselectWidget {
+  border-bottom: 1px solid var(--uc-a2a9b1);
+}
+
+.mw-rcfilters-collapsed .mw-rcfilters-ui-filterTagMultiselectWidget .mw-rcfilters-ui-filterTagMultiselectWidget-wrapper-hideshow {
+  border-left: 1px solid var(--uc-a2a9b1);
+}
+
+.oo-ui-tagMultiselectWidget.oo-ui-widget-enabled .mw-rcfilters-ui-filterTagMultiselectWidget-emphasize.oo-ui-tagMultiselectWidget-handle {
+  background-color: var(--uc-eaf3ff);
+}
+
+.mw-rcfilters-ui-filterTagMultiselectWidget-wrapper-content-title {
+  color: var(--uc-54595d);
+}
+.mw-rcfilters-ui-filterTagMultiselectWidget-wrapper-content-savedQueryTitle {
+  color: var(--uc-202122);
+}
+
+.mw-rcfilters-ui-filterTagMultiselectWidget-views-select-widget.oo-ui-widget {
+  border: 1px solid var(--uc-a2a9b1);
+}
+
+.mw-rcfilters-ui-filterTagMultiselectWidget-emptyFilters {
+  color: var(--uc-72777d);
+}
+
+.mw-rcfilters-ui-itemMenuOptionWidget:not(:last-child):not(.mw-rcfilters-ui-itemMenuOptionWidget-identifier-talk) {
+  border-bottom: 1px solid var(--uc-eaecf0);
+}
+.mw-rcfilters-ui-itemMenuOptionWidget-view-namespaces {
+  border-top: 4px solid var(--uc-c8ccd1);
+}
+
+.mw-rcfilters-ui-itemMenuOptionWidget:hover {
+  background-color: var(--uc-f8f9fa);
+}
+
+.mw-rcfilters-ui-itemMenuOptionWidget.oo-ui-optionWidget-selected {
+  background-color: var(--uc-eaf3ff);
+}
+.mw-rcfilters-ui-itemMenuOptionWidget-label-title {
+  color: var(--uc-202122);
+}
+.mw-rcfilters-ui-itemMenuOptionWidget-label-desc {
+  color: var(--uc-54595d);
+}
+
+.mw-rcfilters-ui-itemMenuOptionWidget-excludeLabel {
+  color: var(--uc-54595d);
+}
+
+.mw-rcfilters-ui-filterMenuOptionWidget.oo-ui-flaggedElement-muted:not(.oo-ui-optionWidget-selected) {
+  background-color: var(--uc-f8f9fa);
+}
+.mw-rcfilters-ui-filterMenuOptionWidget.oo-ui-flaggedElement-muted .mw-rcfilters-ui-itemMenuOptionWidget-label-title,
+.mw-rcfilters-ui-filterMenuOptionWidget.oo-ui-flaggedElement-muted .mw-rcfilters-ui-itemMenuOptionWidget-label-desc {
+  color: var(--uc-54595d);
+}
+.mw-rcfilters-ui-filterMenuOptionWidget.oo-ui-flaggedElement-muted.oo-ui-optionWidget-highlighted {
+  background-color: var(--uc-eaecf0);
+  color: var(--uc-000000);
+}
+
+.mw-rcfilters-ui-filterMenuSectionOptionWidget {
+  background-color: var(--uc-eaecf0);
+}
+.mw-rcfilters-ui-filterMenuSectionOptionWidget-header-title.oo-ui-labelElement-label {
+  color: var(--uc-54595d);
+}
+
+.mw-rcfilters-ui-tagItemWidget.oo-ui-flaggedElement-muted.oo-ui-tagItemWidget.oo-ui-widget-enabled {
+  background-color: var(--uc-eaecf0);
+  border-color: var(--uc-c8ccd1);
+}
+.mw-rcfilters-ui-tagItemWidget.oo-ui-flaggedElement-muted.oo-ui-tagItemWidget.oo-ui-widget-enabled .oo-ui-labelElement-label {
+  color: var(--uc-72777d);
+}
+
+.mw-rcfilters-ui-tagItemWidget.oo-ui-flaggedElement-invalid.oo-ui-tagItemWidget.oo-ui-widget-enabled .oo-ui-labelElement-label {
+  color: var(--uc-b32424);
+}
+.oo-ui-tagMultiselectWidget.oo-ui-widget-enabled.oo-ui-tagMultiselectWidget-outlined .mw-rcfilters-ui-tagItemWidget-selected.oo-ui-tagItemWidget.oo-ui-widget-enabled {
+  background-color: var(--uc-eaf3ff);
+  border-color: var(--uc-3366cc);
+}
+.mw-rcfilters-ui-tagItemWidget-popup-content {
+  color: var(--uc-54595d);
+}
+
+.mw-rcfilters-ui-tagItemWidget-highlight[data-color="c1"]:before {
+  background-color: var(--uc-3366cc);
+}
+.mw-rcfilters-ui-tagItemWidget-highlight[data-color="c2"]:before {
+  background-color: var(--uc-00af89);
+}
+.mw-rcfilters-ui-tagItemWidget-highlight[data-color="c3"]:before {
+  background-color: var(--uc-ffcc33);
+}
+.mw-rcfilters-ui-tagItemWidget-highlight[data-color="c4"]:before {
+  background-color: var(--uc-ff6d22);
+}
+.mw-rcfilters-ui-tagItemWidget-highlight[data-color="c5"]:before {
+  background-color: var(--uc-dd3333);
+}
+.mw-rcfilters-ui-filterMenuHeaderWidget-title {
+  color: var(--uc-54595d);
+}
+
+.mw-rcfilters-ui-filterMenuHeaderWidget-header {
+  border-bottom: 1px solid var(--uc-c8ccd1);
+  background-color: var(--uc-f8f9fa);
+}
+
+.mw-rcfilters-ui-menuSelectWidget-noresults {
+  color: var(--uc-54595d);
+}
+
+.mw-rcfilters-ui-menuSelectWidget-footer {
+  background-color: var(--uc-f8f9fa);
+  border-top: 1px solid var(--uc-c8ccd1);
+}
+
+.mw-rcfilters-ui-viewSwitchWidget label.oo-ui-labelWidget {
+  color: var(--uc-54595d);
+}
+
+.mw-rcfilters-ui-datePopupWidget {
+  border-top: 1px solid var(--uc-a2a9b1);
+}
+
+.mw-rcfilters-ui-datePopupWidget .mw-rcfilters-ui-valuePickerWidget-title {
+  color: var(--uc-72777d);
+}
+
+@keyframes fadeBlue {
+  60% {
+    border-top-color: var(--uc-3366cc);
+  }
+  100% {
+    border-top-color: var(--uc-c8ccd1);
+  }
+}
+
+.mw-rcfilters-ui-changesListWrapperWidget-previousChangesIndicator {
+  border-top: 2px solid var(--uc-c8ccd1);
+}
+
+.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey td:not(:nth-child(-n + 2)) {
+  background-color: var(--uc-dee0e3);
+}
+
+.mw-rcfilters-ui-changesListWrapperWidget .mw-changeslist-legend {
+  background-color: var(--uc-ffffff);
+
+  border: 1px solid var(--uc-c8ccd1);
+}
+
+.mw-rcfilters-ui-highlights-color-none {
+  background-color: var(--uc-ffffff);
+  border: 1px solid var(--uc-54595d);
+}
+
+.mw-rcfilters-ui-highlights-color-c1 {
+  background-color: var(--uc-3366cc);
+}
+
+.mw-rcfilters-ui-highlights-color-c2 {
+  background-color: var(--uc-00af89);
+}
+
+.mw-rcfilters-ui-highlights-color-c3 {
+  background-color: var(--uc-ffcc33);
+}
+
+.mw-rcfilters-ui-highlights-color-c4 {
+  background-color: var(--uc-ff6d22);
+}
+
+.mw-rcfilters-ui-highlights-color-c5 {
+  background-color: var(--uc-dd3333);
+}
+
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c1,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c1 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-c2d1f0);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c2,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c2 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c2.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c2.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-b3e7dc);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c3,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c3 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c3.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c3.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-fff0c2);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c4,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c4 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c4.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c4.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-ffd3bd);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c5,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c5 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-f5c2c2);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-8cc5d5);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c3,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c3 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c3.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c3.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-ccdecc);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c4,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c4 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c4.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c4.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-ccb4bb);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c5,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c5 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-c4a6bf);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-bfdeaf);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c4,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c4 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c4.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c4.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-bfc7aa);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c5,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c5 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-b7b8af);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-ffce95);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c5,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c5 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-f7bf99);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-f7a895);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-94bda8);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c5,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c5 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-8c99a8);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c4,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c4 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c4.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c4.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-94a7a4);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-d0ad90);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c5,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c5 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-c8a094);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-c88a90);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-c4be80);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c5,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c5 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-bcb184);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-bc9a80);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-f7a16c);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-b5ae8b);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c5,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c5 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-aea18f);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-ae8d8b);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-d2917f);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-c89f73);
+}
+.mw-rcfilters-ui-changesListWrapperWidget li.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5,
+.mw-rcfilters-ui-changesListWrapperWidget .mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5 tr:first-child,
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-toplevel:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 2)),
+.mw-rcfilters-ui-changesListWrapperWidget tr.mw-rcfilters-highlight-color-c1.mw-rcfilters-highlight-color-c2.mw-rcfilters-highlight-color-c3.mw-rcfilters-highlight-color-c4.mw-rcfilters-highlight-color-c5.mw-rcfilters-ui-highlights-enhanced-nested:not(.mw-rcfilters-ui-changesListWrapperWidget-enhanced-grey) td:not(:nth-child(-n + 4)) {
+  background-color: var(--uc-b28874);
+}
+
+.mw-rcfilters-ui-highlightColorPickerWidget-buttonSelect-color-none {
+  background-color: var(--uc-ffffff);
+  border: 1px solid var(--uc-54595d);
+}
+
+.mw-rcfilters-ui-highlightColorPickerWidget-buttonSelect-color-none.oo-ui-buttonOptionWidget.oo-ui-buttonElement-active,
+.mw-rcfilters-ui-highlightColorPickerWidget-buttonSelect-color-none.oo-ui-buttonOptionWidget.oo-ui-optionWidget-pressed,
+.mw-rcfilters-ui-highlightColorPickerWidget-buttonSelect-color-none.oo-ui-buttonOptionWidget.oo-ui-optionWidget-selected {
+  background-color: var(--uc-ffffff);
+}
+.mw-rcfilters-ui-highlightColorPickerWidget-buttonSelect-color-c1 {
+  background-color: var(--uc-3366cc);
+  border-color: var(--uc-3366cc);
+}
+.mw-rcfilters-ui-highlightColorPickerWidget-buttonSelect-color-c1.oo-ui-buttonOptionWidget.oo-ui-buttonElement-active,
+.mw-rcfilters-ui-highlightColorPickerWidget-buttonSelect-color-c1.oo-ui-buttonOptionWidget.oo-ui-optionWidget-pressed,
+.mw-rcfilters-ui-highlightColorPickerWidget-buttonSelect-color-c1.oo-ui-buttonOptionWidget.oo-ui-optionWidget-selected {
+  background-color: var(--uc-3366cc);
+}
+.mw-rcfilters-ui-highlightColorPickerWidget-buttonSelect-color-c2 {
+  background-color: var(--uc-00af89);
+  border: 1px solid var(--uc-54595d);
+  border-color: var(--uc-00af89);
+}
+.mw-rcfilters-ui-highlightColorPickerWidget-buttonSelect-color-c2.oo-ui-buttonOptionWidget.oo-ui-buttonElement-active,
+.mw-rcfilters-ui-highlightColorPickerWidget-buttonSelect-color-c2.oo-ui-buttonOptionWidget.oo-ui-optionWidget-pressed,
+.mw-rcfilters-ui-highlightColorPickerWidget-buttonSelect-color-c2.oo-ui-buttonOptionWidget.oo-ui-optionWidget-selected {
+  background-color: var(--uc-00af89);
+}
+.mw-rcfilters-ui-highlightColorPickerWidget-buttonSelect-color-c3 {
+  background-color: var(--uc-ffcc33);
+  border: 1px solid var(--uc-54595d);
+  border-color: var(--uc-ffcc33);
+}
+.mw-rcfilters-ui-highlightColorPickerWidget-buttonSelect-color-c3.oo-ui-buttonOptionWidget.oo-ui-buttonElement-active,
+.mw-rcfilters-ui-highlightColorPickerWidget-buttonSelect-color-c3.oo-ui-buttonOptionWidget.oo-ui-optionWidget-pressed,
+.mw-rcfilters-ui-highlightColorPickerWidget-buttonSelect-color-c3.oo-ui-buttonOptionWidget.oo-ui-optionWidget-selected {
+  background-color: var(--uc-ffcc33);
+}
+.mw-rcfilters-ui-highlightColorPickerWidget-buttonSelect-color-c4 {
+  background-color: var(--uc-ff6d22);
+  border: 1px solid var(--uc-54595d);
+  border-color: var(--uc-ff6d22);
+}
+.mw-rcfilters-ui-highlightColorPickerWidget-buttonSelect-color-c4.oo-ui-buttonOptionWidget.oo-ui-buttonElement-active,
+.mw-rcfilters-ui-highlightColorPickerWidget-buttonSelect-color-c4.oo-ui-buttonOptionWidget.oo-ui-optionWidget-pressed,
+.mw-rcfilters-ui-highlightColorPickerWidget-buttonSelect-color-c4.oo-ui-buttonOptionWidget.oo-ui-optionWidget-selected {
+  background-color: var(--uc-ff6d22);
+}
+.mw-rcfilters-ui-highlightColorPickerWidget-buttonSelect-color-c5 {
+  background-color: var(--uc-dd3333);
+  border: 1px solid var(--uc-54595d);
+  border-color: var(--uc-dd3333);
+}
+.mw-rcfilters-ui-highlightColorPickerWidget-buttonSelect-color-c5.oo-ui-buttonOptionWidget.oo-ui-buttonElement-active,
+.mw-rcfilters-ui-highlightColorPickerWidget-buttonSelect-color-c5.oo-ui-buttonOptionWidget.oo-ui-optionWidget-pressed,
+.mw-rcfilters-ui-highlightColorPickerWidget-buttonSelect-color-c5.oo-ui-buttonOptionWidget.oo-ui-optionWidget-selected {
+  background-color: var(--uc-dd3333);
+}
+
+.oo-ui-buttonWidget.oo-ui-popupButtonWidget .oo-ui-buttonElement-button > .mw-rcfilters-ui-filterItemHighlightButton-circle-color-c1 {
+  background-color: var(--uc-3366cc);
+}
+.oo-ui-buttonWidget.oo-ui-popupButtonWidget .oo-ui-buttonElement-button > .mw-rcfilters-ui-filterItemHighlightButton-circle-color-c2 {
+  background-color: var(--uc-00af89);
+}
+.oo-ui-buttonWidget.oo-ui-popupButtonWidget .oo-ui-buttonElement-button > .mw-rcfilters-ui-filterItemHighlightButton-circle-color-c3 {
+  background-color: var(--uc-ffcc33);
+}
+.oo-ui-buttonWidget.oo-ui-popupButtonWidget .oo-ui-buttonElement-button > .mw-rcfilters-ui-filterItemHighlightButton-circle-color-c4 {
+  background-color: var(--uc-ff6d22);
+}
+.oo-ui-buttonWidget.oo-ui-popupButtonWidget .oo-ui-buttonElement-button > .mw-rcfilters-ui-filterItemHighlightButton-circle-color-c5 {
+  background-color: var(--uc-dd3333);
+}
+
+.mw-rcfilters-ui-savedLinksListWidget-placeholder.oo-ui-optionWidget .oo-ui-labelElement-label {
+  color: var(--uc-72777d);
+}
+
+.mw-rcfilters-ui-savedLinksListItemWidget:hover {
+  background-color: var(--uc-eaecf0);
+  color: var(--uc-000000);
+}
+
+.mw-rcfilters-ui-savedLinksListItemWidget-label {
+  color: var(--uc-3366cc);
+}
+
+.mw-rcfilters-ui-liveUpdateButtonWidget.oo-ui-toggleWidget-on:after {
+  background: var(--uc-3366cc80);
+}
+
+.mw-rcfilters-ui-watchlistTopSectionWidget-separator {
+  border-top: 2px solid var(--uc-eaecf0);
+}
+
+.mw-rcfilters-ui-filterTagMultiselectWidget-mobile .oo-ui-tagMultiselectWidget-input.oo-ui-textInputWidget input[readonly] {
+  background-color: var(--uc-ffffff);
+}
+.mw-rcfilters-ui-filterTagMultiselectWidget-mobile .oo-ui-tagMultiselectWidget-input.oo-ui-textInputWidget input[readonly]::-webkit-input-placeholder {
+  color: var(--uc-000000);
+}
+.mw-rcfilters-ui-filterTagMultiselectWidget-mobile .oo-ui-tagMultiselectWidget-input.oo-ui-textInputWidget input[readonly]:-ms-input-placeholder {
+  color: var(--uc-000000);
+}
+.mw-rcfilters-ui-filterTagMultiselectWidget-mobile .oo-ui-tagMultiselectWidget-input.oo-ui-textInputWidget input[readonly]::-moz-placeholder {
+  color: var(--uc-000000);
+}
+.mw-rcfilters-ui-filterTagMultiselectWidget-mobile .oo-ui-tagMultiselectWidget-input.oo-ui-textInputWidget input[readonly]::placeholder {
+  color: var(--uc-000000);
+}
+
+.mw-email-not-authenticated .oo-ui-labelWidget,
+.mw-email-none .oo-ui-labelWidget {
+  color: var(--uc-000);
+}
+.mw-email-not-authenticated .oo-ui-labelWidget {
+  background-color: var(--uc-fef6e7);
+  border-color: var(--uc-fc3);
+}
+.mw-email-none .oo-ui-labelWidget {
+  background-color: var(--uc-eaecf0);
+  border-color: var(--uc-a2a9b1);
+}
+.mw-prefs-buttons {
+  background-color: var(--uc-fff);
+
+  border-top: 1px solid var(--uc-c8ccd1);
+
+  box-shadow: 0 -4px 4px -4px var(--uc-00000040);
+}
+
+.mw-prefs-tabs-wrapper.oo-ui-panelLayout-framed,
+.mw-prefs-tabs > .oo-ui-menuLayout-content > .oo-ui-indexLayout-stackLayout > .oo-ui-tabPanelLayout {
+  border-color: var(--uc-c8ccd1);
+}
+
+.client-nojs .mw-prefs-tabs .mw-prefs-section-fieldset > .oo-ui-fieldsetLayout-group {
+  border-top: 1px solid var(--uc-c8ccd1);
+}
+
+.oo-ui-fieldsetLayout:target > .oo-ui-fieldsetLayout-header > .oo-ui-labelElement-label {
+  background-color: var(--uc-eaf3ff);
+  outline: 4px solid var(--uc-eaf3ff);
+}
+
+.mw-search-result-data {
+  color: var(--uc-54595d);
+}
+.mw-search-profile-tabs {
+  background-color: var(--uc-f8f9fa);
+
+  border: 1px solid var(--uc-c8ccd1);
+}
+
+.search-types .current a {
+  color: var(--uc-202122);
+}
+
+.results-info {
+  color: var(--uc-54595d);
+}
+
+#mw-searchoptions {
+  background-color: var(--uc-f8f9fa);
+
+  border: 1px solid var(--uc-c8ccd1);
+}
+
+#mw-searchoptions .divider {
+  border-bottom: 1px solid var(--uc-eaecf0);
+}
+
+#mw-search-interwiki {
+  border: 1px solid var(--uc-a2a9b1);
+}
+
+.mw-search-interwiki-project {
+  background-color: var(--uc-eaecf0);
+  border-top: 1px solid var(--uc-c8ccd1);
+}
