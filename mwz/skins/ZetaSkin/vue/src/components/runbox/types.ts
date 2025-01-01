@@ -49,9 +49,9 @@ export interface Job {
   id: string
   type: JobType
   boxes: Box[]
-  pageid: number
+  pageId: number
   main: number
-  step: PhaseType
+  phase: PhaseType
   reqRun?: ReqRun
   reqNotebook?: ReqNotebook
 }

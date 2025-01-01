@@ -1,12 +1,9 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@use 'tailwind.scss';
+@use 'base.scss';
 
-@import 'base.scss';
+@use 'btn.scss';
+@use 'navbar.scss';
+@use 'tag.scss';
 
-@import 'btn.scss';
-@import 'navbar.scss';
-@import 'tag.scss';
-
-@import 'z-break-word.scss';
-@import 'z-scrollbar.scss';
+@use 'z-break-word.scss';
+@use 'z-scrollbar.scss';

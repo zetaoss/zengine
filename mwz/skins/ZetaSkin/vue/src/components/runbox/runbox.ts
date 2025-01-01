@@ -38,8 +38,8 @@ const actions = {
 
     const resp = await http.get(`/api/box/${job.type}/${pageId}/${md5(job)}`)
     console.log('resp', resp)
-    job.step = resp.step
-    switch (job.step) {
+    job.phase = resp.step
+    switch (job.phase) {
       case 0:
         enqueue(actions.post, job)
         break
