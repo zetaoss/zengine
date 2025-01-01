@@ -1,8 +1,45 @@
 {
+    "name": "zetaoss/zeta-skin",
+    "type": "mediawiki-skin",
+    "description": "Modern version of the ZetaWiki skin",
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "jmnote"
+        }
+    ],
     "require": {
+        "composer/installers": ">1.0.12",
         "eftec/bladeone": "^4.8"
     },
+    "extra": {
+        "installer-name": "ZetaSkin"
+    },
     "require-dev": {
-        "squizlabs/php_codesniffer": "^3.6"
+        "mediawiki/mediawiki-codesniffer": "45.0.0",
+        "mediawiki/mediawiki-phan-config": "0.15.0",
+        "mediawiki/minus-x": "1.1.3",
+        "php-parallel-lint/php-console-highlighter": "1.0.0",
+        "php-parallel-lint/php-parallel-lint": "1.4.0"
+    },
+    "scripts": {
+        "fix": [
+            "minus-x fix .",
+            "phpcbf"
+        ],
+        "test": [
+            "parallel-lint . --exclude node_modules --exclude vendor",
+            "@phpcs",
+            "minus-x check ."
+        ],
+        "test:size": "php ../../vendor/phpunit/phpunit/phpunit -c ../../phpunit.xml.dist tests/phpunit/structure/BundleSizeTest.php",
+        "phan": "phan -d . --long-progress-bar",
+        "phpcs": "phpcs -sp --cache"
+    },
+    "config": {
+        "allow-plugins": {
+            "composer/installers": true,
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
     }
 }
