@@ -86,12 +86,6 @@ const router = createRouter({
       path: '/social-join/:code',
       component: () => import('@/views/auth/SocialJoin.vue'),
     },
-    // {
-    //   // placeholder for wiki
-    //   path: '/wiki/:any',
-    //   component: () => null,
-    //   meta: { tab: 'wiki' },
-    // },
   ],
 })
 
