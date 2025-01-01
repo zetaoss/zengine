@@ -17,7 +17,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/auth', function () {
+Route::prefix('auth')->group(function () {
     Route::get('/redirect/{provider}', [SocialController::class, 'redirect'])->where('provider', 'github|google');
     Route::get('/callback/{provider}', [SocialController::class, 'callback'])->where('provider', 'github|google');
     Route::get('/config-services', function () {
@@ -26,7 +26,7 @@ Route::get('/auth', function () {
     });
 });
 
-Route::get('/api', function () {
+Route::prefix('api')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/logout', [AuthController::class, 'logout']);
 
