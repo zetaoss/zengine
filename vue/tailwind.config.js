@@ -6,8 +6,7 @@ module.exports = {
     './common/**/*.{vue,js,ts,jsx,tsx}',
   ],
   darkMode: 'class',
-  plugins: [
-  ],
+  plugins: [],
   theme: {
     extend: {
       colors: {

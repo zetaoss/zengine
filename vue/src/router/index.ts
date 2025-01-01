@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-
 // import useAuthStore from '@/stores/auth'
 
 const router = createRouter({
@@ -87,24 +86,13 @@ const router = createRouter({
       path: '/social-join/:code',
       component: () => import('@/views/auth/SocialJoin.vue'),
     },
-    {
-      // placeholder for wiki
-      path: '/wiki/:any',
-      component: () => null,
-      meta: { tab: 'wiki' },
-    },
+    // {
+    //   // placeholder for wiki
+    //   path: '/wiki/:any',
+    //   component: () => null,
+    //   meta: { tab: 'wiki' },
+    // },
   ],
 })
-
-// router.beforeEach((to) => {
-//   const auth = useAuthStore()
-//   if (to.meta.requiresAuth && !auth.isLoggedIn) {
-//     return {
-//       path: '/login',
-//       query: { redirect: to.fullPath },
-//     }
-//   }
-//   return {}
-// })
 
 export default router
