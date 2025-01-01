@@ -1,13 +1,17 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "zetaoss/zeta",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
-    "license": "MIT",
+    "description": "zeta laravel",
+    "keywords": [
+        "zeta",
+        "laravel"
+    ],
+    "license": "Apache-2.0",
     "require": {
         "php": "^8.2",
         "laravel/framework": "^11.31",
+        "laravel/socialite": "^5.16",
         "laravel/tinker": "^2.9"
     },
     "require-dev": {
@@ -17,7 +21,7 @@
         "laravel/sail": "^1.26",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.1",
-        "phpunit/phpunit": "^11.0.1"
+         "phpunit/phpunit": "^11.0.1"
     },
     "autoload": {
         "psr-4": {
