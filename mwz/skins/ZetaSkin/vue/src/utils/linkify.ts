@@ -1,5 +1,5 @@
 import Autolinker from 'autolinker'
-import { sanitize } from 'isomorphic-dompurify'
+import DOMPurify from "isomorphic-dompurify";
 
 import { titleExist } from './mwapi'
 
@@ -30,5 +30,5 @@ async function linkifyWiki(s: string) {
 }
 
 export default async function linkify(input: string) {
-  return linkifyWiki(linkifyURL(sanitize(input)))
+  return linkifyWiki(linkifyURL(DOMPurify.sanitize(input)))
 }
