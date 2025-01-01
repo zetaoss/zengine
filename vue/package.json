@@ -1,12 +1,9 @@
 {
   "name": "vue",
-  "version": "0.0.0",
-  "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "build": "run-p type-check \"build-only {@}\" --",
-    "watch": "vite build --watch",
     "preview": "vite preview",
     "test:unit": "vitest",
     "test:e2e": "playwright test",
