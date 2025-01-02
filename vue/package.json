@@ -1,5 +1,5 @@
 {
-  "name": "vue",
+  "name": "zeta-engine-vue",
   "type": "module",
   "scripts": {
     "dev": "vite --host",
