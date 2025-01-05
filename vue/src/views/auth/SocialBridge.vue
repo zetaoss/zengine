@@ -27,7 +27,7 @@ async function login() {
     }
     window.location.href = `/wiki/${returnto.replace(/\+/g, ' ')}`
   }
-  console.error('doLogin error')
+  console.error('doLogin error', result)
 }
 
 onMounted(() => {
