@@ -1,7 +1,7 @@
 import http from '@/utils/http'
 
 async function getLogintoken() {
-  const resp: any = await http.get('/w/api.php', {
+  const resp = await http.get('/w/api.php', {
     params: {
       format: 'json',
       action: 'query',
@@ -24,6 +24,6 @@ export default async function doLogin(username: string, password: string, loginr
     rememberMe: '1',
   }
   const headers = { 'Content-Type': 'multipart/form-data' }
-  const resp: any = await http.post('/w/api.php', params, { headers })
+  const resp = await http.post('/w/api.php', params, { headers })
   return resp.data.clientlogin
 }
