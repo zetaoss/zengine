@@ -12,15 +12,12 @@ class SocialController extends Controller
 {
     public function redirect(Request $request, string $provider)
     {
-        // $returnto = $request->input('returnto', '');
-        // if (!$returnto || strlen($returnto) < 1 || strlen($returnto) > 255) {
-        //     $returnto = '';
-        // }
-        // $request->session()->put('returnto', $returnto);
-
-        dd(Socialite::driver($provider));
-        // return Socialite::driver($provider)->redirect();
-        return "hello";
+        $returnto = $request->input('returnto', '');
+        if (!$returnto || strlen($returnto) < 1 || strlen($returnto) > 255) {
+            $returnto = '';
+        }
+        $request->session()->put('returnto', $returnto);
+        return Socialite::driver($provider)->redirect();
     }
 
     public function callback(Request $request, string $provider)
@@ -86,7 +83,7 @@ class SocialController extends Controller
     {
         $otp = sha1(rand());
         $username = UserService::getUserAvatar($user_id)['name'];
-
+        \Illuminate\Support\Facades\Log::debug('An informational message.');
         Cache::store('redis')->put("otp:$otp", $user_id, 30);
         $got = Cache::store('redis')->get("otp:$otp");
         return "/social-bridge?otp=$otp&username=$username";
