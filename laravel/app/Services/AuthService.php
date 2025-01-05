@@ -11,7 +11,7 @@ class AuthService
     public static function me()
     {
         $userID = self::getValidUserID();
-        if ($userID === false) {
+        if (!$userID) {
             return false;
         }
         return self::getMeData($userID);
@@ -30,17 +30,22 @@ class AuthService
             $value = $redis->get('zetawiki:MWSession:' . $_COOKIE['zetawiki_session']);
             if ($value) {
                 $arr = unserialize($value);
-                $wsUserID = $arr['data']['wsUserID'] ?? 0;
-                if ($wsUserID == $userID) {
+                $wsUserID = $arr['data']['wsUserID'] ?? false;
+                if ($wsUserID && $wsUserID == $userID) {
                     return $userID;
                 }
             }
         }
 
         if (array_key_exists('zetawikiToken', $_COOKIE)) {
-            $cnt = count(DB::select('SELECT user_id FROM zetawiki.user WHERE user_id=? AND user_name=? AND user_token=?', [$userID, $userName, $_COOKIE['zetawikiToken']]));
-            if ($cnt == 1) {
-                return $userID;
+            $token = COOKIE['zetawikiToken'];
+            $rows = DB::connection('mwdb')->select('SELECT user_token FROM user WHERE user_id=? AND user_name=? LIMIT 1', [$userID, $userName]);
+            $userToken = $rows[0]->user_token ?? false;
+            if ($dbUserToken) {
+                $wsToken = substr(hash_hmac('whirlpool', '1', $userToken, false), -32);
+                if ($wsToken && $token == $wsToken) {
+                    return $userID;
+                }
             }
         }
         return false;

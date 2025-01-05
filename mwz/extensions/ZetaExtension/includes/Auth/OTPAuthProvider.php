@@ -16,7 +16,7 @@ class OTPAuthProvider extends AbstractPrimaryAuthenticationProvider
         }
         $redis = new \Redis();
         $redis->connect(getenv('REDIS_HOST'));
-        $userID = $redis->get("laravel_cache_:otp:{$req->password}");
+        $userID = $redis->get("otp:{$req->password}");
         $user = User::newFromId($userID);
         if (!$user || $req->username != $user->getName()) {
             return AuthenticationResponse::newAbstain();

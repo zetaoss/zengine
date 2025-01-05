@@ -82,10 +82,8 @@ class SocialController extends Controller
     private function getBridgePath($user_id)
     {
         $otp = sha1(rand());
-        $username = UserService::getUserAvatar($user_id)['name'];
-        \Illuminate\Support\Facades\Log::debug('An informational message.');
         Cache::store('redis')->put("otp:$otp", $user_id, 30);
-        $got = Cache::store('redis')->get("otp:$otp");
+        $username = UserService::getUserAvatar($user_id)['name'] ?? '';
         return "/social-bridge?otp=$otp&username=$username";
     }
 }
