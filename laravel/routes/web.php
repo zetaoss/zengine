@@ -13,17 +13,9 @@ use App\Http\Controllers\SocialController;
 use App\Http\Controllers\WriteRequestController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
-
 Route::prefix('auth')->group(function () {
     Route::get('/redirect/{provider}', [SocialController::class, 'redirect'])->where('provider', 'github|google');
     Route::get('/callback/{provider}', [SocialController::class, 'callback'])->where('provider', 'github|google');
-    Route::get('/config-services', function () {
-        $services = config('services');
-        dd($services);
-    });
 });
 
 Route::prefix('api')->group(function () {
