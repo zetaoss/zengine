@@ -4,7 +4,8 @@
         "dbaeumer.vscode-eslint",
         "editorconfig.editorconfig",
         "kokororin.vscode-phpfmt",
+        "ms-vscode.makefile-tools",
         "shufo.vscode-blade-formatter",
-        "vue.volar",
+        "vue.volar"
     ]
 }
