@@ -12,7 +12,6 @@ import useAuthStore from '@/stores/auth'
 import copyToClipboard from '@/utils/clipboard'
 import http from '@/utils/http'
 
-import BoxStar from './box/BoxStar.vue'
 import type { Row } from './types'
 import { getRatio, getScore, getWikitextTable } from './utils'
 
@@ -50,7 +49,11 @@ function copyTableHTML() {
   showTooltip(1)
   if (!table.value) return
   const el = table.value as HTMLTableElement
-  copyToClipboard(el.outerHTML)
+  let cleanHTML = el.outerHTML.replace(/ (data-v-[^=]+|class|rel|target|style)="[^"]*"/g, '');
+  cleanHTML = cleanHTML.replace(/<table>/g, '<table>\n');
+  cleanHTML = cleanHTML.replace(/<\/tr>/g, '</tr>\n');
+  cleanHTML = cleanHTML.replace(/<a [^>]*>(.*?)<\/a>/g, '$1');
+  copyToClipboard(cleanHTML)
 }
 
 function copyTableWikitext() {
@@ -143,30 +146,22 @@ fetchData()
       <div>
         <table ref="table" class="border-collapse">
           <tr>
-            <th colspan="2">
-              표기
-            </th>
+            <th colspan="2">표기</th>
             <td v-for="(item, idx) in row.items " :key="idx">
               <a class="new" :href="`/wiki/${item.name}`">{{ item.name }}</a>
             </td>
           </tr>
           <tr>
-            <th colspan="2">
-              판정
-            </th>
-            <td v-for="(item, idx) in row.items " :key="idx">
+            <th colspan="2">판정</th>
+            <td v-for="(_, idx) in row.items " :key="idx">
               <span v-if="idx == 0">
-                <BoxStar :n="getScore(row).star" /> {{ getScore(row).grade }}
+                {{ '★'.repeat(getScore(row).star) }} {{ getScore(row).grade }}
               </span>
-              <span v-else>
-                —
-              </span>
+              <span v-else>—</span>
             </td>
           </tr>
           <tr>
-            <th colspan="2">
-              비율
-            </th>
+            <th colspan="2">비율</th>
             <td v-for="(item, idx) in row.items " :key="idx">
               <span v-if="getRatio(row, idx)">
                 {{ (100 * getRatio(row, idx)).toFixed(1) }}%
@@ -177,9 +172,7 @@ fetchData()
             </td>
           </tr>
           <tr>
-            <th colspan="2">
-              계
-            </th>
+            <th colspan="2">계</th>
             <td v-for="(item, idx) in row.items " :key="idx">
               {{ item.total.toLocaleString('en-US') }}
             </td>
@@ -195,9 +188,7 @@ fetchData()
             </td>
           </tr>
           <tr>
-            <th rowspan="3">
-              네이버
-            </th>
+            <th rowspan="3">네이버</th>
             <th>블로그</th>
             <td v-for="(item, idx) in row.items " :key="idx">
               <a target="_blank" rel="noopener noreferrer" class="external"
@@ -225,9 +216,7 @@ fetchData()
             </td>
           </tr>
           <tr>
-            <th colspan="2">
-              구글
-            </th>
+            <th colspan="2">구글</th>
             <td v-for="(item, idx) in row.items " :key="idx">
               <a target="_blank" rel="noopener noreferrer" class="external"
                 :href="`http://www.google.com/search?nfpr=1&q=%22${item.name}%22`">
