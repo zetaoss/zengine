@@ -1,5 +1,4 @@
 {
-    "extensions.ignoreRecommendations": true,
     "remote.autoForwardPorts": true,
     "[php]": {
         "editor.defaultFormatter": "kokororin.vscode-phpfmt",
