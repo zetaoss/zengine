@@ -38,10 +38,10 @@ class AuthService
         }
 
         if (array_key_exists('zetawikiToken', $_COOKIE)) {
-            $token = COOKIE['zetawikiToken'];
+            $token = $_COOKIE['zetawikiToken'];
             $rows = DB::connection('mwdb')->select('SELECT user_token FROM user WHERE user_id=? AND user_name=? LIMIT 1', [$userID, $userName]);
             $userToken = $rows[0]->user_token ?? false;
-            if ($dbUserToken) {
+            if ($userToken) {
                 $wsToken = substr(hash_hmac('whirlpool', '1', $userToken, false), -32);
                 if ($wsToken && $token == $wsToken) {
                     return $userID;
