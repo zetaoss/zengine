@@ -29,7 +29,7 @@ class CommonReportController extends MyController
             return $this->newHTTPError(422, "비교 대상을 2개 이상 입력해 주세요.");
         }
         $report = new CommonReport;
-        $report->user_id = $this->me()['id'];
+        $report->user_id = $this->getMe()['avatar']['id'];
         $report->state = 0;
         $report->save();
 

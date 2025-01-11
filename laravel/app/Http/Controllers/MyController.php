@@ -12,7 +12,7 @@ class MyController extends Controller
 
     private static $me = null;
 
-    private function getMe()
+    protected function getMe()
     {
         if (is_null(self::$me)) {
             self::$me = AuthService::me();
