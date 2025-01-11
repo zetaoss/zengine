@@ -145,85 +145,87 @@ fetchData()
       <hr class="my-4 border-0 border-b">
       <div>
         <table ref="table" class="border-collapse">
-          <tr>
-            <th colspan="2">표기</th>
-            <td v-for="(item, idx) in row.items " :key="idx">
-              <a class="new" :href="`/wiki/${item.name}`">{{ item.name }}</a>
-            </td>
-          </tr>
-          <tr>
-            <th colspan="2">판정</th>
-            <td v-for="(_, idx) in row.items " :key="idx">
-              <span v-if="idx == 0">
-                {{ '★'.repeat(getScore(row).star) }} {{ getScore(row).grade }}
-              </span>
-              <span v-else>—</span>
-            </td>
-          </tr>
-          <tr>
-            <th colspan="2">비율</th>
-            <td v-for="(item, idx) in row.items " :key="idx">
-              <span v-if="getRatio(row, idx)">
-                {{ (100 * getRatio(row, idx)).toFixed(1) }}%
-              </span>
-              <span v-else>
-                —
-              </span>
-            </td>
-          </tr>
-          <tr>
-            <th colspan="2">계</th>
-            <td v-for="(item, idx) in row.items " :key="idx">
-              {{ item.total.toLocaleString('en-US') }}
-            </td>
-          </tr>
-          <tr>
-            <th>다음</th>
-            <th>블로그</th>
-            <td v-for="(item, idx) in row.items " :key="idx">
-              <a target="_blank" rel="noopener noreferrer" class="external"
-                :href="`http://search.daum.net/search?w=blog&q=${item.name}`">
-                {{ item.daum_blog.toLocaleString('en-US') }}
-              </a>
-            </td>
-          </tr>
-          <tr>
-            <th rowspan="3">네이버</th>
-            <th>블로그</th>
-            <td v-for="(item, idx) in row.items " :key="idx">
-              <a target="_blank" rel="noopener noreferrer" class="external"
-                :href="`https://search.naver.com/search.naver?where=post&query=${item.name}`">
-                {{ item.naver_blog.toLocaleString('en-US') }}
-              </a>
-            </td>
-          </tr>
-          <tr>
-            <th>책</th>
-            <td v-for="(item, idx) in row.items " :key="idx">
-              <a target="_blank" rel="noopener noreferrer" class="external"
-                :href="`http://book.naver.com/search/search.nhn?query=${item.name}`">
-                {{ item.naver_book.toLocaleString('en-US') }}
-              </a>
-            </td>
-          </tr>
-          <tr>
-            <th>뉴스</th>
-            <td v-for="(item, idx) in row.items " :key="idx">
-              <a target="_blank" rel="noopener noreferrer" class="external"
-                :href="`https://search.naver.com/search.naver?where=news&query=${item.name}`">
-                {{ item.naver_news.toLocaleString('en-US') }}
-              </a>
-            </td>
-          </tr>
-          <tr>
-            <th colspan="2">구글</th>
-            <td v-for="(item, idx) in row.items " :key="idx">
-              <a target="_blank" rel="noopener noreferrer" class="external"
-                :href="`http://www.google.com/search?nfpr=1&q=%22${item.name}%22`">
-                {{ item.google_search.toLocaleString('en-US') }}
-              </a>
-            </td>
-          </tr>
+          <tbody>
+            <tr>
+              <th colspan="2">표기</th>
+              <td v-for="(item, idx) in row.items " :key="idx">
+                <a class="new" :href="`/wiki/${item.name}`">{{ item.name }}</a>
+              </td>
+            </tr>
+            <tr>
+              <th colspan="2">판정</th>
+              <td v-for="(_, idx) in row.items " :key="idx">
+                <span v-if="idx == 0">
+                  {{ '★'.repeat(getScore(row).star) }} {{ getScore(row).grade }}
+                </span>
+                <span v-else>—</span>
+              </td>
+            </tr>
+            <tr>
+              <th colspan="2">비율</th>
+              <td v-for="(item, idx) in row.items " :key="idx">
+                <span v-if="getRatio(row, idx)">
+                  {{ (100 * getRatio(row, idx)).toFixed(1) }}%
+                </span>
+                <span v-else>
+                  —
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <th colspan="2">계</th>
+              <td v-for="(item, idx) in row.items " :key="idx">
+                {{ item.total.toLocaleString('en-US') }}
+              </td>
+            </tr>
+            <tr>
+              <th>다음</th>
+              <th>블로그</th>
+              <td v-for="(item, idx) in row.items " :key="idx">
+                <a target="_blank" rel="noopener noreferrer" class="external"
+                  :href="`http://search.daum.net/search?w=blog&q=${item.name}`">
+                  {{ item.daum_blog.toLocaleString('en-US') }}
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <th rowspan="3">네이버</th>
+              <th>블로그</th>
+              <td v-for="(item, idx) in row.items " :key="idx">
+                <a target="_blank" rel="noopener noreferrer" class="external"
+                  :href="`https://search.naver.com/search.naver?where=post&query=${item.name}`">
+                  {{ item.naver_blog.toLocaleString('en-US') }}
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <th>책</th>
+              <td v-for="(item, idx) in row.items " :key="idx">
+                <a target="_blank" rel="noopener noreferrer" class="external"
+                  :href="`http://book.naver.com/search/search.nhn?query=${item.name}`">
+                  {{ item.naver_book.toLocaleString('en-US') }}
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <th>뉴스</th>
+              <td v-for="(item, idx) in row.items " :key="idx">
+                <a target="_blank" rel="noopener noreferrer" class="external"
+                  :href="`https://search.naver.com/search.naver?where=news&query=${item.name}`">
+                  {{ item.naver_news.toLocaleString('en-US') }}
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <th colspan="2">구글</th>
+              <td v-for="(item, idx) in row.items " :key="idx">
+                <a target="_blank" rel="noopener noreferrer" class="external"
+                  :href="`http://www.google.com/search?nfpr=1&q=%22${item.name}%22`">
+                  {{ item.google_search.toLocaleString('en-US') }}
+                </a>
+              </td>
+            </tr>
+          </tbody>
         </table>
       </div>
     </div>
