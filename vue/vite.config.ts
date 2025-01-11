@@ -16,4 +16,7 @@ export default defineConfig({
       '@common': fileURLToPath(new URL('./common', import.meta.url)),
     },
   },
+  server: {
+    port: 5173,
+  },
 })
