@@ -11,7 +11,6 @@ import useAuthStore from '@/stores/auth'
 import http from '@/utils/http'
 
 import CommonReportNew from './CommonReportNew.vue'
-import BoxStar from './box/BoxStar.vue'
 import type { Row } from './types'
 import { getRatio, getScore } from './utils'
 
@@ -142,8 +141,7 @@ fetchData()
             <br>
           </td>
           <td v-if="idx == 0">
-            <BoxStar :n="getScore(row).star" />
-            {{ getScore(row).grade }}
+            {{ '★'.repeat(getScore(row).star) }} {{ getScore(row).grade }}
           </td>
           <td v-else>
             —
