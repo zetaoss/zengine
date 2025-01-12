@@ -11,8 +11,7 @@ class SearchService
         $naverClientId = getenv('NAVER_CLIENT_ID') ?? throw new \RuntimeException("NAVER_CLIENT_ID is not set.");
         $naverClientSecret = getenv('NAVER_CLIENT_SECRET') ?? throw new \RuntimeException("NAVER_CLIENT_SECRET is not set.");
         $kakaoApiKey = getenv('KAKAO_API_KEY') ?? throw new \RuntimeException("KAKAO_API_KEY is not set.");
-        $googleSearchKey = getenv('GOOGLE_SEARCH_KEY') ?? throw new \RuntimeException("GOOGLE_SEARCH_KEY is not set.");
-        $googleSearchCx = getenv('GOOGLE_SEARCH_CX') ?? throw new \RuntimeException("GOOGLE_SEARCH_CX is not set.");
+        $googleSearchUrl = getenv('GOOGLE_SEARCH_URL') ?? throw new \RuntimeException("GOOGLE_SEARCH_URL is not set.");
 
         $naverHeaders = [
             'X-Naver-Client-Id' => $naverClientId,
@@ -23,36 +22,27 @@ class SearchService
             'daum_blog' => [
                 'url' => "https://dapi.kakao.com/v2/search/blog",
                 'headers' => ["Authorization" => "KakaoAK $kakaoApiKey"],
-                'queryKey' => 'query',
                 'responsePath' => 'meta.total_count',
             ],
             'naver_blog' => [
                 'url' => "https://openapi.naver.com/v1/search/blog.json",
                 'headers' => $naverHeaders,
-                'queryKey' => 'query',
                 'responsePath' => 'total',
             ],
             'naver_book' => [
                 'url' => "https://openapi.naver.com/v1/search/book.json",
                 'headers' => $naverHeaders,
-                'queryKey' => 'query',
                 'responsePath' => 'total',
             ],
             'naver_news' => [
                 'url' => "https://openapi.naver.com/v1/search/news.json",
                 'headers' => $naverHeaders,
-                'queryKey' => 'query',
                 'responsePath' => 'total',
             ],
             'google_search' => [
-                'url' => "https://www.googleapis.com/customsearch/v1",
+                'url' => $googleSearchUrl,
                 'headers' => [],
-                'queryKey' => 'q',
-                'queryParams' => [
-                    'key' => $googleSearchKey,
-                    'cx' => $googleSearchCx,
-                ],
-                'responsePath' => 'searchInformation.totalResults',
+                'responsePath' => 'total',
             ],
         ];
     }
@@ -75,7 +65,7 @@ class SearchService
 
         try {
             $response = Http::withHeaders($config['headers'])
-                ->get($config['url'], [$config['queryKey'] => $word]);
+                ->get($config['url'], ['query' => $word]);
 
             if ($response->failed()) {
                 Log::error("HTTP request failed: {$response->status()} - {$response->body()}");
