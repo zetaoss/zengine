@@ -7,7 +7,7 @@ use Illuminate\Console\Command;
 
 class SearchCommand extends Command
 {
-    protected $signature = 'search {type} {word}';
+    protected $signature = 'app:search {type?} {word?}';
     protected $description = 'Run a search using the SearchService';
 
     public function handle()
@@ -15,19 +15,30 @@ class SearchCommand extends Command
         $type = $this->argument('type');
         $word = $this->argument('word');
 
-        try {
-            $searchService = new SearchService();
-            $result = $searchService->search($type, $word);
+        $searchService = new SearchService();
+        $validTypes = $searchService->getTypes();
 
-            if ($result === -1) {
-                $this->error('Search failed: Unable to fetch results.');
-            } elseif ($result === -2) {
-                $this->error('Search failed: Response path not found.');
-            } else {
-                $this->info("Search successful. Result: $result");
-            }
-        } catch (\Exception $e) {
-            $this->error('Error: ' . $e->getMessage());
+        if (!$type || !in_array($type, $validTypes, true)) {
+            $this->line('Invalid or missing required argument: type.');
+            $this->line('Available types: ' . implode(', ', $validTypes));
+            $this->line('Usage: php artisan app:search {type} {word}');
+            return Command::FAILURE;
         }
+
+        if (!$word) {
+            $this->line('Missing required argument: word.');
+            $this->line('Example: php artisan app:search ' . $type . ' hello');
+            return Command::FAILURE;
+        }
+
+        $result = $searchService->search($type, $word);
+
+        if (!$result['success']) {
+            $this->error('Search failed: ' . ($result['error'] ?? 'Unknown error occurred.'));
+            return Command::FAILURE;
+        }
+
+        $this->info("Search successful. Result: " . $result['data']);
+        return Command::SUCCESS;
     }
 }
