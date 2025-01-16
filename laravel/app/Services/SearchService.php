@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
@@ -11,35 +10,35 @@ class SearchService
     {
         $naverHeaders = ['X-Naver-Client-Id' => getenv('NAVER_CLIENT_ID'), 'X-Naver-Client-Secret' => getenv('NAVER_CLIENT_SECRET')];
         return [
-            'daum_blog' => [
-                'url' => "https://dapi.kakao.com/v2/search/blog",
-                'headers' => ["Authorization" => "KakaoAK " . getenv('KAKAO_API_KEY')],
+            'daum_blog'     => [
+                'url'          => "https://dapi.kakao.com/v2/search/blog",
+                'headers'      => ["Authorization" => "KakaoAK " . getenv('KAKAO_API_KEY')],
                 'responsePath' => 'meta.total_count',
-                'exactMatch' => false,
+                'exactMatch'   => false,
             ],
-            'naver_blog' => [
-                'url' => "https://openapi.naver.com/v1/search/blog.json",
-                'headers' => $naverHeaders,
+            'naver_blog'    => [
+                'url'          => "https://openapi.naver.com/v1/search/blog.json",
+                'headers'      => $naverHeaders,
                 'responsePath' => 'total',
-                'exactMatch' => false,
+                'exactMatch'   => false,
             ],
-            'naver_book' => [
-                'url' => "https://openapi.naver.com/v1/search/book.json",
-                'headers' => $naverHeaders,
+            'naver_book'    => [
+                'url'          => "https://openapi.naver.com/v1/search/book.json",
+                'headers'      => $naverHeaders,
                 'responsePath' => 'total',
-                'exactMatch' => false,
+                'exactMatch'   => false,
             ],
-            'naver_news' => [
-                'url' => "https://openapi.naver.com/v1/search/news.json",
-                'headers' => $naverHeaders,
+            'naver_news'    => [
+                'url'          => "https://openapi.naver.com/v1/search/news.json",
+                'headers'      => $naverHeaders,
                 'responsePath' => 'total',
-                'exactMatch' => false,
+                'exactMatch'   => false,
             ],
             'google_search' => [
-                'url' => getenv('GOOGLE_SEARCH_URL'),
-                'headers' => [],
+                'url'          => getenv('GOOGLE_SEARCH_URL'),
+                'headers'      => ['X-API-Key' => getenv('GOOGLE_SEARCH_KEY')],
                 'responsePath' => 'total',
-                'exactMatch' => true,
+                'exactMatch'   => true,
             ],
         ];
     }
@@ -54,19 +53,19 @@ class SearchService
         if (empty($type) || empty($word)) {
             return [
                 'success' => false,
-                'error' => 'Search type and word must be provided.',
+                'error'   => 'Search type and word must be provided.',
             ];
         }
 
         $config = $this->getConfig()[$type] ?? null;
-        if (!$config) {
+        if (! $config) {
             return [
                 'success' => false,
-                'error' => "Unsupported search type: $type",
+                'error'   => "Unsupported search type: $type",
             ];
         }
 
-        if (!empty($config['exactMatch']) && $config['exactMatch'] === true) {
+        if (! empty($config['exactMatch']) && $config['exactMatch'] === true) {
             $word = '"' . $word . '"';
         }
 
@@ -77,39 +76,39 @@ class SearchService
             if ($response->failed()) {
                 Log::error("HTTP request failed", [
                     'status' => $response->status(),
-                    'body' => $response->body(),
-                    'type' => $type,
-                    'word' => $word,
+                    'body'   => $response->body(),
+                    'type'   => $type,
+                    'word'   => $word,
                 ]);
                 return [
                     'success' => false,
-                    'error' => 'HTTP request failed.',
+                    'error'   => 'HTTP request failed.',
                 ];
             }
 
-            $data = $response->json();
+            $data  = $response->json();
             $value = $this->getValueFromPath($data, $config['responsePath']);
 
             if ($value === null) {
                 return [
                     'success' => false,
-                    'error' => 'Failed to retrieve the expected value from the response.',
+                    'error'   => 'Failed to retrieve the expected value from the response.',
                 ];
             }
 
             return [
                 'success' => true,
-                'data' => $value,
+                'data'    => $value,
             ];
         } catch (\Exception $e) {
             Log::error("An error occurred during the search operation", [
-                'type' => $type,
-                'word' => $word,
+                'type'      => $type,
+                'word'      => $word,
                 'exception' => $e->getMessage(),
             ]);
             return [
                 'success' => false,
-                'error' => 'An unexpected error occurred.',
+                'error'   => 'An unexpected error occurred.',
             ];
         }
     }

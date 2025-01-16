@@ -7,8 +7,9 @@ class RunService
 {
     public static function lang($data): array
     {
+        $endpoint = getenv('RUNBOX_ENDPOINT');
         try {
-            $response = Http::post("http://runbox/run/lang", $data);
+            $response = Http::post($endpoint . "/run/lang", $data);
             if ($response->successful()) {
                 return [$response->json(), null];
             }
