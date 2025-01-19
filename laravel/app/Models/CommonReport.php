@@ -6,7 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class CommonReport extends Model
 {
-    protected $appends = ['userAvatar', 'total'];
+    protected $appends  = ['userAvatar', 'total'];
+    protected $fillable = ['state'];
 
     public function getUserAvatarAttribute()
     {
