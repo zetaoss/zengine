@@ -7,10 +7,14 @@ export function getRatio(row: Row, idx: number) {
 }
 
 export function getScore(row: Row): Score {
+  const zero = { star: 0, grade: '—' }
   const { items } = row
+  if (items.length < 2) {
+    return zero
+  }
   const top2 = items[0].total + items[1].total
   if (top2 === 0) {
-    return { star: 0, grade: '—' }
+    return zero
   }
   const quorum = items[0].total / top2
   const sampleSizeIndex = Math.log10(Math.log10(top2) + 1)
