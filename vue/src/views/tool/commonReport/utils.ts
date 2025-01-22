@@ -1,29 +1,23 @@
 import { useDateFormat } from '@vueuse/core'
 
-import type { Row, Score } from './types'
+import type { Row } from './types'
 
 export function getRatio(row: Row, idx: number) {
   return row.items[idx].total / row.total
 }
 
-export function getScore(row: Row): Score {
-  const zero = { star: 0, grade: '—' }
-  const { items } = row
-  if (items.length < 2) {
-    return zero
-  }
-  const top2 = items[0].total + items[1].total
-  if (top2 === 0) {
-    return zero
-  }
-  const quorum = items[0].total / top2
-  const sampleSizeIndex = Math.log10(Math.log10(top2) + 1)
-  const num = quorum ** 0.5 * sampleSizeIndex ** 1.5 * 5.5
-  if (num < 0.1) return { star: 0, grade: 'D' }
-  if (num < 1) return { star: 1, grade: 'C' }
-  if (num < 2) return { star: 2, grade: 'B' }
-  if (num < 3) return { star: 3, grade: 'A' }
-  return { star: 4, grade: 'S' }
+export function getScore(row: Row): number {
+  const nums = row.items.map(x => x.total)
+  const total = nums.reduce((acc, cur) => acc + cur, 0)
+  if (nums.length < 2 || total == 0) return -1
+  const p = nums.map(x => x / total)
+  const p0 = p[0]
+  const p1 = p[1]
+  const gap = p0 - p1
+  const sizeWeight = Math.log10(total)
+  const weightedDominance = (gap * 0.8 + p0 * 0.2) * sizeWeight
+  const maxWeight = Math.log10(1000000)
+  return Math.floor(Math.max(0, Math.min(weightedDominance / maxWeight, 1)) * 4)
 }
 
 export function getWikitextTable(table: HTMLTableElement, id: number, url: string, createdAt: string) {

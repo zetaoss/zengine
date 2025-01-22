@@ -21,8 +21,3 @@ export interface Row {
   state: number
   items: Item[]
 }
-
-export interface Score {
-  star: number
-  grade: string
-}

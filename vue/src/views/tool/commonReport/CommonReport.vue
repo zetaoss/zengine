@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-
 import { useRoute, useRouter } from 'vue-router'
+import useAuthStore from '@/stores/auth'
+import http from '@/utils/http'
 
 import AvatarUserLink from '@common/components/avatar/AvatarUserLink.vue'
 import TheSpinner from '@/components/TheSpinner.vue'
+import TheStar from './TheStar.vue'
 import ThePagination from '@/components/pagination/ThePagination.vue'
 import type { PaginateData } from '@/components/pagination/types'
-import useAuthStore from '@/stores/auth'
-import http from '@/utils/http'
 
 import CommonReportNew from './CommonReportNew.vue'
 import type { Row } from './types'
@@ -39,7 +39,7 @@ async function fetchData() {
     page.value = Number(route.params.page as string)
     // window.scrollTo(0, 0)
   }
-  const resp: any = await http.get('/api/common-report', { params: { page: `${page.value}` } })
+  const resp = await http.get('/api/common-report', { params: { page: `${page.value}` } })
   respData.value = resp.data
   paginateData.value = resp.data
   paginateData.value.path = '/tool/common-report/page'
@@ -52,6 +52,7 @@ function openModal() {
   }
   showModal.value = true
 }
+
 function closeModal() {
   showModal.value = false
   fetchData()
@@ -59,7 +60,7 @@ function closeModal() {
 
 let retries = 0
 
-function ensureCondition(conditionFunc: any, repeatFunc: any, maxRetries: number) {
+function ensureCondition(conditionFunc, repeatFunc, maxRetries: number) {
   const timeHandler = () => {
     if (!conditionFunc() && retries <= maxRetries) {
       const timeout = 1000 * 1.5 ** retries
@@ -88,6 +89,7 @@ function ensureLoaded() {
 
 watch(() => route.params, fetchData)
 watch(respData, ensureLoaded)
+
 fetchData()
 </script>
 
@@ -141,7 +143,7 @@ fetchData()
             <br>
           </td>
           <td v-if="idx == 0">
-            {{ '★'.repeat(getScore(row).star) }} {{ getScore(row).grade }}
+            <TheStar :n="getScore(row)" />
           </td>
           <td v-else>
             —
