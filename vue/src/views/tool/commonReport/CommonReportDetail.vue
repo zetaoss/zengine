@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-
 import { mdiCheckBold, mdiContentCopy } from '@mdi/js'
 import { useDateFormat, useDebounceFn } from '@vueuse/core'
 import { useRoute, useRouter } from 'vue-router'
@@ -8,6 +7,8 @@ import { useRoute, useRouter } from 'vue-router'
 import TheIcon from '@common/components/TheIcon.vue'
 import TheTooltip from '@common/components/TheTooltip.vue'
 import AvatarUserLink from '@common/components/avatar/AvatarUserLink.vue'
+import TheStar from './TheStar.vue'
+
 import useAuthStore from '@/stores/auth'
 import copyToClipboard from '@/utils/clipboard'
 import http from '@/utils/http'
@@ -21,7 +22,6 @@ const router = useRouter()
 
 const id = Number(route.params.id as string)
 const row = ref({} as Row)
-
 const tooltips = ref([false, false, false])
 const table = ref(null)
 const tooltipStyle = { boxShadow: 'none', fontSize: '0.7rem', padding: '0.1rem 0.5rem' }
@@ -49,10 +49,10 @@ function copyTableHTML() {
   showTooltip(1)
   if (!table.value) return
   const el = table.value as HTMLTableElement
-  let cleanHTML = el.outerHTML.replace(/ (data-v-[^=]+|class|rel|target|style)="[^"]*"/g, '');
-  cleanHTML = cleanHTML.replace(/<table>/g, '<table>\n');
-  cleanHTML = cleanHTML.replace(/<\/tr>/g, '</tr>\n');
-  cleanHTML = cleanHTML.replace(/<a [^>]*>(.*?)<\/a>/g, '$1');
+  const cleanHTML = el.outerHTML.replace(/ (data-v-[^=]+|class|rel|target|style)="[^"]*"/g, '')
+    .replace(/<table>/g, '<table>\n')
+    .replace(/<\/tr>/g, '</tr>\n')
+    .replace(/<a [^>]*>(.*?)<\/a>/g, '$1')
   copyToClipboard(cleanHTML)
 }
 
@@ -73,7 +73,7 @@ async function del(r: Row) {
 }
 
 async function fetchData() {
-  const resp: any = await http.get(`/api/common-report/${id}`)
+  const resp = await http.get(`/api/common-report/${id}`)
   row.value = resp.data
 }
 
@@ -156,7 +156,7 @@ fetchData()
               <th colspan="2">판정</th>
               <td v-for="(_, idx) in row.items " :key="idx">
                 <span v-if="idx == 0">
-                  {{ '★'.repeat(getScore(row).star) }} {{ getScore(row).grade }}
+                  <TheStar :n="getScore(row)" />
                 </span>
                 <span v-else>—</span>
               </td>
