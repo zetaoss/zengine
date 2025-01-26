@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { inject } from 'vue'
 
-import BoxFront from './box/BoxFront.vue'
+import BoxFront from './box/front/BoxFront.vue'
 import BoxNone from './box/BoxNone.vue'
 import BoxNotebook from './box/BoxNotebook.vue'
 import BoxRun from './box/BoxRun.vue'
-import type { Job } from './types'
-import { JobType } from './types'
+import { type Job, JobType } from './types'
 
 const job = inject('job') as Job
 const seq = inject('seq') as number

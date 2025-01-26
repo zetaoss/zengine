@@ -59,7 +59,7 @@ class CommonReportJob implements ShouldQueue
             ->map(fn($name) => 'q=' . urlencode($name))
             ->implode('&');
 
-        return getenv("SEARCH_API_URL") . "?$query";
+        return getenv("SEARCH_URL") . "/search?$query";
     }
 
     private function updateReportData(array $data): void
