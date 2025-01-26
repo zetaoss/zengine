@@ -31,11 +31,6 @@ const pageId = getRLCONF().wgArticleId
 const actions = {
   get: async (job: Job, resolve: Function) => {
     console.log('get', job)
-    if (job.type === JobType.None) {
-      resolve()
-      return
-    }
-
     const resp = await http.get(`/api/box/${job.type}/${pageId}/${md5(job)}`)
     console.log('resp', resp)
     job.phase = resp.step
@@ -155,17 +150,21 @@ function setJobs() {
   }
 }
 
+
 function runJobs() {
+  const relevantJobTypes = [JobType.Notebook, JobType.Run];
   for (const job of jobs) {
-    enqueue(actions.get, job)
+    if (relevantJobTypes.includes(job.type)) {
+      enqueue(actions.get, job);
+    }
   }
 }
 
 export default function runbox() {
   createBoxes()
   createJobs()
-  runJobs()
   setJobs()
+  runJobs()
   console.log('boxes', boxes)
   console.log('jobs', jobs)
 

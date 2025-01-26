@@ -4,10 +4,10 @@ import { onMounted, ref } from 'vue'
 import TheIcon from '@common/components/TheIcon.vue'
 import { mdiAlert, mdiCloseCircle } from '@mdi/js'
 
-import type { Job } from '../types'
+import type { Job } from '../../types'
 
-import ConsoleWord from './front/ConsoleWord.vue'
-import type { Line, Word } from './front/types'
+import ConsoleWord from './ConsoleWord.vue'
+import type { Line, Word } from './types'
 
 declare global {
   interface Window {
@@ -67,25 +67,23 @@ onMounted(() => {
   <div class="p-4 border rounded bg-zinc-50 dark:bg-zinc-950">
     <slot />
   </div>
-  <div v-if='seq === job.main'>
+  <div v-if='seq === job.main' class="border">
     <iframe ref="iframe" class="w-full border bg-white" :class="{ hidden: !job.boxes.some(b => b.lang === 'html') }"
       title="" />
-    <div v-if="lines.length > 0" class="border font-mono text-sm">
-      <div v-for="(l, i) in lines" :key="i" class="p-1 pt-0">
-        <div class="grid grid-cols-[30px_1fr] rounded" :class="l.sev">
-          <div class="text-center">
-            <template v-if="l.sev == 'warn'">
-              <TheIcon :path="mdiAlert" :size="13" />
-            </template>
-            <template v-else-if="l.sev == 'error'">
-              <TheIcon :path="mdiCloseCircle" :size="13" />
-            </template>
-          </div>
-          <div class="col">
-            <template v-for="(w, j) in l.words" :key="j">
-              <ConsoleWord :word="w" />
-            </template>
-          </div>
+    <div v-if="lines.length > 0" class="border font-mono text-sm p-2 pb-5">
+      <div v-for="(l, i) in lines" :key="i" class="line" :class="l.sev">
+        <div class="text-center">
+          <template v-if="l.sev == 'warn'">
+            <TheIcon :path="mdiAlert" :size="13" />
+          </template>
+          <template v-else-if="l.sev == 'error'">
+            <TheIcon :path="mdiCloseCircle" :size="13" />
+          </template>
+        </div>
+        <div class="col">
+          <template v-for="w in l.words" :key="w">
+            <ConsoleWord :word="w" />
+          </template>
         </div>
       </div>
     </div>
@@ -93,10 +91,8 @@ onMounted(() => {
 </template>
 
 <style scoped lang="scss">
-.log {
-  .col {
-    @apply border-t;
-  }
+.line {
+  @apply m-0.5 grid grid-cols-[30px_1fr] rounded;
 }
 
 .warn {
@@ -105,5 +101,9 @@ onMounted(() => {
 
 .error {
   @apply bg-red-400 bg-opacity-15 text-red-400;
+}
+
+.log+.log .col {
+  @apply border-t pt-0.5;
 }
 </style>
