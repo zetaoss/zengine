@@ -11,12 +11,12 @@ export enum JobType {
   Notebook = 'notebook',
 }
 
-export enum PhaseType {
-  Init = 0,
+export enum StateType {
+  Initial = 0,
   Queued = 1,
-  Running = 2,
-  Completed = 3,
-  Error = 9,
+  Active = 2,
+  Succeeded = 3,
+  Failed = -1,
 }
 
 export interface Box {
@@ -51,7 +51,7 @@ export interface Job {
   boxes: Box[]
   pageId: number
   main: number
-  phase: PhaseType
+  state: StateType
   reqRun?: ReqRun
   reqNotebook?: ReqNotebook
 }
