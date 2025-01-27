@@ -15,7 +15,7 @@ import {
   BoxType,
   type Job,
   JobType,
-  PhaseType,
+  StateType,
 } from './types'
 import { enqueue, md5, wrap } from './util'
 
@@ -31,20 +31,19 @@ const pageId = getRLCONF().wgArticleId
 const actions = {
   get: async (job: Job, resolve: Function) => {
     console.log('get', job)
-    const resp = await http.get(`/api/box/${job.type}/${pageId}/${md5(job)}`)
+    const resp = await http.get(`/api/runbox/${job.type}/${pageId}/${md5(job)}`)
     console.log('resp', resp)
-    job.phase = resp.step
-    switch (job.phase) {
-      case 0:
+    job.state = resp.step
+    switch (job.state) {
+      case StateType.Initial:
         enqueue(actions.post, job)
         break
-      // case PhaseType.Queued:
-      // case PhaseType.Running:
+      // case StateType.Active:
       //   delay *= 1.1
       //   console.log('delay=', delay)
       //   setTimeout(() => enqueue(get, job), delay)
       //   break
-      // case PhaseType.Error:
+      // case StateType.Failed:
       //   job.message = resp.message
       //   break
       default:
@@ -54,9 +53,9 @@ const actions = {
   post: async (job: Job, resolve: Function) => {
     console.log('=> post', job)
     // try {
-    //   const resp = await http.post(`/api/box/post/${job.api}/${job.lang}/${pageId}/${job.hash}`, { texts: job.texts })
-    //   job.phase = resp.phase
-    //   if (job.phase === PhaseType.Running) enqueue(actions.get, job)
+    //   const resp = await http.post(`/api/runbox/${job.api}/${job.lang}/${pageId}/${job.hash}`, { texts: job.texts })
+    //   job.state = resp.state
+    //   if (job.state === StateType.Running) enqueue(actions.get, job)
     // } catch (e) {
     //   console.error('err', e)
     // }
@@ -108,7 +107,7 @@ function createJobs() {
         boxes: [b],
         pageId,
         main: -1,
-        phase: PhaseType.Init,
+        state: StateType.Initial,
       })
     }
   })
