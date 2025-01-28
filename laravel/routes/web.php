@@ -8,7 +8,7 @@ use App\Http\Controllers\PageReactionController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\ReplyController;
-use App\Http\Controllers\RunBoxController;
+use App\Http\Controllers\RunboxController;
 use App\Http\Controllers\SocialController;
 use App\Http\Controllers\WriteRequestController;
 use Illuminate\Support\Facades\Route;
@@ -22,9 +22,7 @@ Route::prefix('api')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/logout', [AuthController::class, 'logout']);
 
-    Route::get('/box/run/{pageid}/{hash}', [RunBoxController::class, 'get']);
-    Route::post('/box/run/{pageid}/{hash}', [RunBoxController::class, 'post']);
-    Route::post('/box/run/{pageid}/{hash}', [RunBoxController::class, 'put']);
+    Route::get('/runbox/{pageid}/{hash}', [RunboxController::class, 'get']);
 
     Route::get('/comments/recent', [CommentController::class, 'recent']);
     Route::get('/comments/{pageID}', [CommentController::class, 'list']);

@@ -3,9 +3,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Runbox;
 
-class RunBoxController extends Controller
+class RunboxController extends Controller
 {
-    public function get($hash)
+    public function get($page_id, $hash)
     {
         $r = Runbox::where('hash', $hash)->first();
         if (! $r) {
