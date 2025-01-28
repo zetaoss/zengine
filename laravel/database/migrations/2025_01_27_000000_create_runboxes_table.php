@@ -17,6 +17,9 @@ return new class extends Migration
             $table->unsignedInteger('page_id');
             $table->json('payload');
             $table->json('logs');
+            $table->unsignedInteger('cpu');
+            $table->unsignedInteger('mem');
+            $table->unsignedInteger('time');
             $table->timestamps();
         });
     }

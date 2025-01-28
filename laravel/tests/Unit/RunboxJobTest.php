@@ -17,7 +17,7 @@ class RunboxJobTest extends TestCase
         $runbox->page_id = 0;
         $runbox->hash    = md5(Str::uuid());
         $runbox->payload = [
-            "lang"  => "invalid-lang",
+            "lang"  => "bash",
             "files" => [
                 ["name" => "greet.txt", "body" => "hello"],
                 ["body" => "cat greet.txt"],
