@@ -16,10 +16,10 @@ return new class extends Migration
             $table->unsignedInteger('user_id');
             $table->unsignedInteger('page_id');
             $table->json('payload');
-            $table->json('logs');
-            $table->unsignedInteger('cpu');
-            $table->unsignedInteger('mem');
-            $table->unsignedInteger('time');
+            $table->json('logs')->nullable();
+            $table->unsignedInteger('cpu')->default(0);
+            $table->unsignedInteger('mem')->default(0);
+            $table->unsignedInteger('time')->default(0);
             $table->timestamps();
         });
     }

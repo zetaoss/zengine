@@ -19,7 +19,7 @@ class RunboxJobTest extends TestCase
         $runbox->payload = [
             "lang"  => "bash",
             "files" => [
-                ["name" => "greet.txt", "body" => "hello"],
+                ["name" => "greet.txt", "body" => "hello world"],
                 ["body" => "cat greet.txt"],
             ],
             "main"  => 1,
@@ -28,5 +28,12 @@ class RunboxJobTest extends TestCase
 
         $job = new RunboxJob($runbox->id);
         $job->handle();
+
+        $runbox->refresh();
+        $this->assertEquals(3, $runbox->state);
+        $this->assertEquals(["1hello world"], $runbox->logs);
+        $this->assertNotEquals(0, $runbox->cpu);
+        $this->assertNotEquals(0, $runbox->mem);
+        $this->assertNotEquals(0, $runbox->time);
     }
 }

@@ -33,10 +33,10 @@ class RunboxJob implements ShouldQueue
             $resp = Http::post(getenv('RUNBOX_URL') . "/run/lang", $this->runbox->payload)->throw();
             $arr  = json_decode($resp->body(), true);
 
+            $this->runbox->logs  = $arr['logs'];
             $this->runbox->cpu   = $arr['cpu'];
             $this->runbox->mem   = $arr['mem'];
             $this->runbox->time  = $arr['time'];
-            $this->runbox->logs  = $arr['metadata'];
             $this->runbox->state = 3;
             $this->runbox->save();
 
