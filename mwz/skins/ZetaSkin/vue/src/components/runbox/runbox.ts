@@ -1,35 +1,26 @@
-// import { type Ref } from 'vue'
+import { createApp } from 'vue';
 
-// import { Md5 } from 'ts-md5'
+import http from '@/utils/http';
+import getRLCONF from '@/utils/rlconf';
 
-// import http from '@/utils/http'
-
-import { createApp } from 'vue'
-
-import http from '@/utils/http'
-import getRLCONF from '@/utils/rlconf'
-
-import TheBox from './TheBox.vue'
+import TheBox from './TheBox.vue';
 import {
   type Box,
   BoxType,
   type Job,
   JobType,
   StateType,
-} from './types'
-import { enqueue, md5, wrap } from './util'
+} from './types';
+import { enqueue, md5, wrap } from './util';
 
-// import {
-//   APIType, type Box, type Job, PhaseType,
-// } from './types'
-
-// const refJobs: Ref<Job>[] = []
 const boxes: Box[] = [];
 const jobs: Job[] = [];
 const pageId = getRLCONF().wgArticleId;
 
+let delay = 1000;
+
 const actions = {
-  get: async (job: Job, resolve: Function) => {
+  get: async (job: Job, resolve: () => void) => {
     console.log('get', job);
     const resp = await http.get(`/api/runbox/${pageId}/${md5(job)}`);
     console.log('resp', resp);
@@ -38,19 +29,19 @@ const actions = {
       case StateType.Initial:
         enqueue(actions.post, job);
         break;
-      // case StateType.Active:
-      //   delay *= 1.1
-      //   console.log('delay=', delay)
-      //   setTimeout(() => enqueue(get, job), delay)
-      //   break
-      // case StateType.Failed:
-      //   job.message = resp.message
-      //   break
+      case StateType.Active:
+        delay *= 1.1;
+        console.log('delay=', delay);
+        setTimeout(() => enqueue(actions.get, job), delay);
+        break
+      case StateType.Failed:
+        // job.message = resp.message;
+        break
       default:
     }
-    resolve()
+    resolve();
   },
-  post: async (job: Job, resolve: Function) => {
+  post: async (job: Job, resolve: () => void) => {
     console.log('=> post', job);
     switch (job.type) {
       case JobType.Run:
@@ -107,6 +98,7 @@ function createJobs() {
       jobs.push({
         id: b.jobId,
         type: JobType.None,
+        hash: "",
         boxes: [b],
         pageId,
         main: -1,
@@ -131,10 +123,10 @@ function setJobs() {
         const req = {
           lang: mainBox.lang,
           main: job.main,
-          files: job.boxes.map((b) => ({ name: b.file, text: b.text })),
+          files: job.boxes.map((b) => ({ name: b.file, body: b.text })),
         }
-        job.hash = md5(req);
         job.reqRun = req;
+        job.hash = md5(req);
       }
     } else if (t === BoxType.Notebook) {
       job.type = JobType.Notebook
