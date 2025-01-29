@@ -11,15 +11,6 @@ class RunboxController extends Controller
         if (! $r) {
             return ['state' => 0];
         }
-        if ($r->state == 1) {
-            return ['state' => 1];
-        }
-        if ($r->state == 2) {
-            return ['state' => 2];
-        }
-        if ($r->state == -1) {
-            return ['state' => -1];
-        }
         return $r;
     }
 }
