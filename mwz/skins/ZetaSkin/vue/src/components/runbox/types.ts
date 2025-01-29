@@ -16,7 +16,7 @@ export enum StateType {
   Queued = 1,
   Active = 2,
   Succeeded = 3,
-  Failed = -1,
+  Failed = 9,
 }
 
 export interface Box {

@@ -15,7 +15,7 @@ class RunboxTest extends TestCase
         parent::setUp();
 
         $this->page_id = 0;
-        $this->hash    = 'c398f8654f8ab6c44c4e8e9f6c438da7';
+        $this->hash    = 'test1234';
     }
 
     public function test_runbox_job_ok()
@@ -31,7 +31,7 @@ class RunboxTest extends TestCase
         $runbox->payload = [
             "lang"  => "bash",
             "files" => [
-                ["name" => "greet.txt", "body" => "hello world"],
+                ["name" => "greet.txt", "body" => "hello test"],
                 ["body" => "cat greet.txt"],
             ],
             "main"  => 1,
@@ -43,13 +43,22 @@ class RunboxTest extends TestCase
 
         $runbox->refresh();
         $this->assertEquals(3, $runbox->state);
-        $this->assertEquals(["1hello world"], $runbox->logs);
+        $this->assertEquals(["1hello test"], $runbox->logs);
         $this->assertNotEquals(0, $runbox->cpu);
         $this->assertNotEquals(0, $runbox->mem);
         $this->assertNotEquals(0, $runbox->time);
     }
 
-    public function test_runbox_ok()
+    public function test_runbox_get0()
+    {
+        $response = $this->getJson('/api/runbox/0/nonexistent-hash');
+        $response->assertStatus(200);
+
+        $data = $response->json();
+        $this->assertEquals(0, $data['state']);
+    }
+
+    public function test_runbox_get3()
     {
         $response = $this->getJson("/api/runbox/{$this->page_id}/{$this->hash}");
         $response->assertStatus(200);
@@ -57,18 +66,50 @@ class RunboxTest extends TestCase
         $data = $response->json();
         $this->assertEquals(3, $data['state']);
         $this->assertEquals(0, $data['page_id']);
-        $this->assertEquals(["1hello world"], $data['logs']);
+        $this->assertEquals(["1hello test"], $data['logs']);
         $this->assertNotEquals(0, $data['cpu']);
         $this->assertNotEquals(0, $data['mem']);
         $this->assertNotEquals(0, $data['time']);
     }
 
-    public function test_runbox_notexist()
+    public function test_runbox_post()
     {
-        $response = $this->getJson('/api/runbox/0/nonexistent-hash');
-        $response->assertStatus(200);
+        $page_id = 1;
+        $hash    = 'post1234';
+        $payload = [
+            'lang'  => 'bash',
+            'files' => [['body' => 'echo hello post']],
+        ];
 
-        $data = $response->json();
-        $this->assertEquals(0, $data['state']);
+        Runbox::where('hash', $hash)->delete();
+        $this->withoutMiddleware();
+        $response = $this->postJson("/api/runbox/{$page_id}/{$hash}", $payload);
+        $response->assertStatus(202);
+
+        $this->waitForRunboxComplete($hash);
+
+        $runbox = Runbox::where('hash', $hash)->first();
+        $this->assertEquals(3, $runbox->state);
+        $this->assertEquals(["1hello post"], $runbox->logs);
+        $this->assertNotEquals(0, $runbox->cpu);
+        $this->assertNotEquals(0, $runbox->mem);
+        $this->assertNotEquals(0, $runbox->time);
+    }
+
+    private function waitForRunboxComplete($hash, $timeout = 10)
+    {
+        $startTime = time();
+        while (true) {
+            $runbox = Runbox::where('hash', $hash)->first();
+            if ($runbox && $runbox->state > 2) {
+                return;
+            }
+
+            if ((time() - $startTime) > $timeout) {
+                $this->fail("Timeout waiting for Runbox");
+            }
+
+            usleep(500000); // 0.5s
+        }
     }
 }

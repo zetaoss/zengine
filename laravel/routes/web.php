@@ -22,18 +22,19 @@ Route::prefix('api')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/logout', [AuthController::class, 'logout']);
 
-    Route::get('/runbox/{pageid}/{hash}', [RunboxController::class, 'get']);
+    Route::get('/runbox/{page}/{hash}', [RunboxController::class, 'get']);
+    Route::post('/runbox/{page}/{hash}', [RunboxController::class, 'post']);
 
     Route::get('/comments/recent', [CommentController::class, 'recent']);
-    Route::get('/comments/{pageID}', [CommentController::class, 'list']);
+    Route::get('/comments/{page}', [CommentController::class, 'list']);
     Route::post('comments', [CommentController::class, 'store']);
     Route::put('/comments/{comment}', [CommentController::class, 'update']);
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
 
-    Route::get('/catcomments/{pageID}', [CommentController::class, 'catcomments']);
+    Route::get('/catcomments/{page}', [CommentController::class, 'catcomments']);
     Route::get('/catcomments-cat/{cat}', [CommentController::class, 'catcommentsCat'])->where('cat', '(.*)');
 
-    Route::get('/reactions/page/{pageID}', [PageReactionController::class, 'show']);
+    Route::get('/reactions/page/{page}', [PageReactionController::class, 'show']);
     Route::post('/reactions/page', [PageReactionController::class, 'store']);
 
     Route::get('/onelines/recent', [OnelineController::class, 'recent']);

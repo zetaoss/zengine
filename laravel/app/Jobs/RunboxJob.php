@@ -30,7 +30,7 @@ class RunboxJob implements ShouldQueue
             $this->runbox->state = 2;
             $this->runbox->save();
 
-            $resp = Http::post(getenv('RUNBOX_URL') . "/run/lang", $this->runbox->payload)->throw();
+            $resp = Http::post(getenv('RUNBOX_URL') . '/run/lang', $this->runbox->payload)->throw();
             $arr  = json_decode($resp->body(), true);
 
             $this->runbox->logs  = $arr['logs'];
@@ -48,10 +48,7 @@ class RunboxJob implements ShouldQueue
 
     public function failed(Throwable $exception)
     {
-        Log::error("RunboxJob failed for Runbox ID: {$this->runbox->id}", [
-            'error' => $exception->getMessage(),
-            'trace' => $exception->getTraceAsString(),
-        ]);
+        Log::error("RunboxJob failed for Runbox ID: {$this->runbox->id}");
         $this->runbox->state = 9;
         $this->runbox->save();
     }
