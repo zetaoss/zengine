@@ -31,7 +31,7 @@ const pageId = getRLCONF().wgArticleId
 const actions = {
   get: async (job: Job, resolve: Function) => {
     console.log('get', job)
-    const resp = await http.get(`/api/runbox/${job.type}/${pageId}/${md5(job)}`)
+    const resp = await http.get(`/api/runbox/${pageId}/${md5(job)}`)
     console.log('resp', resp)
     job.state = resp.step
     switch (job.state) {
