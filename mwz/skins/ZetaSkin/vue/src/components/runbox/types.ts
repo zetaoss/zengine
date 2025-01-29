@@ -36,7 +36,7 @@ export interface ReqRun {
   main: number
   files: {
     name: string
-    text: string
+    body: string
   }[]
 }
 
@@ -48,6 +48,7 @@ export interface ReqNotebook {
 export interface Job {
   id: string
   type: JobType
+  hash: string
   boxes: Box[]
   pageId: number
   main: number

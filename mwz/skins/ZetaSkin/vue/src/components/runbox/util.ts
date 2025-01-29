@@ -4,10 +4,19 @@ import type { Job } from './types'
 
 const queue: Promise<void>[] = [Promise.resolve()]
 
-export function enqueue(f: Function, j: Job) {
-  const task = queue.pop()
-  if (task === undefined) return
-  queue.push(task.then(() => new Promise((resolve) => { f(j, resolve) })))
+type JobHandler = (job: Job, done: () => void) => void;
+
+export function enqueue(f: JobHandler, j: Job) {
+  if (queue.length === 0) return;
+
+  const task = queue.pop();
+  if (!task) return;
+
+  queue.push(
+    task.then(
+      () => new Promise<void>((resolve) => f(j, resolve))
+    )
+  );
 }
 
 export function wrap(el: Element, tag: string): Element {
@@ -17,6 +26,6 @@ export function wrap(el: Element, tag: string): Element {
   return wrapper
 }
 
-export function md5(obj: any) {
-  return Md5.hashStr(JSON.stringify(obj))
+export function md5(obj: unknown): string {
+  return Md5.hashStr(JSON.stringify(obj));
 }
