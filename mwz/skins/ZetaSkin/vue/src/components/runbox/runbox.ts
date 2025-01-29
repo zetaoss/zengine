@@ -24,20 +24,20 @@ import { enqueue, md5, wrap } from './util'
 // } from './types'
 
 // const refJobs: Ref<Job>[] = []
-const boxes: Box[] = []
-const jobs: Job[] = []
-const pageId = getRLCONF().wgArticleId
+const boxes: Box[] = [];
+const jobs: Job[] = [];
+const pageId = getRLCONF().wgArticleId;
 
 const actions = {
   get: async (job: Job, resolve: Function) => {
-    console.log('get', job)
-    const resp = await http.get(`/api/runbox/${pageId}/${md5(job)}`)
-    console.log('resp', resp)
-    job.state = resp.step
+    console.log('get', job);
+    const resp = await http.get(`/api/runbox/${pageId}/${md5(job)}`);
+    console.log('resp', resp);
+    job.state = resp.state
     switch (job.state) {
       case StateType.Initial:
-        enqueue(actions.post, job)
-        break
+        enqueue(actions.post, job);
+        break;
       // case StateType.Active:
       //   delay *= 1.1
       //   console.log('delay=', delay)
@@ -51,14 +51,17 @@ const actions = {
     resolve()
   },
   post: async (job: Job, resolve: Function) => {
-    console.log('=> post', job)
-    // try {
-    //   const resp = await http.post(`/api/runbox/${job.api}/${job.lang}/${pageId}/${job.hash}`, { texts: job.texts })
-    //   job.state = resp.state
-    //   if (job.state === StateType.Running) enqueue(actions.get, job)
-    // } catch (e) {
-    //   console.error('err', e)
-    // }
+    console.log('=> post', job);
+    switch (job.type) {
+      case JobType.Run:
+        try {
+          const resp = await http.post(`/api/runbox/${pageId}/${md5(job)}`, job.reqRun)
+          job.state = resp.state
+          if (job.state < StateType.Succeeded) enqueue(actions.get, job)
+        } catch (e) {
+          console.error('err', e)
+        }
+    }
     resolve()
   },
 }
@@ -67,20 +70,20 @@ function createBoxes() {
   const els = document.getElementsByClassName('mw-highlight')
   Array.from(els).forEach((el, idx) => {
     // lang
-    const cls = el.getAttribute('class') ?? ''
-    const langMatched = cls.match(/mw-highlight-lang-([a-z0-9]+)/)
-    const lang = (langMatched == null) ? '' : langMatched[1]
+    const cls = el.getAttribute('class') ?? '';
+    const langMatched = cls.match(/mw-highlight-lang-([a-z0-9]+)/);
+    const lang = (langMatched == null) ? '' : langMatched[1];
     // type & group
-    const run = el.getAttribute('run')
-    const notebook = el.getAttribute('notebook')
-    let boxType = BoxType.None
-    let jobId = `none-${idx}`
+    const run = el.getAttribute('run');
+    const notebook = el.getAttribute('notebook');
+    let boxType = BoxType.None;
+    let jobId = `none-${idx}`;
     if (run != null) {
-      boxType = BoxType.Run
-      jobId = (run === '') ? `run-single-${idx}` : `run-${run}`
+      boxType = BoxType.Run;
+      jobId = (run === '') ? `run-single-${idx}` : `run-${run}`;
     } else if (notebook != null) {
-      boxType = BoxType.Notebook
-      jobId = (notebook === '') ? `notebook-single-${idx}` : `notebook-${lang}-${notebook}`
+      boxType = BoxType.Notebook;
+      jobId = (notebook === '') ? `notebook-single-${idx}` : `notebook-${lang}-${notebook}`;
     }
     boxes.push({
       type: boxType,
@@ -92,14 +95,14 @@ function createBoxes() {
       isAsciinema: !(el.getAttribute('asciinema') === null),
       text: el.textContent!,
       el,
-    })
+    });
   })
 }
 
 function createJobs() {
   boxes.forEach((b) => {
     if (jobs.length > 0 && jobs[jobs.length - 1].id === b.jobId) {
-      jobs[jobs.length - 1].boxes.push(b)
+      jobs[jobs.length - 1].boxes.push(b);
     } else {
       jobs.push({
         id: b.jobId,
@@ -108,28 +111,30 @@ function createJobs() {
         pageId,
         main: -1,
         state: StateType.Initial,
-      })
+      });
     }
   })
 }
 
 function setJobs() {
   for (const job of jobs) {
-    job.main = job.boxes.findIndex((b) => b.isMain)
-    if (job.main === -1) job.main = job.boxes.length - 1
+    job.main = job.boxes.findIndex((b) => b.isMain);
+    if (job.main === -1) job.main = job.boxes.length - 1;
     // set jobs
-    const mainBox = job.boxes[job.main as number]
-    const t = mainBox.type
+    const mainBox = job.boxes[job.main as number];
+    const t = mainBox.type;
     if (t === BoxType.Run) {
       if (['javascript', 'html'].includes(mainBox.lang)) {
-        job.type = JobType.Front
+        job.type = JobType.Front;
       } else {
-        job.type = JobType.Run
-        job.reqRun = {
+        job.type = JobType.Run;
+        const req = {
           lang: mainBox.lang,
           main: job.main,
           files: job.boxes.map((b) => ({ name: b.file, text: b.text })),
         }
+        job.hash = md5(req);
+        job.reqRun = req;
       }
     } else if (t === BoxType.Notebook) {
       job.type = JobType.Notebook
@@ -141,10 +146,10 @@ function setJobs() {
     // render box
     for (const [i, b] of job.boxes.entries()) {
       const app = createApp({})
-      app.provide('job', job)
-      app.provide('seq', i)
-      app.component('TheBox', TheBox)
-      app.mount(wrap(wrap(b.el, 'the-box'), 'div'))
+      app.provide('job', job);
+      app.provide('seq', i);
+      app.component('TheBox', TheBox);
+      app.mount(wrap(wrap(b.el, 'the-box'), 'div'));
     }
   }
 }
