@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { inject } from 'vue'
 
-import BoxFront from './box/front/BoxFront.vue'
-import BoxNone from './box/BoxNone.vue'
-import BoxNotebook from './box/BoxNotebook.vue'
-import BoxRun from './box/BoxRun.vue'
+import BoxFront from './BoxFront.vue'
+import BoxNotebook from './BoxNotebook.vue'
+import BoxRun from './BoxRun.vue'
+import BoxZero from './BoxZero.vue'
 import { type Job, JobType } from './types'
 
 const job = inject('job') as Job
@@ -15,7 +15,7 @@ const getComponent = () => {
     case JobType.Front: return BoxFront
     case JobType.Notebook: return BoxNotebook
     case JobType.Run: return BoxRun
-    default: return BoxNone
+    default: return BoxZero
   }
 }
 </script>

@@ -1,4 +1,4 @@
-import { createApp } from 'vue';
+import { createApp, reactive, type App } from 'vue';
 
 import http from '@/utils/http';
 import getRLCONF from '@/utils/rlconf';
@@ -13,8 +13,9 @@ import {
 } from './types';
 import { enqueue, md5, wrap } from './util';
 
+const apps: App[] = [];
 const boxes: Box[] = [];
-const jobs: Job[] = [];
+const jobs: Job[] = reactive([]);
 const pageId = getRLCONF().wgArticleId;
 
 let delay = 1000;
@@ -23,7 +24,6 @@ const actions = {
   get: async (job: Job, resolve: () => void) => {
     console.log('get', job);
     const resp = await http.get(`/api/runbox/${pageId}/${md5(job)}`);
-    console.log('resp', resp);
     job.state = resp.state
     switch (job.state) {
       case StateType.Initial:
@@ -31,18 +31,24 @@ const actions = {
         break;
       case StateType.Active:
         delay *= 1.1;
-        console.log('delay=', delay);
         setTimeout(() => enqueue(actions.get, job), delay);
-        break
+        break;
+      case StateType.Succeeded:
+        job.resp = resp;
+        job.boxes.forEach((b, i) => {
+          if (b.jobId == job.id && i == job.main) {
+            console.log('pick b', b)
+          }
+        });
+        break;
       case StateType.Failed:
-        // job.message = resp.message;
-        break
+        break;
       default:
     }
     resolve();
   },
   post: async (job: Job, resolve: () => void) => {
-    console.log('=> post', job);
+    console.log('===> post job:', job);
     switch (job.type) {
       case JobType.Run:
         try {
@@ -67,7 +73,7 @@ function createBoxes() {
     // type & group
     const run = el.getAttribute('run');
     const notebook = el.getAttribute('notebook');
-    let boxType = BoxType.None;
+    let boxType = BoxType.Zero;
     let jobId = `none-${idx}`;
     if (run != null) {
       boxType = BoxType.Run;
@@ -103,6 +109,7 @@ function createJobs() {
         pageId,
         main: -1,
         state: StateType.Initial,
+        resp: null,
       });
     }
   })
@@ -136,12 +143,14 @@ function setJobs() {
       }
     }
     // render box
-    for (const [i, b] of job.boxes.entries()) {
-      const app = createApp({})
+    for (const [seq, b] of job.boxes.entries()) {
+      const app = createApp({});
       app.provide('job', job);
-      app.provide('seq', i);
+      app.provide('seq', seq);
+      app.provide('box', b);
       app.component('TheBox', TheBox);
       app.mount(wrap(wrap(b.el, 'the-box'), 'div'));
+      apps.push(app);
     }
   }
 }
@@ -161,8 +170,6 @@ export default function runbox() {
   createJobs()
   setJobs()
   runJobs()
-  console.log('boxes', boxes)
-  console.log('jobs', jobs)
 
   // console.log(boxes)
   // setJobValues()
@@ -179,12 +186,5 @@ export default function runbox() {
   //   job.api = getAPIType(job)
   //   job.hash = Md5.hashStr(job.api + job.lang + job.texts.join())
   //   enqueue(get, job)
-  // })
-  // // app mount
-  // boxes.forEach((b) => {
-  //   const { app } = b
-  //   app.provide('box', b.spec)
-  //   app.provide('job', b.refJob)
-  //   app.mount(b.root)
   // })
 }
