@@ -1,4 +1,4 @@
-import { createApp, reactive, type App } from 'vue';
+import { createApp, reactive } from 'vue';
 
 import http from '@/utils/http';
 import getRLCONF from '@/utils/rlconf';
@@ -9,11 +9,10 @@ import {
   BoxType,
   type Job,
   JobType,
-  StateType,
+  Step,
 } from './types';
 import { enqueue, md5, wrap } from './util';
 
-const apps: App[] = [];
 const boxes: Box[] = [];
 const jobs: Job[] = reactive([]);
 const pageId = getRLCONF().wgArticleId;
@@ -24,16 +23,16 @@ const actions = {
   get: async (job: Job, resolve: () => void) => {
     console.log('get', job);
     const resp = await http.get(`/api/runbox/${pageId}/${md5(job)}`);
-    job.state = resp.state
-    switch (job.state) {
-      case StateType.Initial:
+    job.step = resp.step
+    switch (job.step) {
+      case Step.Initial:
         enqueue(actions.post, job);
         break;
-      case StateType.Active:
+      case Step.Active:
         delay *= 1.1;
         setTimeout(() => enqueue(actions.get, job), delay);
         break;
-      case StateType.Succeeded:
+      case Step.Succeeded:
         job.resp = resp;
         job.boxes.forEach((b, i) => {
           if (b.jobId == job.id && i == job.main) {
@@ -41,7 +40,7 @@ const actions = {
           }
         });
         break;
-      case StateType.Failed:
+      case Step.Failed:
         break;
       default:
     }
@@ -53,8 +52,8 @@ const actions = {
       case JobType.Run:
         try {
           const resp = await http.post(`/api/runbox/${pageId}/${md5(job)}`, job.reqRun)
-          job.state = resp.state
-          if (job.state < StateType.Succeeded) enqueue(actions.get, job)
+          job.step = resp.step
+          if (job.step < Step.Succeeded) enqueue(actions.get, job)
         } catch (e) {
           console.error('err', e)
         }
@@ -103,12 +102,12 @@ function createJobs() {
     } else {
       jobs.push({
         id: b.jobId,
-        type: JobType.None,
-        hash: "",
+        type: JobType.Zero,
+        hash: '',
         boxes: [b],
         pageId,
         main: -1,
-        state: StateType.Initial,
+        step: Step.Initial,
         resp: null,
       });
     }
@@ -143,23 +142,22 @@ function setJobs() {
       }
     }
     // render box
-    for (const [seq, b] of job.boxes.entries()) {
+    for (const [seq, box] of job.boxes.entries()) {
       const app = createApp({});
       app.provide('job', job);
       app.provide('seq', seq);
-      app.provide('box', b);
+      app.provide('box', box);
       app.component('TheBox', TheBox);
-      app.mount(wrap(wrap(b.el, 'the-box'), 'div'));
-      apps.push(app);
+      app.mount(wrap(wrap(box.el, 'the-box'), 'div'));
     }
   }
 }
 
 
 function runJobs() {
-  const relevantJobTypes = [JobType.Notebook, JobType.Run];
+  const runnableJobTypes = [JobType.Notebook, JobType.Run];
   for (const job of jobs) {
-    if (relevantJobTypes.includes(job.type)) {
+    if (runnableJobTypes.includes(job.type)) {
       enqueue(actions.get, job);
     }
   }

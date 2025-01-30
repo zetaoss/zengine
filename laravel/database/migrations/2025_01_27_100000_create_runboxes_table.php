@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('type', 50);
             $table->string('hash', 255)->unique();
-            $table->tinyInteger('state');
+            $table->tinyInteger('step');
             $table->unsignedInteger('user_id');
             $table->unsignedInteger('page_id');
             $table->json('payload');

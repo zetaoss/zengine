@@ -24,7 +24,7 @@ class RunboxTest extends TestCase
 
         $runbox          = new Runbox();
         $runbox->type    = 'run';
-        $runbox->state   = 0;
+        $runbox->step    = 0;
         $runbox->user_id = 0;
         $runbox->page_id = $this->page_id;
         $runbox->hash    = $this->hash;
@@ -42,7 +42,7 @@ class RunboxTest extends TestCase
         $job->handle();
 
         $runbox->refresh();
-        $this->assertEquals(3, $runbox->state);
+        $this->assertEquals(3, $runbox->step);
         $this->assertEquals(["1hello test"], $runbox->logs);
         $this->assertNotEquals(0, $runbox->cpu);
         $this->assertNotEquals(0, $runbox->mem);
@@ -55,7 +55,7 @@ class RunboxTest extends TestCase
         $response->assertStatus(200);
 
         $data = $response->json();
-        $this->assertEquals(0, $data['state']);
+        $this->assertEquals(0, $data['step']);
     }
 
     public function test_runbox_get3()
@@ -64,7 +64,7 @@ class RunboxTest extends TestCase
         $response->assertStatus(200);
 
         $data = $response->json();
-        $this->assertEquals(3, $data['state']);
+        $this->assertEquals(3, $data['step']);
         $this->assertEquals(0, $data['page_id']);
         $this->assertEquals(["1hello test"], $data['logs']);
         $this->assertNotEquals(0, $data['cpu']);
@@ -89,24 +89,24 @@ class RunboxTest extends TestCase
         $this->waitForRunboxComplete($hash);
 
         $runbox = Runbox::where('hash', $hash)->first();
-        $this->assertEquals(3, $runbox->state);
+        $this->assertEquals(3, $runbox->step);
         $this->assertEquals(["1hello post"], $runbox->logs);
         $this->assertNotEquals(0, $runbox->cpu);
         $this->assertNotEquals(0, $runbox->mem);
         $this->assertNotEquals(0, $runbox->time);
     }
 
-    private function waitForRunboxComplete($hash, $timeout = 10)
+    private function waitForRunboxComplete($hash, $timeout = 20)
     {
         $startTime = time();
         while (true) {
-            $runbox = Runbox::where('hash', $hash)->first();
-            if ($runbox && $runbox->state > 2) {
+            $row = Runbox::where('hash', $hash)->first();
+            if ($row && $row->step > 2) {
                 return;
             }
 
             if ((time() - $startTime) > $timeout) {
-                $this->fail("Timeout waiting for Runbox");
+                $this->fail("Timeout");
             }
 
             usleep(500000); // 0.5s

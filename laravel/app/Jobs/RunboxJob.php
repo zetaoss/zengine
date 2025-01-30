@@ -27,17 +27,17 @@ class RunboxJob implements ShouldQueue
     public function handle()
     {
         try {
-            $this->runbox->state = 2;
+            $this->runbox->step = 2;
             $this->runbox->save();
 
             $resp = Http::post(getenv('RUNBOX_URL') . '/run/lang', $this->runbox->payload)->throw();
             $arr  = json_decode($resp->body(), true);
 
-            $this->runbox->logs  = $arr['logs'];
-            $this->runbox->cpu   = $arr['cpu'];
-            $this->runbox->mem   = $arr['mem'];
-            $this->runbox->time  = $arr['time'];
-            $this->runbox->state = 3;
+            $this->runbox->logs = $arr['logs'];
+            $this->runbox->cpu  = $arr['cpu'];
+            $this->runbox->mem  = $arr['mem'];
+            $this->runbox->time = $arr['time'];
+            $this->runbox->step = 3;
             $this->runbox->save();
 
         } catch (Throwable $e) {
@@ -49,7 +49,7 @@ class RunboxJob implements ShouldQueue
     public function failed(Throwable $exception)
     {
         Log::error("RunboxJob failed for Runbox ID: {$this->runbox->id}");
-        $this->runbox->state = 9;
+        $this->runbox->step = 9;
         $this->runbox->save();
     }
 }

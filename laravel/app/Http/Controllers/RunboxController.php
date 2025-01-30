@@ -12,7 +12,7 @@ class RunboxController extends Controller
     {
         $r = Runbox::where('hash', $hash)->first();
         if (! $r) {
-            return ['state' => 0];
+            return ['step' => 0];
         }
 
         return $r;
@@ -28,7 +28,7 @@ class RunboxController extends Controller
 
         $runbox          = new Runbox();
         $runbox->type    = 'run';
-        $runbox->state   = 0;
+        $runbox->step    = 0;
         $runbox->user_id = 0;
         $runbox->page_id = $pageId;
         $runbox->hash    = $hash;

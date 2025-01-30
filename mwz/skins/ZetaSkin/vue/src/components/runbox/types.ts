@@ -11,7 +11,7 @@ export enum JobType {
   Notebook = 'notebook',
 }
 
-export enum StateType {
+export enum Step {
   Initial = 0,
   Queued = 1,
   Active = 2,
@@ -59,7 +59,7 @@ export interface Job {
   boxes: Box[]
   pageId: number
   main: number
-  state: StateType
+  step: Step
   reqRun?: ReqRun
   reqNotebook?: ReqNotebook
   resp: Resp | null
