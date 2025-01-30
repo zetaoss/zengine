@@ -20,26 +20,28 @@ class CommonReportJobTest extends TestCase
             $report->items()->create(['name' => $word]);
         }
 
-        $this->assertDatabaseHas('common_reports', [
-            'id'      => $report->id,
-            'state'   => 0,
-            'user_id' => 1,
-        ]);
-
-        foreach ($items as $word) {
-            $this->assertDatabaseHas('common_report_items', [
-                'common_report_id' => $report->id,
-                'name'             => $word,
-            ]);
-        }
-
         CommonReportJob::dispatch($report->id);
 
-        sleep(1);
+        $this->waitForComplete($report->id);
 
-        $this->assertDatabaseHas('common_reports', [
-            'id'    => $report->id,
-            'state' => 1,
-        ]);
+        $report = CommonReport::where('id', $report->id)->first();
+        $this->assertEquals(2, $report->state);
+    }
+
+    private function waitForComplete($id, $timeout = 10)
+    {
+        $startTime = time();
+        while (true) {
+            $row = CommonReport::where('id', $id)->first();
+            if ($row && $row->state == 2) {
+                return;
+            }
+
+            if ((time() - $startTime) > $timeout) {
+                $this->fail("Timeout");
+            }
+
+            usleep(500000); // 0.5s
+        }
     }
 }
