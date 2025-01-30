@@ -1,11 +1,11 @@
 export enum BoxType {
-  None = '',
+  Zero = '',
   Run = 'run',
   Notebook = 'notebook',
 }
 
 export enum JobType {
-  None = '',
+  Zero = '',
   Run = 'run',
   Front = 'front',
   Notebook = 'notebook',
@@ -45,6 +45,13 @@ export interface ReqNotebook {
   cellTexts: string[][]
 }
 
+export interface Resp {
+  cpu: number
+  mem: number
+  time: number
+  logs: string[]
+}
+
 export interface Job {
   id: string
   type: JobType
@@ -55,4 +62,5 @@ export interface Job {
   state: StateType
   reqRun?: ReqRun
   reqNotebook?: ReqNotebook
+  resp: Resp | null
 }

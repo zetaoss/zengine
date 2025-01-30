@@ -4,10 +4,10 @@ import { onMounted, ref } from 'vue'
 import TheIcon from '@common/components/TheIcon.vue'
 import { mdiAlert, mdiCloseCircle } from '@mdi/js'
 
-import type { Job } from '../../types'
+import type { Job } from './types'
 
-import ConsoleWord from './ConsoleWord.vue'
-import type { Line, Word } from './types'
+import ConsoleWord from './console/ConsoleWord.vue'
+import type { Line, Word } from './console/types'
 
 declare global {
   interface Window {
