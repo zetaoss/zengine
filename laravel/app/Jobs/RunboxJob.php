@@ -30,7 +30,7 @@ class RunboxJob implements ShouldQueue
             $this->runbox->step = 2;
             $this->runbox->save();
 
-            $resp = Http::post(getenv('RUNBOX_URL') . '/run/lang', $this->runbox->payload)->throw();
+            $resp = Http::post(getenv('RUNBOX_URL') . '/lang', $this->runbox->payload)->throw();
             $arr  = json_decode($resp->body(), true);
 
             $this->runbox->logs = $arr['logs'];
