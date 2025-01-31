@@ -20,42 +20,42 @@ export enum Step {
 }
 
 export interface Box {
-  type: BoxType
-  jobId: string
-  lang: string
-  file: string
-  title: string
-  text: string
-  isMain: boolean
-  isAsciinema: boolean
-  el: Element
+  type: BoxType;
+  jobId: string;
+  lang: string;
+  file: string;
+  title: string;
+  text: string;
+  isMain: boolean;
+  isAsciinema: boolean;
+  el: Element;
 }
 
 export interface Payload {
-  lang: string
+  lang: string;
   files?: {
-    name: string
-    body: string
+    name: string;
+    body: string;
   }[]
-  main?: number
-  sources?: string[]
+  main?: number;
+  sources?: string[];
 }
 
-export interface Resp {
-  cpu: number
-  mem: number
-  time: number
-  outs: string[]
+export interface Response {
+  cpu: number;
+  mem: number;
+  time: number;
+  outs: unknown;
 }
 
 export interface Job {
-  id: string
-  type: JobType
-  hash: string
-  boxes: Box[]
-  pageId: number
-  main: number
-  step: Step
-  payload: Payload | null
-  resp: Resp | null
+  id: string;
+  type: JobType;
+  hash: string;
+  boxes: Box[];
+  pageId: number;
+  main: number;
+  step: Step;
+  payload: Payload | null;
+  response: Response | null;
 }
