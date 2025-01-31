@@ -10,13 +10,13 @@ return new class extends Migration
     {
         Schema::create('runboxes', function (Blueprint $table) {
             $table->id();
-            $table->string('type', 50);
             $table->string('hash', 255)->unique();
             $table->tinyInteger('step');
             $table->unsignedInteger('user_id');
             $table->unsignedInteger('page_id');
+            $table->string('type', 8);
             $table->json('payload');
-            $table->json('logs')->nullable();
+            $table->json('outs')->nullable();
             $table->unsignedInteger('cpu')->default(0);
             $table->unsignedInteger('mem')->default(0);
             $table->unsignedInteger('time')->default(0);

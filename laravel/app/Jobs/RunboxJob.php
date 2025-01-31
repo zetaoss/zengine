@@ -30,10 +30,15 @@ class RunboxJob implements ShouldQueue
             $this->runbox->step = 2;
             $this->runbox->save();
 
-            $resp = Http::post(getenv('RUNBOX_URL') . '/lang', $this->runbox->payload)->throw();
+            $type    = $this->runbox->type;
+            $outsKey = 'logs';
+            if ($type == 'notebook') {
+                $outsKey = 'outputsList';
+            }
+            $resp = Http::post(getenv('RUNBOX_URL') . "/$type", $this->runbox->payload)->throw();
             $arr  = json_decode($resp->body(), true);
 
-            $this->runbox->logs = $arr['logs'];
+            $this->runbox->outs = $arr[$outsKey];
             $this->runbox->cpu  = $arr['cpu'];
             $this->runbox->mem  = $arr['mem'];
             $this->runbox->time = $arr['time'];

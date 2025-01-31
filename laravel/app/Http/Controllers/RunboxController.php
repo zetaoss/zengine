@@ -8,31 +8,35 @@ use Illuminate\Http\Request;
 class RunboxController extends Controller
 {
 
-    public function get($page_id, $hash)
+    public function get($hash)
     {
         $r = Runbox::where('hash', $hash)->first();
         if (! $r) {
             return ['step' => 0];
         }
-
         return $r;
     }
 
-    public function post(Request $request, $pageId, $hash)
+    public function post(Request $request)
     {
-        $payload = $request->validate([
-            'lang'         => 'required|string',
-            'files'        => 'required|array',
-            'files.*.body' => 'required|string',
+        $v = $request->validate([
+            'hash'    => 'required|string',
+            'user_id' => 'required|int',
+            'page_id' => 'required|int',
+            'type'    => 'required|string',
+            'payload' => 'required|array',
         ]);
 
+        if (! in_array($v['type'], ['lang', 'notebook'])) {
+            abort(404);
+        }
         $runbox          = new Runbox();
-        $runbox->type    = 'run';
-        $runbox->step    = 0;
+        $runbox->hash    = $v['hash'];
+        $runbox->step    = 1;
         $runbox->user_id = 0;
-        $runbox->page_id = $pageId;
-        $runbox->hash    = $hash;
-        $runbox->payload = $payload;
+        $runbox->page_id = $v['page_id'];
+        $runbox->type    = $v['type'];
+        $runbox->payload = $v['payload'];
         $runbox->save();
 
         RunboxJob::dispatch($runbox->id);

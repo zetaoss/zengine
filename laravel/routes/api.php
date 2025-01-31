@@ -16,8 +16,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('/me', [AuthController::class, 'me']);
 Route::get('/logout', [AuthController::class, 'logout']);
 
-Route::get('/runbox/{page}/{hash}', [RunboxController::class, 'get']);
-Route::post('/runbox/{page}/{hash}', [RunboxController::class, 'post']);
+Route::get('/runbox/{hash}', [RunboxController::class, 'get']);
+Route::post('/runbox', [RunboxController::class, 'post']);
 
 Route::get('/comments/recent', [CommentController::class, 'recent']);
 Route::get('/comments/{page}', [CommentController::class, 'list']);
