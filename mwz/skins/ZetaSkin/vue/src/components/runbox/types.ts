@@ -6,7 +6,7 @@ export enum BoxType {
 
 export enum JobType {
   Zero = '',
-  Run = 'run',
+  Lang = 'lang',
   Front = 'front',
   Notebook = 'notebook',
 }
@@ -31,25 +31,21 @@ export interface Box {
   el: Element
 }
 
-export interface ReqRun {
+export interface Payload {
   lang: string
-  main: number
-  files: {
+  files?: {
     name: string
     body: string
   }[]
-}
-
-export interface ReqNotebook {
-  lang: string
-  cellTexts: string[][]
+  main?: number
+  sources?: string[]
 }
 
 export interface Resp {
   cpu: number
   mem: number
   time: number
-  logs: string[]
+  outs: string[]
 }
 
 export interface Job {
@@ -60,7 +56,6 @@ export interface Job {
   pageId: number
   main: number
   step: Step
-  reqRun?: ReqRun
-  reqNotebook?: ReqNotebook
+  payload: Payload | null
   resp: Resp | null
 }

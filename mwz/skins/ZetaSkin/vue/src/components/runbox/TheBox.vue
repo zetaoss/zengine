@@ -2,8 +2,8 @@
 import { inject } from 'vue'
 
 import BoxFront from './BoxFront.vue'
+import BoxLang from './BoxLang.vue'
 import BoxNotebook from './BoxNotebook.vue'
-import BoxRun from './BoxRun.vue'
 import BoxZero from './BoxZero.vue'
 import { type Job, JobType } from './types'
 
@@ -13,8 +13,8 @@ const seq = inject('seq') as number
 const getComponent = () => {
   switch (job.type) {
     case JobType.Front: return BoxFront
+    case JobType.Lang: return BoxLang
     case JobType.Notebook: return BoxNotebook
-    case JobType.Run: return BoxRun
     default: return BoxZero
   }
 }
