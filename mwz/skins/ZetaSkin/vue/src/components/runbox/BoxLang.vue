@@ -5,7 +5,7 @@ import { type Job } from './types';
 export default {
   setup() {
     const job = inject<Job>('job');
-    const outs = computed(() => job?.resp?.outs ?? []);
+    const outs = computed(() => job?.response?.outs ? JSON.parse(JSON.stringify(job.response.outs)) : []);
 
     return { outs };
   },
