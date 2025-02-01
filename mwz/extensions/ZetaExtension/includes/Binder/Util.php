@@ -1,4 +1,5 @@
 <?php
+
 namespace ZetaExtension\Binder;
 
 use MediaWiki\MediaWikiServices;
@@ -16,7 +17,7 @@ class Util
         $rows = [];
         foreach ($out['titles'] as $i => $title) {
             $t = self::followRedirects(\Title::newFromText($title));
-            if (!$t) {
+            if (! $t) {
                 continue;
             }
             $rows[] = ['binder_id' => $binder_id, 'page_id' => $t->getArticleId()];
@@ -28,7 +29,7 @@ class Util
         $dbw->delete('ldb.binder_pages', ['binder_id' => $binder_id]);
         $dbw->insert('ldb.binder_pages', $rows);
         $temp = $dbw->newSelectQueryBuilder()->select('id')->from('ldb.binders')->where(['id' => $binder_id])->fetchField();
-        if (!$temp) {
+        if (! $temp) {
             $dbw->insert('binders', ['id' => $binder_id]);
         }
         $dbw->update('binders', ['data' => null], ['id' => $binder_id]);
@@ -36,12 +37,13 @@ class Util
 
     public static function followRedirects($t)
     {
-        if (!$t->exists()) {
+        if (! $t->exists()) {
             return false;
         }
         if ($t->isRedirect()) {
             return self::followRedirects(self::newFromID($t)->followRedirect());
         }
+
         return $t;
     }
 

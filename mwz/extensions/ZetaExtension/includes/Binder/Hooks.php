@@ -1,4 +1,5 @@
 <?php
+
 namespace ZetaExtension\Binder;
 
 use MediaWiki\MediaWikiServices;
@@ -21,7 +22,7 @@ class Hooks
             return;
         }
         $binder_id = array_keys($restoredPages)[0] ?? false;
-        if (!$binder_id) {
+        if (! $binder_id) {
             return;
         }
         $dbw = MediaWikiServices::getInstance()->getDBLoadBalancer()->getConnection(DB_PRIMARY);

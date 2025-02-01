@@ -1,2 +1,3 @@
 <?php
-$magicWords = ['en'=>['img'=>[0,'img']]];
+
+$magicWords = ['en' => ['img' => [0, 'img']]];
