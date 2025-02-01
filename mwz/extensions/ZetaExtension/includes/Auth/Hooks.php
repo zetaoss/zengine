@@ -1,4 +1,5 @@
 <?php
+
 namespace ZetaExtension\Auth;
 
 class Hooks
@@ -9,7 +10,7 @@ class Hooks
             return;
         }
         $returnto = $_GET['returnto'] ?? false;
-        if (!$returnto) {
+        if (! $returnto) {
             header('Location: /login');
             exit;
         }
@@ -30,14 +31,14 @@ class Hooks
     private static function __returnTo()
     {
         $returnto = $_GET['returnto'] ?? false;
-        if (!$returnto) {
+        if (! $returnto) {
             return true;
         }
         global $wgZetaAllowHosts;
-        if (!in_array(parse_url($returnto, PHP_URL_HOST), $wgZetaAllowHosts)) {
+        if (! in_array(parse_url($returnto, PHP_URL_HOST), $wgZetaAllowHosts)) {
             return true;
         }
-        header('Location: ' . $returnto);
+        header('Location: '.$returnto);
         exit;
     }
 }

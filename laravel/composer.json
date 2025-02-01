@@ -1,11 +1,11 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "zetaoss/zeta",
+    "name": "zetaoss/zengine",
     "type": "project",
-    "description": "zeta laravel",
+    "description": "The laravel application for the zengine.",
     "keywords": [
-        "zeta",
-        "laravel"
+        "zengine",
+        "zlaravel"
     ],
     "license": "Apache-2.0",
     "require": {

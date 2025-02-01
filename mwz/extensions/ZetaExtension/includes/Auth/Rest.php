@@ -1,4 +1,5 @@
 <?php
+
 namespace ZetaExtension\Auth;
 
 use MediaWiki\MediaWikiServices;
@@ -18,18 +19,18 @@ class Rest extends SimpleHandler
 
         // validate code
         $redis = new Client(['host' => getenv('REDIS_HOST')]);
-        if (!$redis) {
+        if (! $redis) {
             return ['status' => 'error', 'error' => 'internal error'];
         }
         $social_id = $redis->get("zetawiki_cache_:code:$code");
-        if (!$social_id || !is_numeric($social_id) || $social_id < 1) {
+        if (! $social_id || ! is_numeric($social_id) || $social_id < 1) {
             return ['status' => 'error', 'error' => 'invalid code'];
         }
 
         // check creatable
         $newusername = Title::makeTitleSafe(NS_USER, ucfirst($username));
         $newuser = User::newFromName($newusername->getText(), 'creatable');
-        if (!$newuser->isAnon()) {
+        if (! $newuser->isAnon()) {
             return ['status' => 'error', 'error' => 'not createable username'];
         }
 

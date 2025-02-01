@@ -4,6 +4,7 @@ namespace ZetaExtension\Binder;
 
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Rest\SimpleHandler;
+use Title;
 use Wikimedia\ParamValidator\ParamValidator;
 
 class RestGet extends SimpleHandler
@@ -55,7 +56,7 @@ class RestGet extends SimpleHandler
         if (! is_numeric($id)) {
             return -1;
         }
-        $t = \Title::newFromID($id);
+        $t = Title::newFromID($id);
         if (! $t->exists() || $t->getNamespace() != 3000) {
             return -2;
         }
@@ -108,7 +109,7 @@ class RestGet extends SimpleHandler
             if (! array_key_exists('title', $node)) {
                 continue;
             }
-            $t = \Title::newFromText($node['title']);
+            $t = Title::newFromText($node['title']);
             unset($node['title']);
             if (array_key_exists('redirect', $node)) {
                 unset($node['redirect']);

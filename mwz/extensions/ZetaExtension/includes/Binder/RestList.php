@@ -1,4 +1,5 @@
 <?php
+
 namespace ZetaExtension\Binder;
 
 use MediaWiki\MediaWikiServices;
@@ -18,6 +19,7 @@ class RestList extends SimpleHandler
         foreach ($res as $row) {
             $rows[] = $row;
         }
+
         return $rows;
     }
 }

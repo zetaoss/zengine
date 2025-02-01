@@ -1,4 +1,5 @@
 <?php
+
 namespace ZetaExtension\Toc;
 
 class Toc
@@ -8,7 +9,8 @@ class Toc
         if ($parser->getTitle()->getNamespace() != 0) {
             return true;
         }
-        $text .= "__FORCETOC__";
+        $text .= '__FORCETOC__';
+
         return true;
     }
 }
