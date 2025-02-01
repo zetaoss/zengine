@@ -1,92 +1,58 @@
-<script lang='ts'>
+<script lang='ts' setup>
 import { inject, computed } from 'vue';
 import { type Job } from './types';
 
-export default {
-  setup() {
-    const job = inject<Job>('job');
-    const outs = computed(() => job?.response?.outs ? JSON.parse(JSON.stringify(job.response.outs)) : []);
+const job = inject<Job>('job');
+const seq = inject<number>('seq') ?? -1;
+const outputs = computed(() => job?.outs[seq] ?? []);
 
-    const ansi2html = (s: string) => {
-      let isOpen = false;
-      return s
-        .replace(/</g, '&lt;')
-        .replace(/\x1b\[(\d+;)?(\d+)m/g, (_, _1, code) => {
-          const closeTag = isOpen ? '</span>' : '';
-          isOpen = !!code;
-          return closeTag + (code ? `<span class="ansi${code}">` : '');
-        }) + (isOpen ? '</span>' : '');
-    };
-
-    return { outs, ansi2html };
-  },
-};
+const ansi2html = (s: string) =>
+  s.replace(/</g, '&lt;').replace(/\x1b\[(\d+;)?(\d+)m/g, (_, _1, code) =>
+    code ? `<span class="ansi${code}">` : '</span>'
+  ) + '</span>';
 </script>
 
 <template>
   <div class="border p-2">
     <slot />
   </div>
-  <div class="out">
-    <div v-if="outs.length" class="border">
-      <div v-for="(out, i) in outs" :key="i" class="outputs">
-        <div v-for="(r, j) in out" :key="j" class="output p-2" :class="r.output_type">
-
-          <template v-if="r.output_type === 'stream' && r.text">
-            <div v-for="(text, k) in r.text" :key="k">{{ text }}</div>
-          </template>
-
-          <template v-else-if="r.output_type === 'display_data' && r.data">
-            <div v-if="r.data['image/png']">
-              <img :src="'data:image/png;base64,' + r.data['image/png']" />
-            </div>
-          </template>
-
-          <template v-else-if="r.output_type === 'execute_result' && r.data">
-            <div v-if="r.data['text/html']">
-              <div v-html="r.data['text/html'].join('')"></div>
-            </div>
-            <div v-else-if="r.data['text/plain']">
-              <pre>{{ r.data['text/plain'].join('') }}</pre>
-            </div>
-          </template>
-
-          <template v-else-if="r.output_type === 'error'">
-            <pre v-html="ansi2html(r.traceback?.join('\n'))" />
-          </template>
-
-        </div>
-      </div>
+  <div v-if="outputs.length" class="outputs">
+    <div v-for="(o, index) in outputs" :key="index" class="output p-2" :class="o.output_type">
+      <template v-if="o.output_type === 'stream'">
+        <div v-for="(text, k) in o.text" :key="k">{{ text }}</div>
+      </template>
+      <template v-else-if="o.output_type === 'display_data' && o.data?.['image/png']">
+        <img :src="'data:image/png;base64,' + o.data['image/png']" class="bg-white" />
+      </template>
+      <template v-else-if="o.output_type === 'execute_result'">
+        <div v-if="o.data?.['text/html']" v-html="o.data['text/html'].join('')"></div>
+        <pre v-else-if="o.data?.['text/plain']">{{ o.data['text/plain'].join('') }}</pre>
+      </template>
+      <pre v-else-if="o.output_type === 'error'" v-html="ansi2html(o.traceback?.join('\n') ?? '')" />
     </div>
   </div>
 </template>
 
 <style>
-.out {
+.outputs {
   font-family: "Roboto", "Noto", sans-serif;
-  @apply text-sm;
+  @apply text-sm border;
+}
 
-  img {
-    @apply bg-white;
-  }
+.dataframe {
+  @apply border;
+}
 
-  .dataframe {
-    @apply border;
+.dataframe th {
+  @apply px-2;
+}
 
-    th {
-      @apply px-2;
-    }
+.dataframe tbody tr {
+  text-align: right;
+}
 
-    tbody {
-      tr {
-        text-align: right;
-
-        &:nth-child(odd) {
-          background: #8884;
-        }
-      }
-    }
-  }
+.dataframe tbody tr:nth-child(odd) {
+  background: #8884;
 }
 
 .output.error {

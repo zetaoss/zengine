@@ -1,15 +1,18 @@
-async function httpDo(method: string, url: string, data: Object) {
-  const headers = { 'Content-Type': 'application/json' }
-  const init = method === 'GET' ? { method, headers } : { method, headers, body: JSON.stringify(data) }
+async function request(method: string, url: string, body?: object) {
+  const init: RequestInit = {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    ...(body && { body: JSON.stringify(body) })
+  }
   const response = await fetch(url, init)
   return response.json()
 }
 
 const http = {
-  get: (url = '', data = {}) => httpDo('GET', url, data),
-  post: (url = '', data = {}) => httpDo('POST', url, data),
-  put: (url = '', data = {}) => httpDo('PUT', url, data),
-  delete: (url = '', data = {}) => httpDo('DELETE', url, data),
+  get: (url: string) => request('GET', url),
+  post: (url: string, data: object) => request('POST', url, data),
+  put: (url: string, data: object) => request('PUT', url, data),
+  delete: (url: string, data?: object) => request('DELETE', url, data),
 }
 
 export default http

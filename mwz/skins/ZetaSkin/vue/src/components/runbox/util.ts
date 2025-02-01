@@ -26,6 +26,6 @@ export function wrap(el: Element, tag: string): Element {
   return wrapper
 }
 
-export function md5(obj: unknown): string {
-  return Md5.hashStr(JSON.stringify(obj));
+export function md5(...args: unknown[]): string {
+  return Md5.hashStr(JSON.stringify(args));
 }
