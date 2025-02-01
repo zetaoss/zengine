@@ -3,6 +3,6 @@
     "scss.lint.unknownAtRules": "ignore",
     "remote.autoForwardPorts": true,
     "[php]": {
-        "editor.defaultFormatter": "kokororin.vscode-phpfmt",
+        "editor.defaultFormatter": "open-southeners.laravel-pint",
     },
 }

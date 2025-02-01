@@ -11,8 +11,8 @@ const useAuthStore = defineStore('auth', () => {
   const isLoggedIn = computed(() => userData.value.avatar && userData.value.avatar.id > 0)
 
   async function update() {
-    const resp: any = await http.get('/api/me')
-    userData.value = resp.data
+    const { data } = await http.get('/api/me')
+    userData.value = data
   }
 
   function canWrite() {

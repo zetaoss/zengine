@@ -14,10 +14,7 @@ defineProps({
 
 <template>
   <span class="inline-block align-middle">
-    <span class="flex rounded-[30%] overflow-hidden" :style="`height:${size}px; width:${size}px`">
-      <template v-if="userAvatar == null">
-        NULL
-      </template>
+    <span v-if="userAvatar" class="flex rounded-[30%] overflow-hidden" :style="`height:${size}px; width:${size}px`">
       <template v-if="userAvatar.t == 3">
         <img class="w-full h-full" alt="gravatar" :src="`//www.gravatar.com/avatar/${userAvatar?.ghash}?s=32`">
       </template>

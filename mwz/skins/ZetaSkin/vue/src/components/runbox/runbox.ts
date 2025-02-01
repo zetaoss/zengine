@@ -58,7 +58,7 @@ export default function runbox() {
     const lang = el.className.match(/mw-highlight-lang-([a-z0-9]+)/)?.[1] || '';
     const run = el.getAttribute('run');
     const notebookAttr = el.getAttribute('notebook');
-    const notebook = notebookAttr === '' ? 'untitled' : notebookAttr;
+    const notebook = notebookAttr === '' ? 'noname' : notebookAttr;
 
     let boxType = BoxType.Zero;
     let jobId = `none-${idx}`;

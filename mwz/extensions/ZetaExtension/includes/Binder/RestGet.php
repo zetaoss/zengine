@@ -1,4 +1,5 @@
 <?php
+
 namespace ZetaExtension\Binder;
 
 use MediaWiki\MediaWikiServices;
@@ -20,7 +21,7 @@ class RestGet extends SimpleHandler
 
     public function run($pageID)
     {
-        if (!is_numeric($pageID) || $pageID < 1) {
+        if (! is_numeric($pageID) || $pageID < 1) {
             return [];
         }
         $refresh = isset($_GET['refresh']);
@@ -39,22 +40,23 @@ class RestGet extends SimpleHandler
             }
         }
         $res = $dbr->newSelectQueryBuilder()
-            ->select(['id', 'data'])->from('binders')
+            ->select(['id', 'data'])->from('ldb.binders')
             ->where(['id' => $binderIDs, 'deleted' => 0, 'enabled' => 1])->fetchResultSet();
         $rows = [];
         foreach ($res as $row) {
-            $rows[] = (!$refresh && $row->data) ? unserialize($row->data) : $this->getData($row->id);
+            $rows[] = (! $refresh && $row->data) ? unserialize($row->data) : $this->getData($row->id);
         }
+
         return $rows;
     }
 
     private function getData($id)
     {
-        if (!is_numeric($id)) {
+        if (! is_numeric($id)) {
             return -1;
         }
         $t = \Title::newFromID($id);
-        if (!$t->exists() || $t->getNamespace() != 3000) {
+        if (! $t->exists() || $t->getNamespace() != 3000) {
             return -2;
         }
         // /w/api.php?action=parse&format=json&prop=text&pageid=182990
@@ -86,6 +88,7 @@ class RestGet extends SimpleHandler
         $s = preg_replace("/,\s*}/", '}', $s);
         $s = substr($s, 9, -1);
         $trees = $this->optimizeNodes(json_decode($s, true));
+
         return [
             'id' => $id,
             'title' => substr($parse['title'], 7),
@@ -102,7 +105,7 @@ class RestGet extends SimpleHandler
             if (array_key_exists('new', $node)) {
                 continue;
             }
-            if (!array_key_exists('title', $node)) {
+            if (! array_key_exists('title', $node)) {
                 continue;
             }
             $t = \Title::newFromText($node['title']);
@@ -113,6 +116,7 @@ class RestGet extends SimpleHandler
             }
             $node['id'] = $t ? $t->getArticleId() : 0;
         }
+
         return $nodes;
     }
 }

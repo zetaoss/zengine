@@ -13,7 +13,7 @@ defineProps({
 
 <template>
   <a class="avatar pt-[2px] px-[5px] pb-[4px] rounded-lg hover:no-underline hover:bg-gray-200 dark:hover:bg-gray-700"
-    :href="`/user/${userAvatar?.name}`">
+    :href="`/wiki/User:${userAvatar?.name}`">
     <AvatarUser :user-avatar="userAvatar" :size="size" />
   </a>
 </template>
