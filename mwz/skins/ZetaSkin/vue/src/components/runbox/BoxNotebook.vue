@@ -3,13 +3,10 @@ import { inject, computed } from 'vue';
 import { type Job } from './types';
 
 const job = inject<Job>('job');
-const seq = inject<number>('seq') ?? -1;
+const seq = inject<number>('seq') ?? 0;
 const outputs = computed(() => job?.outs[seq] ?? []);
 
-const ansi2html = (s: string) =>
-  s.replace(/</g, '&lt;').replace(/\x1b\[(\d+;)?(\d+)m/g, (_, _1, code) =>
-    code ? `<span class="ansi${code}">` : '</span>'
-  ) + '</span>';
+const ansi2html = (s: string) => s.replace(/</g, '&lt;').replace(/\x1b\[(\d+;)?(\d+)m/g, (_, _1, code) => code ? `<span class="ansi${code}">` : '</span>') + '</span>';
 </script>
 
 <template>
@@ -17,9 +14,9 @@ const ansi2html = (s: string) =>
     <slot />
   </div>
   <div v-if="outputs.length" class="outputs">
-    <div v-for="(o, index) in outputs" :key="index" class="output p-2" :class="o.output_type">
+    <div v-for="(o, i) in outputs" :key="i" class="output p-2" :class="o.output_type">
       <template v-if="o.output_type === 'stream'">
-        <div v-for="(text, k) in o.text" :key="k">{{ text }}</div>
+        <div v-for="(text, j) in o.text" :key="j">{{ text }}</div>
       </template>
       <template v-else-if="o.output_type === 'display_data' && o.data?.['image/png']">
         <img :src="'data:image/png;base64,' + o.data['image/png']" class="bg-white" />

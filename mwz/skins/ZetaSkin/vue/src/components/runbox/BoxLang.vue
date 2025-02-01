@@ -5,7 +5,7 @@ import { type Job } from "./types";
 const job = inject<Job>("job");
 const seq = inject("seq");
 
-const logs = computed(() => job && job?.main === seq ? job.logs : []);
+const logs = computed(() => job && job.main === seq ? job.logs : []);
 </script>
 
 <template>
