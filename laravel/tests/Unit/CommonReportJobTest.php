@@ -1,4 +1,5 @@
 <?php
+
 namespace Tests\Unit;
 
 use App\Jobs\CommonReportJob;
@@ -7,12 +8,12 @@ use Tests\TestCase;
 
 class CommonReportJobTest extends TestCase
 {
-    public function testOk()
+    public function test_ok()
     {
         $items = ['Alice', 'Bob'];
 
-        $report          = new CommonReport();
-        $report->state   = 0;
+        $report = new CommonReport;
+        $report->state = 0;
         $report->user_id = 1;
         $report->save();
 
@@ -38,7 +39,7 @@ class CommonReportJobTest extends TestCase
             }
 
             if ((time() - $startTime) > $timeout) {
-                $this->fail("Timeout");
+                $this->fail('Timeout');
             }
 
             usleep(500000); // 0.5s

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Services\AuthService;
@@ -17,6 +18,7 @@ class MyController extends Controller
         if (is_null(self::$me)) {
             self::$me = AuthService::me();
         }
+
         return self::$me;
     }
 
@@ -53,12 +55,13 @@ class MyController extends Controller
     private function checkPermssion($writerID, $allowAdmin, $reason = '-')
     {
         $me = $this->getMe();
-        if (!$me) {
+        if (! $me) {
             return $this->newHTTPError(403, 'unauthorized: not logged in');
         }
         if ($writerID == 0 || $writerID == $this->getUserID() || ($allowAdmin && $this->isAdmin())) {
             return false;
         }
+
         return $this->newHTTPError(403, "unauthorized: $reason");
     }
 

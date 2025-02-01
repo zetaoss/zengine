@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\PageReaction;
@@ -9,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 class PageReactionController extends MyController
 {
     private $emojis = ['👍', '😆', '😢', '😮', '❤️', '❤'];
+
     private $codes = [128077, 128518, 128546, 128558, 10084, 10084];
 
     private function emoji2code($emoji)
@@ -24,7 +26,7 @@ class PageReactionController extends MyController
     public function show($pageID)
     {
         $pr = PageReaction::where('page_id', $pageID)->first();
-        if (!$pr) {
+        if (! $pr) {
             return ['data' => null];
         }
         $emojiCount = $pr->emoji_count;
@@ -43,7 +45,7 @@ class PageReactionController extends MyController
     {
         $request->validate([
             'pageid' => 'required|int|min:1',
-            'emoji' => 'in:' . implode(',', $this->emojis),
+            'emoji' => 'in:'.implode(',', $this->emojis),
             'enable' => 'required|boolean',
         ]);
         $err = $this->shouldCreatable();
@@ -72,13 +74,14 @@ class PageReactionController extends MyController
             $cnt += $row->cnt;
         }
         $pr = PageReaction::where('page_id', $pageID)->first();
-        if (!$pr) {
+        if (! $pr) {
             $pr = new PageReaction;
         }
         $pr->page_id = $pageID;
         $pr->cnt = $cnt;
         $pr->emoji_count = $emoji_count;
         $pr->save();
+
         return ['status' => 'ok'];
     }
 }

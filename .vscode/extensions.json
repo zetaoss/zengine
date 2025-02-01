@@ -3,6 +3,7 @@
         "bradlc.vscode-tailwindcss",
         "dbaeumer.vscode-eslint",
         "editorconfig.editorconfig",
+        "laravel.vscode-laravel",
         "ms-vscode.makefile-tools",
         "open-southeners.laravel-pint",
         "shufo.vscode-blade-formatter",

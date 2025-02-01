@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Post;
@@ -20,6 +21,7 @@ class PostController extends MyController
     public function show(Post $post)
     {
         $post->increment('hit');
+
         return $post;
     }
 
@@ -41,6 +43,7 @@ class PostController extends MyController
         $post->channel_id = 1;
         $post->user_id = $this->getUserID();
         $post->save();
+
         return ['status' => 'ok'];
     }
 
@@ -62,6 +65,7 @@ class PostController extends MyController
         $post->channel_id = 1;
         $post->user_id = $this->getUserID();
         $post->save();
+
         return ['status' => 'ok'];
     }
 
@@ -72,6 +76,7 @@ class PostController extends MyController
             return $err;
         }
         $post->delete();
+
         return ['status' => 'ok'];
     }
 
@@ -85,6 +90,7 @@ class PostController extends MyController
         if ($validator->fails()) {
             return $this->newHTTPError(400, $validator->getMessageBag()->toArray());
         }
+
         return null;
     }
 }

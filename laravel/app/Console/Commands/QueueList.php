@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Console\Commands;
 
 use Carbon\Carbon;
@@ -7,7 +8,8 @@ use Illuminate\Support\Facades\DB;
 
 class QueueList extends Command
 {
-    protected $signature   = 'queue:list';
+    protected $signature = 'queue:list';
+
     protected $description = 'List all queued jobs';
 
     public function handle()
@@ -19,14 +21,15 @@ class QueueList extends Command
         } else {
             $jobData = $jobs->map(function ($job) {
                 $payload = json_decode($job->payload, true);
-                $age     = str_replace(' ago', '', Carbon::parse($job->created_at)->shortRelativeDiffForHumans());
+                $age = str_replace(' ago', '', Carbon::parse($job->created_at)->shortRelativeDiffForHumans());
+
                 return [
-                    'ID'       => $job->id,
-                    'Queue'    => $job->queue,
-                    'Name'     => $payload['displayName'] ?? 'N/A',
+                    'ID' => $job->id,
+                    'Queue' => $job->queue,
+                    'Name' => $payload['displayName'] ?? 'N/A',
                     'MaxTries' => $payload['maxTries'] ?? 'N/A',
                     'Attempts' => $job->attempts,
-                    'Age'      => $age,
+                    'Age' => $age,
                 ];
             })->toArray();
 

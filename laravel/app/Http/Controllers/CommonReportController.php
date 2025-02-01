@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Jobs\CommonReportJob;
@@ -25,8 +26,8 @@ class CommonReportController extends MyController
             return $err;
         }
         $names = array_filter(request('names', []));
-        if (!is_array($names) || count($names) < 2) {
-            return $this->newHTTPError(422, "비교 대상을 2개 이상 입력해 주세요.");
+        if (! is_array($names) || count($names) < 2) {
+            return $this->newHTTPError(422, '비교 대상을 2개 이상 입력해 주세요.');
         }
         $report = new CommonReport;
         $report->user_id = $this->getMe()['avatar']['id'];
@@ -51,6 +52,7 @@ class CommonReportController extends MyController
             return $err;
         }
         $row->delete();
+
         return ['status' => 'ok'];
     }
 }

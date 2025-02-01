@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use App\Services\UserService;
@@ -10,8 +11,11 @@ class Post extends Model
     use SoftDeletes;
 
     protected $appends = ['userAvatar', 'tag_names'];
+
     protected $dates = ['deleted_at'];
+
     protected $hidden = ['channel_id', 'deleted_at', 'delete_user_id'];
+
     protected $fillable = ['user_id', 'cat', 'title', 'body', 'is_notice', 'tags_str', 'replies_count'];
 
     public function getUserAvatarAttribute()
@@ -29,7 +33,7 @@ class Post extends Model
         parent::boot();
         static::deleting(function ($post) {
             $me = UserService::me();
-            if (!$me) {
+            if (! $me) {
                 return;
             }
 
