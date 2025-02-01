@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use App\Services\UserService;
@@ -8,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 class WriteRequest extends Model
 {
     protected $attributes = ['rate' => 0];
+
     protected $appends = ['hit', 'userAvatar'];
 
     public function getUserAvatarAttribute()
@@ -21,6 +23,7 @@ class WriteRequest extends Model
         if ($row) {
             return $row->hit;
         }
+
         return 0;
     }
 }

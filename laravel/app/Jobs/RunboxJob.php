@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Jobs;
 
 use App\Models\Runbox;
@@ -14,6 +15,7 @@ use Throwable;
 class RunboxJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
     private $runbox;
 
     public function __construct($runboxID)
@@ -30,17 +32,17 @@ class RunboxJob implements ShouldQueue
             $this->runbox->step = 2;
             $this->runbox->save();
 
-            $type    = $this->runbox->type;
+            $type = $this->runbox->type;
             $outsKey = 'logs';
             if ($type == 'notebook') {
                 $outsKey = 'outputsList';
             }
-            $resp = Http::post(getenv('RUNBOX_URL') . "/$type", $this->runbox->payload)->throw();
-            $arr  = json_decode($resp->body(), true);
+            $resp = Http::post(getenv('RUNBOX_URL')."/$type", $this->runbox->payload)->throw();
+            $arr = json_decode($resp->body(), true);
 
             $this->runbox->outs = $arr[$outsKey];
-            $this->runbox->cpu  = $arr['cpu'];
-            $this->runbox->mem  = $arr['mem'];
+            $this->runbox->cpu = $arr['cpu'];
+            $this->runbox->mem = $arr['mem'];
             $this->runbox->time = $arr['time'];
             $this->runbox->step = 3;
             $this->runbox->save();

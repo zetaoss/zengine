@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Comment;
@@ -16,6 +17,7 @@ class CommentController extends MyController
             ->orderBy('z_comment.created', 'desc')->limit(10)->get()
             ->map(function ($row) {
                 $row->avatar = UserService::getUserAvatar($row->user_id);
+
                 return $row;
             });
     }
@@ -26,6 +28,7 @@ class CommentController extends MyController
             ->select('id', 'user_id', 'created', 'message')->where('curid', $pageID)->orderBy('created', 'desc')->get()
             ->map(function ($row) {
                 $row->avatar = UserService::getUserAvatar($row->user_id);
+
                 return $row;
             });
     }
@@ -47,6 +50,7 @@ class CommentController extends MyController
             'name' => $this->getUserName(),
             'created' => date('Y-m-d H:i:s'),
         ]);
+
         return ['status' => 'ok'];
     }
 
@@ -61,6 +65,7 @@ class CommentController extends MyController
         }
         $comment->message = $request->message;
         $comment->save();
+
         return ['status' => 'ok'];
     }
 
@@ -71,6 +76,7 @@ class CommentController extends MyController
             return $err;
         }
         $comment->delete();
+
         return ['status' => 'ok'];
     }
 
@@ -83,6 +89,7 @@ class CommentController extends MyController
         AND cl.cl_type = 'page'
         GROUP BY cl_to
         ORDER BY cnt DESC", [$pageID]);
+
         return [
             'cats' => $cats,
             'comments' => (count($cats) == 0) ? [] : DB::connection('mwdb')->table('z_comment')
@@ -92,6 +99,7 @@ class CommentController extends MyController
                 ->where([['categorylinks.cl_type', 'page'], ['categorylinks.cl_to', $cats[0]->name]])->get()
                 ->map(function ($row) {
                     $row->avatar = UserService::getUserAvatar($row->user_id);
+
                     return $row;
                 }),
         ];
@@ -107,9 +115,9 @@ class CommentController extends MyController
                 ->where([['categorylinks.cl_type', 'page'], ['categorylinks.cl_to', $cat]])->get()
                 ->map(function ($row) {
                     $row->avatar = UserService::getUserAvatar($row->user_id);
+
                     return $row;
                 }),
         ];
     }
-
 }

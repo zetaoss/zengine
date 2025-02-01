@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use App\Services\AuthService;
@@ -11,7 +12,9 @@ class Reply extends Model
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
+
     protected $fillable = ['user_id', 'body'];
+
     protected $appends = ['userAvatar'];
 
     public function getUserAvatarAttribute()
@@ -27,7 +30,7 @@ class Reply extends Model
         });
         static::deleted(function ($reply) {
             $me = AuthService::me();
-            if (!$me) {
+            if (! $me) {
                 return;
             }
             $reply->delete_user_id = $me['avatar']['id'];
@@ -35,6 +38,7 @@ class Reply extends Model
             $reply->post->update(['replies_count' => $reply->post->replies()->count()]);
         });
     }
+
     public function post()
     {
         return $this->belongsTo(Post::class, 'post_id');

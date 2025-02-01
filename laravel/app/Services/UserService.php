@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services;
 
 use Illuminate\Support\Facades\Cache;
@@ -24,6 +25,7 @@ class UserService
         $user = $rows[0];
         $userAvatar = ['id' => $userID, 'name' => $user->user_name, 't' => $user->t, 'ghash' => $user->ghash];
         Cache::put($key, $userAvatar);
+
         return $userAvatar;
     }
 }

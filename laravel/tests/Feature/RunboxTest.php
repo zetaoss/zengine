@@ -1,4 +1,5 @@
 <?php
+
 namespace Tests\Feature;
 
 use App\Models\Runbox;
@@ -20,22 +21,22 @@ class RunboxTest extends TestCase
     {
         $tests = [
             [
-                'data'     => [
-                    'hash'    => 'lang_post_1',
+                'data' => [
+                    'hash' => 'lang_post_1',
                     'user_id' => 0,
                     'page_id' => 0,
-                    'type'    => 'lang',
+                    'type' => 'lang',
                     'payload' => ['lang' => 'bash', 'files' => [['body' => 'echo lang_post_1']]],
                 ],
                 'wantCode' => 202,
                 'wantOuts' => '["1lang_post_1"]',
             ],
             [
-                'data'     => [
-                    'hash'    => 'notebook_post_1',
+                'data' => [
+                    'hash' => 'notebook_post_1',
                     'user_id' => 0,
                     'page_id' => 0,
-                    'type'    => 'notebook',
+                    'type' => 'notebook',
                     'payload' => ['lang' => 'python', 'sources' => ['msg = "notebook_post_1"', 'print(msg)']],
                 ],
                 'wantCode' => 202,
@@ -44,15 +45,15 @@ class RunboxTest extends TestCase
         ];
 
         foreach ($tests as $t) {
-            $data     = $t['data'];
+            $data = $t['data'];
             $wantCode = $t['wantCode'];
             $wantOuts = $t['wantOuts'];
-            $hash     = $data['hash'];
+            $hash = $data['hash'];
 
             Runbox::where('hash', $hash)->delete();
             $this->withoutMiddleware();
 
-            $response = $this->postJson("/api/runbox", $data);
+            $response = $this->postJson('/api/runbox', $data);
             $response->assertStatus($wantCode);
 
             $this->waitForComplete($hash);
@@ -82,5 +83,4 @@ class RunboxTest extends TestCase
             usleep(500000); // 0.5s
         }
     }
-
 }

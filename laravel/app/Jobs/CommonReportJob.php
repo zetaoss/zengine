@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Jobs;
 
 use App\Models\CommonReport;
@@ -15,6 +16,7 @@ class CommonReportJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     protected CommonReport $report;
+
     public int $tries = 1;
 
     public function __construct(int $id)
@@ -35,7 +37,7 @@ class CommonReportJob implements ShouldQueue
             } else {
                 Log::error('API request failed', [
                     'status' => $response->status(),
-                    'body'   => $response->body(),
+                    'body' => $response->body(),
                 ]);
             }
         } catch (\Exception $e) {
@@ -56,25 +58,25 @@ class CommonReportJob implements ShouldQueue
     {
         $query = $this->report->items
             ->pluck('name')
-            ->map(fn($name) => 'q=' . urlencode($name))
+            ->map(fn ($name) => 'q='.urlencode($name))
             ->implode('&');
 
-        return getenv("SEARCH_URL") . "/search?$query";
+        return getenv('SEARCH_URL')."/search?$query";
     }
 
     private function updateReportData(array $data): void
     {
         $engines = $data['result']['engines'] ?? [];
-        $values  = $data['result']['values'] ?? [];
+        $values = $data['result']['values'] ?? [];
 
         $this->report->items->each(function ($item, $index) use ($engines, $values) {
             $dataMap = array_combine($engines, $values[$index] ?? []);
 
             $item->fill([
-                'daum_blog'     => $dataMap['daum_blog'] ?? 0,
-                'naver_blog'    => $dataMap['naver_blog'] ?? 0,
-                'naver_book'    => $dataMap['naver_book'] ?? 0,
-                'naver_news'    => $dataMap['naver_news'] ?? 0,
+                'daum_blog' => $dataMap['daum_blog'] ?? 0,
+                'naver_blog' => $dataMap['naver_blog'] ?? 0,
+                'naver_book' => $dataMap['naver_book'] ?? 0,
+                'naver_news' => $dataMap['naver_news'] ?? 0,
                 'google_search' => $dataMap['google_search'] ?? 0,
             ]);
 

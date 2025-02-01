@@ -13,13 +13,14 @@ class EnsureNotBlocked
         if ($this->isBlocked()) {
             abort(403, 'Access denied');
         }
+
         return $next($request);
     }
 
     private function isBlocked(): bool
     {
         $user_id = $_COOKIE['zetawikiUserID'] ?? false;
-        if (!$user_id) {
+        if (! $user_id) {
             return true;
         }
         $row = DB::connection('mwdb')->table('ipblocks')->select('ipb_expiry')->where('ipb_user', '=', $user_id)->first();
@@ -28,6 +29,7 @@ class EnsureNotBlocked
                 return true;
             }
         }
+
         return false;
     }
 }

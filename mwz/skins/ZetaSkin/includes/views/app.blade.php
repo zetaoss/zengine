@@ -1,5 +1,3 @@
-{{-- {{ dd(get_defined_vars()['variables']) }} --}}
-{{-- // TODO: remove this line before release --}}
 <div id="app" class="min-h-screen">
     <nav id="navbar" class="w-full text-sm border-b z-40 bg-white dark:bg-slate-700">
         <div class="max-w-8xl mx-auto w-full md:flex whitespace-nowrap">

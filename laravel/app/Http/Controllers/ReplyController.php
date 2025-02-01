@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Post;
@@ -23,6 +24,7 @@ class ReplyController extends MyController
         if ($err !== false) {
             return $err;
         }
+
         return $post->createReply([
             'body' => $request->body,
             'user_id' => $this->getUserID(),
@@ -42,6 +44,7 @@ class ReplyController extends MyController
         }
         $reply->body = $request->body;
         $reply->save();
+
         return ['status' => 'ok'];
     }
 
@@ -52,6 +55,7 @@ class ReplyController extends MyController
             return $err;
         }
         $reply->delete();
+
         return ['status' => 'ok'];
     }
 
@@ -63,6 +67,7 @@ class ReplyController extends MyController
         if ($validator->fails()) {
             return $this->newHTTPError(400, 'bad_request', $validator->getMessageBag()->toArray());
         }
+
         return null;
     }
 }
