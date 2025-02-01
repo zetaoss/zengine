@@ -34,11 +34,20 @@ export interface Box {
 export interface Payload {
   lang: string;
   files?: {
-    name: string;
+    name?: string;
     body: string;
-  }[]
+  }[];
   main?: number;
   sources?: string[];
+}
+
+export interface Output {
+  output_type: string;
+  text?: string[];
+  data?: Record<string, string[]>;
+  ename?: string;
+  evalue?: string;
+  traceback?: string[];
 }
 
 export interface Response {
@@ -50,12 +59,14 @@ export interface Response {
 
 export interface Job {
   id: string;
-  type: JobType;
   hash: string;
   boxes: Box[];
   pageId: number;
   main: number;
+  type: JobType;
   step: Step;
   payload: Payload | null;
-  response: Response | null;
+  logs: string[];
+  outs: Output[][];
 }
+
