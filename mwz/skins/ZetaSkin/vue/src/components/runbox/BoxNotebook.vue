@@ -15,41 +15,52 @@ const ansi2html = (s: string) => s.replace(/</g, '&lt;').replace(/\x1b\[(\d+;)?(
   </div>
   <div v-if="outputs.length" class="outputs">
     <div v-for="(o, i) in outputs" :key="i" class="output p-2" :class="o.output_type">
-      <template v-if="o.output_type === 'stream'">
-        <div v-for="(text, j) in o.text" :key="j">{{ text }}</div>
+      <template v-if="o.output_type == 'display_data'">
+        <img v-if="o.data?.['image/png']" :src="'data:image/png;base64,' + o.data['image/png']" class="bg-white" />
+        <div v-else-if="o.data?.['text/html']" v-html="o.data['text/html'].join('')"></div>
       </template>
-      <template v-else-if="o.output_type === 'display_data' && o.data?.['image/png']">
-        <img :src="'data:image/png;base64,' + o.data['image/png']" class="bg-white" />
+      <template v-else-if="o.output_type == 'error'">
+        <pre v-html="ansi2html(o.traceback?.join('\n') ?? '')"></pre>
       </template>
-      <template v-else-if="o.output_type === 'execute_result'">
+      <template v-else-if="o.output_type == 'execute_result'">
         <div v-if="o.data?.['text/html']" v-html="o.data['text/html'].join('')"></div>
         <pre v-else-if="o.data?.['text/plain']">{{ o.data['text/plain'].join('') }}</pre>
       </template>
-      <pre v-else-if="o.output_type === 'error'" v-html="ansi2html(o.traceback?.join('\n') ?? '')" />
+      <template v-else>
+        <div v-for="(text, j) in o.text" :key="j">{{ text }}</div>
+      </template>
     </div>
   </div>
 </template>
 
 <style>
 .outputs {
-  font-family: "Roboto", "Noto", sans-serif;
-  @apply text-sm border;
+  @apply text-sm font-sans;
 }
 
 .dataframe {
-  @apply border;
-}
+  thead {
+    @apply border-b;
+  }
 
-.dataframe th {
-  @apply px-2;
-}
+  th,
+  td {
+    @apply px-2;
+  }
 
-.dataframe tbody tr {
-  text-align: right;
-}
+  tr {
+    @apply text-right;
+  }
 
-.dataframe tbody tr:nth-child(odd) {
-  background: #8884;
+  tbody {
+    tr {
+      &:nth-child(odd) {
+        @apply bg-neutral-100 dark:bg-neutral-800;
+      }
+
+      @apply hover:bg-teal-100 dark:hover:bg-teal-950;
+    }
+  }
 }
 
 .output.error {

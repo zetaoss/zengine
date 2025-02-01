@@ -3,8 +3,8 @@
         "bradlc.vscode-tailwindcss",
         "dbaeumer.vscode-eslint",
         "editorconfig.editorconfig",
-        "kokororin.vscode-phpfmt",
         "ms-vscode.makefile-tools",
+        "open-southeners.laravel-pint",
         "shufo.vscode-blade-formatter",
         "vue.volar"
     ]

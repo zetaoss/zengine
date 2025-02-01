@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-// import useAuthStore from '@/stores/auth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -75,10 +74,6 @@ const router = createRouter({
       component: () => import('@/views/auth/LogoutView.vue'),
     },
     {
-      path: '/user/:name',
-      component: () => import('@/views/user/UserProfile.vue'),
-    },
-    {
       path: '/social-bridge',
       component: () => import('@/views/auth/SocialBridge.vue'),
     },
@@ -87,8 +82,7 @@ const router = createRouter({
       component: () => import('@/views/auth/SocialJoin.vue'),
     },
     {
-      // dummy for /wiki/xxx
-      path: '/wiki/:any',
+      path: '/wiki/:any', // dummy for wiki
       component: () => null,
     },
   ],
