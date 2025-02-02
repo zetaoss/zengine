@@ -2,9 +2,7 @@
 import TheIcon from '@common/components/TheIcon.vue'
 import { mdiCog } from '@mdi/js'
 import { useWindowScroll } from '@vueuse/core'
-
 import getRLCONF from '@/utils/rlconf'
-
 import BinderNode from './BinderNode.vue'
 
 const { y } = useWindowScroll()

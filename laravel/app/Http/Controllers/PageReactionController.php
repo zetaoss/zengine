@@ -27,7 +27,7 @@ class PageReactionController extends MyController
     {
         $pr = PageReaction::where('page_id', $pageID)->first();
         if (! $pr) {
-            return ['data' => null];
+            return (object) [];
         }
         $emojiCount = $pr->emoji_count;
         $userEmojis = [];
@@ -38,7 +38,7 @@ class PageReactionController extends MyController
             }
         }
 
-        return ['data' => compact('emojiCount', 'userEmojis')];
+        return [compact('emojiCount', 'userEmojis')];
     }
 
     public function store(Request $request)

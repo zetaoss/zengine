@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-
 import { mdiAccount, mdiChevronDown } from '@mdi/js'
 import { onClickOutside } from '@vueuse/core'
 import { useRoute } from 'vue-router'
@@ -44,13 +43,13 @@ watch(() => route.path, close)
         </span>
       </div>
     </button>
-    <div class="hidden md:block md:absolute z-30 top-full right-0" :class="{ 'md:hidden': !show }">
+    <div v-show="show" class="hidden md:block md:absolute z-30 top-full right-0">
       <div class="rounded-lg overflow-hidden m-1 border bg-z-card">
         <NavbarItems :items="items" />
       </div>
     </div>
   </div>
-  <div class="columns-2 py-1 md:hidden bg-zinc-200 dark:bg-zinc-800" :class="{ hidden: !show }">
+  <div v-show="show" class="columns-2 py-1 md:hidden bg-zinc-200 dark:bg-zinc-800">
     <NavbarItems :items="items" />
   </div>
 </template>

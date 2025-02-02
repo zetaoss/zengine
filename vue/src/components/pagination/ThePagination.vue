@@ -1,34 +1,34 @@
 <script setup lang="ts">
-import { type PropType, ref, watch } from 'vue'
-
+import { computed, type PropType, watch } from 'vue'
 import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
-
 import TheIcon from '@common/components/TheIcon.vue'
-
 import type { PaginateData } from './types'
 
 const props = defineProps({
   paginateData: { type: Object as PropType<PaginateData>, required: true },
 })
-const startPage = ref(1)
-const endPage = ref(1)
-const prevPage = ref(0)
-const nextPage = ref(0)
-function load() {
-  if (!props.paginateData.current_page) {
-    return
-  }
-  startPage.value = Math.floor((props.paginateData.current_page - 1) / 10) * 10 + 1
-  endPage.value = Math.min(startPage.value + 9, props.paginateData.last_page)
-  prevPage.value = startPage.value - 1
-  nextPage.value = endPage.value + 1
-  if (nextPage.value > props.paginateData.last_page) {
-    nextPage.value = 0
-  }
-}
 
-watch(() => props.paginateData, load)
-load()
+const startPage = computed(() => {
+  return Math.floor((props.paginateData.current_page - 1) / 10) * 10 + 1
+})
+
+const endPage = computed(() => {
+  return Math.min(startPage.value + 9, props.paginateData.last_page)
+})
+
+const prevPage = computed(() => {
+  return startPage.value > 1 ? startPage.value - 1 : 0
+})
+
+const nextPage = computed(() => {
+  return endPage.value < props.paginateData.last_page ? endPage.value + 1 : 0
+})
+
+const pages = computed(() => {
+  return Array.from({ length: endPage.value - startPage.value + 1 }, (_, i) => startPage.value + i)
+})
+
+watch(() => props.paginateData, () => { }, { immediate: true })
 </script>
 
 <template>
@@ -40,9 +40,10 @@ load()
       </RouterLink>
     </span>
 
-    <span v-for="page in Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i)" :key="page">
+    <span v-for="page in pages" :key="page">
       <RouterLink :to="{ path: `${paginateData.path}/${page}` }" class="btn btn-light !px-3"
-        :class="{ disabled: page == paginateData.current_page }">{{ page }}
+        :class="{ disabled: page == paginateData.current_page }">
+        {{ page }}
       </RouterLink>
     </span>
 

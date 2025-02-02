@@ -191,16 +191,10 @@ const itemDatas = ref([
   <div class="menu-bar">
     <template v-for="(itemData, index) in itemDatas">
       <template v-if="itemData.type === 'divider'">
-        <div
-          :key="`divider${index}`"
-          class="divider"
-        />
+        <div :key="`divider${index}`" class="divider" />
       </template>
       <template v-else>
-        <menu-item
-          :key="index"
-          :item-data="itemData"
-        />
+        <menu-item :key="index" :item-data="itemData" />
       </template>
     </template>
   </div>

@@ -1,16 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-
 import TheModal from '@common/components/TheModal.vue'
 import TheTextarea from '@common/components/TheTextarea.vue'
 import AvatarCore from '@common/components/avatar/AvatarCore.vue'
 import AvatarUserLink from '@common/components/avatar/AvatarUserLink.vue'
 import type UserAvatar from '@common/types/userAvatar'
-
 import { canDelete, canEdit } from '@/utils/auth'
 import http from '@/utils/http'
 import getRLCONF from '@/utils/rlconf'
-
 import LinkifyBox from '../LinkifyBox.vue'
 
 interface Row {
@@ -120,10 +117,12 @@ fetchData()
         <AvatarCore :userAvatar="row.avatar" :size="32" />
       </div>
       <div class="w-full">
-        <button type="button" v-if="canDelete(row.avatar.id)" class="float-right btn btn-xs btn-danger" @click="del(row)">
+        <button type="button" v-if="canDelete(row.avatar.id)" class="float-right btn btn-xs btn-danger"
+          @click="del(row)">
           삭제
         </button>
-        <button type="button" v-if="canEdit(row.avatar.id)" class="float-right btn btn-xs" @click="edit(row)">수정</button>
+        <button type="button" v-if="canEdit(row.avatar.id)" class="float-right btn btn-xs"
+          @click="edit(row)">수정</button>
         <div class="text-sm">
           <a :href="`/profile/${row.avatar.name}`">{{ row.avatar.name }}</a>
           <span class="ml-3 text-neutral-400">{{ row.created.substring(0, 10) }}</span>

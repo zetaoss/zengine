@@ -1,6 +1,5 @@
 import Autolinker from 'autolinker'
-// import sanitizeHTML from 'sanitize-html'
-import { sanitize } from 'isomorphic-dompurify'
+import DOMPurify from 'isomorphic-dompurify'
 
 import titleExist from './mediawiki'
 
@@ -13,23 +12,22 @@ function linkifyURL(s: string) {
   })
 }
 
-async function linkifyWikiMatch(s: string, match: string) {
-  const title = match.slice(2, -2)
-  const exist: boolean = await titleExist(title)
-  const newClass = exist ? 'new' : ''
-  return s.split(match).join(`<a href="/wiki/${title}" class="internal ${newClass}">${title}</a>`)
+export async function linkifyWikiMatch(s: string, match: string) {
+  const title = match.slice(2, -2);
+  const exist = await titleExist(title);
+  const classList = ['internal', exist ? '' : 'new'].filter(Boolean).join(' ');
+  return s.split(match).join(`<a href="/wiki/${title}" class="${classList}">${title}</a>`);
 }
 
 export async function linkifyWiki(s: string) {
-  const temp = s.match(/\[\[([^[\]|]*)[^[\]]*\]\]/g)
-  if (!temp) return s
-  const matches = [...new Set(temp)]
+  const matches = Array.from(new Set(s.match(/\[\[([^[\]|]*)[^[\]]*\]\]/g) || []));
   for (const match of matches) {
-    s = await linkifyWikiMatch(s, match)
+    s = await linkifyWikiMatch(s, match);
   }
-  return s
+  return s;
 }
 
 export default async function linkify(input: string) {
-  return linkifyWiki(linkifyURL(sanitize(input)))
+  const sanitizedInput = DOMPurify.sanitize(input)
+  return linkifyWiki(linkifyURL(sanitizedInput))
 }

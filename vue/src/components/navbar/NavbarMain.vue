@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import NavbarSearch from '@common/components/navbar/NavbarSearch.vue'
-
 import NavbarUserMenu from './NavbarUserMenu.vue'
 </script>
 

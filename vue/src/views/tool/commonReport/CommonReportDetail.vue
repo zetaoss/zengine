@@ -84,15 +84,11 @@ fetchData()
   <div v-if="row.userAvatar" class="p-5">
     <div class="py-4 overflow-auto">
       <div class="float-right">
-        <RouterLink to="/tool/common-report" class="btn">
-          목록
-        </RouterLink>
+        <RouterLink to="/tool/common-report" class="btn">목록</RouterLink>
       </div>
     </div>
     <div class="border bg-z-card rounded p-5">
-      <h2 class="my-5 text-2xl font-bold">
-        통용 보고서 #{{ id }}
-      </h2>
+      <h2 class="my-5 text-2xl font-bold">통용 보고서 #{{ id }}</h2>
       <div class="h-10">
         <div class="float-left">
           <div>

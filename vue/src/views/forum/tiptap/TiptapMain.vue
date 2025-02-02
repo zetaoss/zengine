@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import {
-  onBeforeUnmount, onMounted, ref, watch,
-} from 'vue'
+import { onBeforeUnmount, onMounted, shallowRef, watch } from 'vue'
 
 import CharacterCount from '@tiptap/extension-character-count'
 import Highlight from '@tiptap/extension-highlight'
@@ -24,60 +22,54 @@ const props = defineProps({
   modelValue: { type: String, default: '' },
   isError: { type: Boolean, default: false },
 })
-const editor = ref(null as any)
-
-watch(() => props.modelValue, (value) => {
-  const isSame = editor.value.getHTML() === value
-  if (isSame) return
-  editor.value.commands.setContent(value, false)
-})
 
 const emit = defineEmits(['update:modelValue'])
+const editor = shallowRef<Editor | null>(null)
+
+watch(() => props.modelValue, (newValue) => {
+  if (editor.value && editor.value.getHTML() !== newValue) {
+    editor.value.commands.setContent(newValue, false)
+  }
+})
 
 onMounted(() => {
   editor.value = new Editor({
     extensions: [
       StarterKit.configure({
-        history: true as any,
-        heading: {
-          levels: [1, 2, 3],
-        },
+        history: { depth: 100 },
+        heading: { levels: [1, 2, 3] },
       }),
       Highlight,
       TaskList,
       TaskItem,
-      CharacterCount.configure({
-        limit: 10000,
-      }),
-      Table.configure({
-        resizable: true,
-      }),
+      CharacterCount.configure({ limit: 10000 }),
+      Table.configure({ resizable: true }),
       TableCell,
       TableHeader,
       TableRow,
-      Placeholder.configure({
-        placeholder: '내용',
-      }),
-      Image.configure({
-        inline: true,
-      }),
+      Placeholder.configure({ placeholder: '내용' }),
+      Image.configure({ inline: true }),
       Iframe,
     ],
     content: props.modelValue,
     onUpdate: () => {
-      emit('update:modelValue', editor.value.getHTML())
+      if (editor.value) {
+        emit('update:modelValue', editor.value.getHTML())
+      }
     },
   })
 })
 
-onBeforeUnmount(() => { editor.value.destroy() })
+onBeforeUnmount(() => {
+  editor.value?.destroy()
+})
 </script>
 
 <template>
   <div v-if="editor" class="editor" :class="{ 'border-red-50 dark:border-red-900': isError }">
     <menu-bar :editor="editor" />
     <table-menu-bar :editor="editor" />
-    <editor-content class="editor__content" :editor="editor" />
+    <editor-content v-if="editor" class="editor__content" :editor="editor" />
     <div class="editor__footer">
       <div class="w-full text-right">
         <div v-if="editor" class="character-count">

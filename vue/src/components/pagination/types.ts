@@ -5,7 +5,7 @@ export interface PaginateLink {
 }
 
 export interface PaginateData {
-  data: any[]
+  data: unknown[]
   current_page: number
   first_page_url: string
   from: number

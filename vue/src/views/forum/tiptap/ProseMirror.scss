@@ -45,7 +45,7 @@
     }
 
     img {
-        @apply m-2 h-auto border border-2 block;
+        @apply m-2 h-auto border-2 block;
     }
 
     hr {
@@ -90,7 +90,7 @@
         }
 
         th {
-            @apply font-bold text-left bg-zinc-100 dark:bg-zinc-800 ;
+            @apply font-bold text-left bg-zinc-100 dark:bg-zinc-800;
         }
 
         .selectedCell:after {
@@ -134,7 +134,7 @@
 }
 
 .iframe-wrapper {
-    @apply w-[600px] h-[300px] border border-2 rounded;
+    @apply w-[600px] h-[300px] border-2 rounded;
 
     &.ProseMirror-selectednode {
         outline: 3px solid #68CEF8;

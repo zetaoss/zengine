@@ -2,6 +2,6 @@ export interface ItemData {
   type?: string
   icon: string
   title?: string
-  action?: () => {}
-  isActive?: () => {}
+  action?: () => void
+  isActive?: () => boolean
 }
