@@ -23,18 +23,3 @@ export interface Reply {
   post_id: number
   userAvatar: UserAvatar
 }
-
-export interface DataError {
-  title: string[]
-  body: string[]
-  errorType: string
-  status: string
-}
-
-export interface Data {
-  error: DataError
-}
-
-export interface ErrorResponse {
-  data: Data
-}

@@ -8,9 +8,7 @@ import HomeOnelines from './HomeOnelines.vue'
 
 <template>
   <div class="p-5">
-    <h2 class="my-5 text-2xl font-bold">
-      제타위키
-    </h2>
+    <h2 class="my-5 text-2xl font-bold">제타위키</h2>
     <div class="my-5 grid gap-4 md:grid-cols-2">
       <section>
         <HomeAbout />
@@ -44,6 +42,7 @@ import HomeOnelines from './HomeOnelines.vue'
     </div>
   </div>
 </template>
+
 <style lang="scss" scoped>
 section {
   @apply p-4 border rounded-md bg-z-card;

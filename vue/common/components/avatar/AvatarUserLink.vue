@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import type { PropType } from 'vue'
-
 import type UserAvatar from '@common/types/userAvatar'
-
 import AvatarUser from './AvatarUser.vue'
 
 defineProps({

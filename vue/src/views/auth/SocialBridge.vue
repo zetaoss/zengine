@@ -10,28 +10,28 @@ import doLogin from './login'
 const route = useRoute()
 
 async function login() {
-  const username = route.query.username as string
-  const password = route.query.otp as string
-  const loginreturnurl = window.location.origin
+  const username = route.query.username as string;
+  const password = route.query.otp as string;
+  const loginreturnurl = window.location.origin;
 
   const result = await doLogin(username, password, loginreturnurl)
   if (result.status === 'PASS') {
-    const returnto = route.query.returnto as string
+    const returnto = route.query.returnto as string;
     if (returnto === undefined || returnto.length < 1) {
-      window.location.href = '/'
+      window.location.href = '/';
       return
     }
     if (returnto?.startsWith(`//${window.location.host}/`)) {
-      window.location.href = returnto
+      window.location.href = returnto;
       return
     }
-    window.location.href = `/wiki/${returnto.replace(/\+/g, ' ')}`
+    window.location.href = `/wiki/${returnto.replace(/\+/g, ' ')}`;
   }
-  console.error('doLogin error', result)
+  console.error('doLogin error', result);
 }
 
 onMounted(() => {
-  login()
+  login();
 })
 </script>
 

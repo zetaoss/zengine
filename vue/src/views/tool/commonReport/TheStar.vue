@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { defineProps } from 'vue';
-
-defineProps({ n: Number })
+defineProps<{ n?: number }>();
 </script>
+
 <template>
-  <span>{{ '★'.repeat(n + 1) }} {{ ['D', 'C', 'B', 'A', 'S'][n] }}</span>
+  <span>{{ '★'.repeat((n ?? 0) + 1) }} {{ ['D', 'C', 'B', 'A', 'S'][n ?? 0] }}</span>
 </template>

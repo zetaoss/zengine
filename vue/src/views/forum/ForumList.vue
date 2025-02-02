@@ -1,46 +1,46 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-
 import { useDateFormat } from '@vueuse/core'
 import { useRoute } from 'vue-router'
-
 import AvatarCore from '@common/components/avatar/AvatarCore.vue'
 import ThePagination from '@/components/pagination/ThePagination.vue'
 import type { PaginateData } from '@/components/pagination/types'
 import useAuthStore from '@/stores/auth'
 import http from '@/utils/http'
-
 import BoxPost from './box/BoxPost.vue'
 import type { Post } from './types'
 
 const auth = useAuthStore()
 const route = useRoute()
 
-const postID = ref(0)
-const posts = ref([] as Post[])
-const paginateData = ref({} as PaginateData)
-const page = ref(1)
+const postID = ref<number>(0)
+const posts = ref<Post[]>([])
+const paginateData = ref<PaginateData>({} as PaginateData)
+const page = ref<number>(1)
 
-async function fetchData() {
-  if (route.params.id) {
-    postID.value = Number(route.params.id as string)
+const fetchData = async () => {
+  postID.value = Number(route.params.id) || 0
+  if (postID.value > 0) {
     window.scrollTo(0, 80)
     return
   }
-  postID.value = 0
-  if (route.params.page) {
-    page.value = Number(route.params.page as string)
+
+  page.value = Number(route.params.page) || 1
+  try {
+    const { data } = await http.get(`/api/posts?page=${page.value}`)
+    paginateData.value = { ...data, path: '/forum/page' }
+    posts.value = data.data
+  } catch (error) {
+    console.error('failed to fetchData', error)
   }
-  const resp: any = await http.get(`/api/posts?page=${page.value}`)
-  paginateData.value = resp.data
-  paginateData.value.path = '/forum/page'
-  posts.value = resp.data.data
 }
 
-watch(() => route.params, fetchData)
-fetchData()
-</script>
+const formatDate = (date: string) => {
+  return useDateFormat(date, 'YY-MM-DD HH:mm').value
+}
 
+watch(() => [route.params.id, route.params.page], fetchData, { immediate: true })
+</script>
 <template>
   <div class="p-5">
     <h2 class="my-5 text-2xl font-bold">
@@ -88,7 +88,7 @@ fetchData()
               {{ p.userAvatar.name }}
             </span>
             <span class="w-auto md:w-[40%] md:text-center">
-              {{ useDateFormat(p.created_at, 'YY-MM-DD HH:mm').value }}
+              {{ formatDate(p.created_at) }}
             </span>
             <span class="w-auto md:w-[15%] md:text-center"><span class="md:hidden px-1">· 조회</span>
               {{ p.hit }}

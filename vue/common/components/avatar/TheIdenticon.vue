@@ -1,15 +1,22 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-
+import { onMounted, ref, nextTick } from 'vue'
 import { Md5 } from 'ts-md5'
 
 const props = defineProps({
   name: { type: String, required: true },
   size: { type: Number, required: true },
 })
-const el: any = ref(null)
 
-onMounted(() => {
+const el = ref<HTMLCanvasElement | null>(null)
+
+onMounted(async () => {
+  await nextTick()
+
+  if (!el.value) return
+
+  const ctx = el.value.getContext('2d')
+  if (!ctx) return
+
   const m = Md5.hashStr(`${props?.name}`)
   const p = m.match(/(.{1,2})/g)
   const q = p!.map((_, i) => (p![i][0] > '4' ? 1 : 0))
@@ -19,7 +26,7 @@ onMounted(() => {
   const g = '#0000'
   const a = [0, 0, 0, 0, 0]
   const b = a.map((__, i) => a.map((_, j) => q[i * 3 + j]))
-  const ctx = el.value.getContext('2d')
+
   ctx.scale(60, 30)
   b.forEach((c, i) => {
     c.forEach((_, j) => {
@@ -29,6 +36,7 @@ onMounted(() => {
   })
 })
 </script>
+
 <template>
   <canvas ref="el" class="w-full h-full p-[5%] bg-zinc-100" />
 </template>

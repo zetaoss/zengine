@@ -1,90 +1,52 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+const TheHome = () => import('@/views/home/TheHome.vue')
+const ForumList = () => import('@/views/forum/ForumList.vue')
+const ForumNew = () => import('@/views/forum/ForumNew.vue')
+const ForumEdit = () => import('@/views/forum/ForumEdit.vue')
+const TheTool = () => import('@/views/tool/TheTool.vue')
+const CommonReport = () => import('@/views/tool/commonReport/CommonReport.vue')
+const CommonReportDetail = () => import('@/views/tool/commonReport/CommonReportDetail.vue')
+const WriteRequest = () => import('@/views/tool/writeRequest/WriteRequest.vue')
+const LoginView = () => import('@/views/auth/LoginView.vue')
+const LogoutView = () => import('@/views/auth/LogoutView.vue')
+const SocialBridge = () => import('@/views/auth/SocialBridge.vue')
+const SocialJoin = () => import('@/views/auth/SocialJoin.vue')
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    {
-      path: '/',
-      component: () => import('@/views/home/TheHome.vue'),
-      meta: { tab: 'wiki' },
-    },
+    { path: '/', component: TheHome, meta: { tab: 'wiki' } },
     {
       path: '/forum',
-      component: () => import('@/views/forum/ForumList.vue'),
       meta: { tab: 'forum' },
-    },
-    {
-      path: '/forum/new',
-      component: () => import('@/views/forum/ForumNew.vue'),
-      meta: { tab: 'forum', requiresAuth: true },
-    },
-    {
-      path: '/forum/:id',
-      component: () => import('@/views/forum/ForumList.vue'),
-      meta: { tab: 'forum' },
-    },
-    {
-      path: '/forum/:id/edit',
-      component: () => import('@/views/forum/ForumEdit.vue'),
-      meta: { tab: 'forum', requiresAuth: true },
-    },
-    {
-      path: '/forum/page/:page',
-      component: () => import('@/views/forum/ForumList.vue'),
-      meta: { tab: 'forum' },
-    },
-    {
-      path: '/tool',
-      component: () => import('@/views/tool/TheTool.vue'),
-      meta: { tab: 'tool' },
       children: [
-        {
-          path: 'common-report',
-          component: () => import('@/views/tool/commonReport/CommonReport.vue'),
-          meta: { tab: 'tool' },
-        },
-        {
-          path: 'common-report/page/:page',
-          component: () => import('@/views/tool/commonReport/CommonReport.vue'),
-          meta: { tab: 'tool' },
-        },
-        {
-          path: 'common-report/:id',
-          component: () => import('@/views/tool/commonReport/CommonReportDetail.vue'),
-          meta: { tab: 'tool' },
-        },
-        {
-          path: 'write-request',
-          component: () => import('@/views/tool/writeRequest/WriteRequest.vue'),
-          meta: { tab: 'tool' },
-        },
-        {
-          path: 'write-request/page/:page',
-          component: () => import('@/views/tool/writeRequest/WriteRequest.vue'),
-          meta: { tab: 'tool' },
-        },
+        { path: '', component: ForumList },
+        { path: 'new', component: ForumNew, meta: { requiresAuth: true } },
+        { path: ':id', component: ForumList },
+        { path: ':id/edit', component: ForumEdit, meta: { requiresAuth: true } },
+        { path: 'page/:page', component: ForumList },
       ],
     },
     {
-      path: '/login',
-      component: () => import('@/views/auth/LoginView.vue'),
+      path: '/tool',
+      component: TheTool,
+      meta: { tab: 'tool' },
+      children: [
+        { path: 'common-report', component: CommonReport },
+        { path: 'common-report/page/:page', component: CommonReport },
+        { path: 'common-report/:id', component: CommonReportDetail },
+        { path: 'write-request', component: WriteRequest },
+        { path: 'write-request/page/:page', component: WriteRequest },
+      ],
     },
-    {
-      path: '/logout',
-      component: () => import('@/views/auth/LogoutView.vue'),
-    },
-    {
-      path: '/social-bridge',
-      component: () => import('@/views/auth/SocialBridge.vue'),
-    },
-    {
-      path: '/social-join/:code',
-      component: () => import('@/views/auth/SocialJoin.vue'),
-    },
-    {
-      path: '/wiki/:any', // dummy for wiki
-      component: () => null,
-    },
+    { path: '/login', component: LoginView },
+    { path: '/logout', component: LogoutView },
+    { path: '/social-bridge', component: SocialBridge },
+    { path: '/social-join/:code', component: SocialJoin },
+
+    // catch-all (dummy route for wiki)
+    { path: '/wiki/:any', component: () => null },
   ],
 })
 

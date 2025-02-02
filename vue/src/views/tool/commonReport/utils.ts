@@ -35,7 +35,7 @@ export function getWikitextTable(table: HTMLTableElement, id: number, url: strin
     rows.push(row)
     number = row.length
   }
-  // create text
+
   const dt = useDateFormat(createdAt, 'YYYY-MM-DD').value
   let text = `{| class='wikitable'
 |+ [${url} 통용 보고서 #${id} ( ${dt} )]

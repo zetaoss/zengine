@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import AvatarUserLink from '@common/components/avatar/AvatarUserLink.vue'
 import type UserAvatar from '@common/types/userAvatar'
 import http from '@/utils/http'
@@ -12,17 +12,21 @@ interface Row {
   message: string
 }
 
-const rows = ref([] as Row[])
+const rows = ref<Row[]>([])
 
-async function fetchData() {
-  const resp: any = await http.get('/api/onelines/recent')
-  resp.data.forEach(async (r: Row) => {
-    r.message = await linkify(r.message)
-    rows.value.push(r)
-  })
-}
-
-fetchData()
+onMounted(async () => {
+  try {
+    const { data } = await http.get('/api/onelines/recent')
+    rows.value = await Promise.all(
+      data.map(async (r: Row) => ({
+        ...r,
+        message: await linkify(r.message),
+      }))
+    )
+  } catch (error) {
+    console.error('Error fetching onelines:', error)
+  }
+})
 </script>
 
 <template>

@@ -19,8 +19,8 @@ const status = ref(Status.Unknown)
 let code = ''
 
 async function validateCode() {
-  const resp: any = await http.get(`/api/auth/social/check/${code}`)
-  if (!resp.data) {
+  const { data } = await http.get(`/api/auth/social/check/${code}`)
+  if (!data) {
     alert('invalid code')
     window.location.href = '/'
   }
@@ -31,7 +31,7 @@ function changed() {
 }
 
 async function checkUsername() {
-  const resp: any = await http.get('/w/api.php', {
+  const { data } = await http.get('/w/api.php', {
     params: {
       action: 'query',
       list: 'users',
@@ -44,7 +44,7 @@ async function checkUsername() {
       uselang: 'ko',
     },
   })
-  if (resp.data.query.users[0].cancreate) {
+  if (data.query.users[0].cancreate) {
     status.value = Status.Can
     return
   }
@@ -52,36 +52,32 @@ async function checkUsername() {
 }
 
 async function login() {
-  const resp: any = await http.get(`/api/auth/social/login/${code}`, {
-    params: {
-      username: username.value,
-    },
+  const { data } = await http.get(`/api/auth/social/login/${code}`, {
+    params: { username: username.value },
   })
-  if (resp.data.status !== 'success') {
-    alert('error on login')
-    window.location.href = '/'
-    return
+  if (data.status !== 'success') {
+    alert('error on login');
+    window.location.href = '/';
+    return;
   }
-  window.location.href = resp.data.data
+  window.location.href = data.data;
 }
 
 async function create() {
-  const resp: any = await http.get(`/w/rest.php/auth/${code}`, {
-    params: {
-      username: username.value,
-    },
+  const { data } = await http.get(`/w/rest.php/auth/${code}`, {
+    params: { username: username.value },
   })
-  if (resp.data.status !== 'success') {
-    alert('error on create')
-    window.location.href = '/'
-    return
+  if (data.status !== 'success') {
+    alert('error on create');
+    window.location.href = '/';
+    return;
   }
-  login()
+  login();
 }
 
 onMounted(() => {
-  code = route.params.code as string
-  validateCode()
+  code = route.params.code as string;
+  validateCode();
 })
 </script>
 

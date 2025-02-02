@@ -1,36 +1,38 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import http from '@/utils/http'
 
 interface Row {
   title: string
 }
 
-const rows1 = ref([] as Row[])
-const rows2 = ref([] as Row[])
+const rows1 = ref<Row[]>([])
+const rows2 = ref<Row[]>([])
 
-async function fetchRows(rcshow: string, rclimit: number) {
-  const resp: any = await http.get('/w/api.php', {
+async function fetchRows(rcshow: string, rclimit: number): Promise<Row[]> {
+  const { data } = await http.get('/w/api.php', {
     params: {
       format: 'json',
       action: 'query',
       list: 'recentchanges',
       rcprop: 'title',
-      rcnamespace: '0',
+      rcnamespace: 0,
       rctype: 'new',
       rcshow,
-      rclimit: rclimit.toString(),
+      rclimit,
     },
   })
-  return resp.data.query.recentchanges
+  return data.query.recentchanges
 }
 
-async function fetchData() {
-  rows1.value = await fetchRows('!bot|!anon', 21)
-  rows2.value = await fetchRows('!bot|anon', 4)
-}
-
-fetchData()
+onMounted(async () => {
+  const [res1, res2] = await Promise.all([
+    fetchRows('!bot|!anon', 21),
+    fetchRows('!bot|anon', 4)
+  ])
+  rows1.value = res1
+  rows2.value = res2
+})
 </script>
 
 <template>

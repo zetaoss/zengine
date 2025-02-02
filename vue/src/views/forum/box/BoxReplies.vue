@@ -111,13 +111,15 @@ fetchData()
         <div class="z-10 absolute right-0 bg-white divide-y divide-gray-100 rounded shadow dark:bg-gray-700">
           <ul class="list-none p-0 text-xs text-gray-700 dark:text-gray-200">
             <li>
-              <button type="button" class="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+              <button type="button"
+                class="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
                 @click="edit(reply)">
                 수정
               </button>
             </li>
             <li>
-              <button type="button" class="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+              <button type="button"
+                class="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
                 @click="del(reply)">
                 삭제
               </button>
