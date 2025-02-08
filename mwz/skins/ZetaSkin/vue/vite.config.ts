@@ -9,6 +9,12 @@ export default defineConfig({
   build: {
     emptyOutDir: true,
     outDir: '../resources/dist',
+    minify: 'terser',
+    terserOptions: {
+      mangle: {
+        reserved: ['$', 've'] // Prevent conflict with MediaWiki (jQuery, VisualEditor)
+      },
+    },
     rollupOptions: {
       output: {
         compact: true,
