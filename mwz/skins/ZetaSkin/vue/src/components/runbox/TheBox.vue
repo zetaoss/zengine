@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { inject } from 'vue'
 
-import BoxFront from './BoxFront.vue'
+import BoxFront from './front/BoxFront.vue'
 import BoxLang from './BoxLang.vue'
 import BoxNotebook from './BoxNotebook.vue'
 import BoxZero from './BoxZero.vue'
