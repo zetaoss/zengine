@@ -2,20 +2,23 @@ import { fileURLToPath, URL } from 'node:url'
 
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import laravel from 'laravel-vite-plugin'
 
 // https://vite.dev/config/
 export default defineConfig({
   build: {
-    emptyOutDir: true,
     outDir: '../resources/dist',
+    emptyOutDir: true,
     minify: 'terser',
     terserOptions: {
+      compress: {
+        passes: 1,
+      },
       mangle: {
         reserved: ['$', 've'] // Prevent conflict with MediaWiki (jQuery, VisualEditor)
       },
     },
     rollupOptions: {
+      input: 'src/app.ts',
       output: {
         compact: true,
         entryFileNames: '[name].js',
@@ -25,12 +28,6 @@ export default defineConfig({
   },
   plugins: [
     vue(),
-    laravel({
-      input: [
-        'src/app.ts',
-      ],
-      refresh: true,
-    }),
   ],
   resolve: {
     alias: {
