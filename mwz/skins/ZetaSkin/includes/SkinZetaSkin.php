@@ -13,14 +13,8 @@ class SkinZetaSkin extends SkinBlade
     public static function onBeforePageDisplay($out, $skin)
     {
         $out->addHTMLClasses($_COOKIE['theme'] ?? '');
-        if (getenv('APP_ENV') == 'dev') {
-            $hash = crc32(rand());
-            $out->addHeadItem('css', "<link href='/w/skins/ZetaSkin/resources/dist/app.css?$hash' rel='stylesheet' />");
-            $out->addScript("<script src='/w/skins/ZetaSkin/resources/dist/app.js?$hash'></script><script type='module' src='/@vite/client'></script>");
-        } else {
-            $out->addHeadItem('css', '<link href="/w/skins/ZetaSkin/resources/dist/app.css" rel="stylesheet" />');
-            $out->addScript('<script src="/w/skins/ZetaSkin/resources/dist/app.js"></script>');
-        }
+        $out->addHeadItem('css', '<link href="/w/skins/ZetaSkin/resources/dist/app.css" rel="stylesheet" />');
+        $out->addScript('<script src="/w/skins/ZetaSkin/resources/dist/app.js"></script>');
     }
 
     public static function onMakeGlobalVariablesScript(array &$vars, $out)

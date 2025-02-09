@@ -8,19 +8,6 @@ export default defineConfig({
   build: {
     outDir: '../resources/dist',
     emptyOutDir: true,
-    // <terser>
-    // Prevent conflict with MediaWiki (jQuery, VisualEditor)
-    // https://github.com/evanw/esbuild/issues/2338
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        passes: 1,
-      },
-      mangle: {
-        reserved: ['$', 've']
-      },
-    },
-    // </terser>
     rollupOptions: {
       input: 'src/app.ts',
       output: {
@@ -32,6 +19,23 @@ export default defineConfig({
   },
   plugins: [
     vue(),
+    // <replace>
+    // Prevent conflict with MediaWiki (jQuery, VisualEditor)
+    // https://github.com/evanw/esbuild/issues/2338
+    // Faster but unstable replace plugin for development ⚠️ Use only in dev.
+    {
+      name: 'replace',
+      apply: 'build',
+      generateBundle(_, bundle) {
+        for (const [file, chunk] of Object.entries(bundle)) {
+          if ('code' in chunk) { // js file only
+            console.log(`Processing JS file: ${file}`);
+            chunk.code = chunk.code.replace(/\bve\b/g, '___ve'); // ve → ___ve
+          }
+        }
+      },
+    },
+    // </replace>
   ],
   resolve: {
     alias: {
