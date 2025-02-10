@@ -1,70 +1,109 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import ArgFunction from './ArgFunction.vue'
-import ArgObject from './ArgObject.vue';
 
 const props = defineProps<{
+  k?: string | number | null;
   arg: unknown
   depth: number
-  expand: boolean
-  summary: boolean
+  summary?: boolean
 }>();
 
-interface Display {
-  type: string
-  arg: unknown
-}
+const typ = ref('')
+const text = ref('')
+const expandable = ref(false);
+const len = ref(0);
+const expanded = ref(false);
+const obj = ref({});
 
-const d = ref<Display>({ type: '', arg: '' })
-
-function parse(arg: unknown): Display {
-  if (typeof arg === 'function') {
-    return { type: 'function', arg: arg };
-  }
-  if (typeof arg === 'number') {
-    return { type: 'number', arg: arg };
-  }
+function inspect(arg: unknown) {
+  typ.value = typeof arg
   if (typeof arg === 'object') {
-    return { type: 'object', arg: arg }
+    if (arg === null) {
+      typ.value = 'null'
+      text.value = 'null'
+      return
+    }
+    obj.value = arg
+    len.value = Object.keys(arg).length
+    if (Array.isArray(arg)) {
+      typ.value = 'array'
+    }
+    if (!props.summary) {
+      expandable.value = true
+    }
+    return
   }
   if (typeof arg === 'string') {
-    if (props.depth == 0) return { type: 'raw', arg: arg }
-    else return { type: 'string', arg: `'${arg}'` }
+    typ.value = 'string'
+    text.value = arg
+    return
   }
   if (typeof arg === 'symbol') {
-    return { type: 'symbol', arg: arg.toString() };
+    typ.value = 'symbol'
+    text.value = arg.toString()
+    return
   }
-  return { type: 'unknown', arg: `(${typeof arg})${arg}` }
+  if (typeof arg === 'number') {
+    typ.value = 'number'
+    text.value = arg.toString()
+    return
+  }
+  text.value = `${arg}`
 }
 
 onMounted(() => {
-  d.value = parse(props.arg)
-})
+  inspect(props.arg);
+});
 </script>
 
 <template>
-  <span :class="d.type">
-    <template v-if="d.type == 'function'">
-      <ArgFunction :arg="d.arg" />
-    </template>
-    <template v-else-if="d.type == 'object'">
-      <ArgObject :arg="d.arg" :depth="depth" :expand="expand" :summary="summary" />
-    </template>
-    <template v-else>
-      <span :class="d.type">{{ d.arg }}</span>
-    </template>
+  <span class="console-arg" :class="{ 'expand-toggle': expandable }" @click="expanded = !expanded">
+    <span v-if="expandable">
+      <span v-text="expanded ? '▼ ' : '▶ '" />
+      <span v-if="expandable">({{ len }})&nbsp;</span>
+    </span>
+    <span v-if="k !== undefined" class="key text-blue-400">{{ k }}:&nbsp;</span>
+    <span :class="typ">
+      <template v-if="typ === 'array'">
+        <template v-if="summary">
+          ({{ len }}) Array
+        </template>
+        <template v-else>
+          <span>[</span>
+          <span v-for="(v, k) in obj" :key="k">
+            <ConsoleArg :arg="v" :depth="depth + 1" :summary="true" />
+            <span v-if="k !== len - 1">, </span>
+          </span>
+          <span>]</span>
+        </template>
+      </template>
+      <template v-else-if="typ === 'object'">object</template>
+      <template v-else>{{ text }}</template>
+    </span>
   </span>
+  <div v-if="expandable && expanded" class="children">
+    <div v-for="(v, k) in obj" :key="k" :style="{ paddingLeft: `${depth * 2}rem` }">
+      <ConsoleArg :k="k" :arg="v" :depth="depth + 1" />
+    </div>
+  </div>
 </template>
 
 <style scoped lang="scss">
-.dict,
-.list,
-.function {
-  @apply italic;
+.expand-toggle {
+  cursor: pointer;
+  @apply pr-2;
 }
 
-.element {
-  @apply text-indigo-500 dark:text-indigo-300;
+.children {
+  @apply mt-1;
+}
+
+.key {
+  @apply text-blue-400;
+}
+
+.function {
+  @apply italic;
 }
 
 .number,
@@ -77,7 +116,7 @@ onMounted(() => {
   @apply text-sky-500 dark:text-sky-300;
 }
 
-.neutral,
+.null,
 .undefined {
   @apply text-neutral-400 dark:text-neutral-500;
 }
