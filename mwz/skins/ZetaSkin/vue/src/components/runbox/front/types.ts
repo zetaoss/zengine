@@ -1,4 +1,4 @@
 export interface Line {
-  sev: string
+  level: string
   args: unknown[]
 }

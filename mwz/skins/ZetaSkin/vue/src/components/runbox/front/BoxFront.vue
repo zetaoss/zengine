@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import type { Job } from '../types'
-import type { Line0 } from './types'
+import type { Line } from './types'
 import ConsoleArg from './ConsoleArg.vue'
 import TheIcon from '@common/components/TheIcon.vue'
 import { mdiAlert, mdiCloseCircle } from '@mdi/js'
@@ -18,7 +18,7 @@ const props = defineProps<{
 }>()
 const { job, seq } = props
 const iframe = ref<HTMLIFrameElement | null>(null)
-const lines = ref<Line0[]>([])
+const lines = ref<Line[]>([])
 
 onMounted(() => {
   if (!iframe.value) return
@@ -27,8 +27,8 @@ onMounted(() => {
   win.console = new Proxy(console, {
     get(_, prop) {
       return (...args: unknown[]) => {
-        const sev = prop as string
-        lines.value.push({ sev, args })
+        const level = prop as string
+        lines.value.push({ level, args })
       }
     }
   })
@@ -43,22 +43,21 @@ onMounted(() => {
     <slot />
   </div>
   <div v-if='seq === job.main' class="border">
-    <iframe ref="iframe" class="w-full border bg-white" :class="{ hidden: !job.boxes.some(b => b.lang === 'html') }"
-      title="" />
+    <iframe ref="iframe" class="w-full border bg-white" :class="{ hidden: !job.boxes.some(b => b.lang === 'html') }" />
     <div v-if="lines.length > 0" class="border font-mono text-sm p-2 pb-5">
-      <div v-for="(line, i) in lines" :key="i" class="line" :class="line.sev">
+      <div v-for="(line, i) in lines" :key="i" class="line" :class="line.level">
         <span class="text-center">
-          <template v-if="line.sev == 'warn'">
+          <template v-if="line.level == 'warn'">
             <TheIcon :path="mdiAlert" :size="13" />
           </template>
-          <template v-else-if="line.sev == 'error'">
+          <template v-else-if="line.level == 'error'">
             <TheIcon :path="mdiCloseCircle" :size="13" />
           </template>
         </span>
         <span>
           <span v-for="(arg, i) in line.args" :key="i">
             <span v-if="i != 0">&nbsp;</span>
-            <ConsoleArg :arg="arg" :depth="0" :expand="false" :summary="false" />
+            <ConsoleArg :arg="arg" :depth="1" :expand="false" :expandable="true" />
           </span>
         </span>
       </div>

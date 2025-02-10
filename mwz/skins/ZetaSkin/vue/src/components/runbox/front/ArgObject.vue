@@ -6,10 +6,10 @@ import ConsoleArg from './ConsoleArg.vue'
 const props = defineProps<{
   arg: unknown
   depth: number
-  summary: boolean
+  expandable: boolean
 }>();
 
-const kind = ref('')
+const subtype = ref('')
 const text = ref('')
 const entries = ref<[string, unknown][]>([])
 const expand = ref(false)
@@ -19,21 +19,21 @@ watchEffect(() => {
 
   if (typeof a === 'object') {
     if (a === null) {
-      kind.value = 'null'
+      subtype.value = 'null'
       text.value = 'null'
       return
     }
     if (Array.isArray(a)) {
-      kind.value = 'array'
+      subtype.value = 'array'
       return
     }
     const name = a.constructor.name || (Symbol.toStringTag in a ? 'console' : '');
     if (name !== 'Object') {
-      kind.value = 'global'
+      subtype.value = 'global'
       text.value = name + ' global{}'
       return
     }
-    kind.value = 'plain'
+    subtype.value = 'plain'
     text.value = '{}'
     entries.value = Object.entries(a)
   }
@@ -41,17 +41,17 @@ watchEffect(() => {
 </script>
 
 <template>
-  <template v-if="kind == 'array'">
-    <ArgObjectArray :arg="arg" :depth="depth" :expand="false" :summary="summary" />
+  <template v-if="subtype == 'array'">
+    <ArgObjectArray :arg="arg" :depth="depth" :expand="false" :expandable="expandable" />
   </template>
-  <template v-else-if="kind === 'plain'">
+  <template v-else-if="subtype === 'plain'">
     <span class="bg-blue-500" @click="expand = !expand">
       {{ depth }}
       <template v-if="expand">
         <template v-for="[key, value] in entries" :key="key">
           <span class="object-key">{{ key }}:</span>
           <span class="object-value">
-            <ConsoleArg :arg="value" :depth="depth + 1" :expand="false" :summary="true" />
+            <ConsoleArg :arg="value" :depth="depth + 1" :expand="false" :expandable="false" />
           </span>
         </template>
       </template>
@@ -61,7 +61,7 @@ watchEffect(() => {
     </span>
   </template>
   <template v-else>
-    <span :class="kind">{{ text }}</span>
+    <span :class="subtype">{{ text }}</span>
   </template>
 </template>
 
