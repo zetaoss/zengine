@@ -91,7 +91,7 @@ onMounted(() => {
       </span>
     </span>
     <div v-if="expandable && expanded" class="children">
-      <div v-for="(v, k) in obj" :key="k" :style="{ paddingLeft: `${0.5 * depth + 0.5}rem` }">
+      <div v-for="(v, k) in obj" :key="k" :style="{ paddingLeft: `${0.2 * depth + 0.5}rem` }">
         <ConsoleArg :k="k" :arg="v" :depth="depth + 1" />
       </div>
     </div>
