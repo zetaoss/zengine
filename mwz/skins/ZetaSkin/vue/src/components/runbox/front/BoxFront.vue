@@ -67,7 +67,7 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .line {
-  @apply m-0.5 grid grid-cols-[30px_1fr] rounded;
+  @apply m-0.5 grid grid-cols-[30px_1fr] rounded border-b;
 }
 
 .warn {
