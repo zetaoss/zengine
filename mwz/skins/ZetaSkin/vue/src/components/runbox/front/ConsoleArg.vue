@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import TheToggle from './TheToggle.vue';
+import ArgFunction from './ArgFunction.vue';
 
 const props = defineProps<{
   k?: string | number | null;
@@ -18,6 +19,12 @@ const obj = ref({});
 
 function inspect(arg: unknown) {
   typ.value = typeof arg
+  if (typeof arg === 'function') {
+    typ.value = 'function'
+    text.value = 'function'
+    expandable.value = false
+    return
+  }
   if (typeof arg === 'object') {
     if (arg === null) {
       typ.value = 'null'
@@ -71,13 +78,13 @@ onMounted(() => {
           <TheToggle :isOpen="expanded" />
         </span>
       </span>
-      <span v-if="depth < 2 || (expandable && !expanded)">({{ len }})&nbsp;</span>
       <span :class="typ">
         <template v-if="typ === 'array'">
           <template v-if="depth > 1 && (summary || expanded)">
             <span>Array({{ len }})</span>
           </template>
           <template v-else>
+            <span v-if="expandable">({{ len }})&nbsp;</span>
             <span>[</span>
             <span v-for="(v, k) in obj" :key="k">
               <ConsoleArg :arg="v" :depth="depth + 1" :summary="true" />
@@ -85,6 +92,9 @@ onMounted(() => {
             </span>
             <span>]</span>
           </template>
+        </template>
+        <template v-else-if="typ === 'function'">
+          <ArgFunction :arg="arg" />
         </template>
         <template v-else-if="typ === 'object'">object</template>
         <template v-else>{{ text }}</template>
