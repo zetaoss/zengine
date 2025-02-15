@@ -3,6 +3,7 @@ import { ref, watchEffect } from 'vue'
 
 const props = defineProps<{
   arg: unknown
+  minify: number
 }>()
 
 const arrow = ref(false)
@@ -17,8 +18,16 @@ watchEffect(() => {
 </script>
 
 <template>
-  <span v-if="text">
-    <span v-if="!arrow" class="text-orange-400 dark:text-orange-400">ƒ&nbsp;</span>
-    <span>{{ text }}</span>
-  </span>
+  <template v-if="minify == 0">
+    <span v-if="text">
+      <span v-if="!arrow" class="text-orange-400 dark:text-orange-400">ƒ&nbsp;</span>
+      <span>{{ text }}</span>
+    </span>
+  </template>
+  <template v-else-if="minify == 1">
+    <span>ƒ ...</span>
+  </template>
+  <template v-if="minify == 2">
+    <span>ƒ</span>
+  </template>
 </template>
