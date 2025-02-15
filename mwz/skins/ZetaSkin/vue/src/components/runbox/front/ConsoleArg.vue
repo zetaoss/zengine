@@ -6,9 +6,9 @@ import ListEntries from './ListEntries.vue';
 import TheToggle from './TheToggle.vue';
 
 const props = defineProps<{
-  k?: string | number | null;
+  id?: string | number | null;
   arg: unknown
-  depth?: number
+  depth: number
   minify: number
   expandable: boolean
 }>();
@@ -73,11 +73,11 @@ onMounted(() => {
 <template>
   <span class="inline-block">
     <span :class="{ 'cursor-pointer': entries && expandable }" @click="expanded = expandable ? !expanded : expanded">
-      <span v-if="k || k === 0">
+      <span v-if="id || id === 0">
         <span>
           <TheToggle :isOpen="expanded" :class="{ invisible: !expandable || !entries }" />
         </span>
-        <span class="key text-blue-400">{{ k }}:&nbsp;</span>
+        <span class="text-blue-400">{{ id }}:&nbsp;</span>
       </span>
       <span v-else>
         <span v-if="!minify && entries">
@@ -86,7 +86,8 @@ onMounted(() => {
       </span>
       <span :class="typ">
         <template v-if="entries">
-          <ArgEntries :typ="typ" :entries="entries" :contructor="contructor" :minify="minify" />
+          <ArgEntries :typ="typ" :entries="entries" :depth="depth" :contructor="contructor" :minify="minify"
+            :expanded="expanded" />
         </template>
         <template v-else-if="typ === 'function'">
           <ArgFunction :arg="arg" :minify="minify" />
@@ -97,8 +98,7 @@ onMounted(() => {
       </span>
     </span>
     <div v-if="entries && expanded">
-      <ListEntries :typ="typ" :entries="entries" :depth="depth ?? 0" :minify="minify" :expanded="expanded"
-        :expandable="true" />
+      <ListEntries :typ="typ" :entries="entries" :depth="depth" :minify="minify" :expanded="expanded" />
     </div>
   </span>
 </template>
@@ -106,10 +106,6 @@ onMounted(() => {
 <style scoped lang="scss">
 .children {
   @apply mt-1;
-}
-
-.key {
-  @apply text-blue-400;
 }
 
 .function {

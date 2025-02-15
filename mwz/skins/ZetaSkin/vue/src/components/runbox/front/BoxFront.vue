@@ -57,7 +57,7 @@ onMounted(() => {
         <span>
           <span v-for="(arg, i) in line.args" :key="i">
             <span v-if="i != 0">&nbsp;</span>
-            <ConsoleArg :arg="arg" :depth="1" :expandable="true" :minify="0" />
+            <ConsoleArg :arg="arg" :depth="0" :expandable="true" :minify="0" />
           </span>
         </span>
       </div>
