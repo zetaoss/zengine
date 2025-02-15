@@ -1,28 +1,28 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import TheToggle from './TheToggle.vue';
+import ArgEntries from './ArgEntries.vue';
 import ArgFunction from './ArgFunction.vue';
+import ListEntries from './ListEntries.vue';
+import TheToggle from './TheToggle.vue';
 
 const props = defineProps<{
   k?: string | number | null;
   arg: unknown
-  depth: number
-  summary?: boolean
+  depth?: number
+  minify: number
+  expandable: boolean
 }>();
 
 const typ = ref('')
 const text = ref('')
-const expandable = ref(false);
-const len = ref(0);
 const expanded = ref(false);
-const obj = ref({});
+const entries = ref<[string | number, unknown][] | null>(null);
+const contructor = ref('');
 
 function inspect(arg: unknown) {
   typ.value = typeof arg
   if (typeof arg === 'function') {
     typ.value = 'function'
-    text.value = 'function'
-    expandable.value = false
     return
   }
   if (typeof arg === 'object') {
@@ -31,31 +31,37 @@ function inspect(arg: unknown) {
       text.value = 'null'
       return
     }
-    obj.value = arg
-    len.value = Object.keys(arg).length
     if (Array.isArray(arg)) {
-      typ.value = 'array'
+      typ.value = 'Array'
+      entries.value = arg.map((value, index) => [index, value])
+      return
     }
-    if (!props.summary) {
-      expandable.value = true
+    contructor.value = arg.constructor.name
+    if (arg instanceof Map) {
+      typ.value = 'Map'
+      entries.value = [...arg.entries()]
+      return
     }
-    return
+    if (arg instanceof Set) {
+      typ.value = 'Set'
+      entries.value = [...arg].map((value, index) => [index, value])
+      return
+    }
+    if (Object.keys(arg).length > 0) {
+      typ.value = 'Object'
+      entries.value = Object.entries(arg)
+      return
+    }
   }
   if (typeof arg === 'string') {
-    typ.value = 'string'
-    text.value = arg
+    text.value = `'${arg}'`
     return
   }
   if (typeof arg === 'symbol') {
-    typ.value = 'symbol'
     text.value = arg.toString()
     return
   }
-  if (typeof arg === 'number') {
-    typ.value = 'number'
-    text.value = arg.toString()
-    return
-  }
+  // number, object, string
   text.value = `${arg}`
 }
 
@@ -65,55 +71,39 @@ onMounted(() => {
 </script>
 
 <template>
-  <span class="inline-block align-top">
-    <span class="console-arg" :class="{ 'expand-toggle': expandable }" @click="expanded = !expanded">
-      <span v-if="k !== undefined">
+  <span class="inline-block">
+    <span :class="{ 'cursor-pointer': entries && expandable }" @click="expanded = expandable ? !expanded : expanded">
+      <span v-if="k || k === 0">
         <span>
-          <TheToggle :isOpen="expanded" :class="{ invisible: !expandable }" />
+          <TheToggle :isOpen="expanded" :class="{ invisible: !expandable || !entries }" />
         </span>
         <span class="key text-blue-400">{{ k }}:&nbsp;</span>
       </span>
       <span v-else>
-        <span v-if="expandable">
+        <span v-if="!minify && entries">
           <TheToggle :isOpen="expanded" />
         </span>
       </span>
       <span :class="typ">
-        <template v-if="typ === 'array'">
-          <template v-if="depth > 1 && (summary || expanded)">
-            <span>Array({{ len }})</span>
-          </template>
-          <template v-else>
-            <span v-if="expandable">({{ len }})&nbsp;</span>
-            <span>[</span>
-            <span v-for="(v, k) in obj" :key="k">
-              <ConsoleArg :arg="v" :depth="depth + 1" :summary="true" />
-              <span v-if="k !== len - 1">, </span>
-            </span>
-            <span>]</span>
-          </template>
+        <template v-if="entries">
+          <ArgEntries :typ="typ" :entries="entries" :contructor="contructor" :minify="minify" />
         </template>
         <template v-else-if="typ === 'function'">
-          <ArgFunction :arg="arg" />
+          <ArgFunction :arg="arg" :minify="minify" />
         </template>
-        <template v-else-if="typ === 'object'">object</template>
-        <template v-else>{{ text }}</template>
+        <template v-else>
+          <span>{{ text }}</span>
+        </template>
       </span>
     </span>
-    <div v-if="expandable && expanded" class="children">
-      <div v-for="(v, k) in obj" :key="k" :style="{ paddingLeft: `${0.2 * depth + 0.5}rem` }">
-        <ConsoleArg :k="k" :arg="v" :depth="depth + 1" />
-      </div>
+    <div v-if="entries && expanded">
+      <ListEntries :typ="typ" :entries="entries" :depth="depth ?? 0" :minify="minify" :expanded="expanded"
+        :expandable="true" />
     </div>
   </span>
 </template>
 
 <style scoped lang="scss">
-.expand-toggle {
-  cursor: pointer;
-  @apply pr-2;
-}
-
 .children {
   @apply mt-1;
 }
