@@ -6,9 +6,9 @@ import LayoutRemocon from '@common/components/LayoutRemocon.vue'
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col">
+  <div class="h-full min-h-screen flex flex-col">
     <NavbarMain />
-    <div class="max-w-8xl mx-auto w-full grow shrink">
+    <div class="flex-grow w-full max-w-8xl mx-auto">
       <RouterView />
     </div>
     <LayoutFoot />

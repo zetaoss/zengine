@@ -1,68 +1,57 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
-import { QSplitter } from 'quasar';
-import Card from '@common/components/ui/UICard.vue';
-import CardContent from '@common/components/ui/UICardContent.vue';
-import Button from '@common/components/ui/UIButton.vue';
+import { ref, onMounted, watch, nextTick } from 'vue';
+import TheSplit from '@/components/TheSplit.vue';
+
 const htmlCode = ref('<h1>Hello, World!</h1>');
-const jsCode = ref('console.log("Hello from JS");');
+const jsCode = ref('console.log(new Date());');
 const iframeRef = ref<HTMLIFrameElement | null>(null);
 const logs = ref<{ type: string; message: unknown[] }[]>([]);
+const consoleContainer = ref<HTMLElement | null>(null);
 
-const splitterModel1 = ref(50);
-const splitterModel2 = ref(50);
-const splitterModel3 = ref(70);
+const generateIframeContent = () => {
+  const sanitizedHtml = htmlCode.value.trim();
+  const wrappedHtml = sanitizedHtml.startsWith('<html>') ? sanitizedHtml : `<html><body>${sanitizedHtml}</body></html>`;
+
+  return `
+    ${wrappedHtml}
+    <script>
+      window.addEventListener('message', (event) => {
+        if (event.source !== window.parent) return;
+        const { type, message } = event.data;
+        window.parent.postMessage({ type, message }, '*');
+      });
+
+      window.console = new Proxy(console, {
+        get(target, prop) {
+          return (...args) => {
+            if (typeof prop === 'string' && ['log', 'error', 'warn'].includes(prop)) {
+              window.parent.postMessage({ type: prop, message: args.map(arg => arg?.toString?.() || arg) }, '*');
+            }
+            return target[prop](...args);
+          };
+        }
+      });
+
+      window.addEventListener('error', (event) => {
+        event.preventDefault();
+        window.parent.postMessage({
+          type: 'error',
+          message: [\`Syntax Error: \${event.message} at \${event.filename}:\${event.lineno}:\${event.colno}\`]
+        }, '*');
+      });
+
+      try {
+        ${jsCode.value}
+      } catch (e) {
+        console.error(e);
+      }
+    <\/script>
+  `;
+};
 
 const updateIframe = () => {
   if (iframeRef.value) {
-    const iframe = iframeRef.value;
-    const doc = iframe.contentDocument || iframe.contentWindow?.document;
-    if (doc) {
-      doc.open();
-      doc.write(`
-        <html>
-          <head>
-            <script>
-              window.addEventListener('message', (event) => {
-                if (event.source !== window.parent) return;
-                const { type, message } = event.data;
-                window.parent.postMessage({ type, message }, '*');
-              });
-
-              window.console = new Proxy({}, {
-                get(_, prop) {
-                  return (...args) => {
-                    if (typeof prop === 'string' && ['log', 'error', 'warn'].includes(prop)) {
-                      parent.postMessage({ type: prop, message: args.map(arg => arg && arg.toString ? arg.toString() : arg) }, '*');
-                    }
-                  };
-                }
-              });
-
-              window.addEventListener('error', (event) => {
-                event.preventDefault();
-                parent.postMessage({ type: 'error', message: [\`Syntax Error: \${ event.message } at \${ event.filename }: \${ event.lineno }: \${ event.colno }\`] }, '*');
-              });
-            <\/script>
-</head>
-
-<body>
-            ${htmlCode.value}
-            <script>
-              setTimeout(() => {
-                try {
-                  ${jsCode.value}
-                } catch (e) {
-                  console.error(e);
-                }
-              }, 10);
-            <\/script>
-          </body>
-
-</html>
-`);
-      doc.close();
-    }
+    iframeRef.value.srcdoc = generateIframeContent();
   }
 };
 
@@ -71,6 +60,16 @@ const handleConsoleMessages = (event: MessageEvent) => {
     logs.value.push({ type: event.data.type, message: event.data.message });
   }
 };
+
+watch(logs, async () => {
+  await nextTick();
+  if (consoleContainer.value) {
+    consoleContainer.value.scrollTo({
+      top: consoleContainer.value.scrollHeight,
+      behavior: 'smooth',
+    });
+  }
+}, { deep: true, flush: 'post' });
 
 onMounted(() => {
   window.addEventListener('message', handleConsoleMessages);
@@ -81,51 +80,104 @@ watch([htmlCode, jsCode], updateIframe);
 </script>
 
 <template>
-  <QSplitter v-model="splitterModel1" class="h-screen">
-    <template v-slot:before>
-      <QSplitter v-model="splitterModel2" vertical>
-        <template v-slot:before>
-          <div class="p-2">
-            <h2 class='text-xl mb-2'>HTML</h2>
-            <textarea v-model='htmlCode' class='w-full h-32 p-2 border rounded'></textarea>
-          </div>
+  <div class="w-full h-full flex flex-col">
+    <div>aaaa</div>
+    <div class="flex-grow">
+      <TheSplit direction="vertical" :initialPercentage="50">
+        <template #first>
+          <TheSplit direction="horizontal" :initialPercentage="50">
+            <template #first>
+              <div class="section">
+                <span>HTML</span>
+                <textarea v-model="htmlCode" class="editor"></textarea>
+              </div>
+            </template>
+
+            <template #second>
+              <div class="section">
+                <span>JavaScript</span>
+                <textarea v-model="jsCode" class="editor"></textarea>
+              </div>
+            </template>
+          </TheSplit>
         </template>
-        <template v-slot:after>
-          <div class="p-2">
-            <h2 class='text-xl mb-2'>JavaScript</h2>
-            <textarea v-model='jsCode' class='w-full h-32 p-2 border rounded'></textarea>
-            <Button class='mt-4' @click='updateIframe'>Run</Button>
-          </div>
-        </template>
-      </QSplitter>
-    </template>
-    <template v-slot:after>
-      <QSplitter v-model="splitterModel3" vertical>
-        <template v-slot:before>
-          <div class="p-2">
-            <h2 class='text-xl mb-2'>Preview</h2>
-            <Card>
-              <CardContent>
-                <iframe ref='iframeRef' class='w-full h-64 border rounded'
-                  sandbox="allow-scripts allow-same-origin"></iframe>
-              </CardContent>
-            </Card>
-          </div>
-        </template>
-        <template v-slot:after>
-          <div class="p-2">
-            <h2 class='text-xl mb-2'>Console Output</h2>
-            <Card>
-              <CardContent class='h-32 overflow-auto p-2 bg-black text-white'>
-                <div v-for='(log, index) in logs' :key='index'
-                  :class="{ 'text-red-500': log.type === 'error', 'text-yellow-500': log.type === 'warn' }">
-                  [{{ log.type.toUpperCase() }}] {{ log.message.join(' ') }}
+
+        <template #second>
+          <TheSplit direction="horizontal" :initialPercentage="55"> <!-- 위/아래 분할 -->
+            <template #first>
+              <div class="section">
+                <span>Preview</span>
+                <div class="preview-container">
+                  <iframe ref="iframeRef" class="iframe" sandbox="allow-scripts"></iframe>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </template>
+
+            <template #second>
+              <div class="section">
+                <span>Console</span>
+                <div class="console-container" ref="consoleContainer">
+                  <div v-for="(log, index) in logs" :key="index"
+                    :class="{ 'text-red-500': log.type === 'error', 'text-yellow-500': log.type === 'warn' }">
+                    [{{ log.type.toUpperCase() }}] {{ log.message.join(' ') }}
+                  </div>
+                </div>
+              </div>
+            </template>
+          </TheSplit>
         </template>
-      </QSplitter>
-    </template>
-  </QSplitter>
+      </TheSplit>
+    </div>
+  </div>
 </template>
+
+<style scoped>
+.frontbox {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.section {
+  padding: 1rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor {
+  width: 100%;
+  height: 100%;
+  padding: 0.5rem;
+  font-family: monospace;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  resize: none;
+}
+
+.preview-container {
+  width: 100%;
+  height: 100%;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.console-container {
+  width: 100%;
+  height: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  overflow-y: auto;
+  background-color: #f5f5f5;
+  font-family: monospace;
+}
+</style>
