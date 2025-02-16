@@ -22,12 +22,11 @@ const generateIframeContent = () => {
       });
 
       window.console = new Proxy(console, {
-        get(target, prop) {
+        get(_, prop) {
           return (...args) => {
             if (typeof prop === 'string' && ['log', 'error', 'warn'].includes(prop)) {
               window.parent.postMessage({ type: prop, message: args.map(arg => arg?.toString?.() || arg) }, '*');
             }
-            return target[prop](...args);
           };
         }
       });
@@ -36,7 +35,7 @@ const generateIframeContent = () => {
         event.preventDefault();
         window.parent.postMessage({
           type: 'error',
-          message: [\`Syntax Error: \${event.message} at \${event.filename}:\${event.lineno}:\${event.colno}\`]
+          message: [\`Syntax Error: \${ event.message } at \${ event.filename }:\${ event.lineno }:\${ event.colno }\`]
         }, '*');
       });
 
@@ -56,19 +55,14 @@ const updateIframe = () => {
 };
 
 const handleConsoleMessages = (event: MessageEvent) => {
-  if (event.data && event.data.type) {
+  if (event.data?.type) {
     logs.value.push({ type: event.data.type, message: event.data.message });
   }
 };
 
 watch(logs, async () => {
   await nextTick();
-  if (consoleContainer.value) {
-    consoleContainer.value.scrollTo({
-      top: consoleContainer.value.scrollHeight,
-      behavior: 'smooth',
-    });
-  }
+  consoleContainer.value?.scrollTo({ top: consoleContainer.value.scrollHeight, behavior: 'smooth' });
 }, { deep: true, flush: 'post' });
 
 onMounted(() => {
@@ -76,47 +70,47 @@ onMounted(() => {
   updateIframe();
 });
 
-watch([htmlCode, jsCode], updateIframe);
+watch(htmlCode, updateIframe);
 </script>
 
 <template>
   <div class="w-full h-full flex flex-col">
-    <div>aaaa</div>
+    <button @click="updateIframe" class="bg-blue-500 text-white py-2">Run</button>
     <div class="flex-grow">
       <TheSplit direction="vertical" :initialPercentage="50">
         <template #first>
           <TheSplit direction="horizontal" :initialPercentage="50">
             <template #first>
-              <div class="section">
+              <div class="p-4 h-full flex flex-col">
                 <span>HTML</span>
-                <textarea v-model="htmlCode" class="editor"></textarea>
+                <textarea v-model="htmlCode"
+                  class="w-full h-full p-2 font-mono border border-gray-300 rounded resize-none"></textarea>
               </div>
             </template>
-
             <template #second>
-              <div class="section">
+              <div class="p-4 h-full flex flex-col">
                 <span>JavaScript</span>
-                <textarea v-model="jsCode" class="editor"></textarea>
+                <textarea v-model="jsCode"
+                  class="w-full h-full p-2 font-mono border border-gray-300 rounded resize-none"></textarea>
               </div>
             </template>
           </TheSplit>
         </template>
-
         <template #second>
-          <TheSplit direction="horizontal" :initialPercentage="55"> <!-- 위/아래 분할 -->
+          <TheSplit direction="horizontal" :initialPercentage="55">
             <template #first>
-              <div class="section">
+              <div class="p-4 h-full flex flex-col">
                 <span>Preview</span>
-                <div class="preview-container">
-                  <iframe ref="iframeRef" class="iframe" sandbox="allow-scripts"></iframe>
+                <div class="w-full h-full border border-gray-300 rounded overflow-hidden">
+                  <iframe ref="iframeRef" class="w-full h-full border-none" sandbox="allow-scripts"></iframe>
                 </div>
               </div>
             </template>
-
             <template #second>
-              <div class="section">
+              <div class="p-4 h-full flex flex-col">
                 <span>Console</span>
-                <div class="console-container" ref="consoleContainer">
+                <div ref="consoleContainer"
+                  class="w-full h-full p-2 border border-gray-300 rounded overflow-y-auto bg-gray-100 font-mono">
                   <div v-for="(log, index) in logs" :key="index"
                     :class="{ 'text-red-500': log.type === 'error', 'text-yellow-500': log.type === 'warn' }">
                     [{{ log.type.toUpperCase() }}] {{ log.message.join(' ') }}
@@ -130,54 +124,3 @@ watch([htmlCode, jsCode], updateIframe);
     </div>
   </div>
 </template>
-
-<style scoped>
-.frontbox {
-  width: 100%;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.section {
-  padding: 1rem;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.editor {
-  width: 100%;
-  height: 100%;
-  padding: 0.5rem;
-  font-family: monospace;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  resize: none;
-}
-
-.preview-container {
-  width: 100%;
-  height: 100%;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-}
-
-.console-container {
-  width: 100%;
-  height: 100%;
-  padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  overflow-y: auto;
-  background-color: #f5f5f5;
-  font-family: monospace;
-}
-</style>
