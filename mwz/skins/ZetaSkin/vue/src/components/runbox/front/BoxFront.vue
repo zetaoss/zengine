@@ -20,10 +20,26 @@ const { job, seq } = props
 const iframe = ref<HTMLIFrameElement | null>(null)
 const lines = ref<Line[]>([])
 
+function generateJobScript(job: Job): string {
+  return job.boxes.map(b => {
+    if (b.lang !== 'javascript') return b.text;
+    return `<script>
+      try {
+        new Function(\`${b.text}\`)();
+      } catch(e) {
+        console.error(\`Uncaught \${e.name}: \${e.message} at line: \${e.stack}\`);
+      }
+    <\/script>`;
+  }).join('');
+}
+
+
+
 onMounted(() => {
   if (!iframe.value) return
   const { contentDocument: doc, contentWindow: win } = iframe.value
   if (!doc || !win) return
+
   win.console = new Proxy(console, {
     get(_, prop) {
       return (...args: unknown[]) => {
@@ -32,9 +48,9 @@ onMounted(() => {
       }
     }
   })
-  doc.open()
-  doc.write(job.boxes.map((b) => (b.lang === 'javascript' ? `<script>${b.text}<\/script>` : b.text)).join(''))
-  doc.close()
+  doc.open();
+  doc.write(generateJobScript(job));
+  doc.close();
 })
 </script>
 
