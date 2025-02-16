@@ -23,8 +23,20 @@ const adjustSizes = (containerSize: number) => {
 
 useResizeObserver(container, (entries) => {
   const { width, height } = entries[0].contentRect;
-  adjustSizes(isVertical.value ? width : height);
+  adjustSizes(isVertical.value ? height : width);
 });
+
+const disableIframes = () => {
+  document.querySelectorAll('iframe').forEach((iframe) => {
+    iframe.style.pointerEvents = 'none';
+  });
+};
+
+const enableIframes = () => {
+  document.querySelectorAll('iframe').forEach((iframe) => {
+    iframe.style.pointerEvents = 'auto';
+  });
+};
 
 const handleMouseMove = (e: MouseEvent) => {
   if (!isResizing.value || !container.value) return;
@@ -41,17 +53,13 @@ const handleMouseMove = (e: MouseEvent) => {
 const stopResize = () => {
   document.body.style.userSelect = '';
   isResizing.value = false;
-  if (divider.value) {
-    divider.value.style.cursor = isVertical.value ? 'ew-resize' : 'ns-resize';
-  }
+  enableIframes();
 };
 
 const startResize = () => {
   document.body.style.userSelect = 'none';
   isResizing.value = true;
-  if (divider.value) {
-    divider.value.style.cursor = isVertical.value ? 'col-resize' : 'row-resize';
-  }
+  disableIframes();
 };
 
 useEventListener(window, 'mousemove', handleMouseMove);
@@ -70,7 +78,7 @@ onMounted(() => {
       <slot name="first"></slot>
     </div>
     <div ref="divider"
-      :class="['relative z-10 bg-gray-300', isVertical ? 'w-1 h-full cursor-ew-resize' : 'h-1 w-full cursor-ns-resize']"
+      :class="['relative z-10 bg-gray-400/30 divider', isVertical ? 'w-2 h-full cursor-ew-resize' : 'h-2 w-full cursor-ns-resize']"
       @mousedown="startResize">
     </div>
     <div class="overflow-auto flex-1">
@@ -78,21 +86,3 @@ onMounted(() => {
     </div>
   </div>
 </template>
-
-<style scoped>
-/* Divider에만 1px 경계선 추가 */
-.bg-gray-300 {
-  background-color: #d1d5db;
-  /* Divider 배경색 */
-}
-
-/* 수직 Divider */
-.w-1 {
-  width: 1px;
-}
-
-/* 수평 Divider */
-.h-1 {
-  height: 1px;
-}
-</style>
