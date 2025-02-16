@@ -78,7 +78,7 @@ onMounted(() => {
       <slot name="first"></slot>
     </div>
     <div ref="divider"
-      :class="['relative z-10 bg-gray-400/30 divider', isVertical ? 'w-2 h-full cursor-ew-resize' : 'h-2 w-full cursor-ns-resize']"
+      :class="['relative z-10 bg-gray-200 dark:bg-gray-800 divider', isVertical ? 'w-2 h-full cursor-ew-resize' : 'h-2 w-full cursor-ns-resize']"
       @mousedown="startResize">
     </div>
     <div class="overflow-auto flex-1">

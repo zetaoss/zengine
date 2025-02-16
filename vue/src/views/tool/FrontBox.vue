@@ -7,6 +7,7 @@ const jsCode = ref('console.log(new Date());');
 const iframeRef = ref<HTMLIFrameElement | null>(null);
 const logs = ref<{ type: string; message: unknown[] }[]>([]);
 const consoleContainer = ref<HTMLElement | null>(null);
+const autoUpdate = ref(true);
 
 const generateIframeContent = () => {
   const sanitizedHtml = htmlCode.value.trim();
@@ -60,22 +61,54 @@ const handleConsoleMessages = (event: MessageEvent) => {
   }
 };
 
-watch(logs, async () => {
-  await nextTick();
-  consoleContainer.value?.scrollTo({ top: consoleContainer.value.scrollHeight, behavior: 'smooth' });
-}, { deep: true, flush: 'post' });
-
 onMounted(() => {
   window.addEventListener('message', handleConsoleMessages);
   updateIframe();
 });
 
-watch(htmlCode, updateIframe);
+watch(logs, async () => {
+  await nextTick();
+  consoleContainer.value?.scrollTo({ top: consoleContainer.value.scrollHeight, behavior: 'smooth' });
+}, { deep: true, flush: 'post' });
+
+watch(autoUpdate, (newValue) => {
+  if (newValue) {
+    updateIframe();
+  }
+});
+
+watch([htmlCode, jsCode], () => {
+  if (autoUpdate.value) {
+    updateIframe();
+  }
+});
 </script>
 
 <template>
   <div class="w-full h-full flex flex-col">
-    <button @click="updateIframe" class="bg-blue-500 text-white py-2">Run</button>
+
+    <div class="flex items-center py-2 px-4 bg-gray-200 dark:bg-gray-800 transition-colors">
+      <div class="ml-auto flex items-center space-x-4">
+        <!-- Auto Update Toggle -->
+        <label class="flex items-center cursor-pointer">
+          <input type="checkbox" v-model="autoUpdate" class="hidden">
+          <span class="relative w-10 h-5 rounded-full transition-all duration-300"
+            :class="autoUpdate ? 'bg-blue-600 dark:bg-blue-400' : 'bg-gray-300 dark:bg-gray-600'">
+            <span
+              class="absolute left-1 top-1 w-3 h-3 bg-white dark:bg-gray-200 rounded-full transition-all duration-300"
+              :class="autoUpdate ? 'translate-x-5' : ''"></span>
+          </span>
+          <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Auto Update</span>
+        </label>
+
+        <!-- Run Button -->
+        <button @click="updateIframe" class="bg-blue-500 dark:bg-blue-400 text-white dark:text-gray-900 text-sm font-semibold py-1.5 px-4 rounded
+                   hover:bg-blue-600 dark:hover:bg-blue-500 transition">
+          Run
+        </button>
+      </div>
+    </div>
+
     <div class="flex-grow">
       <TheSplit direction="vertical" :initialPercentage="50">
         <template #first>
@@ -107,12 +140,21 @@ watch(htmlCode, updateIframe);
               </div>
             </template>
             <template #second>
-              <div class="p-4 h-full flex flex-col">
-                <span>Console</span>
+              <!-- Console Section -->
+              <div class="p-4 h-full flex flex-col relative">
+                <div class="flex justify-between items-center mb-2">
+                  <span class="text-gray-700 dark:text-gray-300">Console</span>
+                  <button @click="logs = []" class="text-xs px-2 py-1 rounded transition border border-gray-300 dark:border-gray-600
+                   text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700">
+                    Clear
+                  </button>
+                </div>
                 <div ref="consoleContainer"
-                  class="w-full h-full p-2 border border-gray-300 rounded overflow-y-auto bg-gray-100 font-mono">
-                  <div v-for="(log, index) in logs" :key="index"
-                    :class="{ 'text-red-500': log.type === 'error', 'text-yellow-500': log.type === 'warn' }">
+                  class="w-full h-full p-2 border border-gray-300 dark:border-gray-600 rounded overflow-y-auto bg-gray-100 dark:bg-gray-800 font-mono">
+                  <div v-for="(log, index) in logs" :key="index" :class="{
+                    'text-red-500 dark:text-red-400': log.type === 'error',
+                    'text-yellow-500 dark:text-yellow-400': log.type === 'warn'
+                  }">
                     [{{ log.type.toUpperCase() }}] {{ log.message.join(' ') }}
                   </div>
                 </div>
