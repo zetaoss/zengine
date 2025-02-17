@@ -88,7 +88,7 @@ watch(htmlCode, () => {
   <div class="w-full h-full flex flex-col">
 
     <div
-      class="flex items-center py-2 px-4 bg-gray-100 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-700 transition-colors">
+      class="flex items-center py-2 px-4 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors">
       <div class="ml-auto">
         <!-- Run Button -->
         <button @click="updateIframe" class="bg-blue-500 dark:bg-blue-400 text-white dark:text-gray-900 text-sm font-semibold py-1.5 px-4 rounded
@@ -120,15 +120,13 @@ watch(htmlCode, () => {
                     </label>
                   </div>
                 </div>
-                <textarea v-model="htmlCode"
-                  class="w-full h-full p-2 font-mono border border-gray-300 rounded resize-none"></textarea>
+                <textarea v-model="htmlCode" class="w-full h-full p-2"></textarea>
               </div>
             </template>
             <template #second>
               <div class="p-4 h-full flex flex-col">
                 <span>JavaScript</span>
-                <textarea v-model="jsCode"
-                  class="w-full h-full p-2 font-mono border border-gray-300 rounded resize-none"></textarea>
+                <textarea v-model="jsCode" class="w-full h-full p-2"></textarea>
               </div>
             </template>
           </TheSplit>
@@ -138,7 +136,7 @@ watch(htmlCode, () => {
             <template #first>
               <div class="p-4 h-full flex flex-col">
                 <span>Preview</span>
-                <div class="w-full h-full border border-gray-300 rounded overflow-hidden">
+                <div class="w-full h-full border border-gray-200 dark:border-gray-600 rounded overflow-hidden">
                   <iframe ref="iframeRef" class="w-full h-full border-none" sandbox="allow-scripts"></iframe>
                 </div>
               </div>
@@ -148,13 +146,13 @@ watch(htmlCode, () => {
               <div class="p-4 h-full flex flex-col relative">
                 <div class="flex justify-between items-center mb-2">
                   <span class="text-gray-700 dark:text-gray-300">Console</span>
-                  <button @click="logs = []" class="text-xs px-2 py-1 rounded transition border border-gray-300 dark:border-gray-600
+                  <button @click="logs = []" class="text-xs px-2 py-1 rounded transition border border-gray-200 dark:border-gray-600
                    text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700">
                     Clear
                   </button>
                 </div>
                 <div ref="consoleContainer"
-                  class="w-full h-full p-2 border border-gray-300 dark:border-gray-600 rounded overflow-y-auto bg-gray-100 dark:bg-gray-800 font-mono">
+                  class="w-full h-full p-2 border border-gray-200 dark:border-gray-600 rounded overflow-y-auto bg-gray-100 dark:bg-gray-800 font-mono">
                   <div v-for="(log, index) in logs" :key="index" :class="{
                     'text-red-500 dark:text-red-400': log.type === 'error',
                     'text-yellow-500 dark:text-yellow-400': log.type === 'warn'

@@ -1,8 +1,9 @@
-@use 'base.scss';
+@use 'base_layer.scss';
+@use 'base_tags.scss';
 
 @use 'btn.scss';
 @use 'navbar.scss';
-@use 'tag.scss';
+@use 'textarea.scss';
 
 @use 'z-break-word.scss';
 @use 'z-scrollbar.scss';
