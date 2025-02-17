@@ -77,7 +77,7 @@ watch(autoUpdate, (newValue) => {
   }
 });
 
-watch([htmlCode, jsCode], () => {
+watch(htmlCode, () => {
   if (autoUpdate.value) {
     updateIframe();
   }
@@ -87,20 +87,9 @@ watch([htmlCode, jsCode], () => {
 <template>
   <div class="w-full h-full flex flex-col">
 
-    <div class="flex items-center py-2 px-4 bg-gray-200 dark:bg-gray-800 transition-colors">
-      <div class="ml-auto flex items-center space-x-4">
-        <!-- Auto Update Toggle -->
-        <label class="flex items-center cursor-pointer">
-          <input type="checkbox" v-model="autoUpdate" class="hidden">
-          <span class="relative w-10 h-5 rounded-full transition-all duration-300"
-            :class="autoUpdate ? 'bg-blue-600 dark:bg-blue-400' : 'bg-gray-300 dark:bg-gray-600'">
-            <span
-              class="absolute left-1 top-1 w-3 h-3 bg-white dark:bg-gray-200 rounded-full transition-all duration-300"
-              :class="autoUpdate ? 'translate-x-5' : ''"></span>
-          </span>
-          <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Auto Update</span>
-        </label>
-
+    <div
+      class="flex items-center py-2 px-4 bg-gray-100 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-700 transition-colors">
+      <div class="ml-auto">
         <!-- Run Button -->
         <button @click="updateIframe" class="bg-blue-500 dark:bg-blue-400 text-white dark:text-gray-900 text-sm font-semibold py-1.5 px-4 rounded
                    hover:bg-blue-600 dark:hover:bg-blue-500 transition">
@@ -115,7 +104,22 @@ watch([htmlCode, jsCode], () => {
           <TheSplit direction="horizontal" :initialPercentage="50">
             <template #first>
               <div class="p-4 h-full flex flex-col">
-                <span>HTML</span>
+                <div class="flex items-center mb-2">
+                  <span class="text-gray-700 dark:text-gray-300">HTML</span>
+                  <div class="ml-auto flex items-center space-x-4">
+                    <!-- Auto Update Toggle -->
+                    <label class="flex items-center cursor-pointer">
+                      <input type="checkbox" v-model="autoUpdate" class="hidden">
+                      <span class="relative w-10 h-5 rounded-full transition-all duration-300"
+                        :class="autoUpdate ? 'bg-blue-600 dark:bg-blue-400' : 'bg-gray-300 dark:bg-gray-600'">
+                        <span
+                          class="absolute left-1 top-1 w-3 h-3 bg-white dark:bg-gray-200 rounded-full transition-all duration-300"
+                          :class="autoUpdate ? 'translate-x-5' : ''"></span>
+                      </span>
+                      <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Auto Update</span>
+                    </label>
+                  </div>
+                </div>
                 <textarea v-model="htmlCode"
                   class="w-full h-full p-2 font-mono border border-gray-300 rounded resize-none"></textarea>
               </div>
