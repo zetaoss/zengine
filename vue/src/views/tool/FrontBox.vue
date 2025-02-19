@@ -2,68 +2,49 @@
 import { ref, onMounted, watch, nextTick } from 'vue';
 import TheSplit from '@/components/TheSplit.vue';
 
+declare global {
+  interface Window {
+    console: Console;
+  }
+}
+
+type Log = { level: string; args: unknown[] };
+
 const htmlCode = ref('<h1>Hello, World!</h1>');
 const jsCode = ref('console.log(new Date());');
-const iframeRef = ref<HTMLIFrameElement | null>(null);
-const logs = ref<{ type: string; message: unknown[] }[]>([]);
+const iframe = ref<HTMLIFrameElement | null>(null);
+const logs = ref<Log[]>([]);
 const consoleContainer = ref<HTMLElement | null>(null);
 const autoUpdate = ref(true);
 
-const generateIframeContent = () => {
+function getContent(): string {
   const sanitizedHtml = htmlCode.value.trim();
   const wrappedHtml = sanitizedHtml.startsWith('<html>') ? sanitizedHtml : `<html><body>${sanitizedHtml}</body></html>`;
+  return `${wrappedHtml}<script>try{new Function(\`${jsCode.value}\`)();}catch(e){console.error(\`Uncaught \${e.name}: \${e.message} \${e.stack.split('\\n')[2]}\`);}<\/script>`;
+}
 
-  return `
-    ${wrappedHtml}
-    <script>
-      window.addEventListener('message', (event) => {
-        if (event.source !== window.parent) return;
-        const { type, message } = event.data;
-        window.parent.postMessage({ type, message }, '*');
-      });
-
-      window.console = new Proxy(console, {
+const run = () => {
+  logs.value.push({ level: "BOX", args: ["Running FrontBox"] })
+  if (iframe.value) {
+    const { contentDocument: doc, contentWindow: win } = iframe.value;
+    if (doc && win) {
+      win.console = new Proxy(console, {
         get(_, prop) {
-          return (...args) => {
-            if (typeof prop === 'string' && ['log', 'error', 'warn'].includes(prop)) {
-              window.parent.postMessage({ type: prop, message: args.map(arg => arg?.toString?.() || arg) }, '*');
-            }
-          };
+          return (...args: unknown[]) => {
+            const level = prop as string
+            logs.value.push({ level, args })
+          }
         }
-      });
-
-      window.addEventListener('error', (event) => {
-        event.preventDefault();
-        window.parent.postMessage({
-          type: 'error',
-          message: [\`Syntax Error: \${ event.message } at \${ event.filename }:\${ event.lineno }:\${ event.colno }\`]
-        }, '*');
-      });
-
-      try {
-        ${jsCode.value}
-      } catch (e) {
-        console.error(e);
-      }
-    <\/script>
-  `;
-};
-
-const updateIframe = () => {
-  if (iframeRef.value) {
-    iframeRef.value.srcdoc = generateIframeContent();
-  }
-};
-
-const handleConsoleMessages = (event: MessageEvent) => {
-  if (event.data?.type) {
-    logs.value.push({ type: event.data.type, message: event.data.message });
+      })
+      doc.open();
+      doc.write(getContent());
+      doc.close();
+    }
   }
 };
 
 onMounted(() => {
-  window.addEventListener('message', handleConsoleMessages);
-  updateIframe();
+  run();
 });
 
 watch(logs, async () => {
@@ -73,13 +54,13 @@ watch(logs, async () => {
 
 watch(autoUpdate, (newValue) => {
   if (newValue) {
-    updateIframe();
+    run();
   }
 });
 
 watch(htmlCode, () => {
   if (autoUpdate.value) {
-    updateIframe();
+    run();
   }
 });
 </script>
@@ -91,7 +72,7 @@ watch(htmlCode, () => {
       class="flex items-center py-2 px-4 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors">
       <div class="ml-auto">
         <!-- Run Button -->
-        <button @click="updateIframe" class="bg-blue-500 dark:bg-blue-400 text-white dark:text-gray-900 text-sm font-semibold py-1.5 px-4 rounded
+        <button @click="run" class="bg-blue-500 dark:bg-blue-400 text-white dark:text-gray-900 text-sm font-semibold py-1.5 px-4 rounded
                    hover:bg-blue-600 dark:hover:bg-blue-500 transition">
           Run
         </button>
@@ -137,7 +118,7 @@ watch(htmlCode, () => {
               <div class="p-4 h-full flex flex-col">
                 <span>Preview</span>
                 <div class="w-full h-full border border-gray-200 dark:border-gray-600 rounded overflow-hidden">
-                  <iframe ref="iframeRef" class="w-full h-full border-none" sandbox="allow-scripts"></iframe>
+                  <iframe ref="iframe" class="w-full h-full border-none" />
                 </div>
               </div>
             </template>
@@ -154,10 +135,10 @@ watch(htmlCode, () => {
                 <div ref="consoleContainer"
                   class="w-full h-full p-2 border border-gray-200 dark:border-gray-600 rounded overflow-y-auto bg-gray-100 dark:bg-gray-800 font-mono">
                   <div v-for="(log, index) in logs" :key="index" :class="{
-                    'text-red-500 dark:text-red-400': log.type === 'error',
-                    'text-yellow-500 dark:text-yellow-400': log.type === 'warn'
+                    'text-red-500 dark:text-red-400': log.level === 'error',
+                    'text-yellow-500 dark:text-yellow-400': log.level === 'warn'
                   }">
-                    [{{ log.type.toUpperCase() }}] {{ log.message.join(' ') }}
+                    {{ log.args.join(' ') }}
                   </div>
                 </div>
               </div>
