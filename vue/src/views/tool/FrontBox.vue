@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, nextTick } from 'vue';
 import TheSplit from '@/components/TheSplit.vue';
+import TheConsole from '@common/components/console/TheConsole.vue';
 
 declare global {
   interface Window {
@@ -134,12 +135,7 @@ watch(htmlCode, () => {
                 </div>
                 <div ref="consoleContainer"
                   class="w-full h-full p-2 border border-gray-200 dark:border-gray-600 rounded overflow-y-auto bg-gray-100 dark:bg-gray-800 font-mono">
-                  <div v-for="(log, index) in logs" :key="index" :class="{
-                    'text-red-500 dark:text-red-400': log.level === 'error',
-                    'text-yellow-500 dark:text-yellow-400': log.level === 'warn'
-                  }">
-                    {{ log.args.join(' ') }}
-                  </div>
+                  <TheConsole :logs="logs" />
                 </div>
               </div>
             </template>
