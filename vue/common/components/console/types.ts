@@ -1,4 +1,4 @@
-export interface Line {
+export interface Log {
   level: string
   args: unknown[]
 }
