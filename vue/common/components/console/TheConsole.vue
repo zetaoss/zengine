@@ -17,10 +17,10 @@ defineProps<{
 
 <style scoped>
 .error {
-  color: red;
+  @apply bg-red-100 dark:bg-[#533];
 }
 
 .warn {
-  color: orange;
+  @apply bg-yellow-100 dark:bg-[#442];
 }
 </style>

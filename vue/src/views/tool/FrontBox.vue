@@ -67,7 +67,7 @@ watch(htmlCode, () => {
 </script>
 
 <template>
-  <div class="w-full h-full flex flex-col">
+  <div class="w-full block" style="height: calc(100vh - 250px)">
 
     <div
       class="flex items-center py-2 px-4 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors">
@@ -80,7 +80,7 @@ watch(htmlCode, () => {
       </div>
     </div>
 
-    <div class="flex-grow">
+    <div class="h-full">
       <TheSplit direction="vertical" :initialPercentage="50">
         <template #first>
           <TheSplit direction="horizontal" :initialPercentage="50">
