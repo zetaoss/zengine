@@ -9,19 +9,22 @@ defineProps<{
 
 <template>
   <template v-for="(log, i) in logs" :key="i">
-    <div :class="log.level" v-for="(arg, j) in log.args" :key="j">
-      <ConsoleArg :arg="arg" :depth="0" :minify="0" :expandable="true" />
+    <div :class="log.level">
+      <span v-for="(arg, j) in log.args" :key="j">
+        <span v-if="j > 0">&nbsp;</span>
+        <ConsoleArg :arg="arg" :depth="0" :minify="0" :expandable="true" />
+      </span>
     </div>
   </template>
 </template>
 
 <style scoped>
 .system {
-  @apply bg-gray-200 text-gray-400 dark:bg-gray-700;
+  @apply bg-gray-300 text-white dark:bg-gray-700 dark:text-gray-400;
 }
 
 .error {
-  @apply bg-red-100 dark:bg-[#533];
+  @apply bg-red-100 dark:bg-[#300] border;
 }
 
 .warn {

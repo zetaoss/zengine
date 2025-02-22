@@ -76,7 +76,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <span class="inline-block">
+  <span>
     <span :class="{ 'cursor-pointer': entries && expandable }" @click="expanded = expandable ? !expanded : expanded">
       <span v-if="id || id === 0">
         <span>
