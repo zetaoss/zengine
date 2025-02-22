@@ -16,6 +16,10 @@ defineProps<{
 </template>
 
 <style scoped>
+.system {
+  @apply bg-gray-200 text-gray-400 dark:bg-gray-700;
+}
+
 .error {
   @apply bg-red-100 dark:bg-[#533];
 }

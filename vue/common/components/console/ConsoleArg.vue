@@ -54,6 +54,11 @@ function inspect(arg: unknown) {
     }
   }
   if (typeof arg === 'string') {
+    if (props.depth == 0) {
+      typ.value = 'raw'
+      text.value = arg
+      return
+    }
     text.value = `'${arg}'`
     return
   }
