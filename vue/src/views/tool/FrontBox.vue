@@ -25,7 +25,7 @@ function getContent(): string {
 }
 
 const run = () => {
-  logs.value.push({ level: "BOX", args: ["Running FrontBox"] })
+  logs.value.push({ level: "system", args: ["Running FrontBox"] })
   if (iframe.value) {
     const { contentDocument: doc, contentWindow: win } = iframe.value;
     if (doc && win) {
