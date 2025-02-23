@@ -12,7 +12,16 @@ declare global {
 type Log = { level: string; args: unknown[] };
 
 const htmlCode = ref('<h1>Hello, World!</h1>');
-const jsCode = ref('console.log(new Date());');
+const jsCode = ref(`console.log(console);
+console.log(window);
+console.log(new Date());
+console.log(1,2,3,'hello');
+console.log([1,2,3,4,5,6,7,8,9,10,11]);
+console.log([1,2,3,[4,5,6,[7,8,9,10,11]]]);
+const foo = {a:1, b:2}
+foo.ref = foo;
+console.log(foo);
+`);
 const iframe = ref<HTMLIFrameElement | null>(null);
 const logs = ref<Log[]>([]);
 const consoleContainer = ref<HTMLElement | null>(null);
@@ -31,6 +40,9 @@ const run = () => {
     if (doc && win) {
       win.console = new Proxy(console, {
         get(_, prop) {
+          if (prop === 'constructor') {
+            return { name: 'console' };
+          }
           return (...args: unknown[]) => {
             const level = prop as string
             logs.value.push({ level, args })

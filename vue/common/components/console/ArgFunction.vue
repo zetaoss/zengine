@@ -7,25 +7,27 @@ const props = defineProps<{
 }>()
 
 const arrow = ref(false)
-const text = ref('')
+const text0 = ref('')
+const text1 = ref('')
 
 watchEffect(() => {
   if (typeof props.arg === 'function') {
-    arrow.value = !('prototype' in props.arg)
-    text.value = props.arg.toString().replace(/^function /, '')
+    const s = props.arg.toString()
+    arrow.value = !('prototype' in props.arg) && !s.startsWith("function")
+    text0.value = s.replace(/^function /, '')
+    text1.value = s.replace(/^function /, '').replace(/ { \[native code\] }$/, '')
   }
 })
 </script>
 
 <template>
   <template v-if="minify == 0">
-    <span v-if="text">
-      <span v-if="!arrow" class="text-orange-400 dark:text-orange-400">ƒ&nbsp;</span>
-      <span>{{ text }}</span>
-    </span>
+    <span v-if="!arrow" class="text-orange-400 dark:text-orange-400">ƒ&nbsp;</span>
+    <span>{{ text0 }}</span>
   </template>
   <template v-else-if="minify == 1">
-    <span>ƒ ...</span>
+    <span v-if="!arrow" class="text-orange-400 dark:text-orange-400">ƒ&nbsp;</span>
+    <span>{{ text1 }}</span>
   </template>
   <template v-if="minify == 2">
     <span>ƒ</span>

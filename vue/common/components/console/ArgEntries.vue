@@ -7,7 +7,7 @@ defineProps<{
   depth: number
   minify: number
   expanded: boolean
-  contructor: string
+  name: string
 }>();
 </script>
 
@@ -30,7 +30,7 @@ defineProps<{
     </template>
     <template v-else-if="typ === 'Object'">
       <template v-if="minify == 0">
-        <span v-if="contructor != 'Object'">{{ contructor }}&nbsp;</span>
+        <span v-if="name != 'Object'">{{ name }}&nbsp;</span>
         <span>{</span>
         <span v-for="([key, value], index) in entries.slice(0, 5)" :key="index">
           <span v-if="index != 0">, </span>
@@ -42,7 +42,7 @@ defineProps<{
         <span>}</span>
       </template>
       <template v-else>
-        <span>{{ contructor }}</span>
+        <span>{{ name }}</span>
       </template>
     </template>
     <template v-else>
