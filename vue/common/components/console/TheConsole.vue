@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import ConsoleArg from './ConsoleArg.vue';
+import TheArg from './TheArg.vue';
 import { type Log } from './types';
 
 defineProps<{
@@ -12,7 +12,7 @@ defineProps<{
     <div :class="log.level">
       <span v-for="(arg, j) in log.args" :key="j">
         <span v-if="j > 0">&nbsp;</span>
-        <ConsoleArg :arg="arg" :depth="0" :minify="0" :expandable="true" />
+        <TheArg :arg="arg" :depth="0" />
       </span>
     </div>
   </template>

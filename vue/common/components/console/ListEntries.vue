@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import ConsoleArg from './ConsoleArg.vue';
 
+
 const props = defineProps<{
   typ: string;
   depth: number;
@@ -32,17 +33,10 @@ const sortedEntries = computed(() => {
       </template>
     </template>
     <template v-else-if="typ === 'Object'">
-      <template v-if="minify == 0">
-        <div v-for="([key, value], index) in sortedEntries" :key="index"
-          :style="{ paddingLeft: `${0.2 * depth + 0.5}rem` }">
-          <div class="align-text-top">
-            <ConsoleArg :id="key" :arg="value" :depth="depth + 1" :minify="2" :expandable="true" />
-          </div>
-        </div>
-      </template>
-      <template v-else>
-        <span>ELSE45</span>
-      </template>
+      <div v-for="([key, value], index) in sortedEntries" :key="index"
+        :style="{ paddingLeft: `${0.2 * depth + 0.5}rem solid red` }" class="align-text-top">
+        <ConsoleArg :id="key" :arg="value" :depth="depth + 1" :minify="1" :expandable="true" />
+      </div>
     </template>
     <template v-else>
       <span>( {{ typ }} )</span>
