@@ -2,6 +2,8 @@
 import { onMounted, ref } from 'vue';
 import TheToggle from './TheToggle.vue';
 import ArgString from './ArgString.vue';
+import ArgFunction from './ArgFunction.vue';
+import ListEntries from './ListEntries.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -9,10 +11,12 @@ const props = withDefaults(
     depth: number;
     seen?: Set<unknown>;
     inEntry?: boolean;
+    inConsole?: boolean;
   }>(),
   {
     seen: () => new Set(),
-    inEntry: false
+    inEntry: false,
+    inConsole: false,
   }
 );
 
@@ -60,6 +64,9 @@ function inspect(arg: unknown) {
     if (Object.keys(arg).length > 0) {
       typ.value = 'Object'
       entries.value = Object.entries(arg)
+      if (name.value === 'console') {
+        entries.value = entries.value.map(([name]) => [name, Function(`return function ${name}(){CONSOLE}`)()]);
+      }
       return
     }
   }
@@ -87,7 +94,7 @@ onMounted(() => {
 <template>
   <template v-if="entries.length == 0">
     <template v-if="typ == 'function'">
-      <span class="function">ƒ</span>
+      <ArgFunction :arg="arg" :inEntry="inEntry" :inConsole="inConsole" />
     </template>
     <template v-else-if="typ == 'string'">
       <ArgString :text="text" :inEntry="inEntry" />
@@ -112,26 +119,21 @@ onMounted(() => {
       </span>
     </template>
     <template v-else-if="typ == 'Object'">
-      <span>
-        <span v-if="name">{{ name }}</span> {
+      <span class="italic">
+        <span v-if="name">{{ name }}</span>
+        <span>{</span>
         <span v-for="(entry, i) in entries?.slice(0, 5)" :key="i">
           <span v-if="i > 0">, </span>
-          <span>{{ entry[0] }}:</span>
+          <span class="text-gray-400">{{ entry[0] }}</span>
+          <span>:&nbsp;</span>
           <TheArg :arg="entry[1]" :depth="depth + 1" :seen="localSeen" :inEntry="inEntry" />
         </span>
         <span v-if="entries?.length > 5">, …</span>
-        }
+        <span>}</span>
       </span>
     </template>
     <template v-if="expanded">
-      <template v-for="(entry, i) in entries" :key="i">
-        <div class="flex-grow-0">
-          <div class="overflow-auto break-all" :style="{ paddingLeft: `${0.2 * depth + 0.5}rem` }">
-            <span>- {{ entry[0] }}:&nbsp;</span>
-            <TheArg :arg="entry[1]" :depth="depth + 1" :seen="localSeen" :inEntry="true" />
-          </div>
-        </div>
-      </template>
+      <ListEntries :typ="typ" :depth="depth" :seen="localSeen" :entries="entries" />
     </template>
   </template>
 </template>

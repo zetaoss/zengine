@@ -4,10 +4,8 @@ import ConsoleArg from './ConsoleArg.vue'
 defineProps<{
   typ: string
   entries: [string | number, unknown][]
+  inEntry: boolean
   depth: number
-  minify: number
-  expanded: boolean
-  name: string
 }>();
 </script>
 
