@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, nextTick } from 'vue';
+
 import TheSplit from '@/components/TheSplit.vue';
 import TheConsole from '@common/components/console/TheConsole.vue';
+import { getParam, type Log, type Param } from '@common/components/console/utils';
 
 declare global {
   interface Window {
@@ -9,18 +11,11 @@ declare global {
   }
 }
 
-type Log = { level: string; args: unknown[] };
-
 const htmlCode = ref('<h1>Hello, World!</h1>');
-const jsCode = ref(`console.log(console);
+const jsCode = ref(`
+console.log({aaaaaa:"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",cccccc:"dddddddddddddddddddddddddddddddddddddddddddd"});
+console.log([1,2,3,[4,5,6,[7,8,9,[10,11,12]]]],[1,2,3,[4,5,6,[7,8,9,[10,11,12]]]]);
 console.log(window);
-console.log(new Date());
-console.log(1,2,3,'hello');
-console.log([1,2,3,4,5,6,7,8,9,10,11]);
-console.log([1,2,3,[4,5,6,[7,8,9,10,11]]]);
-const foo = {a:1, b:2}
-foo.ref = foo;
-console.log(foo);
 `);
 const iframe = ref<HTMLIFrameElement | null>(null);
 const logs = ref<Log[]>([]);
@@ -30,11 +25,12 @@ const autoUpdate = ref(true);
 function getContent(): string {
   const sanitizedHtml = htmlCode.value.trim();
   const wrappedHtml = sanitizedHtml.startsWith('<html>') ? sanitizedHtml : `<html><body>${sanitizedHtml}</body></html>`;
-  return `${wrappedHtml}<script>try{new Function(\`${jsCode.value}\`)();}catch(e){console.error(\`Uncaught \${e.name}: \${e.message} \${e.stack.split('\\n')[2]}\`);}<\/script>`;
+  const fullHtml = `${wrappedHtml}<script>try{new Function(\`${jsCode.value.replace(/\\/g, '\\\\')}\`)();}catch(e){console.error(\`Uncaught \${e.name}: \${e.message} \${e.stack.split('\\n')[2]}\`);}<\/script>`;
+  return fullHtml;
 }
 
 const run = () => {
-  logs.value.push({ level: "system", args: ["Running FrontBox"] })
+  logs.value.push({ level: "system", params: [{ arg: null, text: "Running FrontBox", item: { level: "system", arg: null, text: '', type: '', items: [], depth: 0, key: null, circular: false } }] })
   if (iframe.value) {
     const { contentDocument: doc, contentWindow: win } = iframe.value;
     if (doc && win) {
@@ -45,7 +41,8 @@ const run = () => {
           }
           return (...args: unknown[]) => {
             const level = prop as string
-            logs.value.push({ level, args })
+            const params: Param[] = args.map(arg => getParam(level, arg));
+            logs.value.push({ level, params })
           }
         }
       })
