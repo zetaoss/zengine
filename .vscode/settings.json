@@ -5,4 +5,7 @@
     "[php]": {
         "editor.defaultFormatter": "open-southeners.laravel-pint",
     },
+    "[vue]": {
+        "editor.defaultFormatter": "Vue.volar",
+    },
 }
