@@ -6,7 +6,7 @@ export type Param = {
 
 export type Log = {
   level: string;
-  params: Param[];
+  args: unknown[];
 };
 
 export type Item = {
