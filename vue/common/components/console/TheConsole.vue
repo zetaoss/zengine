@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import BriefAny from './BriefAny.vue';
+import ArgSummary from './ArgSummary.vue';
 import { type Log } from './utils';
 
 defineProps<{
@@ -10,12 +10,10 @@ defineProps<{
 <template>
   <div class="console">
     <template v-for="(log, i) in logs" :key="i">
-      <div class="border flex" :class="log.level">
-        <div>
-          <template v-for="(param, j) in log.params" :key="j">
-            <BriefAny :item="param.item" :expandableIfCollection="true" />
-          </template>
-        </div>
+      <div class="border" :class="log.level">
+        <template v-for="(arg, j) in log.args" :key="j">
+          <ArgSummary :level="log.level" :arg="arg" />
+        </template>
       </div>
     </template>
   </div>
@@ -23,10 +21,6 @@ defineProps<{
 
 <style>
 .console {
-  .system {
-    @apply bg-gray-300 text-white dark:bg-gray-700 dark:text-gray-400;
-  }
-
   .error {
     @apply bg-red-100 dark:bg-[#300] border;
   }

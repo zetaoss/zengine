@@ -1,5 +1,5 @@
 <template>
-  <div class="h-full grid gap-4 md:grid-cols-[240px_1fr]">
+  <div class="h-full grid md:grid-cols-[120px_1fr]">
     <div class="bg-z-card p-4">
       <p class="text-lg font-bold">도구</p>
       <RouterLink class="rl" to="/tool/common-report">통용</RouterLink>
