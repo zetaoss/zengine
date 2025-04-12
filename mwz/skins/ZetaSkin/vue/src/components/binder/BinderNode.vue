@@ -7,6 +7,7 @@ defineProps({
   depth: { type: Number, default: 0 },
 })
 </script>
+
 <template>
   <div>
     <div v-if="node.href">

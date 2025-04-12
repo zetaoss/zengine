@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import type { Job } from './types'
-import type { Log } from '@common/components/console/types'
-import ConsoleArg from '@common/components/console/ConsoleArg.vue'
-import TheIcon from '@common/components/TheIcon.vue'
-import { mdiAlert, mdiCloseCircle } from '@mdi/js'
+import TheConsole from '@common/components/console/TheConsole.vue';
+import { type Log } from '@common/components/console/utils';
 
 declare global {
   interface Window {
@@ -61,22 +59,7 @@ onMounted(() => {
   <div v-if='seq === job.main' class="border">
     <iframe ref="iframe" class="w-full border bg-white" :class="{ hidden: !job.boxes.some(b => b.lang === 'html') }" />
     <div v-if="logs.length > 0" class="border font-mono text-sm p-2 pb-5">
-      <div v-for="(log, i) in logs" :key="i" class="line" :class="log.level">
-        <span class="text-center">
-          <template v-if="log.level == 'warn'">
-            <TheIcon :path="mdiAlert" :size="13" />
-          </template>
-          <template v-else-if="log.level == 'error'">
-            <TheIcon :path="mdiCloseCircle" :size="13" />
-          </template>
-        </span>
-        <span>
-          <span v-for="(arg, i) in log.args" :key="i">
-            <span v-if="i != 0">&nbsp;</span>
-            <ConsoleArg :arg="arg" :depth="0" :expandable="true" :minify="0" />
-          </span>
-        </span>
-      </div>
+      <TheConsole :logs="logs" />
     </div>
   </div>
 </template>

@@ -1,100 +1,39 @@
-export type Param = {
-  arg: unknown;
-  text: string;
-  item: Item;
-};
-
 export type Log = {
   level: string;
   args: unknown[];
 };
 
 export type Item = {
-  level: string;
   arg: unknown;
   type: string;
-  key: Key;
-  text: string;
-  items: Item[];
-  depth: number;
-  circular: boolean;
+  entries: Entry[] | null;
+  name: string;
+  needsExpand: boolean;
 }
 
-type Entry = [string | number, unknown];
-type Key = string | number | null;
+export type Entry = [string | number, unknown];
 
-export const getParam = (level: string, arg: unknown,): Param => {
-  const item = createItem(level, arg);
-  const text = stringify(arg);
-  return { arg, text, item };
-};
-
-export const createItem = (level: string, arg: unknown, depth: number = 0, remaining: number = 5, key: Key = null, seen = new WeakSet()): Item => {
-  let items: Item[] = [];
-  const circular = false;
-  const text = String(arg);
-  if (arg === null || arg === undefined) {
-    return { level, arg, type: text, depth, key, text, items, circular };
-  }
-
-  if (typeof arg !== 'object') {
-    return { level, arg, type: typeof arg, depth, key, text, items, circular };
-  }
-
-  const [newCircular, type, entries] = inspectArg(arg, depth, key, seen);
-  if (newCircular === false && remaining > 0) {
-    items = entries.map(([k, v]) => createItem(level, v, depth + 1, remaining - 1, k, seen));
-  }
-  return { level, arg, type, depth, key, text, items, circular: newCircular };
-};
-
-export const getItemCircular = (level: string, arg: unknown, depth: number = 0, key: Key = null, seen = new WeakSet(), searchItems: boolean = true): Item => {
-  const items: Item[] = [];
-  const circular = false;
-  const text = String(arg);
-  if (arg === null || arg === undefined) {
-    return { level, arg, type: String(arg), depth, key, text, items, circular };
-  }
-
-  if (typeof arg !== 'object') {
-    return { level, arg, type: typeof arg, depth, key, text, items, circular };
-  }
-
-  const [newCircular, type, entries] = inspectArg(arg, depth, key, seen);
-  if (searchItems) {
-    const newItems = entries.map(([k, v]) => getItemCircular(level, v, depth + 1, k, seen, false));
-    return { level, arg, type, depth, key, text, items: newItems, circular: newCircular };
-  }
-  return { level, arg, type, depth, key, text, items, circular: newCircular };
-};
-
-
-function inspectArg(arg: unknown, depth: number, key: Key, seen: WeakSet<object>): [boolean, string, Entry[]] {
-  console.log(' '.repeat(depth * 4), key)
-  // if (key == 'speechSynthesis') {
-  //   return [false, 'speechSynthesis', []];
-  // }
+export function inspectArg(arg: unknown): Item {
   if (typeof arg === 'object') {
-    if (arg === null) return [false, 'null', []];
-    if (seen.has(arg)) return [true, 'circular', []];
-    seen.add(arg);
-    if (Array.isArray(arg)) return [false, 'Array', arg.map((item, index) => [index, item])];
-    if (arg instanceof Map) return [false, 'Map', [...arg.entries()]];
-    if (arg instanceof Set) return [false, 'Set', [...arg].map((item, index) => [index, item])];
-    if (arg instanceof WeakMap) return [false, 'WeakMap', []];
-    if (arg instanceof WeakSet) return [false, 'WeakSet', []];
-    if (arg instanceof HTMLElement) return [false, 'HTMLElement', []];
+    if (arg === null) return newItem(arg, 'null');
+    if (Array.isArray(arg)) return newItem(arg, 'Array', arg.map((item, index) => [index, item]));
+    if (arg instanceof Map) return newItem(arg, 'Map', [...arg.entries()]);
+    if (arg instanceof Set) return newItem(arg, 'Set', [...arg].map((item, index) => [index, item]));
+    if (arg instanceof WeakMap) return newItem(arg, 'WeakMap');
+    if (arg instanceof WeakSet) return newItem(arg, 'WeakSet');
+    if (arg instanceof HTMLElement) return newItem(arg, 'HTMLElement');
     if (arg.constructor === undefined) {
       console.log('arg.constructor is undefined', arg);
-      return [false, 'Object', []];
+      return newItem(arg, 'Object');
     }
-    const entries = Object.entries(arg)
-    return [false, 'Object', entries];
-    // if (arg.constructor.name === 'console') return [false, 'Object', Object.entries(arg).map(([fname]) => [fname, Function(`return function ${fname}(){CONSOLE}`)()])];
+    return newItem(arg, 'Object', Object.entries(arg), arg.constructor.name);
   }
-  return [false, typeof arg, []];
+  return newItem(arg, typeof arg);
 }
 
+function newItem(arg: unknown, type: string, entries: null | Entry[] = null, name: string = '', needsExpand: boolean = false): Item {
+  return { arg, type, entries, name, needsExpand };
+}
 
 export const stringify = (function () {
   const sortci = (a: string, b: string): number => {
