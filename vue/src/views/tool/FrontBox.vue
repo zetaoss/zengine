@@ -73,7 +73,7 @@ onMounted(() => {
         <iframe ref="iframe" class="w-full h-full border-none" />
       </div>
       <div class="text-center font-bold bg-slate-400 dark:bg-slate-600  text-white">Console</div>
-      <div class="h-[30vh] bg-slate-300 dark:bg-slate-800 overflow-hidden overflow-y-scroll">
+      <div class="h-[30vh] overflow-hidden overflow-y-scroll">
         <TheConsole :logs="logs" />
       </div>
     </div>

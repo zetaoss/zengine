@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import ArgSummary from './ArgSummary.vue';
+import TheLog from './TheLog.vue';
 import { type Log } from './utils';
 
 defineProps<{
@@ -8,13 +8,9 @@ defineProps<{
 </script>
 
 <template>
-  <div class="console">
+  <div class="console bg-slate-200 dark:bg-slate-800 ">
     <template v-for="(log, i) in logs" :key="i">
-      <div class="border" :class="log.level">
-        <template v-for="(arg, j) in log.args" :key="j">
-          <ArgSummary :level="log.level" :arg="arg" />
-        </template>
-      </div>
+      <TheLog :level="log.level" :args="log.args" />
     </template>
   </div>
 </template>
@@ -50,6 +46,10 @@ defineProps<{
 
   .bluekey {
     @apply text-blue-400;
+  }
+
+  .detail {
+    @apply bg-slate-100 dark:bg-slate-700;
   }
 }
 </style>
