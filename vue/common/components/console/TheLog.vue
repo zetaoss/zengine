@@ -11,7 +11,7 @@ const items = props.args.map((arg) => inspectArg(arg))
 </script>
 
 <template>
-  <div class="border" :class="level">
+  <div class="border-b" :class="level">
     <template v-for="(item, i) in items" :key="i">
       <TheItem :item="item" />
     </template>

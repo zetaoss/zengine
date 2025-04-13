@@ -11,11 +11,7 @@ declare global {
 }
 
 const htmlCode = ref('<h1>Hello, World!</h1>');
-const jsCode = ref(`
-console.log({aaaaaa:"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",cccccc:"dddddddddddddddddddddddddddddddddddddddddddd"});
-console.log([1,2,3,[4,5,6,[7,8,9,[10,11,12]]]],[1,2,3,[4,5,6,[7,8,9,[10,11,12]]]]);
-console.log(window);
-`);
+const jsCode = ref(`console.log('hello');`);
 const iframe = ref<HTMLIFrameElement | null>(null);
 const logs = ref<Log[]>([]);
 
@@ -28,17 +24,16 @@ function getContent(): string {
 
 const run = () => {
   logs.value = [];
-  logs.value.push({ level: "system", args: ["Running FrontBox"] })
   if (iframe.value) {
     const { contentDocument: doc, contentWindow: win } = iframe.value;
     if (doc && win) {
       win.console = new Proxy(console, {
-        get(_, prop) {
-          if (prop === 'constructor') {
+        get(_, p) {
+          if (p === 'constructor') {
             return { name: 'console' };
           }
           return (...args: unknown[]) => {
-            const level = prop as string
+            const level = p as string
             logs.value.push({ level, args })
           }
         }
@@ -72,8 +67,8 @@ onMounted(() => {
       <div class="bg-white h-[50vh]">
         <iframe ref="iframe" class="w-full h-full border-none" />
       </div>
-      <div class="text-center font-bold bg-slate-400 dark:bg-slate-600  text-white">Console</div>
-      <div class="h-[30vh] overflow-hidden overflow-y-scroll">
+      <div class="text-center font-bold bg-slate-400 dark:bg-slate-600 text-white">Console</div>
+      <div class="h-[30vh] overflow-hidden overflow-y-scroll bg-slate-300 dark:bg-slate-800">
         <TheConsole :logs="logs" />
       </div>
     </div>

@@ -8,7 +8,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="console bg-slate-200 dark:bg-slate-800 ">
+  <div class="console">
     <template v-for="(log, i) in logs" :key="i">
       <TheLog :level="log.level" :args="log.args" />
     </template>

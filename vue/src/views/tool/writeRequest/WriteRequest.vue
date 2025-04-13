@@ -154,7 +154,7 @@ fetchData()
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(row, rowKey) in respData.data " :key="rowKey" class="align-top border-b border-[#88888866]">
+        <tr v-for="(row, rowKey) in respData.data" :key="rowKey" class="align-top border-b border-[#88888866]">
           <td class="text-center px-2">
             {{ row.id }}
           </td>
