@@ -24,7 +24,7 @@ const useAuthStore = defineStore('auth', () => {
   }
 
   function canDelete(id: number) {
-    return userData.value.avatar.id === id || userData.value.groups.indexOf('sysop') !== -1;
+    return userData.value.avatar && (userData.value.avatar.id === id || userData.value.groups.indexOf('sysop') !== -1);
   }
 
   return {
