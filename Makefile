@@ -7,6 +7,6 @@ vue-audit:
 
 vue-diff:
 	@echo "🧮 Running vue-diff"
-	node hack/dep-diff.js
+	node hack/vue-diff.js
 
 checks: vue-audit vue-diff
