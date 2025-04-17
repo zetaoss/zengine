@@ -14,4 +14,5 @@ RUN set -eux \
     && cd /app/vue/                  && npm install && npm run build \
     && cd /app/w/                    && composer update \
     && cd /app/w/skins/ZetaSkin/vue/ && npm install && npm run build \
-    && chown www-data:www-data -R /app/*
+    && chown www-data:www-data -R /app
+
