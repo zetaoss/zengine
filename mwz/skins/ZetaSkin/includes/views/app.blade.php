@@ -5,7 +5,7 @@
                 <div>
                     <div class="flex h-12">
                         <a href="/" class="navbar-link">
-                            <img alt="zetawiki" src="/src/assets/zeta.svg" width="12" height="16">
+                            <img alt="zetawiki" src="/zeta.svg" width="12" height="16">
                             <span class="hidden lg:inline ml-2 text-lg font-semibold">제타위키</span></a>
                         </a>
                         <a href="/" class="navbar-link !text-yellow-700 dark:!text-yellow-200">위키</a>
