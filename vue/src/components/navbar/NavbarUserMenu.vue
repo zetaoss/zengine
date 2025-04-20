@@ -6,7 +6,7 @@ import { useRoute } from 'vue-router'
 
 import TheIcon from '@common/components/TheIcon.vue'
 import AvatarCore from '@common/components/avatar/AvatarCore.vue'
-import NavbarItems from '@common/components/navbar/NavbarItems.vue'
+import CNavbarItems from '@common/components/navbar/CNavbarItems.vue'
 import useAuthStore from '@/stores/auth'
 
 import getUserMenuItems from './utils'
@@ -45,11 +45,11 @@ watch(() => route.path, close)
     </button>
     <div v-show="show" class="hidden md:block md:absolute z-30 top-full right-0">
       <div class="rounded-lg overflow-hidden m-1 border bg-z-card">
-        <NavbarItems :items="items" />
+        <CNavbarItems :items="items" />
       </div>
     </div>
   </div>
   <div v-show="show" class="columns-2 py-1 md:hidden bg-zinc-200 dark:bg-zinc-800">
-    <NavbarItems :items="items" />
+    <CNavbarItems :items="items" />
   </div>
 </template>
