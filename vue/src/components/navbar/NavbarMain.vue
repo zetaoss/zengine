@@ -10,7 +10,7 @@ import NavbarUserMenu from './NavbarUserMenu.vue'
         <div>
           <div class="flex h-12">
             <RouterLink class="navbar-link" to="/">
-              <img alt="zetawiki" src="/zeta.svg" width="12" height="16">
+              <img alt="zetawiki" src="/zeta.svg" class="h-6 w-6" />
               <span class="hidden lg:inline ml-2 text-lg font-semibold">제타위키</span>
             </RouterLink>
             <RouterLink class="navbar-link" to="/"
