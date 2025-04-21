@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import NavbarSearch from '@common/components/navbar/NavbarSearch.vue'
+import CNavbarSearch from '@common/components/navbar/CNavbarSearch.vue'
+
 import NavbarUserMenu from './NavbarUserMenu.vue'
 </script>
 
@@ -31,7 +32,7 @@ import NavbarUserMenu from './NavbarUserMenu.vue'
       <NavbarUserMenu />
       <div class="w-full">
         <div v-if="$route.meta.tab == 'wiki'">
-          <NavbarSearch />
+          <CNavbarSearch />
         </div>
       </div>
     </div>
