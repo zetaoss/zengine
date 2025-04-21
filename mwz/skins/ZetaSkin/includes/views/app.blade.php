@@ -16,7 +16,7 @@
             </div>
             <navbar-user-menu :user-menu='@json($userMenu)'></navbar-user-menu>
             <div class="flex-1">
-                <navbar-search></navbar-search>
+                <c-navbar-search></c-navbar-search>
             </div>
         </div>
     </nav>
@@ -81,7 +81,7 @@
             @endunless
         </div>
     </div>
-    <layout-foot></layout-foot>
-    <layout-remocon></layout-remocon>
+    <c-layout-foot></c-layout-foot>
+    <c-layout-remocon></c-layout-remocon>
 </div>
 <div id="box-app"></div>
