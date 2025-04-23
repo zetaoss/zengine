@@ -2,7 +2,11 @@
 
 namespace ZetaSkin;
 
-class SkinZetaSkin extends SkinBlade
+use Html;
+use SkinTemplate;
+use Title;
+
+class SkinZetaSkin extends SkinTemplate
 {
     private static $links;
 
@@ -46,22 +50,56 @@ class SkinZetaSkin extends SkinBlade
 
     public static function onSidebarBeforeOutput($skin, &$sidebar)
     {
-        if (isset($sidebar['TOOLBOX']['whatlinkshere'])) {
-            $sidebar['TOOLBOX']['whatlinkshere']['text'] = '역링크';
+        $map = [
+            'whatlinkshere' => '역링크',
+            'upload' => '업로드',
+            'specialpages' => '특수문서',
+        ];
+
+        foreach ($map as $key => $label) {
+            if (isset($sidebar['TOOLBOX'][$key])) {
+                $sidebar['TOOLBOX'][$key]['text'] = $label;
+            }
         }
-        if (isset($sidebar['TOOLBOX']['upload'])) {
-            $sidebar['TOOLBOX']['upload']['text'] = '업로드';
-        }
-        if (isset($sidebar['TOOLBOX']['specialpages'])) {
-            $sidebar['TOOLBOX']['specialpages']['text'] = '특수문서';
-        }
+
         self::$sidebar = $sidebar;
+    }
+
+    public function generateHTML()
+    {
+        $this->setupTemplateContext();
+        $out = $this->getOutput();
+
+        $html = $out->headElement($this);
+        extract($this->getTemplateData());
+
+        ob_start();
+        require __DIR__.'/views/app.php';
+        $html .= ob_get_clean();
+
+        return $html.$out->tailElement($this);
     }
 
     public function getTemplateData()
     {
-        return parent::getTemplateData() + [
-            // 'links' => self::$links, // TODO: remove this line before release
+        $data = parent::getTemplateData();
+        $data = array_combine(array_map(fn ($x) => str_replace('-', '_', $x), array_keys($data)), $data);
+        $out = $this->getOutput();
+
+        $bodyContent = $out->getHTML()."\n".Html::rawElement('div', ['class' => 'printfooter', 'data-nosnippet' => ''], $this->printSource());
+        $newTalksHtml = $this->getNewtalks() ?: null;
+
+        $data += [
+            'array_indicators' => $this->getIndicatorsData($out->getIndicators()),
+            'html_site_notice' => $this->getSiteNotice() ?: null,
+            'html_user_message' => $newTalksHtml ? Html::rawElement('div', ['class' => 'usermessage'], $newTalksHtml) : null,
+            'html_subtitle' => $this->prepareSubtitle(),
+            'html_body_content' => $this->wrapHTML($out->getTitle(), $bodyContent),
+            'html_categories' => $this->getCategories(),
+            'html_after_content' => $this->afterContentHook(),
+            'html_undelete_link' => $this->prepareUndeleteLink(),
+            'html_user_language_attributes' => $this->prepareUserLanguageAttributes(),
+            'link_mainpage' => Title::newMainPage()->getLocalURL(),
             'action' => $this->getActionName(),
             'hasBinders' => self::$hasBinders,
             'navs' => array_filter([
@@ -99,5 +137,11 @@ class SkinZetaSkin extends SkinBlade
                 'info' => self::$sidebar['TOOLBOX']['info'] ?? false,
             ]),
         ];
+
+        foreach ($this->options['messages'] ?? [] as $message) {
+            $data["msg_{$message}"] = $this->msg($message)->text();
+        }
+
+        return $data;
     }
 }
