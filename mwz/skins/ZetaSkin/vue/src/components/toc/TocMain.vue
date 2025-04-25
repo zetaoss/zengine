@@ -9,7 +9,7 @@ import TocSection from './TocSection.vue'
 import type { Section } from './types'
 
 defineProps({
-  datatoc: { type: {} as PropType<Section>, required: true },
+  toc: { type: {} as PropType<Section>, required: true },
 })
 
 const targetId = ref('')
@@ -37,7 +37,7 @@ onMounted(() => {
     <aside class="overflow-y-auto z-scrollbar" :style="{ maxHeight: `calc(100vh - ${y > 48 ? 30 : 78 - y}px)` }">
       <ul class="list-none p-0 text-z-text2 border-l-2">
         <li class="px-4 m-0 font-bold">목차</li>
-        <li class="m-0" v-for=" s in datatoc['array-sections'] " :key="s.index">
+        <li class="m-0" v-for="s in toc['array-sections']" :key="s.index">
           <TocSection :targetId="targetId" :section="s" />
         </li>
       </ul>
