@@ -111,6 +111,6 @@ class SkinZetaSkin extends SkinMustache
             'logout' => $userMenu['logout'] ?? null,
         ]));
 
-        return $data + ['data' => json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)];
+        return $data;
     }
 }
