@@ -8,68 +8,92 @@ use Illuminate\Support\Facades\Redis;
 
 class AuthService
 {
-    public static function me()
+    public static function me(): array|false
     {
         $userID = self::getValidUserID();
-        if (! $userID) {
+
+        return $userID ? self::getUserInfo($userID) : false;
+    }
+
+    private static function getValidUserID(): ?int
+    {
+        $prefix = getenv('WG_COOKIE_PREFIX');
+        $userID = (int) ($_COOKIE["{$prefix}UserID"] ?? 0);
+        $userName = $_COOKIE["{$prefix}UserName"] ?? null;
+
+        if (! $userID || ! $userName) {
+            return null;
+        }
+
+        if (self::isValidSession($prefix, $userID)) {
+            return $userID;
+        }
+
+        if (self::isValidToken($prefix, $userID, $userName)) {
+            return $userID;
+        }
+
+        return null;
+    }
+
+    private static function isValidSession(string $prefix, int $userID): bool
+    {
+        $sessionKey = $_COOKIE["{$prefix}_session"] ?? null;
+        if (! $sessionKey) {
             return false;
         }
 
-        return self::getMeData($userID);
-    }
-
-    private static function getValidUserID(): int
-    {
-        if (! array_key_exists('zetawikiUserID', $_COOKIE) || ! array_key_exists('zetawikiUserName', $_COOKIE)) {
+        $sessionData = Redis::connection('mwsession')->get('zetawiki:MWSession:'.$sessionKey);
+        if (! $sessionData) {
             return false;
         }
-        $userID = $_COOKIE['zetawikiUserID'];
-        $userName = $_COOKIE['zetawikiUserName'];
 
-        if (array_key_exists('zetawiki_session', $_COOKIE)) {
-            $redis = Redis::connection('mwsession');
-            $value = $redis->get('zetawiki:MWSession:'.$_COOKIE['zetawiki_session']);
-            if ($value) {
-                $arr = unserialize($value);
-                $wsUserID = $arr['data']['wsUserID'] ?? false;
-                if ($wsUserID && $wsUserID == $userID) {
-                    return $userID;
-                }
-            }
-        }
+        $data = @unserialize($sessionData);
 
-        if (array_key_exists('zetawikiToken', $_COOKIE)) {
-            $token = $_COOKIE['zetawikiToken'];
-            $rows = DB::connection('mwdb')->select('SELECT user_token FROM user WHERE user_id=? AND user_name=? LIMIT 1', [$userID, $userName]);
-            $userToken = $rows[0]->user_token ?? false;
-            if ($userToken) {
-                $wsToken = substr(hash_hmac('whirlpool', '1', $userToken, false), -32);
-                if ($wsToken && $token == $wsToken) {
-                    return $userID;
-                }
-            }
-        }
-
-        return false;
+        return is_array($data) && ($data['data']['wsUserID'] ?? 0) == $userID;
     }
 
-    private static function getMeData(int $userID)
+    private static function isValidToken(string $prefix, int $userID, string $userName): bool
     {
-        $key = "meData:$userID";
-        Cache::delete($key);
-        $cached = Cache::get($key);
-        if ($cached) {
+        $token = $_COOKIE["{$prefix}Token"] ?? null;
+        if (! $token) {
+            return false;
+        }
+
+        $row = DB::connection('mwdb')->table('user')
+            ->select('user_token')
+            ->where('user_id', $userID)
+            ->where('user_name', $userName)
+            ->first();
+
+        if (! $row || ! $row->user_token) {
+            return false;
+        }
+
+        $expected = substr(hash_hmac('whirlpool', '1', $row->user_token, false), -32);
+
+        return hash_equals($expected, $token);
+    }
+
+    private static function getUserInfo(int $userID): array
+    {
+        $cacheKey = 'userInfo:'.$userID;
+        $cached = Cache::get($cacheKey);
+        if ($cached !== null) {
             return $cached;
         }
-        $mwdb = DB::connection('mwdb')->getDatabaseName();
-        $rows = DB::select("SELECT group_concat(ug_group) groups FROM $mwdb.user_groups WHERE ug_user=?", [$userID]);
-        $groups = [];
-        if (count($rows) == 1 && ! empty($rows[0]->groups)) {
-            $groups = explode(',', $rows[0]->groups);
-        }
-        $meData = ['avatar' => UserService::getUserAvatar($userID), 'groups' => $groups];
-        Cache::put($key, $meData);
 
-        return $meData;
+        $groups = DB::connection('mwdb')->table('user_groups')
+            ->where('ug_user', $userID)
+            ->pluck('ug_group')
+            ->toArray();
+
+        $userInfo = [
+            'avatar' => UserService::getUserAvatar($userID),
+            'groups' => $groups,
+        ];
+        Cache::put($cacheKey, $userInfo);
+
+        return $userInfo;
     }
 }
