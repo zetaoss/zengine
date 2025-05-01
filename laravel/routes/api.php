@@ -50,10 +50,14 @@ Route::get('/preview', [PreviewController::class, 'show']);
 Route::get('/auth/social/check/{code}', [SocialController::class, 'checkCode']);
 Route::get('/auth/social/login/{code}', [SocialController::class, 'loginCode']);
 
-Route::get('/common-report', [CommonReportController::class, 'index']);
-Route::get('/common-report/{id}', [CommonReportController::class, 'show']);
-Route::post('/common-report', [CommonReportController::class, 'store']);
-Route::delete('/common-report/{id}', [CommonReportController::class, 'destroy']);
+Route::prefix('common-reports')->group(function () {
+    Route::get('/', [CommonReportController::class, 'index']);
+    Route::post('/', [CommonReportController::class, 'store']);
+    Route::get('{id}', [CommonReportController::class, 'show']);
+    Route::delete('{id}', [CommonReportController::class, 'destroy']);
+    Route::post('{id}/rerun', [CommonReportController::class, 'rerun']);
+    Route::post('{id}/clone', [CommonReportController::class, 'clone']);
+});
 
 Route::post('/write-request', [WriteRequestController::class, 'store']);
 Route::get('/write-request/todo', [WriteRequestController::class, 'indexTodo']);
