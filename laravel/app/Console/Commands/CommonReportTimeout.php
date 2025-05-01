@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\CommonReport;
 use Illuminate\Console\Command;
 
 class CommonReportTimeout extends Command
@@ -12,9 +13,9 @@ class CommonReportTimeout extends Command
 
     public function handle()
     {
-        $threshold = Carbon::now()->subMinute();
+        $threshold = new \DateTime('-1 minute');
 
-        $timedOut = CommonReport::where('state', 0)
+        $timedOut = CommonReport::where('state', [0, 1])
             ->where('created_at', '<', $threshold)
             ->get();
 
