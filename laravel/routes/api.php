@@ -50,7 +50,7 @@ Route::get('/preview', [PreviewController::class, 'show']);
 Route::get('/auth/social/check/{code}', [SocialController::class, 'checkCode']);
 Route::get('/auth/social/login/{code}', [SocialController::class, 'loginCode']);
 
-Route::prefix('common-reports')->group(function () {
+Route::prefix('common-report')->group(function () {
     Route::get('/', [CommonReportController::class, 'index']);
     Route::post('/', [CommonReportController::class, 'store']);
     Route::get('{id}', [CommonReportController::class, 'show']);

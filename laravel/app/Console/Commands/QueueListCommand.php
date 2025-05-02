@@ -6,7 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
-class ListQueueJobs extends Command
+class QueueListCommand extends Command
 {
     protected $signature = 'app:queue-list';
 

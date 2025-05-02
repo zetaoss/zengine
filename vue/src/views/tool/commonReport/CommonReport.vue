@@ -45,7 +45,7 @@ async function fetchData() {
     reportData.value = response.data
     paginateData.value = { ...response.data, path: '/tool/common-report/page' } as PaginateData
 
-    if (response.data.data.some(row => row.state < 2)) {
+    if (response.data.data.some(row => ['pending', 'running'].includes(row.phase))) {
       retrier.schedule()
     } else {
       retrier.clear()
@@ -101,12 +101,9 @@ onUnmounted(() => retrier.clear())
             <td v-if="idx === 0" :rowspan="row.items.length" class="text-center text-sm">
               <RouterLink :to="`/tool/common-report/${row.id}`" class="btn dark:black w-full block border !p-1">
                 #{{ row.id }} 상세보기
-                <span v-if="row.state === 0">
-                  <TheSpinner size=".9rem" extra-class="fill-red-700" />
-                </span>
-                <span v-if="row.state === 1">
-                  <TheSpinner size=".9rem" />
-                </span>
+                <span v-if="row.phase === 'pending'">⏳</span>
+                <span v-else-if="row.phase === 'running'" class="inline-block animate-spin">⏳</span>
+                <span v-else-if="row.phase === 'failed'">❌</span>
               </RouterLink>
               <div>{{ row.created_at.substring(0, 10) }}</div>
               <div>

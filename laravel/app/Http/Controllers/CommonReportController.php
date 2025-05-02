@@ -2,27 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\CommonReportJob;
 use App\Models\CommonReport;
-use App\Models\CommonReportItem;
+use App\Services\CommonReportService;
 use Illuminate\Http\Request;
 
 class CommonReportController extends MyController
 {
+    public function __construct(protected CommonReportService $service) {}
+
     public function index()
     {
         return CommonReport::orderByDesc('id')->paginate(15);
     }
 
-    public function show(string $id): CommonReport
+    public function show(string $id)
     {
         return CommonReport::findOrFail($id);
     }
 
     public function store(Request $request)
     {
-        $err = $this->shouldCreatable();
-        if ($err !== false) {
+        if ($err = $this->shouldCreatable()) {
             return $err;
         }
 
@@ -33,19 +33,29 @@ class CommonReportController extends MyController
 
         $userId = $this->getMe()['avatar']['id'];
 
-        CommonReport::create([
-            'user_id' => $userId,
-            'state' => 0,
-        ]);
+        return $this->service->create($names, $userId);
+    }
 
-        foreach ($names as $name) {
-            CommonReportItem::create([
-                'report_id' => $report->id,
-                'name' => $name,
-            ]);
+    public function rerun(int $id)
+    {
+        $report = CommonReport::findOrFail($id);
+        if ($err = $this->shouldDeletable($report->user_id)) {
+            return $err;
         }
 
-        CommonReportJob::dispatch($report->id);
+        $this->service->rerun($report);
+    }
+
+    public function clone(int $id)
+    {
+        $original = CommonReport::findOrFail($id);
+        if ($err = $this->shouldCreatable()) {
+            return $err;
+        }
+
+        $userId = $this->getMe()['avatar']['id'];
+
+        return $this->service->clone($original, $userId);
     }
 
     public function destroy($id)
@@ -59,47 +69,8 @@ class CommonReportController extends MyController
             return $err;
         }
 
-        $report->delete();
+        $this->service->delete($report);
 
         return ['status' => 'ok'];
-    }
-
-    public function rerun(int $id)
-    {
-        $report = CommonReport::findOrFail($id);
-
-        if ($err = $this->shouldRunnable($report->user_id)) {
-            return $err;
-        }
-
-        $report->update(['state' => 0]);
-        CommonReportJob::dispatch($report->id);
-    }
-
-    public function clone(int $id)
-    {
-        $original = CommonReport::findOrFail($id);
-
-        if ($err = $this->shouldCreatable()) {
-            return $err;
-        }
-
-        $userId = $this->getMe()['avatar']['id'];
-
-        $clone = CommonReport::create([
-            'user_id' => $userId,
-            'state' => 0,
-        ]);
-
-        $items = CommonReportItem::where('report_id', $original->id)->get();
-
-        foreach ($items as $item) {
-            CommonReportItem::create([
-                'report_id' => $clone->id,
-                'name' => $item->name,
-            ]);
-        }
-
-        CommonReportJob::dispatch($clone->id);
     }
 }

@@ -2,5 +2,6 @@
 
 use Illuminate\Support\Facades\Schedule;
 
-Schedule::useCache('redis');
-Schedule::command('app:common-report-timeout')->everyMinute()->onOneServer();
+Schedule::command('app:common-report-timeout')
+    ->everyMinute()
+    ->appendOutputTo('/proc/1/fd/1');
