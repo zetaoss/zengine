@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -22,7 +21,12 @@ class QueueListCommand extends Command
             return Command::SUCCESS;
         }
 
-        $rows = $jobs->map(function ($job) {
+        $now = new \DateTime;
+
+        $rows = $jobs->map(function ($job) use ($now) {
+            $created = new \DateTime($job->created_at ?? 'now');
+            $age = $this->formatElapsedTime($created, $now);
+
             $payload = json_decode($job->payload, true) ?? [];
 
             return [
@@ -30,12 +34,23 @@ class QueueListCommand extends Command
                 'Queue' => $job->queue,
                 'Name' => $payload['displayName'] ?? 'N/A',
                 'Tries' => ($payload['maxTries'] ?? '∞').' / '.$job->attempts,
-                'Age' => Carbon::parse($job->created_at)->diffForHumans(now(), true), // e.g., "2m"
+                'Age' => $age,
             ];
         })->toArray();
 
         $this->table(array_keys($rows[0]), $rows);
 
         return Command::SUCCESS;
+    }
+
+    protected function formatElapsedTime(\DateTime $from, \DateTime $to): string
+    {
+        $elapsedSeconds = max(0, $to->getTimestamp() - $from->getTimestamp());
+
+        $hours = intdiv($elapsedSeconds, 3600);
+        $minutes = intdiv($elapsedSeconds % 3600, 60);
+        $seconds = $elapsedSeconds % 60;
+
+        return sprintf('%d:%02d:%02d', $hours, $minutes, $seconds);
     }
 }
