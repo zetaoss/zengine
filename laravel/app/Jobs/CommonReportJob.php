@@ -3,85 +3,40 @@
 namespace App\Jobs;
 
 use App\Models\CommonReport;
+use App\Services\CommonReportService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class CommonReportJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected CommonReport $report;
+    public int $tries = 3;
 
-    public int $tries = 1;
+    public function __construct(public int $reportId) {}
 
-    public function __construct(int $id)
+    public function handle(CommonReportService $service): void
     {
-        Log::debug("Initializing job with report ID: $id");
-        $this->report = CommonReport::findOrFail($id);
-    }
+        $report = CommonReport::with('items')->find($this->reportId);
 
-    public function handle(): void
-    {
-        $this->updateState(1);
+        if (! $report) {
+            Log::warning("Report #{$this->reportId} not found");
 
-        try {
-            $response = Http::get($this->buildUrl());
-
-            if ($response->successful()) {
-                $this->updateReportData($response->json());
-            } else {
-                Log::error('API request failed', [
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                ]);
-            }
-        } catch (\Exception $e) {
-            Log::error('API request error', ['error' => $e->getMessage()]);
-        } finally {
-            $this->updateState(2);
+            return;
         }
 
-        Log::debug('Report processing complete');
-    }
-
-    private function updateState(int $state): void
-    {
-        $this->report->update(['state' => $state]);
-    }
-
-    private function buildUrl(): string
-    {
-        $query = $this->report->items
-            ->pluck('name')
-            ->map(fn ($name) => 'q='.urlencode($name))
-            ->implode('&');
-
-        return getenv('SEARCH_URL')."/search?$query";
-    }
-
-    private function updateReportData(array $data): void
-    {
-        $engines = $data['result']['engines'] ?? [];
-        $values = $data['result']['values'] ?? [];
-
-        $this->report->items->each(function ($item, $index) use ($engines, $values) {
-            $dataMap = array_combine($engines, $values[$index] ?? []);
-
-            $item->fill([
-                'daum_blog' => $dataMap['daum_blog'] ?? 0,
-                'naver_blog' => $dataMap['naver_blog'] ?? 0,
-                'naver_book' => $dataMap['naver_book'] ?? 0,
-                'naver_news' => $dataMap['naver_news'] ?? 0,
-                'google_search' => $dataMap['google_search'] ?? 0,
+        try {
+            $service->processReport($report);
+            Log::info("Report #{$report->id} processed successfully.");
+        } catch (\Throwable $e) {
+            Log::error("Failed to process report #{$report->id}", [
+                'error' => $e->getMessage(),
             ]);
-
-            $item->updateTotal();
-            $item->save();
-        });
+            $report->update(['phase' => 'failed']);
+        }
     }
 }

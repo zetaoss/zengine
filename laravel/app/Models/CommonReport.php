@@ -9,7 +9,7 @@ class CommonReport extends Model
 {
     protected $appends = ['userAvatar', 'total'];
 
-    protected $fillable = ['state'];
+    protected $fillable = ['user_id', 'phase'];
 
     public function getUserAvatarAttribute()
     {

@@ -73,11 +73,28 @@ async function del(r: Row) {
 }
 
 async function fetchData() {
+  console.log('fetchData')
   const resp = await http.get(`/api/common-report/${id}`)
   row.value = resp.data
 }
 
-fetchData()
+async function fetchDataWithRetry(retryDelay = 1000) {
+  await fetchData()
+
+  const phase = row.value.phase
+  if (phase === 'pending' || phase === 'running') {
+    setTimeout(() => {
+      fetchDataWithRetry(retryDelay * 2) // 무한히 증가
+    }, retryDelay)
+  }
+}
+
+async function rerun(r: Row) {
+  await http.post(`/api/common-report/${r.id}/rerun`)
+  await fetchDataWithRetry()
+}
+
+fetchDataWithRetry()
 </script>
 
 <template>
@@ -88,7 +105,16 @@ fetchData()
       </div>
     </div>
     <div class="border bg-z-card rounded p-5">
-      <h2 class="my-5 text-2xl font-bold">통용 보고서 #{{ id }}</h2>
+      <div class="my-5 flex items-center gap-3 text-2xl font-bold">
+        <h2 class="m-0">통용 보고서 #{{ id }}</h2>
+        <div class="flex items-center gap-1 text-base text-gray-600">
+          <span v-if="row.phase === 'pending'">⏳</span>
+          <span v-else-if="row.phase === 'running'" class="inline-block animate-spin">⏳</span>
+          <span v-else-if="row.phase === 'failed'">❌</span>
+          <span v-else-if="row.phase === 'succeeded'">✅</span>
+          <span v-if="row.phase !== 'succeeded'">{{ row.phase }}</span>
+        </div>
+      </div>
       <div class="h-10">
         <div class="float-left">
           <div>
@@ -144,13 +170,13 @@ fetchData()
           <tbody>
             <tr>
               <th colspan="2">표기</th>
-              <td v-for="(item, idx) in row.items " :key="idx">
+              <td v-for="(item, idx) in row.items" :key="idx">
                 <a class="new" :href="`/wiki/${item.name}`">{{ item.name }}</a>
               </td>
             </tr>
             <tr>
               <th colspan="2">판정</th>
-              <td v-for="(_, idx) in row.items " :key="idx">
+              <td v-for="(_, idx) in row.items" :key="idx">
                 <span v-if="idx == 0">
                   <TheStar :n="getScore(row)" />
                 </span>
@@ -159,7 +185,7 @@ fetchData()
             </tr>
             <tr>
               <th colspan="2">비율</th>
-              <td v-for="(item, idx) in row.items " :key="idx">
+              <td v-for="(item, idx) in row.items" :key="idx">
                 <span v-if="getRatio(row, idx)">
                   {{ (100 * getRatio(row, idx)).toFixed(1) }}%
                 </span>
@@ -170,14 +196,14 @@ fetchData()
             </tr>
             <tr>
               <th colspan="2">계</th>
-              <td v-for="(item, idx) in row.items " :key="idx">
+              <td v-for="(item, idx) in row.items" :key="idx">
                 {{ item.total.toLocaleString('en-US') }}
               </td>
             </tr>
             <tr>
               <th>다음</th>
               <th>블로그</th>
-              <td v-for="(item, idx) in row.items " :key="idx">
+              <td v-for="(item, idx) in row.items" :key="idx">
                 <a target="_blank" rel="noopener noreferrer" class="external"
                   :href="`http://search.daum.net/search?w=blog&q=${item.name}`">
                   {{ item.daum_blog.toLocaleString('en-US') }}
@@ -187,7 +213,7 @@ fetchData()
             <tr>
               <th rowspan="3">네이버</th>
               <th>블로그</th>
-              <td v-for="(item, idx) in row.items " :key="idx">
+              <td v-for="(item, idx) in row.items" :key="idx">
                 <a target="_blank" rel="noopener noreferrer" class="external"
                   :href="`https://search.naver.com/search.naver?where=post&query=${item.name}`">
                   {{ item.naver_blog.toLocaleString('en-US') }}
@@ -196,7 +222,7 @@ fetchData()
             </tr>
             <tr>
               <th>책</th>
-              <td v-for="(item, idx) in row.items " :key="idx">
+              <td v-for="(item, idx) in row.items" :key="idx">
                 <a target="_blank" rel="noopener noreferrer" class="external"
                   :href="`http://book.naver.com/search/search.nhn?query=${item.name}`">
                   {{ item.naver_book.toLocaleString('en-US') }}
@@ -205,7 +231,7 @@ fetchData()
             </tr>
             <tr>
               <th>뉴스</th>
-              <td v-for="(item, idx) in row.items " :key="idx">
+              <td v-for="(item, idx) in row.items" :key="idx">
                 <a target="_blank" rel="noopener noreferrer" class="external"
                   :href="`https://search.naver.com/search.naver?where=news&query=${item.name}`">
                   {{ item.naver_news.toLocaleString('en-US') }}
@@ -214,7 +240,7 @@ fetchData()
             </tr>
             <tr>
               <th colspan="2">구글</th>
-              <td v-for="(item, idx) in row.items " :key="idx">
+              <td v-for="(item, idx) in row.items" :key="idx">
                 <a target="_blank" rel="noopener noreferrer" class="external"
                   :href="`http://www.google.com/search?nfpr=1&q=%22${item.name}%22`">
                   {{ item.google_search.toLocaleString('en-US') }}
@@ -234,6 +260,11 @@ fetchData()
       <div v-if="auth.canWrite()" class="float-left">
         <button type="button" class="btn">
           재등록
+        </button>
+      </div>
+      <div v-if="auth.canDelete(row.userAvatar.id) && row.phase === 'failed'" class="float-left ml-2">
+        <button type="button" class="btn" @click="rerun(row)">
+          재실행
         </button>
       </div>
       <div class="float-right">
