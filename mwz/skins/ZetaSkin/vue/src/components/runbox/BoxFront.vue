@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import type { Job } from './types'
-import TheConsole from '@common/components/console/TheConsole.vue';
-import { type Log } from '@common/components/console/utils';
+import TheConsole from '@common/components/console/TheConsole.vue'
+import type { Log } from '@common/components/console/utils'
 
 declare global {
   interface Window {
@@ -11,55 +11,57 @@ declare global {
 }
 
 const props = defineProps<{
-  job: Job,
+  job: Job
   seq: number
 }>()
+
 const { job, seq } = props
 const iframe = ref<HTMLIFrameElement | null>(null)
 const logs = ref<Log[]>([])
 
 function generateJobScript(job: Job): string {
   return job.boxes.map(b => {
-    if (b.lang !== 'javascript') return b.text;
+    if (b.lang !== 'javascript') return b.text
     return `<script>
       try {
         new Function(\`${b.text}\`)();
       } catch(e) {
-        console.error(\`Uncaught \${e.name}: \${e.message} at line: \${e.stack}\`);
+        console.error("Uncaught " + e.name + ": " + e.message + " at " + e.stack);
       }
-    <\/script>`;
-  }).join('');
+    <\/script>`
+  }).join('')
 }
 
-
-
 onMounted(() => {
-  if (!iframe.value) return
-  const { contentDocument: doc, contentWindow: win } = iframe.value
+  const doc = iframe.value?.contentDocument
+  const win = iframe.value?.contentWindow
   if (!doc || !win) return
 
+  // proxy 콘솔
   win.console = new Proxy(console, {
-    get(_, prop) {
+    get(_, level) {
       return (...args: unknown[]) => {
-        const level = prop as string
-        logs.value.push({ level, args })
+        logs.value.push({ level: level as string, args })
       }
     }
   })
-  doc.open();
-  doc.write(generateJobScript(job));
-  doc.close();
+
+  // HTML/JS 출력
+  doc.open()
+  doc.write(generateJobScript(job))
+  doc.close()
 })
 </script>
 
 <template>
-  <div class="p-4 border rounded bg-zinc-50 dark:bg-zinc-950">
+  <div class="p-4 border rounded bg-zinc-100 dark:bg-zinc-900">
     <slot />
-  </div>
-  <div v-if='seq === job.main' class="border">
-    <iframe ref="iframe" class="w-full border bg-white" :class="{ hidden: !job.boxes.some(b => b.lang === 'html') }" />
-    <div v-if="logs.length > 0" class="border font-mono text-sm p-2 pb-5">
-      <TheConsole :logs="logs" />
+    <div v-if="job.main === seq">
+      <iframe ref="iframe" class="w-full h-32 border bg-white"
+        :class="{ hidden: !job.boxes.some(b => b.lang === 'html') }" />
+      <div v-if="logs.length > 0" class="border font-mono text-sm p-2 pb-5">
+        <TheConsole :logs="logs" />
+      </div>
     </div>
   </div>
 </template>

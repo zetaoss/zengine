@@ -111,6 +111,34 @@ class SkinZetaSkin extends SkinMustache
             'logout' => $userMenu['logout'] ?? null,
         ]));
 
+        // if (! empty($data['html-body-content'])) {
+        //     $data['html-body-content'] = self::transformHighlightDivs($data['html-body-content']);
+        // }
+
         return $data;
+    }
+
+    private static function transformHighlightDivs(string $html): string
+    {
+        return preg_replace_callback(
+            '#<div\s+([^>]*class="[^"]*\bmw-highlight\b[^"]*"[^>]*)>\s*(<pre>.*?</pre>)\s*</div>#is',
+            function ($matches) {
+                $attrString = $matches[1];
+                $preBlock = $matches[2];
+
+                // 속성 파싱
+                preg_match_all('/(\w+)="([^"]*)"/', $attrString, $attrMatches, PREG_SET_ORDER);
+                $attrs = [];
+                foreach ($attrMatches as [$_, $key, $value]) {
+                    $attrs[$key] = $value;
+                }
+
+                // JSON 문자열은 그대로 넣고 escape 생략
+                $dataProp = json_encode($attrs, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+                return "<c-layout-foot :data='{$dataProp}'>{$preBlock}</c-layout-foot>";
+            },
+            $html
+        );
     }
 }

@@ -19,12 +19,12 @@ export function enqueue(f: JobHandler, j: Job) {
   );
 }
 
-export function wrap(el: Element, tag: string): Element {
-  const wrapper = document.createElement(tag)
-  el.parentNode?.insertBefore(wrapper, el)
-  wrapper.appendChild(el)
-  return wrapper
-}
+// export function wrap(el: Element, tag: string): Element {
+//   const wrapper = document.createElement(tag)
+//   el.parentNode?.insertBefore(wrapper, el)
+//   wrapper.appendChild(el)
+//   return wrapper
+// }
 
 export function md5(...args: unknown[]): string {
   return Md5.hashStr(JSON.stringify(args));
