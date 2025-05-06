@@ -17,9 +17,9 @@ class AuthService
 
     private static function getValidUserID(): ?int
     {
-        $prefix = getenv('WG_COOKIE_PREFIX');
-        $userID = (int) ($_COOKIE["{$prefix}UserID"] ?? 0);
-        $userName = $_COOKIE["{$prefix}UserName"] ?? null;
+        $prefix = config('app.wg_cookie_prefix');
+        $userID = (int) request()->cookie("{$prefix}UserID");
+        $userName = request()->cookie("{$prefix}UserName");
 
         if (! $userID || ! $userName) {
             return null;
@@ -38,7 +38,7 @@ class AuthService
 
     private static function isValidSession(string $prefix, int $userID): bool
     {
-        $sessionKey = $_COOKIE["{$prefix}_session"] ?? null;
+        $sessionKey = request()->cookie("{$prefix}_session");
         if (! $sessionKey) {
             return false;
         }
@@ -48,14 +48,14 @@ class AuthService
             return false;
         }
 
-        $data = @unserialize($sessionData);
+        $data = @unserialize($sessionData, ['allowed_classes' => false]);
 
         return is_array($data) && ($data['data']['wsUserID'] ?? 0) == $userID;
     }
 
     private static function isValidToken(string $prefix, int $userID, string $userName): bool
     {
-        $token = $_COOKIE["{$prefix}Token"] ?? null;
+        $token = request()->cookie("{$prefix}Token");
         if (! $token) {
             return false;
         }
@@ -92,7 +92,7 @@ class AuthService
             'avatar' => UserService::getUserAvatar($userID),
             'groups' => $groups,
         ];
-        Cache::put($cacheKey, $userInfo);
+        Cache::put($cacheKey, $userInfo, now()->addHours(1));
 
         return $userInfo;
     }
