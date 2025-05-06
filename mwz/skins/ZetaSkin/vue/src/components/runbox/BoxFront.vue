@@ -37,7 +37,6 @@ onMounted(() => {
   const win = iframe.value?.contentWindow
   if (!doc || !win) return
 
-  // proxy 콘솔
   win.console = new Proxy(console, {
     get(_, level) {
       return (...args: unknown[]) => {
@@ -46,7 +45,6 @@ onMounted(() => {
     }
   })
 
-  // HTML/JS 출력
   doc.open()
   doc.write(generateJobScript(job))
   doc.close()

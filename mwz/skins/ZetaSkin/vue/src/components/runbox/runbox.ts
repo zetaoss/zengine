@@ -2,31 +2,39 @@ import { createApp, reactive, h } from 'vue'
 import http from '@/utils/http'
 import getRLCONF from '@/utils/rlconf'
 import TheBox from './TheBox.vue'
-import { type Box, BoxType, type Job, JobType, Step } from './types'
-import { enqueue, md5 } from './util'
+import { type Box, BoxType, type Job, JobType } from './types'
 
 const jobs: Job[] = reactive([])
 const pageId = getRLCONF().wgArticleId
 let delay = 1000
 
+const queue: Promise<void>[] = [Promise.resolve()]
+
+type JobHandler = (job: Job, done: () => void) => void;
+
 async function getJob(job: Job, resolve: () => void) {
   try {
-    const { step, outs } = await http.get(`/api/runbox/${job.hash}`)
-    job.step = step
+    const { phase, outs } = await http.get(`/api/runbox/${job.hash}`)
+    job.phase = phase
 
-    if (step === Step.Initial) {
+    if (phase === 'none') {
       return enqueue(postJob, job)
     }
 
-    if (step === Step.Queued || step === Step.Active) {
+    if (phase === 'pending' || phase === 'running') {
       console.log(`Job ${job.id}: Retrying in ${delay}ms`)
       delay *= 1.1
       setTimeout(() => enqueue(getJob, job), delay)
       return
     }
 
-    if (step === Step.Succeeded) {
-      job[job.type === JobType.Lang ? 'logs' : 'outs'] = outs
+    if (phase === 'succeeded') {
+      if (job.type === JobType.Lang) {
+        console.log(`[${job.id}] phase=succeeded → setting logs`, outs);
+        job.logs.splice(0, job.logs.length, ...outs); // ✅ 중요!
+      } else {
+        job.outs = outs;
+      }
     }
   } catch (error) {
     console.error(`Error fetching job ${job.id}:`, error)
@@ -44,7 +52,7 @@ async function postJob(job: Job, resolve: () => void) {
       type: job.type,
       payload: job.payload,
     })
-    job.step = Step.Queued
+    job.phase = 'pending'
     enqueue(getJob, job)
   } catch (error) {
     console.error(`Error posting job ${job.id}:`, error)
@@ -91,16 +99,16 @@ export function runbox() {
         boxes: [],
         pageId,
         main: -1,
-        step: Step.Initial,
+        phase: null,
         payload: null,
         logs: [],
-        outs: []
+        outs: [],
       }) - 1]
 
     job.boxes.push(box)
   })
 
-  jobs.forEach(job => {
+  jobs.forEach(async job => {
     const mainIdx = job.boxes.findIndex(b => b.isMain)
     job.main = mainIdx !== -1 ? mainIdx : job.boxes.length - 1
     const mainBox = job.boxes[job.main]
@@ -132,7 +140,7 @@ export function runbox() {
       }
     }
 
-    job.hash = md5(job.id, job.pageId, job.type, job.payload)
+    job.hash = await sha256(job.id, job.pageId, job.type, job.payload)
 
     job.boxes.forEach((box, seq) => {
       const el = box.el
@@ -154,4 +162,19 @@ export function runbox() {
       enqueue(getJob, job)
     }
   })
+}
+
+function enqueue(f: JobHandler, j: Job) {
+  const prev = queue.length > 0 ? queue[queue.length - 1] : Promise.resolve();
+  queue.push(
+    prev.then(() => new Promise<void>((resolve) => f(j, resolve)))
+  );
+}
+
+async function sha256(...args: unknown[]) {
+  const msgBuffer = new TextEncoder().encode(JSON.stringify(args));
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
 }
