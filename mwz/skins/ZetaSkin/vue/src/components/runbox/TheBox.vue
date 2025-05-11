@@ -5,23 +5,34 @@ import BoxFront from './BoxFront.vue'
 import BoxLang from './BoxLang.vue'
 import BoxNotebook from './BoxNotebook.vue'
 import BoxZero from './BoxZero.vue'
-import { type Job, JobType } from './types'
+
+import type { Job } from './types'
 
 const job = inject('job') as Job
 const seq = inject('seq') as number
-
-const getComponent = () => {
-  switch (job.type) {
-    case JobType.Front: return BoxFront
-    case JobType.Lang: return BoxLang
-    case JobType.Notebook: return BoxNotebook
-    default: return BoxZero
-  }
-}
 </script>
 
 <template>
-  <component :is="getComponent()" :job="job" :seq="seq">
-    <slot />
-  </component>
+  <div v-if="job">
+    <div v-if="job.type == 'front'">
+      <BoxFront :job="job" :seq="seq">
+        <slot />
+      </BoxFront>
+    </div>
+    <div v-else-if="job.type == 'lang'">
+      <BoxLang :job="job" :seq="seq">
+        <slot />
+      </BoxLang>
+    </div>
+    <div v-else-if="job.type == 'notebook'">
+      <BoxNotebook :job="job" :seq="seq">
+        <slot />
+      </BoxNotebook>
+    </div>
+    <div v-else>
+      <BoxZero job="job" :seq="0">
+        <slot />
+      </BoxZero>
+    </div>
+  </div>
 </template>

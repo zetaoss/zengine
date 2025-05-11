@@ -16,47 +16,46 @@ class RunboxJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    private $runbox;
+    public int $tries = 3;
 
-    public function __construct($runboxID)
+    public function __construct(public int $runboxId) {}
+
+    public function handle(): void
     {
-        $this->runbox = Runbox::find($runboxID);
-        if (! $this->runbox) {
-            throw new \Exception("Runbox with ID {$runboxID} not found.");
+        $runbox = Runbox::find($this->runboxId);
+        if (! $runbox) {
+            Log::warning("Runbox #{$this->runboxId} not found");
+
+            return;
         }
-    }
 
-    public function handle()
-    {
         try {
-            $this->runbox->step = 2;
-            $this->runbox->save();
+            $runbox->phase = 'running';
+            $runbox->save();
 
-            $type = $this->runbox->type;
-            $outsKey = 'logs';
-            if ($type == 'notebook') {
-                $outsKey = 'outputsList';
+            $type = $runbox->type;
+            $response = Http::post(env('RUNBOX_URL')."/$type", $runbox->payload)->throw();
+            $result = $response->json();
+
+            if ($type === 'notebook') {
+                $runbox->outs = $result['outputsList'] ?? [];
+            } else {
+                $runbox->outs = [
+                    'logs' => $result['logs'] ?? [],
+                    'images' => $result['images'] ?? [],
+                ];
             }
-            $resp = Http::post(getenv('RUNBOX_URL')."/$type", $this->runbox->payload)->throw();
-            $arr = json_decode($resp->body(), true);
 
-            $this->runbox->outs = $arr[$outsKey];
-            $this->runbox->cpu = $arr['cpu'];
-            $this->runbox->mem = $arr['mem'];
-            $this->runbox->time = $arr['time'];
-            $this->runbox->step = 3;
-            $this->runbox->save();
+            $runbox->cpu = $result['cpu'] ?? null;
+            $runbox->mem = $result['mem'] ?? null;
+            $runbox->time = $result['time'] ?? null;
+            $runbox->phase = 'succeeded';
+            $runbox->save();
 
         } catch (Throwable $e) {
-            $this->failed($e);
-            throw $e;
+            Log::error("RunboxJob failed for ID {$runbox->id}: {$e->getMessage()}");
+            $runbox->phase = 'failed';
+            $runbox->save();
         }
-    }
-
-    public function failed(Throwable $exception)
-    {
-        Log::error("RunboxJob failed for Runbox ID: {$this->runbox->id}");
-        $this->runbox->step = 9;
-        $this->runbox->save();
     }
 }
