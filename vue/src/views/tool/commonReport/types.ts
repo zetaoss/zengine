@@ -18,6 +18,6 @@ export interface Row {
   userAvatar: UserAvatar
   created_at: string
   updated_at: string
-  state: number
+  phase: string
   items: Item[]
 }

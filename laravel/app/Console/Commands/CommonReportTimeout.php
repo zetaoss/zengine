@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Services\CommonReportService;
+use DateTimeImmutable;
 use Illuminate\Console\Command;
 
 class CommonReportTimeout extends Command
@@ -10,28 +12,24 @@ class CommonReportTimeout extends Command
 
     protected $description = 'Mark reports as failed if not processed within 1 minute';
 
-    public function handle()
+    public function __construct(protected CommonReportService $service)
     {
-        $threshold = Carbon::now()->subMinute();
+        parent::__construct();
+    }
 
-        $timedOut = CommonReport::where('state', 0)
-            ->where('created_at', '<', $threshold)
-            ->get();
+    public function handle(): int
+    {
+        $this->info('['.$this->getName().'] Checking for timed-out reports...');
 
-        if ($timedOut->isEmpty()) {
-            $this->info('No timed-out reports found.');
+        $threshold = new DateTimeImmutable('-1 minute');
+        $count = $this->service->markTimedOutReports($threshold);
 
-            return 0;
+        if ($count === 0) {
+            $this->info('['.$this->getName().'] No timed-out reports found.');
+        } else {
+            $this->info('['.$this->getName()."] Total {$count} report(s) updated.");
         }
 
-        foreach ($timedOut as $report) {
-            $report->state = -1;
-            $report->save();
-            $this->info("Report #{$report->id} marked as failed.");
-        }
-
-        $this->info("Total {$timedOut->count()} report(s) updated.");
-
-        return 0;
+        return Command::SUCCESS;
     }
 }

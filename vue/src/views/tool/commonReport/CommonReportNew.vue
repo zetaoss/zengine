@@ -19,7 +19,7 @@ async function ok() {
     alert('비교 대상을 2개 이상 입력해 주세요')
     return
   }
-  await http.post('/api/common-report', {
+  await http.post('/api/common-reports', {
     names: filtered,
   })
   emit('close')
