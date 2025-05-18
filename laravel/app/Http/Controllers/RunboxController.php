@@ -8,40 +8,36 @@ use Illuminate\Http\Request;
 
 class RunboxController extends Controller
 {
-    public function get($hash)
+    public function show(string $hash)
     {
-        $r = Runbox::where('hash', $hash)->first();
-        if (! $r) {
-            return ['step' => 0];
+        $runbox = Runbox::where('hash', $hash)->first();
+        if (! $runbox) {
+            return ['phase' => 'none'];
         }
 
-        return $r;
+        return $runbox;
     }
 
-    public function post(Request $request)
+    public function store(Request $request)
     {
-        $v = $request->validate([
+        $validated = $request->validate([
             'hash' => 'required|string',
-            'user_id' => 'required|int',
-            'page_id' => 'required|int',
-            'type' => 'required|string',
+            'user_id' => 'required|integer',
+            'page_id' => 'required|integer',
+            'type' => 'required|string|in:lang,notebook',
             'payload' => 'required|array',
         ]);
-
-        if (! in_array($v['type'], ['lang', 'notebook'])) {
-            abort(404);
-        }
-        $runbox = new Runbox;
-        $runbox->hash = $v['hash'];
-        $runbox->step = 1;
-        $runbox->user_id = 0;
-        $runbox->page_id = $v['page_id'];
-        $runbox->type = $v['type'];
-        $runbox->payload = $v['payload'];
-        $runbox->save();
+        $runbox = Runbox::create([
+            'hash' => $validated['hash'],
+            'phase' => 'pending',
+            'user_id' => 0, // TODO: 실제 사용자 ID 사용
+            'page_id' => $validated['page_id'],
+            'type' => $validated['type'],
+            'payload' => $validated['payload'],
+        ]);
 
         RunboxJob::dispatch($runbox->id);
 
-        return response()->json(['message' => 'Accepted'], 202);
+        return response()->json(['phase' => 'pending'], 202);
     }
 }

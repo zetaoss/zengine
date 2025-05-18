@@ -11,7 +11,7 @@ import RouterLink from '@/components/RouterLink.vue'
 import TheBinder from '@/components/binder/TheBinder.vue'
 import PageFoot from '@/components/pagefoot/PageFoot.vue'
 import TocMain from '@/components/toc/TocMain.vue'
-import runbox from '@/components/runbox/runbox'
+import { runbox } from '@/components/runbox/runbox'
 
 import '@/assets/app.scss'
 

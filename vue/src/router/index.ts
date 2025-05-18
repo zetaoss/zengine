@@ -7,6 +7,8 @@ const ForumEdit = () => import('@/views/forum/ForumEdit.vue')
 const TheTool = () => import('@/views/tool/TheTool.vue')
 const CommonReport = () => import('@/views/tool/commonReport/CommonReport.vue')
 const CommonReportDetail = () => import('@/views/tool/commonReport/CommonReportDetail.vue')
+const TheRandom = () => import('@/views/tool/random/TheRandom.vue')
+const SvgToPng = () => import('@/views/tool/SvgToPng.vue')
 const FrontBox = () => import('@/views/tool/FrontBox.vue')
 const WriteRequest = () => import('@/views/tool/writeRequest/WriteRequest.vue')
 const LoginView = () => import('@/views/auth/LoginView.vue')
@@ -39,6 +41,8 @@ const router = createRouter({
         { path: 'common-report/:id', component: CommonReportDetail },
         { path: 'write-request', component: WriteRequest },
         { path: 'write-request/page/:page', component: WriteRequest },
+        { path: 'random', component: TheRandom },
+        { path: 'svg-to-png', component: SvgToPng },
         { path: 'frontbox', component: FrontBox },
       ],
     },
