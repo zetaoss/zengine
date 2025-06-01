@@ -1,5 +1,6 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
-import TheLog from './TheLog.vue'
+import LogVue from './Log.vue'
 import type { Log } from './utils'
 
 defineProps<{
@@ -9,7 +10,7 @@ defineProps<{
 
 <template>
   <div class="console space-y-1 font-mono text-sm">
-    <TheLog v-for="(log, i) in logs" :key="i" :level="log.level" :args="log.args" :initialExpanded="true" />
+    <LogVue v-for="(log, i) in logs" :key="i" :level="log.level" :args="log.args" :initialExpanded="true" />
   </div>
 </template>
 

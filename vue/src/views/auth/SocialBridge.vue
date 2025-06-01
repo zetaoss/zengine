@@ -3,7 +3,7 @@ import { onMounted } from 'vue'
 
 import { useRoute } from 'vue-router'
 
-import TheSpinner from '@/components/TheSpinner.vue'
+import TheSpinner from '@common/ui/Spinner.vue'
 
 import doLogin from './login'
 

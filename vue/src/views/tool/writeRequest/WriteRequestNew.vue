@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import TheModal from '@common/components/TheModal.vue'
+import TheModal from '@common/ui/Modal.vue'
 import http from '@/utils/http'
 import titleExist from '@/utils/mediawiki'
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue'
 
-import TheModal from '@common/components/TheModal.vue'
+import TheModal from '@common/ui/Modal.vue'
 import http from '@/utils/http'
 
 const emit = defineEmits(['close'])

@@ -1,13 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-const TheHome = () => import('@/views/home/TheHome.vue')
+const Home = () => import('@/views/home/Home.vue')
 const ForumList = () => import('@/views/forum/ForumList.vue')
 const ForumNew = () => import('@/views/forum/ForumNew.vue')
 const ForumEdit = () => import('@/views/forum/ForumEdit.vue')
-const TheTool = () => import('@/views/tool/TheTool.vue')
+const Tool = () => import('@/views/tool/Tool.vue')
 const CommonReport = () => import('@/views/tool/commonReport/CommonReport.vue')
 const CommonReportDetail = () => import('@/views/tool/commonReport/CommonReportDetail.vue')
-const TheRandom = () => import('@/views/tool/random/TheRandom.vue')
+const Random = () => import('@/views/tool/random/Random.vue')
 const SvgToPng = () => import('@/views/tool/SvgToPng.vue')
 const FrontBox = () => import('@/views/tool/FrontBox.vue')
 const WriteRequest = () => import('@/views/tool/writeRequest/WriteRequest.vue')
@@ -19,7 +19,7 @@ const SocialJoin = () => import('@/views/auth/SocialJoin.vue')
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    { path: '/', component: TheHome, meta: { tab: 'wiki' } },
+    { path: '/', component: Home, meta: { tab: 'wiki' } },
     {
       path: '/forum',
       meta: { tab: 'forum' },
@@ -33,7 +33,7 @@ const router = createRouter({
     },
     {
       path: '/tool',
-      component: TheTool,
+      component: Tool,
       meta: { tab: 'tool' },
       children: [
         { path: 'common-report', component: CommonReport },
@@ -41,7 +41,7 @@ const router = createRouter({
         { path: 'common-report/:id', component: CommonReportDetail },
         { path: 'write-request', component: WriteRequest },
         { path: 'write-request/page/:page', component: WriteRequest },
-        { path: 'random', component: TheRandom },
+        { path: 'random', component: Random },
         { path: 'svg-to-png', component: SvgToPng },
         { path: 'frontbox', component: FrontBox },
       ],

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import TheModal from '@common/components/TheModal.vue'
-import TheTextarea from '@common/components/TheTextarea.vue'
+import Modal from '@common/ui/Modal.vue'
+import Textarea from '@common/ui/Textarea.vue'
 import AvatarCore from '@common/components/avatar/AvatarCore.vue'
 import AvatarUserLink from '@common/components/avatar/AvatarUserLink.vue'
 import type UserAvatar from '@common/types/userAvatar'
@@ -93,9 +93,9 @@ async function fetchCatCommentsCat(cat: string) {
 fetchData()
 </script>
 <template>
-  <TheModal :show="showModal" ok-class="btn-danger" @ok="delOK()" @cancel="showModal = false">
+  <Modal :show="showModal" ok-class="btn-danger" @ok="delOK()" @cancel="showModal = false">
     댓글을 삭제하시겠습니까?
-  </TheModal>
+  </Modal>
   <div class="p-6 py-4">
     <div>
       문서 댓글 ({{ docComments.length }})
@@ -141,7 +141,7 @@ fetchData()
               </div>
             </div>
             <div class="py-2 rounded-t">
-              <TheTextarea v-model="editingRow.message" />
+              <Textarea v-model="editingRow.message" />
             </div>
             <div class="overflow-auto">
               <div class="float-right">

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import type { Job } from './types'
-import TheConsole from '@common/components/console/TheConsole.vue'
+import Console from '@common/components/console/Console.vue'
 import type { Log } from '@common/components/console/utils'
 
 declare global {
@@ -58,7 +58,7 @@ onMounted(() => {
       <iframe ref="iframe" class="w-full h-32 border bg-white"
         :class="{ hidden: !job.boxes.some(b => b.lang === 'html') }" />
       <div v-if="logs.length > 0" class="border font-mono text-sm p-2 pb-5">
-        <TheConsole :logs="logs" />
+        <Console :logs="logs" />
       </div>
     </div>
   </div>

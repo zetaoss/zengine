@@ -5,7 +5,7 @@ import { mdiHistory, mdiMagnify, mdiShuffle } from '@mdi/js'
 import { vOnClickOutside } from '@vueuse/components'
 
 import ProgressBar from '../ProgressBar.vue'
-import TheIcon from '../TheIcon.vue'
+import Icon from '@common/ui/Icon.vue'
 import CSSTooltip from '../tooltip/CSSTooltip.vue'
 
 interface Page {
@@ -116,7 +116,7 @@ function highlight(needle: string, haystack: string) {
             @input="onInput" @focus="onFocus" @blur="onBlur">
           <button type="button" class="flex-none w-12 h-full focus:z-10 focus:ring-1 bg-transparent focus:text-blue-700"
             @click="onClick">
-            <TheIcon :path="mdiMagnify" />
+            <Icon :path="mdiMagnify" />
           </button>
         </div>
         <div class="absolute z-10 w-full bg-slate-200 dark:bg-gray-900 rounded-b-lg border-t"
@@ -132,7 +132,7 @@ function highlight(needle: string, haystack: string) {
           <a class="block p-2 px-3 border-t rounded-b-lg text-z-text"
             :href="`/w/index.php?title=특수:검색&fulltext=1&search=${keyword}`" :class="{ focused: index == pages.length }"
             @mouseover="onMouseover(pages.length)" @focus="onMouseover(pages.length)">
-            <TheIcon :path="mdiMagnify" /> <b>{{ keyword }}</b> 항목이 포함된 글 검색
+            <Icon :path="mdiMagnify" /> <b>{{ keyword }}</b> 항목이 포함된 글 검색
           </a>
         </div>
       </div>
@@ -140,12 +140,12 @@ function highlight(needle: string, haystack: string) {
     <div class="flex-none">
       <CSSTooltip position="bottom" tooltipText="랜덤">
         <a href="/wiki/특수:임의문서" class="mybtn">
-          <TheIcon :path="mdiShuffle" />
+          <Icon :path="mdiShuffle" />
         </a>
       </CSSTooltip>
       <CSSTooltip position="bottom" tooltipText="최근바뀜">
         <a href="/wiki/특수:최근바뀜" class="mybtn">
-          <TheIcon :path="mdiHistory" />
+          <Icon :path="mdiHistory" />
         </a>
       </CSSTooltip>
     </div>

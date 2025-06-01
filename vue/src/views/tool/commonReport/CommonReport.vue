@@ -4,9 +4,9 @@ import { useRoute, useRouter } from 'vue-router'
 import useAuthStore from '@/stores/auth'
 import http from '@/utils/http'
 import AvatarUserLink from '@common/components/avatar/AvatarUserLink.vue'
-import TheSpinner from '@/components/TheSpinner.vue'
-import TheStar from './TheStar.vue'
-import ThePagination from '@/components/pagination/ThePagination.vue'
+import Spinner from '@common/ui/Spinner.vue'
+import Star from './Star.vue'
+import Pagination from '@/components/pagination/Pagination.vue'
 import type { PaginateData } from '@/components/pagination/types'
 import CommonReportNew from './CommonReportNew.vue'
 import type { Row } from './types'
@@ -125,7 +125,7 @@ onUnmounted(() => retrier.clear())
               <br>
             </td>
             <td v-if="idx === 0">
-              <TheStar :n="getScore(row)" />
+              <Star :n="getScore(row)" />
             </td>
             <td v-else>
               —
@@ -141,11 +141,11 @@ onUnmounted(() => retrier.clear())
         </div>
       </div>
       <div class="text-center pb-8">
-        <ThePagination v-if="paginateData" :paginate-data="paginateData" />
+        <Pagination v-if="paginateData" :paginate-data="paginateData" />
       </div>
     </div>
     <div v-else class="text-center">
-      <TheSpinner size="2rem" />
+      <Spinner size="2rem" />
     </div>
   </div>
 </template>

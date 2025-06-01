@@ -4,10 +4,10 @@ import { mdiCheckBold, mdiContentCopy } from '@mdi/js'
 import { useDateFormat, useDebounceFn } from '@vueuse/core'
 import { useRoute, useRouter } from 'vue-router'
 
-import TheIcon from '@common/components/TheIcon.vue'
-import TheTooltip from '@common/components/TheTooltip.vue'
+import Icon from '@common/ui/Icon.vue'
+import Tooltip from '@common/ui/Tooltip.vue'
 import AvatarUserLink from '@common/components/avatar/AvatarUserLink.vue'
-import TheStar from './TheStar.vue'
+import Star from './Star.vue'
 
 import useAuthStore from '@/stores/auth'
 import copyToClipboard from '@/utils/clipboard'
@@ -125,43 +125,43 @@ fetchDataWithRetry()
           </div>
         </div>
         <div class="float-right">
-          <TheTooltip :style="tooltipStyle" :show="tooltips[2]" content="Copied!">
+          <Tooltip :style="tooltipStyle" :show="tooltips[2]" content="Copied!">
             <button type="button" class="btn" @click="copyTableWikitext">
               표 복사(위키)
               <span v-if="!tooltips[2]">
-                <TheIcon :path="mdiContentCopy" :size="14" />
+                <Icon :path="mdiContentCopy" :size="14" />
               </span>
               <span v-else class="text-green-500">
-                <TheIcon :path="mdiCheckBold" :size="14" />
+                <Icon :path="mdiCheckBold" :size="14" />
               </span>
             </button>
-          </TheTooltip>
+          </Tooltip>
         </div>
         <div class="float-right">
-          <TheTooltip :style="tooltipStyle" :show="tooltips[1]" content="Copied!">
+          <Tooltip :style="tooltipStyle" :show="tooltips[1]" content="Copied!">
             <button type="button" class="btn" @click="copyTableHTML">
               표 복사(HTML)
               <span v-if="!tooltips[1]">
-                <TheIcon :path="mdiContentCopy" :size="14" />
+                <Icon :path="mdiContentCopy" :size="14" />
               </span>
               <span v-else class="text-green-500">
-                <TheIcon :path="mdiCheckBold" :size="14" />
+                <Icon :path="mdiCheckBold" :size="14" />
               </span>
             </button>
-          </TheTooltip>
+          </Tooltip>
         </div>
         <div class="float-right">
-          <TheTooltip :style="tooltipStyle" :show="tooltips[0]" content="Copied!">
+          <Tooltip :style="tooltipStyle" :show="tooltips[0]" content="Copied!">
             <button type="button" class="btn" @click="copyURL">
               URL 복사
               <span v-if="!tooltips[0]">
-                <TheIcon :path="mdiContentCopy" :size="14" />
+                <Icon :path="mdiContentCopy" :size="14" />
               </span>
               <span v-else class="text-green-500">
-                <TheIcon :path="mdiCheckBold" :size="14" />
+                <Icon :path="mdiCheckBold" :size="14" />
               </span>
             </button>
-          </TheTooltip>
+          </Tooltip>
         </div>
       </div>
       <hr class="my-4 border-0 border-b">
@@ -178,7 +178,7 @@ fetchDataWithRetry()
               <th colspan="2">판정</th>
               <td v-for="(_, idx) in row.items" :key="idx">
                 <span v-if="idx == 0">
-                  <TheStar :n="getScore(row)" />
+                  <Star :n="getScore(row)" />
                 </span>
                 <span v-else>—</span>
               </td>

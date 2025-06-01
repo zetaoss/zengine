@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 
-import TheConsole from '@common/components/console/TheConsole.vue';
+import Console from '@common/components/console/Console.vue';
 import { type Log } from '@common/components/console/utils';
 
 declare global {

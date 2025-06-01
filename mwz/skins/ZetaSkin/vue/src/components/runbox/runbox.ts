@@ -1,7 +1,7 @@
 import { createApp, reactive, h } from 'vue'
 import http from '@/utils/http'
 import getRLCONF from '@/utils/rlconf'
-import TheBox from './TheBox.vue'
+import BoxVue from './Box.vue'
 import { type Box, BoxType, type Job, JobType } from './types'
 
 const jobs: Job[] = reactive([])
@@ -31,7 +31,7 @@ async function getJob(job: Job, resolve: () => void) {
     if (phase === 'succeeded') {
       if (job.type === JobType.Lang) {
         console.log(`[${job.id}] phase=succeeded → setting logs`, outs);
-        job.logs.splice(0, job.logs.length, ...outs); // ✅ 중요!
+        job.logs.splice(0, job.logs.length, ...outs);
       } else {
         job.outs = outs;
       }
@@ -148,7 +148,7 @@ export function runbox() {
       el.innerHTML = ''
       createApp({
         render() {
-          return h(TheBox, null, {
+          return h(BoxVue, null, {
             default: () => h('div', { innerHTML: originalHTML })
           })
         }

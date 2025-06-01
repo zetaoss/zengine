@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import http from '@/utils/http'
-import TheModal from '@common/components/TheModal.vue'
+import TheModal from '@common/ui/Modal.vue'
 import TiptapMain from './tiptap/TiptapMain.vue'
 import { useErrors, type ErrorResponse } from './errors'
 import './tiptap/ProseMirror.scss'

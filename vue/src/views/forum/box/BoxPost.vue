@@ -5,7 +5,7 @@ import { useDateFormat } from '@vueuse/core'
 import Prism from 'prismjs'
 import { useRouter } from 'vue-router'
 
-import TheModal from '@common/components/TheModal.vue'
+import TheModal from '@common/ui/Modal.vue'
 import AvatarUserLink from '@common/components/avatar/AvatarUserLink.vue'
 import useAuthStore from '@/stores/auth'
 import http from '@/utils/http'

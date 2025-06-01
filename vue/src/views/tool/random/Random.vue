@@ -1,60 +1,4 @@
-<template>
-  <div class="px-4 py-6 max-w-2xl mx-auto space-y-6 text-gray-800 dark:text-gray-100">
-    <h2 class="text-3xl font-bold text-center dark:text-white">랜덤 문자열 생성기</h2>
-
-    <!-- Preset Buttons -->
-    <div class="flex justify-center flex-wrap gap-2">
-      <button v-for="p in presets" :key="p.key" @click="selectPreset(p.key)"
-        class="px-4 py-1.5 rounded border transition"
-        :class="preset === p.key
-          ? 'bg-blue-600 text-white border-blue-600'
-          : 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700'">
-        {{ p.label }}
-      </button>
-    </div>
-
-    <!-- Length Slider -->
-    <div>
-      <label class="block font-medium mb-1">문자열 길이: {{ length }}</label>
-      <input type="range" min="1" max="64" v-model="length" :disabled="preset === 'uuid'" class="w-full"
-        @change="generate" />
-    </div>
-
-    <!-- Charset Buttons -->
-    <div class="space-y-2">
-      <div class="font-medium">문자 집합</div>
-      <div class="flex flex-wrap gap-2">
-        <button v-for="btn in charsetButtons" :key="btn.key" @click="toggleCharset(btn.key)"
-          :class="charBtnClass(isCharsetEnabled(btn.key), isCharsetReadonly())" :aria-disabled="isCharsetReadonly()"
-          :title="isCharsetReadonly() ? '이 프리셋에선 수정 불가' : '클릭하여 토글'">
-          {{ btn.label }}
-        </button>
-      </div>
-    </div>
-
-    <!-- Generate Button -->
-    <button @click="generate" class="w-full py-2 mt-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
-      새 문자열 생성
-    </button>
-
-    <!-- Output History -->
-    <div class="space-y-2 pt-4">
-      <div v-for="(item, idx) in history" :key="idx"
-        class="flex items-center justify-between p-3 rounded font-mono break-all transition-all" :class="[
-          idx === 0
-            ? 'border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-900/40'
-            : 'bg-gray-50 dark:bg-gray-800',
-        ]">
-        <span class="mr-2 flex-1 break-words">{{ item }}</span>
-        <button @click="copyToClipboard(item, idx)"
-          class="text-sm px-2 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 transition min-w-[80px] text-center">
-          {{ copiedIndex === idx ? '✔ Copied' : '📋 Copy' }}
-        </button>
-      </div>
-    </div>
-  </div>
-</template>
-
+<!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 
@@ -188,3 +132,60 @@ onMounted(() => {
   selectPreset(preset.value)
 })
 </script>
+
+<template>
+  <div class="px-4 py-6 max-w-2xl mx-auto space-y-6 text-gray-800 dark:text-gray-100">
+    <h2 class="text-3xl font-bold text-center dark:text-white">랜덤 문자열 생성기</h2>
+
+    <!-- Preset Buttons -->
+    <div class="flex justify-center flex-wrap gap-2">
+      <button v-for="p in presets" :key="p.key" @click="selectPreset(p.key)"
+        class="px-4 py-1.5 rounded border transition"
+        :class="preset === p.key
+          ? 'bg-blue-600 text-white border-blue-600'
+          : 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700'">
+        {{ p.label }}
+      </button>
+    </div>
+
+    <!-- Length Slider -->
+    <div>
+      <label class="block font-medium mb-1">문자열 길이: {{ length }}</label>
+      <input type="range" min="1" max="64" v-model="length" :disabled="preset === 'uuid'" class="w-full"
+        @change="generate" />
+    </div>
+
+    <!-- Charset Buttons -->
+    <div class="space-y-2">
+      <div class="font-medium">문자 집합</div>
+      <div class="flex flex-wrap gap-2">
+        <button v-for="btn in charsetButtons" :key="btn.key" @click="toggleCharset(btn.key)"
+          :class="charBtnClass(isCharsetEnabled(btn.key), isCharsetReadonly())" :aria-disabled="isCharsetReadonly()"
+          :title="isCharsetReadonly() ? '이 프리셋에선 수정 불가' : '클릭하여 토글'">
+          {{ btn.label }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Generate Button -->
+    <button @click="generate" class="w-full py-2 mt-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+      새 문자열 생성
+    </button>
+
+    <!-- Output History -->
+    <div class="space-y-2 pt-4">
+      <div v-for="(item, idx) in history" :key="idx"
+        class="flex items-center justify-between p-3 rounded font-mono break-all transition-all" :class="[
+          idx === 0
+            ? 'border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-900/40'
+            : 'bg-gray-50 dark:bg-gray-800',
+        ]">
+        <span class="mr-2 flex-1 break-words">{{ item }}</span>
+        <button @click="copyToClipboard(item, idx)"
+          class="text-sm px-2 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 transition min-w-[80px] text-center">
+          {{ copiedIndex === idx ? '✔ Copied' : '📋 Copy' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</template>

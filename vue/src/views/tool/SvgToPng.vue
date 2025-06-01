@@ -18,6 +18,8 @@ const copiedDownload = ref(false)
 const copiedClipboard = ref(false)
 const copiedImgTag = ref(false)
 
+const fileName = ref('converted')
+
 const scaleOptions = [25, 50, 75, 100, 125, 150, 175, 200, 250, 300, 400, 500, 600, 700, 800, 900, 1000]
 const scaleWidth = computed(() => Math.round(originalWidth.value * scalePercent.value / 100))
 const scaleHeight = computed(() => Math.round(originalHeight.value * scalePercent.value / 100))
@@ -54,22 +56,14 @@ function extractSvgDimensions(svg: string): { width: number, height: number } {
 }
 
 function renderSvgToCanvas(callback: (canvas: HTMLCanvasElement) => void) {
-  const ratio = window.devicePixelRatio || 1
   const canvas = document.createElement('canvas')
-
-  // 실제 픽셀 해상도 설정
-  canvas.width = targetWidth.value * ratio
-  canvas.height = targetHeight.value * ratio
-
-  // 화면에서 보일 크기 (CSS)
-  canvas.style.width = `${targetWidth.value}px`
-  canvas.style.height = `${targetHeight.value}px`
+  canvas.width = targetWidth.value
+  canvas.height = targetHeight.value
 
   const ctx = canvas.getContext('2d')
   if (!ctx || !svgSourceText.value.trim()) return
 
-  // 고해상도 대응: 모든 도형을 확대해서 그리기
-  ctx.setTransform(ratio, 0, 0, ratio, 0, 0)
+  ctx.setTransform(1, 0, 0, 1, 0, 0) // 실제 크기 그대로
 
   const svgContent = normalizeSvgContent(svgSourceText.value)
   const url = URL.createObjectURL(new Blob([svgContent], { type: 'image/svg+xml' }))
@@ -114,6 +108,7 @@ function onFileChange(e: Event) {
     const reader = new FileReader()
     reader.onload = () => {
       svgSourceText.value = reader.result as string
+      fileName.value = file.name.replace(/\.svg$/i, '')
       convertSvgToPng(svgSourceText.value)
     }
     reader.readAsText(file)
@@ -127,6 +122,7 @@ function onDrop(event: DragEvent) {
     const reader = new FileReader()
     reader.onload = () => {
       svgSourceText.value = reader.result as string
+      fileName.value = file.name.replace(/\.svg$/i, '')
       convertSvgToPng(svgSourceText.value)
     }
     reader.readAsText(file)
@@ -141,7 +137,7 @@ function downloadPng() {
   if (pngDataUrl.value) {
     const a = document.createElement('a')
     a.href = pngDataUrl.value
-    a.download = 'converted.png'
+    a.download = `${fileName.value || 'converted'}.png`
     a.click()
     copiedDownload.value = true
     setTimeout(() => copiedDownload.value = false, 3000)
@@ -247,9 +243,13 @@ function activateCustomMode() { outputMode.value = 'custom' }
 
           </div>
           <hr>
-          <label class="flex items-center gap-2">
-            <input type="checkbox" v-model="invertColor" />
-            반전
+          <label class="flex items-center gap-3">
+            <span>🌓 반전</span>
+            <button @click="invertColor = !invertColor" type="button"
+              :class="['relative inline-flex items-center h-6 w-11 rounded-full transition-colors focus:outline-none', invertColor ? 'bg-blue-600 dark:bg-blue-400' : 'bg-gray-300 dark:bg-gray-600']">
+              <span
+                :class="['inline-block w-4 h-4 transform bg-white rounded-full transition-transform', invertColor ? 'translate-x-6' : 'translate-x-1']"></span>
+            </button>
           </label>
         </div>
 
@@ -265,6 +265,11 @@ function activateCustomMode() { outputMode.value = 'custom' }
                 class="text-xs px-2 py-0.5 bg-gray-300 dark:bg-gray-700 text-black dark:text-white rounded hover:bg-gray-400 dark:hover:bg-gray-600">
                 {{ copiedDownload ? '✔ Downloaded!' : '⬇ Download' }}
               </button>
+              <label class="flex items-center gap-1 text-sm">
+                파일명
+                <input v-model="fileName" type="text" placeholder="converted"
+                  class="w-40 px-2 py-1 border rounded dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100" />
+              </label>
             </div>
             <div class="inline-block overflow-hidden rounded border shadow bg-checkerboard">
               <img :src="pngDataUrl" :width="targetWidth" :height="targetHeight" alt="PNG Preview" />
