@@ -103,7 +103,7 @@ fetchData()
         </div>
         <div v-if="me && me.canEdit(reply.userAvatar.id)" v-on-click-outside="dropdownClose" class="text-right">
           <button type="button" @click="dropdown(reply)">
-            <Icon :size="16" :path="mdiDotsVertical" />
+            <Icon :path="mdiDotsVertical" />
           </button>
         </div>
       </div>

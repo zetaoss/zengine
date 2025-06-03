@@ -129,10 +129,10 @@ fetchDataWithRetry()
             <button type="button" class="btn" @click="copyTableWikitext">
               표 복사(위키)
               <span v-if="!tooltips[2]">
-                <Icon :path="mdiContentCopy" :size="14" />
+                <Icon :path="mdiContentCopy" />
               </span>
               <span v-else class="text-green-500">
-                <Icon :path="mdiCheckBold" :size="14" />
+                <Icon :path="mdiCheckBold" />
               </span>
             </button>
           </Tooltip>
@@ -142,10 +142,10 @@ fetchDataWithRetry()
             <button type="button" class="btn" @click="copyTableHTML">
               표 복사(HTML)
               <span v-if="!tooltips[1]">
-                <Icon :path="mdiContentCopy" :size="14" />
+                <Icon :path="mdiContentCopy" />
               </span>
               <span v-else class="text-green-500">
-                <Icon :path="mdiCheckBold" :size="14" />
+                <Icon :path="mdiCheckBold" />
               </span>
             </button>
           </Tooltip>
@@ -155,10 +155,10 @@ fetchDataWithRetry()
             <button type="button" class="btn" @click="copyURL">
               URL 복사
               <span v-if="!tooltips[0]">
-                <Icon :path="mdiContentCopy" :size="14" />
+                <Icon :path="mdiContentCopy" />
               </span>
               <span v-else class="text-green-500">
-                <Icon :path="mdiCheckBold" :size="14" />
+                <Icon :path="mdiCheckBold" />
               </span>
             </button>
           </Tooltip>

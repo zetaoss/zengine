@@ -116,7 +116,7 @@ function highlight(needle: string, haystack: string) {
             @input="onInput" @focus="onFocus" @blur="onBlur">
           <button type="button" class="flex-none w-12 h-full focus:z-10 focus:ring-1 bg-transparent focus:text-blue-700"
             @click="onClick">
-            <Icon :path="mdiMagnify" />
+            <Icon :path="mdiMagnify" :size="24" />
           </button>
         </div>
         <div class="absolute z-10 w-full bg-slate-200 dark:bg-gray-900 rounded-b-lg border-t"
@@ -140,12 +140,12 @@ function highlight(needle: string, haystack: string) {
     <div class="flex-none">
       <CSSTooltip position="bottom" tooltipText="랜덤">
         <a href="/wiki/특수:임의문서" class="mybtn">
-          <Icon :path="mdiShuffle" />
+          <Icon :path="mdiShuffle" :size="24" />
         </a>
       </CSSTooltip>
       <CSSTooltip position="bottom" tooltipText="최근바뀜">
         <a href="/wiki/특수:최근바뀜" class="mybtn">
-          <Icon :path="mdiHistory" />
+          <Icon :path="mdiHistory" :size="24" />
         </a>
       </CSSTooltip>
     </div>

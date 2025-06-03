@@ -43,7 +43,7 @@ onUnmounted(() => {
         <div class="relative">
           <div class="absolute right-0">
             <button type="button" class="w-8 h-8" @click="emit('cancel')">
-              <Icon :path="mdiClose" :size="16" />
+              <Icon :path="mdiClose" />
             </button>
           </div>
         </div>

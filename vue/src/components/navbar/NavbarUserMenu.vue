@@ -39,7 +39,7 @@ watch(() => route.path, close)
         </span>
         <span
           class="bg-slate-200 dark:bg-slate-800 rounded-full absolute inline-flex top-[calc(100%-6px)] left-[calc(100%-20px)]">
-          <Icon :path="mdiChevronDown" :size="14" />
+          <Icon :path="mdiChevronDown" />
         </span>
       </div>
     </button>
