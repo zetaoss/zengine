@@ -5,8 +5,6 @@
       <p class="text-lg font-bold">도구</p>
       <RouterLink class="rl" to="/tool/common-report">통용</RouterLink>
       <RouterLink class="rl" to="/tool/write-request">작성요청</RouterLink>
-      <RouterLink class="rl" to="/tool/random">랜덤</RouterLink>
-      <RouterLink class="rl" to="/tool/svg-to-png">svg-png</RouterLink>
       <RouterLink class="rl" to="/tool/frontbox">FrontBox</RouterLink>
     </div>
     <div>
