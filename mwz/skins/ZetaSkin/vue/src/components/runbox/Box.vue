@@ -13,7 +13,7 @@ const seq = inject('seq') as number
 </script>
 
 <template>
-  <div v-if="job" class="border">
+  <div v-if="job">
     <template v-if="job.type == 'front'">
       BoxFront
       <BoxFront :job="job" :seq="seq">

@@ -15,21 +15,30 @@ const box = computed(() => {
   return props.job?.boxes?.[seq] ?? { lang: '', text: '' }
 })
 
-const { copy, copied } = useClipboard({ copiedDuring: 2500 })
+const { copy, copied } = useClipboard()
 </script>
 
 <template>
-  <div class="relative">
-    <div class="absolute top-1 right-2 z-10 bg-opacity-80 text-xs">
-      <div class="flex items-center space-x-2">
-        <span>{{ box.lang }}</span>
-        <button class="px-2 py-1 rounded bg-gray-800 text-gray-300 hover:text-white transition" @click="copy(box.text)">
-          <Icon :path="copied ? mdiCheck : mdiContentCopy" :class="copied ? 'text-green-400' : 'text-gray-300'" />
-        </button>
+  <div class="relative bg-zinc-100 dark:bg-zinc-800 p-5 rounded group">
+    <div class="absolute top-1 right-2 z-10 text-xs opacity-50 flex items-center space-x-2 h-[20px]">
+
+      <span v-if="!copied" class="font-bold group-hover:hidden">
+        {{ box.lang }}
+      </span>
+
+      <div v-else class="items-center space-x-1 text-green-500 inline-flex">
+        <Icon :size="16" :path="mdiCheck" />
+        <span>copied</span>
       </div>
+
+      <button v-if="!copied"
+        class="p-1 mt-1 rounded bg-[#8882] hover:bg-[#8884] hidden group-hover:inline-flex items-center"
+        @click="copy(box.text)">
+        <Icon :size="18" :path="mdiContentCopy" />
+      </button>
     </div>
 
-    <div class="p-2">
+    <div>
       <slot />
     </div>
   </div>
