@@ -30,10 +30,9 @@ async function getJob(job: Job, resolve: () => void) {
 
     if (phase === 'succeeded') {
       if (job.type === JobType.Lang) {
-        console.log(`[${job.id}] phase=succeeded → setting logs`, outs);
-        job.logs.splice(0, job.logs.length, ...outs);
+        job.langOuts = outs;
       } else {
-        job.outs = outs;
+        job.notebookOuts = outs;
       }
     }
   } catch (error) {
@@ -101,8 +100,8 @@ export function runbox() {
         main: -1,
         phase: null,
         payload: null,
-        logs: [],
-        outs: [],
+        langOuts: null,
+        notebookOuts: [],
       }) - 1]
 
     job.boxes.push(box)

@@ -49,6 +49,11 @@ export interface Response {
   outs: unknown;
 }
 
+export interface LangOut {
+  logs: string[];
+  images: string[];
+}
+
 export interface Job {
   id: string;
   hash: string;
@@ -58,7 +63,7 @@ export interface Job {
   type: JobType;
   phase: string | null;
   payload: Payload | null;
-  logs: string[];
-  outs: Output[][];
+  langOuts: LangOut | null;
+  notebookOuts: Output[][];
 }
 

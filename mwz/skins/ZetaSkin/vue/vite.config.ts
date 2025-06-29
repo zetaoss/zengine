@@ -17,7 +17,7 @@ export default defineConfig({
         passes: 1,
       },
       mangle: {
-        reserved: ['$', 've']
+        reserved: ['$', 've'],
       },
     },
     // </terser>
@@ -37,7 +37,6 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       '@common': fileURLToPath(new URL('./common', import.meta.url)),
-      vue: 'vue/dist/vue.esm-bundler.js',
     },
   },
 })

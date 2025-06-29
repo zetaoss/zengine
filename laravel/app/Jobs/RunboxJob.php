@@ -36,11 +36,12 @@ class RunboxJob implements ShouldQueue
             $response = Http::post(env('RUNBOX_URL')."/{$runbox->type}", $runbox->payload)->throw();
             $data = $response->json();
 
+            $outs = isset($data['outputsList']) ? $data['outputsList'] : ['logs' => $data['logs'] ?? null, 'images' => $data['images'] ?? null];
             $runbox->update([
-                'outs' => $data['logs'] ?? $data['outputsList'] ?? null,
                 'cpu' => $data['cpu'] ?? null,
                 'mem' => $data['mem'] ?? null,
                 'time' => $data['time'] ?? null,
+                'outs' => $outs,
                 'phase' => 'succeeded',
             ]);
 
