@@ -1,7 +1,8 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
 import { ref } from 'vue';
 import ItemScalar from './ItemScalar.vue';
-import TheToggle from './TheToggle.vue';
+import Toggle from './Toggle.vue';
 import { type Item, inspectArg, stringify } from './utils';
 
 defineProps<{
@@ -17,7 +18,7 @@ const onClick = () => {
 <template>
   <template v-if="item.entries">
     <span class="cursor-pointer" @click="onClick">
-      <TheToggle :isOpen="isOpen" />
+      <Toggle :isOpen="isOpen" />
       <template v-if="item.type === 'Array'">
         <span>[</span>
         <span v-for="([, v], i) in item.entries" :key="i">

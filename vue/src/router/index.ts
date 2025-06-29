@@ -1,10 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-const TheHome = () => import('@/views/home/TheHome.vue')
+const Home = () => import('@/views/home/Home.vue')
 const ForumList = () => import('@/views/forum/ForumList.vue')
 const ForumNew = () => import('@/views/forum/ForumNew.vue')
 const ForumEdit = () => import('@/views/forum/ForumEdit.vue')
-const TheTool = () => import('@/views/tool/TheTool.vue')
+const Tool = () => import('@/views/tool/Tool.vue')
 const CommonReport = () => import('@/views/tool/commonReport/CommonReport.vue')
 const CommonReportDetail = () => import('@/views/tool/commonReport/CommonReportDetail.vue')
 const FrontBox = () => import('@/views/tool/FrontBox.vue')
@@ -17,7 +17,7 @@ const SocialJoin = () => import('@/views/auth/SocialJoin.vue')
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    { path: '/', component: TheHome, meta: { tab: 'wiki' } },
+    { path: '/', component: Home, meta: { tab: 'wiki' } },
     {
       path: '/forum',
       meta: { tab: 'forum' },
@@ -31,7 +31,7 @@ const router = createRouter({
     },
     {
       path: '/tool',
-      component: TheTool,
+      component: Tool,
       meta: { tab: 'tool' },
       children: [
         { path: 'common-report', component: CommonReport },

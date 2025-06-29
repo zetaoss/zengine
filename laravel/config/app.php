@@ -123,4 +123,5 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'wg_cookie_prefix' => env('WG_COOKIE_PREFIX', 'zetawiki'),
 ];

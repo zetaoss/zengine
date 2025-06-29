@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import TheModal from '@common/components/TheModal.vue'
+import BaseModal from '@common/ui/BaseModal.vue'
 import http from '@/utils/http'
 import titleExist from '@/utils/mediawiki'
 
@@ -47,7 +47,7 @@ function onInput(event: Event) {
 </script>
 
 <template>
-  <TheModal :show="show" :ok-disabled="state != 2" @ok="ok" @cancel="cancel">
+  <BaseModal :show="show" :ok-disabled="state != 2" @ok="ok" @cancel="cancel">
     <div class="block w-full">
       <h5>새 작성 요청 등록하기</h5>
       <input ref="input" aria-label="title" type="text" class="w-full border rounded p-1 px-2 my-2" placeholder="제목 입력"
@@ -65,5 +65,5 @@ function onInput(event: Event) {
         '{{ title }}' 문서는 이미 있으므로 등록할 수 없습니다.
       </div>
     </div>
-  </TheModal>
+  </BaseModal>
 </template>

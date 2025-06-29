@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue'
 
-import TheModal from '@common/components/TheModal.vue'
+import BaseModal from '@common/ui/BaseModal.vue'
 import http from '@/utils/http'
 
 const emit = defineEmits(['close'])
@@ -39,7 +39,7 @@ watch(() => props.show, (newValue, oldValue) => {
 </script>
 
 <template>
-  <TheModal :show="show" @ok="ok" @cancel="cancel">
+  <BaseModal :show="show" @ok="ok" @cancel="cancel">
     <div class="block w-full">
       <h5>새로운 비교 등록하기</h5>
       <hr class="border-t">
@@ -51,5 +51,5 @@ watch(() => props.show, (newValue, oldValue) => {
           class="block w-full border rounded p-1 px-2">
       </div>
     </div>
-  </TheModal>
+  </BaseModal>
 </template>

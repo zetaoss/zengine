@@ -8,10 +8,10 @@ import NavbarUserMenu from '@/components/NavbarUserMenu.vue'
 import PageMenu from '@/components/PageMenu.vue'
 import PageMeta from '@/components/PageMeta.vue'
 import RouterLink from '@/components/RouterLink.vue'
-import TheBinder from '@/components/binder/TheBinder.vue'
+import Binder from '@/components/binder/Binder.vue'
 import PageFoot from '@/components/pagefoot/PageFoot.vue'
 import TocMain from '@/components/toc/TocMain.vue'
-import runbox from '@/components/runbox/runbox'
+import { runbox } from '@/components/runbox/runbox'
 
 import '@/assets/app.scss'
 
@@ -25,7 +25,7 @@ app.component('NavbarUserMenu', NavbarUserMenu)
 app.component('PageMenu', PageMenu)
 app.component('PageMeta', PageMeta)
 app.component('RouterLink', RouterLink)
-app.component('TheBinder', TheBinder)
+app.component('Binder', Binder)
 app.component('PageFoot', PageFoot)
 app.component('TocMain', TocMain)
 

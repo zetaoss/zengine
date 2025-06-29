@@ -4,7 +4,7 @@ import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 import http from '@/utils/http'
-import TheSpinner from '@/components/TheSpinner.vue'
+import TheSpinner from '@common/ui/Spinner.vue'
 import useAuthStore from '@/stores/auth'
 
 const me = useAuthStore()

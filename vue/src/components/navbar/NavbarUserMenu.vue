@@ -4,7 +4,7 @@ import { mdiAccount, mdiChevronDown } from '@mdi/js'
 import { onClickOutside } from '@vueuse/core'
 import { useRoute } from 'vue-router'
 
-import TheIcon from '@common/components/TheIcon.vue'
+import BaseIcon from '@common/ui/BaseIcon.vue'
 import AvatarCore from '@common/components/avatar/AvatarCore.vue'
 import CNavbarItems from '@common/components/navbar/CNavbarItems.vue'
 import useAuthStore from '@/stores/auth'
@@ -35,11 +35,11 @@ watch(() => route.path, close)
           <AvatarCore :user-avatar="me.userData.avatar" :size="24" />
         </span>
         <span v-else>
-          <TheIcon :path="mdiAccount" />
+          <BaseIcon :path="mdiAccount" />
         </span>
         <span
           class="bg-slate-200 dark:bg-slate-800 rounded-full absolute inline-flex top-[calc(100%-6px)] left-[calc(100%-20px)]">
-          <TheIcon :path="mdiChevronDown" :size="14" />
+          <BaseIcon :path="mdiChevronDown" />
         </span>
       </div>
     </button>
