@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type PropType, ref } from 'vue'
 
-import TheIcon from '@common/components/TheIcon.vue'
+import BaseIcon from '@common/ui/BaseIcon.vue'
 import AvatarCore from '@common/components/avatar/AvatarCore.vue'
 import CNavbarItems from '@common/components/navbar/CNavbarItems.vue'
 import type Item from '@common/components/navbar/types'
@@ -30,11 +30,11 @@ onClickOutside(target, () => { show.value = false })
           <AvatarCore :user-avatar="avatar" />
         </span>
         <span v-else>
-          <TheIcon :path="mdiAccount" />
+          <BaseIcon :path="mdiAccount" />
         </span>
         <span
           class="bg-slate-200 dark:bg-slate-800 rounded-full absolute inline-flex top-[calc(100%-6px)] left-[calc(100%-20px)]">
-          <TheIcon :path="mdiChevronDown" :size="14" />
+          <BaseIcon :path="mdiChevronDown" :size="14" />
         </span>
       </div>
     </button>

@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import http from '@/utils/http'
-import TheModal from '@common/components/TheModal.vue'
+import BaseModal from '@common/ui/BaseModal.vue'
 import TiptapMain from './tiptap/TiptapMain.vue'
 import { useErrors, type ErrorResponse } from './errors'
 import './tiptap/ProseMirror.scss'
@@ -73,9 +73,9 @@ onMounted(fetchData)
 </script>
 
 <template>
-  <TheModal :show="showModal" @ok="ModalOK" @cancel="showModal = false">
+  <BaseModal :show="showModal" @ok="ModalOK" @cancel="showModal = false">
     글 수정하기를 취소하시겠습니까?
-  </TheModal>
+  </BaseModal>
 
   <div class="p-5">
     <div class="container mx-auto px-4 max-w-[1140px]">

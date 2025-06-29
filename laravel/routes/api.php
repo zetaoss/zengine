@@ -50,6 +50,12 @@ Route::get('/preview', [PreviewController::class, 'show']);
 Route::get('/auth/social/check/{code}', [SocialController::class, 'checkCode']);
 Route::get('/auth/social/login/{code}', [SocialController::class, 'loginCode']);
 
+Route::prefix('runbox')->group(function () {
+    Route::post('/', [RunboxController::class, 'store']);
+    Route::get('{hash}', [RunboxController::class, 'show']);
+    Route::post('{hash}/rerun', [RunboxController::class, 'rerun']);
+});
+
 Route::prefix('common-report')->group(function () {
     Route::get('/', [CommonReportController::class, 'index']);
     Route::post('/', [CommonReportController::class, 'store']);

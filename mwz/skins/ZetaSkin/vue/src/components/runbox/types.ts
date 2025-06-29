@@ -11,14 +11,6 @@ export enum JobType {
   Notebook = 'notebook',
 }
 
-export enum Step {
-  Initial = 0,
-  Queued = 1,
-  Active = 2,
-  Succeeded = 3,
-  Failed = 9,
-}
-
 export interface Box {
   type: BoxType;
   jobId: string;
@@ -57,6 +49,11 @@ export interface Response {
   outs: unknown;
 }
 
+export interface LangOut {
+  logs: string[];
+  images: string[];
+}
+
 export interface Job {
   id: string;
   hash: string;
@@ -64,9 +61,9 @@ export interface Job {
   pageId: number;
   main: number;
   type: JobType;
-  step: Step;
+  phase: string | null;
   payload: Payload | null;
-  logs: string[];
-  outs: Output[][];
+  langOuts: LangOut | null;
+  notebookOuts: Output[][];
 }
 

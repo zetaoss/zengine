@@ -2,7 +2,7 @@
 import type { PropType } from 'vue'
 import type UserAvatar from '@common/types/userAvatar'
 import LetterAvatar from './LetterAvatar.vue'
-import TheIdenticon from './TheIdenticon.vue'
+import Identicon from './Identicon.vue'
 
 defineProps({
   userAvatar: { type: Object as PropType<UserAvatar>, required: true },
@@ -20,7 +20,7 @@ defineProps({
         <LetterAvatar :name="userAvatar.name" :size="size" />
       </template>
       <template v-else>
-        <TheIdenticon :name="userAvatar.name" :size="size" />
+        <Identicon :name="userAvatar.name" :size="size" />
       </template>
     </span>
   </span>

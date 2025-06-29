@@ -1,5 +1,6 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
-import TheIcon from '@common/components/TheIcon.vue'
+import BaseIcon from '@common/ui/BaseIcon.vue'
 import { mdiCog } from '@mdi/js'
 import { useWindowScroll } from '@vueuse/core'
 import getRLCONF from '@/utils/rlconf'
@@ -19,7 +20,7 @@ function dblclick() {
       <div v-for='(binder) in binders' :key="binder.id">
         <header @dblclick='dblclick'>{{ binder.title }}
           <a :href="`/wiki/Binder:${binder.title}`">
-            <TheIcon :path="mdiCog" />
+            <BaseIcon :path="mdiCog" />
           </a>
         </header>
         <ul class="p-0 m-0" v-for="tree in binder.trees" :key="tree.text">

@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <div class="h-full grid md:grid-cols-[120px_1fr]">
     <div class="bg-z-card p-4">
@@ -11,6 +12,7 @@
     </div>
   </div>
 </template>
+
 <style scoped>
 .rl {
   @apply block p-2;

@@ -6,7 +6,7 @@ import { useRoute, useRouter } from 'vue-router'
 import ProgressBar from '@common/components/ProgressBar.vue'
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import type UserAvatar from '@common/types/userAvatar'
-import ThePagination from '@/components/pagination/ThePagination.vue'
+import Pagination from '@/components/pagination/Pagination.vue'
 import type { PaginateData } from '@/components/pagination/types'
 import useAuthStore from '@/stores/auth'
 import http from '@/utils/http'
@@ -195,7 +195,7 @@ fetchData()
       </div>
     </div>
     <div class="text-center py-4 bg-slate-100 dark:bg-slate-900">
-      <ThePagination :paginate-data="paginateData" />
+      <Pagination :paginate-data="paginateData" />
     </div>
   </div>
 </template>

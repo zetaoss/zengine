@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
 import HomeAbout from './HomeAbout.vue'
 import HomeComments from './HomeComments.vue'
