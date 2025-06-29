@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import http from '@/utils/http'
-import TheModal from '@common/ui/Modal.vue'
+import BaseModal from '@common/ui/BaseModal.vue'
 import TiptapMain from './tiptap/TiptapMain.vue'
 import { useErrors, type ErrorResponse } from './errors'
 import './tiptap/ProseMirror.scss'
@@ -56,9 +56,9 @@ const modalOK = () => {
 </script>
 
 <template>
-  <TheModal :show="showModal" @ok="modalOK" @cancel="showModal = false">
+  <BaseModal :show="showModal" @ok="modalOK" @cancel="showModal = false">
     새 글 쓰기를 취소하시겠습니까?
-  </TheModal>
+  </BaseModal>
 
   <div class="p-5">
     <div class="container mx-auto px-4 max-w-[1140px]">

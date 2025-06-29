@@ -5,9 +5,9 @@ import { mdiDotsVertical } from '@mdi/js'
 import { vOnClickOutside } from '@vueuse/components'
 import { useDateFormat } from '@vueuse/core'
 
-import Icon from '@common/ui/Icon.vue'
-import Modal from '@common/ui/Modal.vue'
-import Textarea from '@common/ui/Textarea.vue'
+import BaseIcon from '@common/ui/BaseIcon.vue'
+import BaseModal from '@common/ui/BaseModal.vue'
+import BaseTextarea from '@common/ui/BaseTextarea.vue'
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import AvatarUserLink from '@common/components/avatar/AvatarUserLink.vue'
 import useAuthStore from '@/stores/auth'
@@ -88,9 +88,9 @@ fetchData()
 </script>
 
 <template>
-  <Modal :show="showModal" ok-class="btn-danger" @ok="modalOK()" @cancel="showModal = false">
+  <BaseModal :show="showModal" ok-class="btn-danger" @ok="modalOK()" @cancel="showModal = false">
     댓글을 삭제하시겠습니까?
-  </Modal>
+  </BaseModal>
   <div>
     <h3 class="py-2 px-4 text-lg">
       댓글 ({{ replies.length }})
@@ -103,7 +103,7 @@ fetchData()
         </div>
         <div v-if="me && me.canEdit(reply.userAvatar.id)" v-on-click-outside="dropdownClose" class="text-right">
           <button type="button" @click="dropdown(reply)">
-            <Icon :path="mdiDotsVertical" />
+            <BaseIcon :path="mdiDotsVertical" />
           </button>
         </div>
       </div>
@@ -142,7 +142,7 @@ fetchData()
               </div>
             </div>
             <div class="py-2 rounded-t bg-white dark:bg-black">
-              <Textarea v-model="editingReply.body" />
+              <BaseTextarea v-model="editingReply.body" />
             </div>
             <div class="overflow-auto">
               <div class="float-right">

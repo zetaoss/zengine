@@ -5,7 +5,7 @@ import { useDateFormat } from '@vueuse/core'
 import Prism from 'prismjs'
 import { useRouter } from 'vue-router'
 
-import TheModal from '@common/ui/Modal.vue'
+import BaseModal from '@common/ui/BaseModal.vue'
 import AvatarUserLink from '@common/components/avatar/AvatarUserLink.vue'
 import useAuthStore from '@/stores/auth'
 import http from '@/utils/http'
@@ -62,9 +62,9 @@ fetchData()
 </script>
 
 <template>
-  <TheModal :show="showModal" ok-class="btn-danger" @ok="modalOK" @cancel="showModal = false">
+  <BaseModal :show="showModal" ok-class="btn-danger" @ok="modalOK" @cancel="showModal = false">
     글을 삭제하시겠습니까?
-  </TheModal>
+  </BaseModal>
   <div v-if="post">
     <div class="border rounded py-4 bg-z-card">
       <div class="px-4">
