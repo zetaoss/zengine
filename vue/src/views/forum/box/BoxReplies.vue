@@ -172,7 +172,7 @@ fetchData()
           </div>
         </div>
         <div class="pt-2">
-          <Textarea v-model="replyBody" />
+          <BaseTextarea v-model="replyBody" />
         </div>
         <div class="overflow-auto">
           <div class="float-right">
