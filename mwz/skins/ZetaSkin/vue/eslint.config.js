@@ -15,7 +15,6 @@ export default [
 
   ...pluginVue.configs['flat/essential'],
   ...vueTsEslintConfig(),
-
   {
     ...pluginVitest.configs.recommended,
     files: ['src/**/__tests__/*'],
