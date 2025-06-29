@@ -4,7 +4,7 @@ import { onMounted, onUnmounted } from 'vue'
 
 import { mdiClose } from '@mdi/js'
 
-import Icon from '@common/ui/Icon.vue'
+import BaseIcon from '@common/ui/BaseIcon.vue'
 
 const props = defineProps({
   show: { type: Boolean, required: true },
@@ -43,7 +43,7 @@ onUnmounted(() => {
         <div class="relative">
           <div class="absolute right-0">
             <button type="button" class="w-8 h-8" @click="emit('cancel')">
-              <Icon :path="mdiClose" />
+              <BaseIcon :path="mdiClose" />
             </button>
           </div>
         </div>

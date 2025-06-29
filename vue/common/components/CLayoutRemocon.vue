@@ -2,7 +2,7 @@
 import { mdiChevronDown, mdiChevronUp, mdiWeatherNight } from '@mdi/js'
 import { useDark, useToggle } from '@vueuse/core'
 
-import Icon from '@common/ui/Icon.vue'
+import BaseIcon from '@common/ui/BaseIcon.vue'
 
 const isDark = useDark()
 const toggleDark = useToggle(isDark)
@@ -28,13 +28,13 @@ function scrollToBottom() {
   <div class="fixed bottom-0 right-0 z-40 print:hidden">
     <div class="z-50 mx-0.5 text-white opacity-80">
       <button type="button" @click="toggleDark()">
-        <Icon :class="{ 'text-yellow-500': isDark }" :path="mdiWeatherNight" />
+        <BaseIcon :class="{ 'text-yellow-500': isDark }" :path="mdiWeatherNight" />
       </button>
       <button type="button" @click="scrollToTop">
-        <Icon :path="mdiChevronUp" />
+        <BaseIcon :path="mdiChevronUp" />
       </button>
       <button type="button" @click="scrollToBottom">
-        <Icon :path="mdiChevronDown" />
+        <BaseIcon :path="mdiChevronDown" />
       </button>
     </div>
   </div>
