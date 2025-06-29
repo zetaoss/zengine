@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import { computed, type PropType, watch } from 'vue'
 import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
-import Icon from '@common/ui/Icon.vue'
+import BaseIcon from '@common/ui/BaseIcon.vue'
 import type { PaginateData } from './types'
 
 const props = defineProps({
@@ -36,7 +36,7 @@ watch(() => props.paginateData, () => { }, { immediate: true })
   <div v-if="paginateData.path" class="leading-4 py-2">
     <span v-if="prevPage">
       <RouterLink :to="{ path: `${paginateData.path}/${prevPage}` }" class="btn btn-light !px-2">
-        <Icon :path="mdiChevronLeft" />
+        <BaseIcon :path="mdiChevronLeft" />
         이전
       </RouterLink>
     </span>
@@ -51,7 +51,7 @@ watch(() => props.paginateData, () => { }, { immediate: true })
     <span v-if="nextPage">
       <RouterLink :to="{ path: `${paginateData.path}/${nextPage}` }" class="btn btn-light !px-2">
         다음
-        <Icon :path="mdiChevronRight" />
+        <BaseIcon :path="mdiChevronRight" />
       </RouterLink>
     </span>
   </div>

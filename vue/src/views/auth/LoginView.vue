@@ -4,7 +4,7 @@ import { ref } from 'vue'
 import { mdiAccount, mdiLock } from '@mdi/js'
 import { useRoute } from 'vue-router'
 
-import Icon from '@common/ui/Icon.vue'
+import BaseIcon from '@common/ui/BaseIcon.vue'
 
 import GithubIcon from './icons/GithubIcon.vue'
 import GoogleIcon from './icons/GoogleIcon.vue'
@@ -63,7 +63,7 @@ async function login() {
       </div>
       <div class="flex my-1">
         <span class="inline-flex items-center px-3 bg-gray-200 text-gray-500 border border-r-0 rounded-l">
-          <Icon :path="mdiAccount" :size="24" />
+          <BaseIcon :path="mdiAccount" :size="24" />
         </span>
         <input v-model="username" aria-label="username" type="text"
           class="rounded-none rounded-r border block flex-1 min-w-0 w-full text-sm p-2.5 focus:outline-none focus:ring focus:border-blue-500 bg-white text-black"
@@ -71,7 +71,7 @@ async function login() {
       </div>
       <div class="flex my-1">
         <span class="inline-flex items-center px-3 bg-gray-200 text-gray-500 border border-r-0 rounded-l">
-          <Icon :path="mdiLock" :size="24" />
+          <BaseIcon :path="mdiLock" :size="24" />
         </span>
         <input v-model="password" aria-label="password" type="password"
           class="rounded-none rounded-r border block flex-1 min-w-0 w-full text-sm p-2.5 focus:outline-none focus:ring focus:border-blue-500 bg-white text-black"

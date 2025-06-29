@@ -4,7 +4,7 @@ import { mdiCheckBold, mdiContentCopy } from '@mdi/js'
 import { useDateFormat, useDebounceFn } from '@vueuse/core'
 import { useRoute, useRouter } from 'vue-router'
 
-import Icon from '@common/ui/Icon.vue'
+import BaseIcon from '@common/ui/BaseIcon.vue'
 import Tooltip from '@common/ui/Tooltip.vue'
 import AvatarUserLink from '@common/components/avatar/AvatarUserLink.vue'
 import Star from './Star.vue'
@@ -129,10 +129,10 @@ fetchDataWithRetry()
             <button type="button" class="btn" @click="copyTableWikitext">
               표 복사(위키)
               <span v-if="!tooltips[2]">
-                <Icon :path="mdiContentCopy" />
+                <BaseIcon :path="mdiContentCopy" />
               </span>
               <span v-else class="text-green-500">
-                <Icon :path="mdiCheckBold" />
+                <BaseIcon :path="mdiCheckBold" />
               </span>
             </button>
           </Tooltip>
@@ -142,10 +142,10 @@ fetchDataWithRetry()
             <button type="button" class="btn" @click="copyTableHTML">
               표 복사(HTML)
               <span v-if="!tooltips[1]">
-                <Icon :path="mdiContentCopy" />
+                <BaseIcon :path="mdiContentCopy" />
               </span>
               <span v-else class="text-green-500">
-                <Icon :path="mdiCheckBold" />
+                <BaseIcon :path="mdiCheckBold" />
               </span>
             </button>
           </Tooltip>
@@ -155,10 +155,10 @@ fetchDataWithRetry()
             <button type="button" class="btn" @click="copyURL">
               URL 복사
               <span v-if="!tooltips[0]">
-                <Icon :path="mdiContentCopy" />
+                <BaseIcon :path="mdiContentCopy" />
               </span>
               <span v-else class="text-green-500">
-                <Icon :path="mdiCheckBold" />
+                <BaseIcon :path="mdiCheckBold" />
               </span>
             </button>
           </Tooltip>
