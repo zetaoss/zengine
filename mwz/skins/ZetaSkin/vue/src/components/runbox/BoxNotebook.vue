@@ -1,133 +1,60 @@
-<script lang='ts' setup>
-import { inject, computed } from 'vue';
+<!-- File: mwz/skins/ZetaSkin/vue/src/components/runbox/BoxNotebook.vue -->
+<script setup lang="ts">
+import { inject, computed, ref, watch } from 'vue';
+import { useClipboard } from '@vueuse/core';
+import { mdiContentCopy, mdiCheck, mdiLoading } from '@mdi/js';
+import BaseIcon from '@common/ui/BaseIcon.vue';
+import NotebookOutput from './BoxNotebookOutput.vue';
 import { type Job } from './types';
 
-const job = inject<Job>('job');
-const seq = inject<number>('seq') ?? 0;
-const outputs = computed(() => job?.outs[seq] ?? []);
+const job = inject('job') as Job;
+const seq = inject('seq') as number;
 
-const ansi2html = (s: string) => s.replace(/</g, '&lt;').replace(/\x1b\[(\d+;)?(\d+)m/g, (_, _1, code) => code ? `<span class="ansi${code}">` : '</span>') + '</span>';
+const nbouts = computed(() => job?.notebookOuts?.[seq] ?? []);
+const box = computed(() => job?.boxes?.[seq] ?? { lang: '', text: '' });
+const isJobInProgress = computed(() => job?.phase === 'pending' || job?.phase === 'running');
+
+const { copy, copied } = useClipboard();
+const loaded = ref(false);
+
+watch(() => job?.phase, (newPhase) => {
+  loaded.value = newPhase !== null && newPhase !== undefined;
+}, { immediate: true });
 </script>
 
 <template>
-  <div class="border p-2">
-    <slot />
-  </div>
-  <div v-if="outputs.length" class="outputs">
-    <div v-for="(o, i) in outputs" :key="i" class="output p-2" :class="o.output_type">
-      <template v-if="o.output_type == 'display_data'">
-        <img v-if="o.data?.['image/png']" :src="'data:image/png;base64,' + o.data['image/png']" class="bg-white" />
-        <div v-else-if="o.data?.['text/html']" v-html="o.data['text/html'].join('')"></div>
-      </template>
-      <template v-else-if="o.output_type == 'error'">
-        <pre v-html="ansi2html(o.traceback?.join('\n') ?? '')"></pre>
-      </template>
-      <template v-else-if="o.output_type == 'execute_result'">
-        <div v-if="o.data?.['text/html']" v-html="o.data['text/html'].join('')"></div>
-        <pre v-else-if="o.data?.['text/plain']">{{ o.data['text/plain'].join('') }}</pre>
-      </template>
-      <template v-else>
-        <div v-for="(text, j) in o.text" :key="j">{{ text }}</div>
-      </template>
+  <div class="relative border p-2 bg-zinc-100 dark:bg-zinc-800 group">
+    <div class="absolute top-1 right-2 z-10 text-xs opacity-50 flex items-center space-x-2 h-[20px]">
+
+      <span v-if="!copied" class="font-bold flex items-center space-x-1">
+        <span>{{ box.lang }}</span>
+        <BaseIcon v-if="isJobInProgress" :size="16" :path="mdiLoading" :spin="true" />
+      </span>
+
+      <div v-else class="items-center space-x-1 text-green-500 inline-flex">
+        <BaseIcon :size="16" :path="mdiCheck" />
+        <span>copied</span>
+      </div>
+
+      <button v-if="!copied"
+        class="p-1 mt-1 rounded bg-[#8882] hover:bg-[#8884] hidden group-hover:inline-flex items-center"
+        @click="copy(box.text)">
+        <BaseIcon :size="18" :path="mdiContentCopy" />
+      </button>
+    </div>
+
+    <div class="p-3">
+      <slot />
+    </div>
+
+    <div v-if="loaded && job">
+      <div v-if="job.phase === 'succeeded'" class="outputs">
+        <div v-if="nbouts && nbouts.length">
+          <div v-for="(nbout, i) in nbouts" :key="i">
+            <NotebookOutput :out="nbout" />
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
-
-<style>
-.outputs {
-  @apply text-sm font-sans;
-}
-
-.dataframe {
-  thead {
-    @apply border-b;
-  }
-
-  th,
-  td {
-    @apply px-2;
-  }
-
-  tr {
-    @apply text-right;
-  }
-
-  tbody {
-    tr {
-      &:nth-child(odd) {
-        @apply bg-neutral-100 dark:bg-neutral-800;
-      }
-
-      @apply hover:bg-teal-100 dark:hover:bg-teal-950;
-    }
-  }
-}
-
-.output.error {
-  @apply bg-red-100 dark:bg-red-950/80;
-}
-
-.ansi30 {
-  @apply text-black dark:text-gray-500;
-}
-
-.ansi31 {
-  @apply text-red-600 dark:text-red-400;
-}
-
-.ansi32 {
-  @apply text-green-600 dark:text-green-400;
-}
-
-.ansi33 {
-  @apply text-yellow-600 dark:text-yellow-400;
-}
-
-.ansi34 {
-  @apply text-blue-600 dark:text-blue-400;
-}
-
-.ansi35 {
-  @apply text-purple-600 dark:text-purple-400;
-}
-
-.ansi36 {
-  @apply text-cyan-600 dark:text-cyan-400;
-}
-
-.ansi37 {
-  @apply text-gray-600 dark:text-gray-400;
-}
-
-.ansi90 {
-  @apply text-gray-500 dark:text-gray-600;
-}
-
-.ansi91 {
-  @apply text-red-400 dark:text-red-300;
-}
-
-.ansi92 {
-  @apply text-green-400 dark:text-green-300;
-}
-
-.ansi93 {
-  @apply text-yellow-400 dark:text-yellow-300;
-}
-
-.ansi94 {
-  @apply text-blue-400 dark:text-blue-300;
-}
-
-.ansi95 {
-  @apply text-purple-400 dark:text-purple-300;
-}
-
-.ansi96 {
-  @apply text-cyan-400 dark:text-cyan-300;
-}
-
-.ansi97 {
-  @apply text-gray-400 dark:text-gray-200;
-}
-</style>
