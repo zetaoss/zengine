@@ -26,7 +26,6 @@ const seq = inject('seq') as number
       </BoxLang>
     </template>
     <template v-else-if="job.type == 'notebook'">
-      BoxNotebook
       <BoxNotebook :job="job" :seq="seq">
         <slot />
       </BoxNotebook>
