@@ -10,7 +10,7 @@ import { type Job } from './types';
 const job = inject('job') as Job;
 const seq = inject('seq') as number;
 
-const outs = computed(() => job?.notebookOuts?.[seq] ?? []);
+const nbouts = computed(() => job?.notebookOuts?.[seq] ?? []);
 const box = computed(() => job?.boxes?.[seq] ?? { lang: '', text: '' });
 const isJobInProgress = computed(() => job?.phase === 'pending' || job?.phase === 'running');
 
@@ -49,9 +49,9 @@ watch(() => job?.phase, (newPhase) => {
 
     <div v-if="loaded && job">
       <div v-if="job.phase === 'succeeded'" class="outputs">
-        <div v-if="outs && outs.length">
-          <div v-for="(out, i) in outs" :key="i">
-            <NotebookOutput :out="out" />
+        <div v-if="nbouts && nbouts.length">
+          <div v-for="(nbout, i) in nbouts" :key="i">
+            <NotebookOutput :out="nbout" />
           </div>
         </div>
       </div>
