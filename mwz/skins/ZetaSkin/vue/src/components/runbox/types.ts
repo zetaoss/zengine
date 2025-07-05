@@ -1,3 +1,4 @@
+// File: mwz/skins/ZetaSkin/vue/src/components/runbox/types.ts
 export enum BoxType {
   Zero = '',
   Run = 'run',
