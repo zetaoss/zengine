@@ -2,8 +2,6 @@
   "css.lint.unknownAtRules": "ignore",
   "scss.lint.unknownAtRules": "ignore",
   "remote.autoForwardPorts": true,
-  "editor.detectIndentation": false,
-  "editor.tabSize": 2,
   "[php]": {
     "editor.defaultFormatter": "open-southeners.laravel-pint",
   },
