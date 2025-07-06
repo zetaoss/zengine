@@ -1,11 +1,11 @@
 {
-    "css.lint.unknownAtRules": "ignore",
-    "scss.lint.unknownAtRules": "ignore",
-    "remote.autoForwardPorts": true,
-    "[php]": {
-        "editor.defaultFormatter": "open-southeners.laravel-pint",
-    },
-    "[vue]": {
-        "editor.defaultFormatter": "Vue.volar",
-    },
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+  "remote.autoForwardPorts": true,
+  "[php]": {
+    "editor.defaultFormatter": "open-southeners.laravel-pint",
+  },
+  "[vue]": {
+    "editor.defaultFormatter": "Vue.volar",
+  },
 }

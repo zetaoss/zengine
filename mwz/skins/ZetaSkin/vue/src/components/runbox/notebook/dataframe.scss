@@ -1,0 +1,32 @@
+.dataframe {
+  @apply text-right border-collapse overflow-hidden;
+
+  thead {
+    th {
+      @apply p-1 font-semibold border-b;
+      @apply border-zinc-300 dark:border-zinc-600;
+    }
+  }
+
+  tbody {
+    tr {
+      &:nth-child(odd) {
+        @apply bg-zinc-200 dark:bg-[#333];
+      }
+
+      &:hover {
+        @apply bg-zinc-300 dark:bg-zinc-700;
+      }
+
+    }
+
+    th {
+      @apply p-1;
+    }
+
+    td {
+      @apply p-1;
+    }
+
+  }
+}
