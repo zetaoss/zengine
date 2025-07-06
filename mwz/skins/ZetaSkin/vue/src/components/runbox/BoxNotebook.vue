@@ -4,7 +4,7 @@ import { inject, computed, ref, watch } from 'vue';
 import { useClipboard } from '@vueuse/core';
 import { mdiContentCopy, mdiCheck, mdiLoading } from '@mdi/js';
 import BaseIcon from '@common/ui/BaseIcon.vue';
-import NotebookOutput from './BoxNotebookOutput.vue';
+import NBOutput from './notebook/NBOutput.vue';
 import { type Job } from './types';
 
 const job = inject('job') as Job;
@@ -51,7 +51,7 @@ watch(() => job?.phase, (newPhase) => {
       <div v-if="job.phase === 'succeeded'" class="outputs">
         <div v-if="nbouts && nbouts.length">
           <div v-for="(nbout, i) in nbouts" :key="i">
-            <NotebookOutput :out="nbout" />
+            <NBOutput :out="nbout" />
           </div>
         </div>
       </div>
