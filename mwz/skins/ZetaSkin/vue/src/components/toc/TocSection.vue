@@ -24,18 +24,17 @@ const linkClass = computed(() => ['hover:no-underline', 'hover:text-sky-400', is
 
 const onClick = (e: MouseEvent) => {
   e.preventDefault()
-  if (anchor.value) emit('navigate', anchor.value)
+  emit('navigate', anchor.value)
+  history.pushState(null, '', `#${anchor.value}`)
 }
 </script>
 
 <template>
   <div>
-    <div class="px-4">
-      <a :href="`#${anchor}`" :aria-current="isPrimary ? 'location' : undefined" :class="linkClass" @click="onClick">
-        <span class="opacity-50">{{ number }}</span>
-        {{ label }}
-      </a>
-    </div>
+    <a :href="`#${anchor}`" :aria-current="isPrimary ? 'location' : undefined" :class="linkClass" @click="onClick">
+      <span class="opacity-50">{{ number }}</span>
+      {{ label }}
+    </a>
 
     <ul v-if="children?.length > 0" class="pl-3 py-0 list-none m-0" role="list">
       <li v-for="s in children" :key="s.index ?? s.anchor" class="m-0">
