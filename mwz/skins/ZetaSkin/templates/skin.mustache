@@ -1,90 +1,94 @@
 <div id="app" class="min-h-screen">
-    <nav id="navbar" class="w-full text-sm border-b z-40 bg-white dark:bg-slate-700">
-        <div class="max-w-8xl mx-auto w-full md:flex whitespace-nowrap">
-            <div class="inline-block md:flex-none">
-                <div>
-                    <div class="flex h-12">
-                        <a href="/" class="navbar-link">
-                            <img alt="zetawiki" src="/zeta.svg" class="h-6 w-6" />
-                            <span class="hidden lg:inline ml-2 text-lg font-semibold">제타위키</span>
-                        </a>
-                        <a href="/" class="navbar-link !text-yellow-700 dark:!text-yellow-200">위키</a>
-                        <a href="/forum" class="navbar-link">포럼</a>
-                        <a href="/tool/common-report" class="navbar-link">도구</a>
-                    </div>
-                </div>
-            </div>
-
-            <navbar-user-menu :user-menu='{{{ jsonUserMenu }}}'></navbar-user-menu>
-
-            <div class="flex-1">
-                <c-navbar-search></c-navbar-search>
-            </div>
+  <nav id="navbar" class="w-full text-sm border-b z-40 bg-white dark:bg-slate-700">
+    <div class="max-w-8xl mx-auto w-full md:flex whitespace-nowrap">
+      <div class="inline-block md:flex-none">
+        <div>
+          <div class="flex h-12">
+            <a href="/" class="navbar-link">
+              <img alt="zetawiki" src="/zeta.svg" class="h-6 w-6" />
+              <span class="hidden lg:inline ml-2 text-lg font-semibold">제타위키</span>
+            </a>
+            <a href="/" class="navbar-link !text-yellow-700 dark:!text-yellow-200">위키</a>
+            <a href="/forum" class="navbar-link">포럼</a>
+            <a href="/tool/common-report" class="navbar-link">도구</a>
+          </div>
         </div>
-    </nav>
+      </div>
 
-    <div class="max-w-8xl mx-auto">
-        <div class="flex flex-row {{#isBinder}}has-binders{{/isBinder}}">
-            {{#isBinder}}
-            <div class="hidden md:block flex-none w-60">
-                <the-binder></the-binder>
-            </div>
-            {{/isBinder}}
+      <navbar-user-menu :user-menu='{{{ jsonUserMenu }}}'></navbar-user-menu>
 
-            <div class="flex-auto">
-                <div class="p-4 py-8 md:m-4 md:p-8 md:border md:rounded-md bg-white dark:bg-neutral-900">
-                    <div class="text-3xl font-semibold">{{{ html-title }}}</div>
-                    <div>{{{ html-subtitle }}}</div>
-
-                    <div class="flow-root mt-2 text-sm">
-                        <div class="float-left">
-                            {{#is-article}}
-                            {{#isView}}
-                            <page-meta historyhref="{{ zPageMenu.history.href }}"></page-meta>
-                            {{/isView}}
-                            {{/is-article}}
-                        </div>
-
-                        <div class="flex float-right">
-                            {{#arrayButtons}}
-                            {{^current}}
-                            <a class="page-btn" href="{{ href }}">{{ text }}</a>
-                            {{/current}}
-                            {{/arrayButtons}}
-
-                            <page-menu>
-                                {{#arrayMenu}}
-                                <li><a href="{{ href }}">{{ text }}</a></li>
-                                {{/arrayMenu}}
-                            </page-menu>
-                        </div>
-                    </div>
-
-                    {{#data-portlets.data-category-normal.html-items}}
-                    <div class="page-cats">
-                        <ul>{{{ . }}}</ul>
-                    </div>
-                    {{/data-portlets.data-category-normal.html-items}}
-
-                    <article id="content" class="py-6" v-pre>
-                        {{{ html-body-content }}}
-                    </article>
-
-                    {{^is-specialpage}}
-                    <the-runbox></the-runbox>
-                    <page-foot></page-foot>
-                    {{/is-specialpage}}
-                </div>
-            </div>
-
-            {{^is-specialpage}}
-            <div class="hidden hb-lg-md-block flex-none w-60">
-                <toc-main :toc='{{{ jsonTOC }}}'></toc-main>
-            </div>
-            {{/is-specialpage}}
-        </div>
+      <div class="flex-1">
+        <c-navbar-search></c-navbar-search>
+      </div>
     </div>
+  </nav>
 
-    <c-layout-foot></c-layout-foot>
-    <c-layout-remocon></c-layout-remocon>
+  <div class="max-w-8xl mx-auto">
+    <div class="flex flex-row {{#isBinder}}has-binders{{/isBinder}}">
+      {{#isBinder}}
+      <div class="hidden md:block flex-none w-60">
+        <the-binder></the-binder>
+      </div>
+      {{/isBinder}}
+
+      <div class="flex-auto">
+        <div class="p-4 py-8 md:m-4 md:p-8 md:border md:rounded-md bg-white dark:bg-neutral-900">
+          <div class="text-3xl font-semibold">{{{ html-title }}}</div>
+          <div>{{{ html-subtitle }}}</div>
+
+          <div class="flow-root mt-2 text-sm">
+            <div class="float-left">
+              {{#is-article}}
+              {{#isView}}
+              <page-meta historyhref="{{ zPageMenu.history.href }}"></page-meta>
+              {{/isView}}
+              {{/is-article}}
+            </div>
+
+            <div class="flex float-right">
+              {{#arrayButtons}}
+              {{^current}}
+              <a class="page-btn" href="{{ href }}">{{ text }}</a>
+              {{/current}}
+              {{/arrayButtons}}
+
+              <page-menu>
+                {{#arrayMenu}}
+                <li><a href="{{ href }}">{{ text }}</a></li>
+                {{/arrayMenu}}
+              </page-menu>
+            </div>
+          </div>
+
+          {{#data-portlets.data-category-normal.html-items}}
+          <div class="page-cats">
+            <ul>{{{ . }}}</ul>
+          </div>
+          {{/data-portlets.data-category-normal.html-items}}
+
+          <article id="content" class="py-6" v-pre>
+            {{{ html-body-content }}}
+          </article>
+
+          {{^is-specialpage}}
+          <the-runbox></the-runbox>
+          <page-foot></page-foot>
+          {{/is-specialpage}}
+        </div>
+      </div>
+
+
+      {{^is-specialpage}}
+      <div class="hidden hb-lg-md-block flex-none w-60">
+        <div class="sticky top-14 max-h-[calc(100vh-56px)] overflow-auto pr-2">
+          <toc-main :toc='{{{ jsonTOC }}}' :header-offset="56"></toc-main>
+        </div>
+      </div>
+      {{/is-specialpage}}
+
+    </div>
+  </div>
+
+  <c-layout-foot></c-layout-foot>
+  <c-layout-remocon></c-layout-remocon>
 </div>

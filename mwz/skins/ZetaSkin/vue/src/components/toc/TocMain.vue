@@ -1,23 +1,49 @@
+<!-- TocMain.vue -->
 <script setup lang="ts">
 import type { PropType } from 'vue'
-
+import { computed } from 'vue'
 import type { Section } from './types'
 import TocSection from './TocSection.vue'
+import { useScrollSpy } from '@/composables/useScrollSpy'
 
 const props = defineProps({
-  toc: {
-    type: [Object, String] as PropType<Section | string>,
-    required: true,
-  },
+  toc: { type: [Object, String] as PropType<Section | string>, required: true },
+  headerOffset: { type: Number, default: 64 },
 })
 
-const toc = props.toc as Section
+const tocObj = computed<Section | null>(() =>
+  typeof props.toc === 'object' && props.toc !== null ? (props.toc as Section) : null
+)
+
+const flattenAnchors = (root?: Section | null): string[] => {
+  if (!root) return []
+  const out: string[] = []
+  const walk = (n: Section) => {
+    if (n.anchor) out.push(n.anchor)
+      ; (n['array-sections'] ?? []).forEach(walk)
+  }
+  if (root) walk(root)
+  return out
+}
+
+const anchors = computed(() => flattenAnchors(tocObj.value))
+const { activeId } = useScrollSpy(anchors, props.headerOffset)
+
+const scrollToAnchor = (id: string) => {
+  const el = document.getElementById(id)
+  if (!el) return
+  const top = el.getBoundingClientRect().top + window.scrollY - props.headerOffset
+  window.scrollTo({ top, behavior: 'smooth' })
+}
 </script>
 
 <template>
-  <ul>
-    <li v-for="s in toc['array-sections'] || []" :key="s.index">
-      <TocSection targetId="" :section="s" />
-    </li>
-  </ul>
+  <nav aria-label="Table of contents">
+    <ul v-if="tocObj"
+      class="text-sm text-z-text tracking-tight list-none m-0 p-0 border-l-4 border-sky-400 dark:border-sky-600">
+      <li v-for="s in tocObj['array-sections'] ?? []" :key="s.index ?? s.anchor" class="m-0">
+        <TocSection :section="s" :targetId="activeId ?? ''" @navigate="scrollToAnchor" />
+      </li>
+    </ul>
+  </nav>
 </template>

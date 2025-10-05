@@ -1,29 +1,45 @@
+<!-- TocSection.vue -->
 <script setup lang="ts">
 import type { PropType } from 'vue'
-import TocSection from './TocSection.vue'
-
+import { computed } from 'vue'
 import stripTags from '@/utils/str'
+import type { Section } from './types'
 
-import { type Section } from './types'
+defineOptions({ name: 'TocSection' })
 
 const props = defineProps({
-  section: { type: {} as PropType<Section>, required: true },
+  section: { type: Object as PropType<Section>, required: true },
   targetId: { type: String, required: true },
 })
+const emit = defineEmits<{ (e: 'navigate', id: string): void }>()
 
-const anchor = props.section.anchor ?? ''
-const tid = props.targetId ?? ''
+const anchor = computed(() => props.section.anchor ?? '')
+const children = computed(() => props.section['array-sections'] ?? [])
+const label = computed(() => stripTags(props.section.line).trim())
+const number = computed(() => props.section.number)
+
+const isPrimary = computed(() => anchor.value === props.targetId)
+
+const linkClass = computed(() => ['hover:no-underline', 'hover:text-sky-400', isPrimary.value ? 'text-sky-500 semi-bold' : 'text-z-text'])
+
+const onClick = (e: MouseEvent) => {
+  e.preventDefault()
+  if (anchor.value) emit('navigate', anchor.value)
+}
 </script>
+
 <template>
   <div>
-    <div class="py-[2px] px-4">
-      <a :href="`#${anchor}`" class="w-full hover:no-underline hover:text-sky-400 inline-block leading-4 z-break-word"
-        :class="[anchor == tid ? 'text-z-text' : 'text-z-text2']">
-        {{ stripTags(section.line).trim() }}</a>
+    <div class="px-4">
+      <a :href="`#${anchor}`" :aria-current="isPrimary ? 'location' : undefined" :class="linkClass" @click="onClick">
+        <span class="opacity-50">{{ number }}</span>
+        {{ label }}
+      </a>
     </div>
-    <ul class="pl-3 py-0 list-none" v-if="section['array-sections'].length > 0">
-      <li class="m-0" v-for="s in section['array-sections']" :key="s.index">
-        <TocSection :targetId='tid' :section="s" />
+
+    <ul v-if="children?.length > 0" class="pl-3 py-0 list-none m-0" role="list">
+      <li v-for="s in children" :key="s.index ?? s.anchor" class="m-0">
+        <TocSection :targetId="targetId" :section="s" @navigate="$emit('navigate', $event)" />
       </li>
     </ul>
   </div>
