@@ -1,4 +1,3 @@
-<!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
 import BaseIcon from '@common/ui/BaseIcon.vue'
 import { mdiCog } from '@mdi/js'
@@ -13,6 +12,7 @@ function dblclick() {
   console.log('dblclick')
 }
 </script>
+
 <template>
   <aside class="p-4 bg-white dark:bg-neutral-900 overflow-y-auto sticky top-0 z-scrollbar border-r"
     :style="{ height: `calc(100vh - ${y > 48 ? 0 : 48 - y}px)` }">
