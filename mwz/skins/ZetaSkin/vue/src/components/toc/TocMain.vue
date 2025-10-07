@@ -5,6 +5,7 @@ import { computed } from 'vue'
 import type { Section } from './types'
 import TocSection from './TocSection.vue'
 import { useScrollSpy } from '@/composables/useScrollSpy'
+import CCapSticky from '@common/components/CCapSticky.vue'
 
 const props = defineProps({
   toc: { type: [Object, String] as PropType<Section | string>, required: true },
@@ -38,13 +39,15 @@ const scrollToAnchor = (id: string) => {
 </script>
 
 <template>
-  <nav class="py-4">
-    <ul v-if="tocObj"
-      class="text-sm text-z-text tracking-tight list-none m-0 p-0 pl-4 border-l-4 border-sky-400 dark:border-sky-600">
-      <li class="opacity-50">페이지 목차</li>
-      <li v-for="s in tocObj['array-sections'] ?? []" :key="s.index ?? s.anchor" class="m-0">
-        <TocSection :section="s" :targetId="activeId ?? ''" @navigate="scrollToAnchor" />
-      </li>
-    </ul>
-  </nav>
+  <CCapSticky>
+    <nav>
+      <ul v-if="tocObj"
+        class="text-sm text-z-text tracking-tight list-none m-0 p-0 pl-4 border-l-4 border-sky-400 dark:border-sky-600">
+        <li class="opacity-50 m-0">페이지 목차</li>
+        <li v-for="s in tocObj['array-sections'] ?? []" :key="s.index ?? s.anchor" class="m-0">
+          <TocSection :section="s" :targetId="activeId ?? ''" @navigate="scrollToAnchor" />
+        </li>
+      </ul>
+    </nav>
+  </CCapSticky>
 </template>
