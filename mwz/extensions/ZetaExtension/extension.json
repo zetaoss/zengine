@@ -51,12 +51,12 @@
     {
       "path": "/binder",
       "method": "GET",
-      "class": "ZetaExtension\\Binder\\RestList"
+      "class": "ZetaExtension\\Binder\\RestBinder"
     },
     {
       "path": "/binder/{pageid}",
       "method": "GET",
-      "class": "ZetaExtension\\Binder\\RestGet"
+      "class": "ZetaExtension\\Binder\\RestBinder"
     }
   ],
   "ResourceModules": {
