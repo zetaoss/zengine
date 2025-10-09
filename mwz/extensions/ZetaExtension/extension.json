@@ -30,10 +30,10 @@
     "TagMagic": "magic/TagMagic.php"
   },
   "Hooks": {
-    "ArticleDelete": "ZetaExtension\\Binder\\Hooks::onArticleDelete",
-    "ArticleUndelete": "ZetaExtension\\Binder\\Hooks::onArticleUndelete",
     "InternalParseBeforeLinks": "ZetaExtension\\Toc\\Toc::onInternalParseBeforeLinks",
-    "PageSaveComplete": "ZetaExtension\\Binder\\Hooks::onPageSaveComplete",
+    "PageSaveComplete": "ZetaExtension\\Binder\\BinderHooks::onPageSaveComplete",
+    "PageDeleteComplete": "ZetaExtension\\Binder\\BinderHooks::onPageDeleteComplete",
+    "PageUndeleteComplete": "ZetaExtension\\Binder\\BinderHooks::onPageUndeleteComplete",
     "ParserFirstCallInit": [
       "ZetaExtension\\Map\\Map::onParserFirstCallInit",
       "ZetaExtension\\Tag\\Tag::onParserFirstCallInit"

@@ -37,7 +37,7 @@ class RestGet extends SimpleHandler
             foreach ($binderIDs as $binderID) {
                 $wikiPageFactory = MediaWikiServices::getInstance()->getWikiPageFactory();
                 $wikiPage = $wikiPageFactory->newFromID($binderID);
-                Util::updateBinderPages($wikiPage);
+                BinderService::syncRelations($wikiPage);
             }
         }
         $res = $dbr->newSelectQueryBuilder()
@@ -113,7 +113,7 @@ class RestGet extends SimpleHandler
             unset($node['title']);
             if (array_key_exists('redirect', $node)) {
                 unset($node['redirect']);
-                $t = Util::followRedirects($t);
+                $t = BinderService::resolveRedirects($t);
             }
             $node['id'] = $t ? $t->getArticleId() : 0;
         }
