@@ -14,6 +14,6 @@ interface RLCONF {
 }
 
 export default function getRLCONF(): RLCONF {
-  // @ts-ignore
+  // @ts-expect-error: external variable RLCONF
   return RLCONF
 }

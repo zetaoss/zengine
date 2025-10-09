@@ -2,7 +2,6 @@
 <script setup lang="ts">
 import type { PropType } from 'vue'
 import { computed } from 'vue'
-import stripTags from '@/utils/str'
 import type { Section } from './types'
 
 defineOptions({ name: 'TocSection' })
@@ -15,7 +14,7 @@ const emit = defineEmits<{ (e: 'navigate', id: string): void }>()
 
 const anchor = computed(() => props.section.anchor ?? '')
 const children = computed(() => props.section['array-sections'] ?? [])
-const label = computed(() => stripTags(props.section.line).trim())
+const label = computed(() => props.section.line.replace(/<\/?[^>]+>/ig, ' ').trim())
 const number = computed(() => props.section.number)
 
 const isPrimary = computed(() => anchor.value === props.targetId)
