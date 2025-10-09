@@ -2,8 +2,9 @@
   "css.lint.unknownAtRules": "ignore",
   "scss.lint.unknownAtRules": "ignore",
   "remote.autoForwardPorts": true,
+  "laravel-pint-fixer.pintBinPath": "/app/laravel/vendor/laravel/pint/builds/pint",
   "[php]": {
-    "editor.defaultFormatter": "open-southeners.laravel-pint",
+    "editor.defaultFormatter": "evgenius33.laravel-pint-fixer"
   },
   "[vue]": {
     "editor.defaultFormatter": "Vue.volar",
