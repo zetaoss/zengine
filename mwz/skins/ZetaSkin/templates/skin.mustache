@@ -24,12 +24,12 @@
   </nav>
 
   <div class="max-w-8xl mx-auto">
-    <div class="flex flex-row {{#isBinder}}has-binders{{/isBinder}}">
-      {{#isBinder}}
+    <div class="flex flex-row {{#hasBinders}}has-binders{{/hasBinders}}">
+      {{#hasBinders}}
       <div class="hidden md:block flex-none w-60">
         <the-binder></the-binder>
       </div>
-      {{/isBinder}}
+      {{/hasBinders}}
 
       <div class="flex-auto">
         <div class="p-4 py-8 md:m-4 md:p-8 md:border md:rounded-md bg-white dark:bg-neutral-900">
@@ -48,13 +48,13 @@
             <div class="flex float-right">
               {{#arrayButtons}}
               {{^current}}
-              <a class="page-btn" href="{{ href }}">{{ text }}</a>
+              <a class="page-btn" {{#id}}id="{{.}}"{{/id}} href="{{href}}">{{text}}</a>
               {{/current}}
               {{/arrayButtons}}
 
               <page-menu>
                 {{#arrayMenu}}
-                <li><a href="{{ href }}">{{ text }}</a></li>
+                <li><a href="{{href}}">{{text}}</a></li>
                 {{/arrayMenu}}
               </page-menu>
             </div>
@@ -66,7 +66,7 @@
           </div>
           {{/data-portlets.data-category-normal.html-items}}
 
-          <article id="content" class="py-6" v-pre>
+          <article id="content" data-mw-ve-target-container class="py-6" v-pre>
             {{{ html-body-content }}}
           </article>
 

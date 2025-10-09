@@ -10,8 +10,6 @@ class SkinZetaSkin extends SkinMustache
 
     private static $sidebar;
 
-    private static $isBinder;
-
     public static function onBeforePageDisplay($out, $skin)
     {
         $out->addHTMLClasses($_COOKIE['theme'] ?? '');
@@ -21,21 +19,12 @@ class SkinZetaSkin extends SkinMustache
 
     public static function onMakeGlobalVariablesScript(array &$vars, $out)
     {
-        $binders = [];
-        $contributors = [];
-        $lastmod = '';
+        $ctx = PageContext::getInstance($out);
 
-        if ($vars['wgIsArticle'] && $vars['wgAction'] == 'view') {
-            $binders = DataService::getBinders($vars['wgArticleId']) ?? [];
-            $contributors = DataService::getContributors($vars['wgPageName']);
-            $lastmod = $out->getRevisionTimestamp();
-        }
-
-        $vars['binders'] = $binders;
-        self::$isBinder = ! empty($binders);
-        $vars['contributors'] = $contributors;
-        $vars['lastmod'] = $lastmod;
-        $vars['avatar'] = DataService::getUserAvatar($vars['wgUserId'] ?? 0);
+        $vars['binders'] = $ctx->binders;
+        $vars['contributors'] = $ctx->contributors;
+        $vars['lastmod'] = $ctx->lastmod;
+        $vars['avatar'] = $ctx->avatar;
     }
 
     public static function onSkinTemplateNavigation__Universal($skinTemplate, &$links)
@@ -44,6 +33,9 @@ class SkinZetaSkin extends SkinMustache
             $links['user-menu']['profile'] = ['text' => '프로필', 'href' => '/user/profile'];
             $links['user-menu']['userpage']['text'] = '사용자 문서';
             $links['user-menu']['mytalk']['text'] = '사용자 토론';
+        }
+        if (isset($links['views']['edit'])) {
+            $links['views']['edit']['id'] = 'ca-edit';
         }
         self::$links = $links;
     }
@@ -69,14 +61,17 @@ class SkinZetaSkin extends SkinMustache
     {
         $data = parent::getTemplateData();
 
+        $ctx = PageContext::getInstance($this->getOutput());
+
         $views = self::$links['views'] ?? [];
+        trace('views', $views);
         $actions = self::$links['actions'] ?? [];
         $namespaces = self::$links['namespaces'] ?? [];
         $toolbox = self::$sidebar['TOOLBOX'] ?? [];
         $userMenu = self::$links['user-menu'] ?? [];
 
-        $data['isView'] = $this->getActionName() === 'view';
-        $data['isBinder'] = self::$isBinder;
+        $data['isView'] = $ctx->isView;
+        $data['hasBinders'] = $ctx->hasBinders;
 
         $data['arrayButtons'] = array_values(array_filter([
             'view' => $views['view'] ?? null,
@@ -86,6 +81,7 @@ class SkinZetaSkin extends SkinMustache
             'unwatch' => $views['unwatch'] ?? null,
             'talk' => $namespaces['talk'] ?? null,
         ]));
+
         $data['arrayMenu'] = array_values(array_filter([
             'history' => $views['history'] ?? null,
             'delete' => $actions['delete'] ?? null,

@@ -4,11 +4,9 @@ import getRLCONF from './rlconf'
 
 async function getMW(): Promise<MediaWiki> {
   let retries = 1
-  // @ts-ignore
   while (typeof mw === 'undefined' || typeof mw.Api === 'undefined') {
     await ((t: number) => new Promise((r) => { setTimeout(r, t) }))(retries++)
   }
-  // @ts-ignore
   return mw
 }
 
