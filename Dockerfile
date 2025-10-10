@@ -10,7 +10,7 @@ RUN set -eux \
     && ln -rs /app/mwz/extensions/ZetaExtension /app/w/extensions/ \
     && ln -rs /app/mwz/skins/ZetaSkin           /app/w/skins/ \
     && cd /app/laravel/              && composer install \
-    && cd /app/vue/                  && npm install && npm run build \
+    && cd /app/vue/                  && pnpm install --frozen-lockfile && pnpm run build \
     && cd /app/w/                    && composer update \
-    && cd /app/w/skins/ZetaSkin/vue/ && npm install && npm run build \
+    && cd /app/w/skins/ZetaSkin/vue/ && pnpm install --frozen-lockfile && pnpm run build \
     && chown www-data:www-data -R /app/*
