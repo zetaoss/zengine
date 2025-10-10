@@ -2,8 +2,8 @@ SHELL=/bin/bash
 
 vue-audit:
 	@echo "🔍 Running vue-audit"
-	cd mwz/skins/ZetaSkin/vue && npm audit
-	cd vue && npm audit
+	cd mwz/skins/ZetaSkin/vue && pnpm audit
+	cd vue && pnpm audit
 
 vue-diff:
 	@echo "🧮 Running vue-diff"
