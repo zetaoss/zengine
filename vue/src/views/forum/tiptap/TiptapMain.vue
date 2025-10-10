@@ -5,10 +5,7 @@ import CharacterCount from '@tiptap/extension-character-count'
 import Highlight from '@tiptap/extension-highlight'
 import Image from '@tiptap/extension-image'
 import Placeholder from '@tiptap/extension-placeholder'
-import Table from '@tiptap/extension-table'
-import TableCell from '@tiptap/extension-table-cell'
-import TableHeader from '@tiptap/extension-table-header'
-import TableRow from '@tiptap/extension-table-row'
+import { Table, TableRow, TableCell, TableHeader } from '@tiptap/extension-table'
 import TaskItem from '@tiptap/extension-task-item'
 import TaskList from '@tiptap/extension-task-list'
 import StarterKit from '@tiptap/starter-kit'
@@ -28,7 +25,7 @@ const editor = shallowRef<Editor | null>(null)
 
 watch(() => props.modelValue, (newValue) => {
   if (editor.value && editor.value.getHTML() !== newValue) {
-    editor.value.commands.setContent(newValue, false)
+    editor.value.commands.setContent(newValue)
   }
 })
 
@@ -36,7 +33,6 @@ onMounted(() => {
   editor.value = new Editor({
     extensions: [
       StarterKit.configure({
-        history: { depth: 100 },
         heading: { levels: [1, 2, 3] },
       }),
       Highlight,
