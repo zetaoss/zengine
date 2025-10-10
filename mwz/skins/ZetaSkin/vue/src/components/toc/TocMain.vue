@@ -39,7 +39,7 @@ const scrollToAnchor = (id: string) => {
 </script>
 
 <template>
-  <CCapSticky>
+  <CCapSticky :marginY="16">
     <nav>
       <ul v-if="tocObj"
         class="text-sm text-z-text tracking-tight list-none m-0 p-0 pl-4 border-l-4 border-sky-400 dark:border-sky-600">

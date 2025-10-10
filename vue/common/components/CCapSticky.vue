@@ -3,9 +3,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { useWindowScroll, useWindowSize, useEventListener } from '@vueuse/core'
 
+const props = defineProps({
+  marginY: { type: Number, default: 0 },
+  classes: { type: String, default: '' },
+})
+
 const capTop = 48
 const capBottom = 152
-const marginY = 16
 
 const docH = ref(0)
 const { y } = useWindowScroll()
@@ -16,9 +20,9 @@ const readDocH = () => {
 }
 
 const styleVars = computed(() => {
-  const top = Math.max(0, capTop - y.value) + marginY
+  const top = Math.max(0, capTop - y.value) + props.marginY
   const remain = Math.max(0, docH.value - (y.value + winH.value))
-  const bottom = Math.max(0, capBottom - remain) + marginY
+  const bottom = Math.max(0, capBottom - remain) + props.marginY
 
   return {
     top: `${top}px`,
@@ -33,7 +37,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="sticky overflow-y-auto scrollbar-simple mr-4" :style="styleVars">
+  <div class="sticky scrollbar-simple" :class="classes" :style="styleVars">
     <slot />
   </div>
 </template>

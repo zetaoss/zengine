@@ -4,6 +4,7 @@ export interface Binder {
   title: string
   trees: BinderNodeType[]
 }
+
 export interface BinderNodeType {
   href: string
   text: string

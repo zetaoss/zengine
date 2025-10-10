@@ -1,10 +1,13 @@
 .scrollbar-simple {
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+
     &::-webkit-scrollbar-track {
         background: transparent;
     }
 
     &::-webkit-scrollbar {
-        width: 8px;
+        width: 6px;
     }
 
     &::-webkit-scrollbar-corner {
@@ -13,6 +16,6 @@
 
     &::-webkit-scrollbar-thumb {
         background: var(--z-scrollbar);
-        border-radius: 8px;
+        border-radius: 6px;
     }
 }
