@@ -64,7 +64,6 @@ class SkinZetaSkin extends SkinMustache
         $ctx = PageContext::getInstance($this->getOutput());
 
         $views = self::$links['views'] ?? [];
-        trace('views', $views);
         $actions = self::$links['actions'] ?? [];
         $namespaces = self::$links['namespaces'] ?? [];
         $toolbox = self::$sidebar['TOOLBOX'] ?? [];
