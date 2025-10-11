@@ -1,9 +1,9 @@
 SHELL=/bin/bash
 
-vue-audit:
-	@echo "Running vue-audit"
-	cd mwz/skins/ZetaSkin/vue && pnpm audit
-	cd vue && pnpm audit
+vue-install:
+	@echo "Running vue-install"
+	cd mwz/skins/ZetaSkin/vue && pnpm install
+	cd vue && pnpm install
 
 vue-build:
 	@echo "Running vue-build"
@@ -14,4 +14,10 @@ vue-diff:
 	@echo "Running vue-diff"
 	node hack/vue-diff.js
 
-checks: vue-audit vue-build vue-diff
+vue-audit:
+	@echo "Running vue-audit"
+	cd mwz/skins/ZetaSkin/vue && pnpm audit
+	cd vue && pnpm audit
+
+checks: vue-install vue-build vue-diff vue-audit
+	@echo "✅ All checks passed"
