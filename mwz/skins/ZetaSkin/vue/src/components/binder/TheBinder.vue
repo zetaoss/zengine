@@ -30,21 +30,21 @@ async function refreshBinder() {
 </script>
 
 <template>
-  <div class="h-full border-x bg-zinc-50 dark:bg-neutral-900">
+  <div class="binder h-full border-x bg-zinc-50 dark:bg-neutral-900">
     <CCapSticky>
-      <div class="text-xs tracking-tighter" v-if="bindersRef.length">
+      <div v-if="bindersRef.length">
         <div v-for="binder in bindersRef" :key="binder.id">
-          <header class="sticky top-0 z-10 flex items-center justify-between px-3 py-2
+          <header class="text-sm sticky top-0 z-10 flex items-center justify-between px-3 py-2
                    bg-gray-100 dark:bg-neutral-700 font-bold" @dblclick.stop="refreshBinder">
             <span>{{ binder.title }}</span>
             <a :href="`/wiki/Binder:${binder.title}`"
-              class="inline-flex items-center gap-1 rounded-md px-2 py-1 hover:bg-slate-200/70 dark:hover:bg-slate-700/70
-                     focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 dark:focus-visible:ring-slate-600" @click.stop title="Binder 설정">
+              class="inline-flex items-center gap-1 rounded-md px-2 py-1 hover:bg-slate-200/70 dark:hover:bg-slate-700/70"
+              @click.stop>
               <BaseIcon :path="mdiCog" :class="['h-4 w-4', busy ? 'animate-spin' : '']" />
             </a>
           </header>
 
-          <ul class="m-0 p-1 list-none">
+          <ul class="m-0 p-0 px-1 pb-8 list-none">
             <BinderNode v-for="tree in binder.trees" :key="tree.text" :node="tree" :depth="0" :wgTitle="wgTitle" />
           </ul>
         </div>
@@ -52,3 +52,15 @@ async function refreshBinder() {
     </CCapSticky>
   </div>
 </template>
+
+<style>
+.binder {
+  ul {
+    @apply text-xs tracking-tighter;
+  }
+
+  a {
+    @apply text-sky-800 dark:text-sky-600;
+  }
+}
+</style>
