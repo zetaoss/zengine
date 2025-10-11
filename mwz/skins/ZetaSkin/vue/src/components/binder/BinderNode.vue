@@ -1,31 +1,40 @@
 <!-- BinderNode.vue -->
 <script setup lang="ts">
+import { computed, ref } from 'vue'
 import type { PropType } from 'vue'
 import type { BinderNodeType } from './types'
+import BaseIcon from '@common/ui/BaseIcon.vue'
+import { mdiTriangleDown } from '@mdi/js'
 
-defineProps({
+const props = defineProps({
   node: { type: Object as PropType<BinderNodeType>, required: true },
   depth: { type: Number, default: 0 },
   wgTitle: { type: String, default: '' },
 })
 
-const indent = 14
-const padX = 8
+const isLink = computed(() => !!props.node.href)
+const hasChildren = computed(() => !!props.node.nodes?.length)
+const collapsed = ref(props.depth > 0)
+const toggle = () => { collapsed.value = !collapsed.value }
 </script>
 
 <template>
   <li>
-    <component :is="node.href ? 'a' : 'div'" :href="node.href || undefined"
-      class="block w-full rounded-md px-2 py-1 transition-colors hover:bg-slate-200 dark:hover:bg-slate-700 hover:no-underline"
-      :class="[
-        node.text === wgTitle ? 'current bg-slate-300/50 dark:bg-slate-700/50' : '',
-        node.href ? 'cursor-pointer' : '',
-        node.new ? 'text-red-700' : 'text-sky-700 dark:text-sky-500',
-      ]" :style="{ paddingLeft: `${padX + depth * indent}px`, paddingRight: `${padX}px` }">
-      {{ node.text }}
-    </component>
-
-    <ul v-if="node.nodes?.length" class="p-0 m-0 pl-2 list-none border-slate-200/60 dark:border-slate-700/40">
+    <div class="flex items-stretch">
+      <button v-if="hasChildren" class="w-4 grid place-items-center text-gray-500 rounded hover:bg-gray-500/20"
+        @click.stop.prevent="toggle">
+        <BaseIcon :path="mdiTriangleDown" class="w-[9px] transition-transform origin-center"
+          :class="{ '-rotate-90': collapsed }" />
+      </button>
+      <div v-else class="w-4">
+      </div>
+      <component :is="isLink ? 'a' : 'div'" :href="node.href || undefined"
+        class="flex-1 rounded hover:bg-gray-500/20 hover:no-underline p-0.5" :class="node.new ? 'new' : ''">
+        {{ node.text }}
+      </component>
+    </div>
+    <ul v-if="hasChildren" v-show="!collapsed"
+      class="p-0 m-0 pl-2 list-none border-slate-200/60 dark:border-slate-700/40">
       <BinderNode v-for="n in node.nodes" :key="n.text" :node="n" :depth="depth + 1" :wgTitle="wgTitle" />
     </ul>
   </li>
