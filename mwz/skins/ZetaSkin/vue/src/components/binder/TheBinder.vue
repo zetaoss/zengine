@@ -45,7 +45,8 @@ async function refreshBinder() {
           </header>
 
           <ul class="m-0 p-0 px-1 pb-8 list-none">
-            <BinderNode v-for="tree in binder.trees" :key="tree.text" :node="tree" :depth="0" :wgTitle="wgTitle" />
+            <BinderNode v-for="(tree, i) in binder.trees" :key="tree.text" :node="tree" :depth="0" :wgTitle="wgTitle"
+              :binderId="binder.id" :idx="i" />
           </ul>
         </div>
       </div>
