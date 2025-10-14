@@ -8,7 +8,7 @@ import CCapSticky from '@common/components/CCapSticky.vue'
 import getRLCONF from '@/utils/rlconf'
 import BinderNode from './BinderNode.vue'
 
-const { wgArticleId, wgTitle, binders } = getRLCONF()
+const { wgArticleId, binders } = getRLCONF()
 
 const bindersRef = ref(binders ?? [])
 const busy = ref(false)
@@ -34,8 +34,8 @@ async function refreshBinder() {
     <CCapSticky>
       <div v-if="bindersRef.length">
         <div v-for="binder in bindersRef" :key="binder.id">
-          <header class="text-sm sticky top-0 z-10 flex items-center justify-between px-3 py-2
-                   bg-gray-100 dark:bg-neutral-700 font-bold" @dblclick.stop="refreshBinder">
+          <header class="sticky top-0 z-10 flex items-center justify-between px-3 py-2
+                   bg-gray-100 dark:bg-neutral-800 font-bold" @dblclick.stop="refreshBinder">
             <span>{{ binder.title }}</span>
             <a :href="`/wiki/Binder:${binder.title}`"
               class="inline-flex items-center gap-1 rounded-md px-2 py-1 hover:bg-slate-200/70 dark:hover:bg-slate-700/70"
@@ -44,9 +44,9 @@ async function refreshBinder() {
             </a>
           </header>
 
-          <ul class="m-0 p-0 px-1 pb-8 list-none">
-            <BinderNode v-for="(tree, i) in binder.trees" :key="tree.text" :node="tree" :depth="0" :wgTitle="wgTitle"
-              :binderId="binder.id" :idx="i" />
+          <ul class="m-0 p-0 pt-2 pb-8 list-none">
+            <BinderNode v-for="(tree, i) in binder.trees" :key="tree.text" :node="tree" :depth="0"
+              :wgArticleId="wgArticleId" :binderId="binder.id" :idx="i" />
           </ul>
         </div>
       </div>
@@ -57,7 +57,7 @@ async function refreshBinder() {
 <style>
 .binder {
   ul {
-    @apply text-xs tracking-tighter;
+    @apply text-sm tracking-tighter;
   }
 
   a {

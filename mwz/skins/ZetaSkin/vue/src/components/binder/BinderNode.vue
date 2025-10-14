@@ -3,20 +3,20 @@
 import { type PropType, computed, ref, onMounted, nextTick, watchEffect } from 'vue'
 import type { BinderNodeType } from './types'
 import BaseIcon from '@common/ui/BaseIcon.vue'
-import { mdiTriangleDown } from '@mdi/js'
+import { mdiChevronRight } from '@mdi/js'
 import { useStorage } from '@vueuse/core'
 
 const props = defineProps({
   node: { type: Object as PropType<BinderNodeType>, required: true },
   depth: { type: Number, default: 0 },
-  wgTitle: { type: String, default: '' },
+  wgArticleId: { type: Number, required: true },
   binderId: { type: Number, required: true },
   parentPath: { type: String, default: '' },
   idx: { type: Number, default: 0 },
 })
 const emit = defineEmits<{ (e: 'reveal'): void }>()
 
-const isCurrent = computed(() => props.node.text === props.wgTitle)
+const isCurrent = computed(() => props.node.id === props.wgArticleId)
 const isLink = computed(() => !!props.node.href)
 const hasChildren = computed(() => !!props.node.nodes?.length)
 
@@ -52,32 +52,28 @@ async function centerScrollIfCurrent() {
   if (!isCurrent.value) return
   emit('reveal')
   await nextTick()
-  rowRef.value?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  rowRef.value?.scrollIntoView({ block: 'center' })
 }
 
 onMounted(centerScrollIfCurrent)
 </script>
 
 <template>
-  <li>
-    <div class="flex items-stretch" ref="rowRef">
-      <button v-if="hasChildren" class="w-4 grid place-items-center text-gray-500 rounded hover:bg-gray-500/20"
-        @click.stop.prevent="toggle">
-        <BaseIcon :path="mdiTriangleDown" class="w-[9px] transition-transform origin-center"
-          :class="{ '-rotate-90': !expanded }" />
-      </button>
-      <div v-else class="w-4"></div>
-
-      <component :is="isLink ? 'a' : 'div'" :href="node.href || undefined"
-        class="flex-1 rounded hover:bg-gray-500/20 hover:no-underline p-0.5"
-        :class="isCurrent ? 'font-bold' : node.new ? 'new' : ''">
-        {{ node.text }}
+  <li class="flex flex-col">
+    <div class="flex items-stretch hover:bg-gray-500/20 rounded-r-full" ref="rowRef">
+      <component :is="isLink ? 'a' : 'div'" :href="node.href || undefined" class="flex flex-1 px-2 hover:no-underline"
+        :class="{ 'font-bold': isCurrent, 'new': node.new }">
+        <span :style="{ paddingLeft: `${depth}rem` }">{{ node.text }}</span>
       </component>
+
+      <button v-if="hasChildren" class="w-5 h-5 grid place-items-center text-gray-500 rounded-full hover:bg-gray-500/20"
+        @click.stop.prevent="toggle">
+        <BaseIcon :path="mdiChevronRight" class="transition-transform" :class="{ 'rotate-90': expanded }" />
+      </button>
     </div>
 
-    <ul v-if="hasChildren" v-show="expanded"
-      class="p-0 m-0 pl-2 list-none border-slate-200/60 dark:border-slate-700/40">
-      <BinderNode v-for="(n, i) in node.nodes" :key="n.text" :node="n" :depth="depth + 1" :wgTitle="wgTitle"
+    <ul v-if="hasChildren" v-show="expanded" class="p-0 m-0">
+      <BinderNode v-for="(n, i) in node.nodes" :key="n.text" :node="n" :depth="depth + 1" :wgArticleId="wgArticleId"
         :binderId="binderId" :parentPath="key" :idx="i" @reveal="handleReveal" />
     </ul>
   </li>
