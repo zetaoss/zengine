@@ -8,31 +8,22 @@ final class BinderHooks
 
     public static function onPageSaveComplete($page, $user, $summary, $flags, $revisionRecord, $editResult): void
     {
-        if ($page->getNamespace() !== self::NS_BINDER) {
-            return;
+        if ($page->getNamespace() === self::NS_BINDER) {
+            BinderService::syncRelations($page->getId());
         }
-        BinderService::syncRelations($page);
     }
 
     public static function onPageDeleteComplete($page, $reason, $pageID, $revID, $archivedRevisionCount, $user, $timestamp, $logEntry, $archivedFileCount): void
     {
-        if ($page->getNamespace() !== self::NS_BINDER) {
-            return;
-        }
-        $binderId = $pageID ?? $page->getId();
-        if ($binderId > 0) {
-            BinderService::markDeleted((int) $binderId);
+        if ($page->getNamespace() === self::NS_BINDER) {
+            BinderService::markDeleted($pageID);
         }
     }
 
     public static function onPageUndeleteComplete($title, $user, $reason, $oldPageID, $newPageID, $restoredRevisionCount, $logEntry): void
     {
-        if ($title->getNamespace() !== self::NS_BINDER) {
-            return;
-        }
-        $binderId = $newPageID ?: $title->getId();
-        if ($binderId > 0) {
-            BinderService::unmarkDeletedAndResync((int) $binderId);
+        if ($title->getNamespace() === self::NS_BINDER) {
+            BinderService::unmarkDeletedAndResync($newPageID);
         }
     }
 }

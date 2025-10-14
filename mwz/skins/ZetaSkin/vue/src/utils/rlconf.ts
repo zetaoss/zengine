@@ -5,7 +5,6 @@ import type { Binder } from '@/components/binder/types'
 interface RLCONF {
   wgArticleId: number,
   wgCategories: string[],
-  wgTitle: string,
   wgUserId: number,
   wgUserGroups: string[],
   avatar: UserAvatar,
