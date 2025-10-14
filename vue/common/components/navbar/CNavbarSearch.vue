@@ -88,20 +88,35 @@ function onInput(event: Event) {
 function onBlur() {
   setTimeout(close, 500)
 }
+
 function onFocus() {
   if (pages.value.length < 0) return
   expanded.value = true
 }
+
 function onMouseover(i: number) {
   index.value = i
 }
+
 function onClick() {
   index.value = -1
   goToSearch()
 }
+
+function escapeHTML(s: string) {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function highlight(needle: string, haystack: string) {
-  const re = new RegExp(needle.replace(/^\s*/, '').replace(/\s*$/, ''), 'gi')
-  return haystack.replace(re, (s) => `<b>${s}</b>`)
+  const safeNeedle = needle.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  if (!safeNeedle) return escapeHTML(haystack);
+  const re = new RegExp(safeNeedle, 'giu');
+  return escapeHTML(haystack).replace(re, (s) => `<b>${escapeHTML(s)}</b>`);
 }
 </script>
 <template>

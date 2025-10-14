@@ -24,21 +24,9 @@ final class BinderService
             : $svc->getDBLoadBalancer()->getConnection(DB_REPLICA);
     }
 
-    private static function wikiPageFromId(int $pageId)
-    {
-        $svc = MediaWikiServices::getInstance();
-        if (method_exists($svc, 'getWikiPageFactory')) {
-            return $svc->getWikiPageFactory()->newFromID($pageId);
-        }
-        $t = \Title::newFromID($pageId);
-
-        return $t ? \WikiPage::factory($t) : null;
-    }
-
     public static function listBinders(): array
     {
-        $dbr = self::dbr();
-        $res = $dbr->newSelectQueryBuilder()
+        $res = self::dbr()->newSelectQueryBuilder()
             ->select(['A.id', 'B.page_title'])
             ->from('ldb.binders', 'A')
             ->leftJoin('page', 'B', 'A.id = B.page_id')
@@ -58,82 +46,72 @@ final class BinderService
         if ($pageId < 1) {
             return [];
         }
-        $dbr = self::dbr();
-        $binderIDs = $dbr->newSelectQueryBuilder()
-            ->select('binder_id')->from('ldb.binder_pages')
-            ->where(['page_id' => $pageId])->fetchFieldValues();
+
+        $binderIDs = self::dbr()->newSelectQueryBuilder()
+            ->select('binder_id')
+            ->from('ldb.binder_pages')
+            ->where(['page_id' => $pageId])
+            ->fetchFieldValues();
+
         if (! $binderIDs) {
             return [];
         }
 
         if ($refresh) {
-            foreach ($binderIDs as $bid) {
-                $wp = self::wikiPageFromId((int) $bid);
-                if ($wp) {
-                    self::syncRelations($wp);
-                }
+            $out = [];
+            foreach ($binderIDs as $id) {
+                $out[] = self::buildAndStoreBinderData($id);
             }
+
+            return $out;
         }
 
-        $res = $dbr->newSelectQueryBuilder()
-            ->select(['id', 'data'])->from('ldb.binders')
+        $res = self::dbr()->newSelectQueryBuilder()
+            ->select(['id', 'data'])
+            ->from('ldb.binders')
             ->where(['id' => $binderIDs, 'deleted' => 0, 'enabled' => 1])
             ->fetchResultSet();
 
-        $rows = [];
+        $out = [];
         foreach ($res as $row) {
-            $rows[] = (! $refresh && $row->data) ? unserialize($row->data) : self::buildBinderData((int) $row->id);
+            $data = $row->data ? json_decode($row->data, true) : null;
+            if (is_array($data)) {
+                $out[] = $data;
+            } else {
+                $out[] = self::buildAndStoreBinderData((int) $row->id);
+            }
         }
 
-        return $rows;
+        return $out;
     }
 
-    public static function syncRelations($page): void
+    public static function syncRelations(int $binderId): void
     {
-        $binderId = $page->getId();
-        if ($binderId <= 0) {
-            return;
-        }
+        $dbw = self::dbw();
+        $res = $dbw->newSelectQueryBuilder()
+            ->select(['target_id' => $dbw->buildCoalesce(['p2.page_id', 'p.page_id'])])
+            ->from('pagelinks', 'pl')
+            ->join('page', 'p', 'p.page_namespace = pl.pl_namespace AND p.page_title = pl.pl_title')
+            ->leftJoin('redirect', 'rd', 'rd.rd_from = p.page_id')
+            ->leftJoin('page', 'p2', 'p2.page_namespace = rd.rd_namespace AND p2.page_title = rd.rd_title')
+            ->where(['pl.pl_from' => $binderId])
+            ->fetchResultSet();
 
-        $text = (string) $page->getContent()?->getText();
-        if ($text === '') {
-            self::writeRelations($binderId, []);
-
-            return;
-        }
-
-        if (! preg_match_all('/\[\[\s*(?<title>[^\|\]\n#]+)(?:#[^\|\]]*)?(?:\|[^\]]*)?\s*\]\]/u', $text, $matches, PREG_SET_ORDER)) {
-            self::writeRelations($binderId, []);
-
-            return;
-        }
-
-        $svc = MediaWikiServices::getInstance();
-        $tf = $svc->getTitleFactory();
-        $rows = [];
         $seen = [];
-
-        foreach ($matches as $m) {
-            $raw = trim($m['title']);
-            if ($raw === '') {
-                continue;
-            }
-            $t = $tf->newFromText($raw);
-            if (! $t) {
-                continue;
-            }
-            $t = self::resolveRedirects($t);
-            if (! $t) {
-                continue;
-            }
-            $pid = $t->getId();
+        $rows = [];
+        foreach ($res as $row) {
+            $pid = (int) $row->target_id;
             if ($pid > 0 && ! isset($seen[$pid])) {
                 $seen[$pid] = true;
                 $rows[] = ['binder_id' => $binderId, 'page_id' => $pid];
             }
         }
 
-        self::writeRelations($binderId, $rows);
+        $dbw->delete('ldb.binder_pages', ['binder_id' => $binderId]);
+        if ($rows) {
+            $dbw->insert('ldb.binder_pages', $rows);
+        }
+        $dbw->upsert('ldb.binders', ['id' => $binderId], ['id'], [], __METHOD__);
     }
 
     public static function markDeleted(int $binderId): void
@@ -144,38 +122,55 @@ final class BinderService
     public static function unmarkDeletedAndResync(int $binderId): void
     {
         self::dbw()->upsert('ldb.binders', ['id' => $binderId, 'deleted' => 0], ['id'], ['deleted' => 0], __METHOD__);
-        $wp = self::wikiPageFromId($binderId);
-        if ($wp) {
-            self::syncRelations($wp);
-        }
+        self::syncRelations($binderId);
     }
 
-    private static function writeRelations(int $binderId, array $rows): void
+    private static function buildAndStoreBinderData(int $id): array
     {
-        $dbw = self::dbw();
-        $dbw->delete('ldb.binder_pages', ['binder_id' => $binderId]);
-        if ($rows) {
-            $dbw->insert('ldb.binder_pages', $rows);
+        $data = self::buildBinderData($id);
+        if (! is_array($data)) {
+            return [];
         }
-        $dbw->upsert('ldb.binders', ['id' => $binderId], ['id'], ['id' => $binderId], __METHOD__);
+        $row = ['id' => $id, 'data' => json_encode($data)];
+        self::dbw()->upsert('ldb.binders', $row, ['id'], $row, __METHOD__);
+
+        return $data;
+    }
+
+    private static function wikiPageFromId(int $pageId)
+    {
+        if ($pageId < 1) {
+            return null;
+        }
+
+        $svc = MediaWikiServices::getInstance();
+
+        if (method_exists($svc, 'getWikiPageFactory')) {
+            $page = $svc->getWikiPageFactory()->newFromID($pageId);
+        } else {
+            $t = \Title::newFromID($pageId);
+            $page = $t ? \WikiPage::factory($t) : null;
+        }
+
+        if (! $page) {
+            return null;
+        }
+        if (method_exists($page, 'exists') && ! $page->exists()) {
+            return null;
+        }
+
+        return $page;
     }
 
     private static function resolveRedirects(\Title $t, int $maxHops = 9): ?\Title
     {
         $svc = MediaWikiServices::getInstance();
         $tf = $svc->getTitleFactory();
-
         $lookup = $svc->getRedirectLookup();
-        $seen = [];
+
         while ($maxHops-- > 0) {
-            if (! $t->exists()) {
+            if (! $t->exists() || $t->getId() === 0) {
                 return null;
-            }
-            $pid = $t->getId();
-            if ($pid > 0) {
-                if (isset($seen[$pid])) {
-                    return $t;
-                } $seen[$pid] = true;
             }
             $target = $lookup->getRedirectTarget($t);
             if (! $target) {
@@ -190,70 +185,122 @@ final class BinderService
         return $t;
     }
 
-    private static function buildBinderData(int $id): array|int
+    private static function titleToIdByText(string $titleText): int
     {
-        $json = @file_get_contents("http://localhost/w/api.php?action=parse&format=json&prop=text&pageid={$id}");
-        if ($json === false) {
-            return -2;
+        $svc = MediaWikiServices::getInstance();
+        $tf = $svc->getTitleFactory();
+
+        $t = $tf->newFromText($titleText);
+        if (! $t) {
+            return 0;
         }
 
-        $parse = json_decode($json, true)['parse'] ?? null;
-        if (! $parse || ! isset($parse['text']['*'])) {
-            return -2;
+        $t2 = self::resolveRedirects($t);
+        if ($t2) {
+            $t = $t2;
         }
 
-        $s = $parse['text']['*'];
-        $s = substr($s, strpos($s, '<ul>'));
-        $s = substr($s, 0, strrpos($s, '</ul>') + 5);
-        $s = str_replace('&amp;', '&', $s);
-        $s = preg_replace('/<\/ul>\s*<ul>/', '', $s);
-        $s = str_replace('</ul></li><li><ul>', '', $s);
-        $s = str_replace('<ul>', '"nodes":[', $s);
-        $s = str_replace('</ul>', '],', $s);
-        $s = str_replace('<li>', '{', $s);
-        $s = str_replace('</li>', '},', $s);
-        $s = str_replace('<a href="', '"href":"', $s);
-        $s = preg_replace_callback('|>[^<]*</a>|', fn ($m) => str_replace('"', '\"', $m[0]), $s);
-        $s = str_replace('</a>', '",', $s);
-        $s = str_replace(' title="[^"]*"', '', $s);
-        $s = str_replace(' class="new"', ',"new":1', $s);
-        $s = str_replace(' class="mw-redirect"', ',"redirect":1', $s);
-        $s = preg_replace('/\w+="[^"]*"/', '', $s);
-        $s = str_replace('>', ',"text":"', $s);
-        $s = "[$s]";
-        $s = preg_replace('/{([^"^{^}\n]+)/', '{"text":"$1",', $s);
-        $s = preg_replace("/,\s*\]/", ']', $s);
-        $s = preg_replace("/,\s*}/", '}', $s);
-        $s = substr($s, 9, -1);
+        return $t->getId();
+    }
 
-        $trees = self::optimizeNodes(json_decode($s, true));
+    private static function buildBinderData(int $id): array
+    {
+        $page = self::wikiPageFromId($id);
+        if (! $page) {
+            return [];
+        }
+
+        $svc = MediaWikiServices::getInstance();
+        $popts = method_exists($svc, 'getParserOptionsFactory')
+            ? $svc->getParserOptionsFactory()->newFromAnon()
+            : \ParserOptions::newFromAnon();
+
+        $po = method_exists($page, 'getParserOutput') ? $page->getParserOutput($popts) : null;
+        if (! $po) {
+            return [];
+        }
+
+        $html = (string) $po->getText();
+        libxml_use_internal_errors(true);
+        $dom = new \DOMDocument;
+        $dom->loadHTML('<?xml encoding="utf-8" ?>'.$html, LIBXML_NOERROR | LIBXML_NOWARNING);
+        libxml_clear_errors();
+
+        $uls = $dom->getElementsByTagName('ul');
+        if ($uls->length === 0) {
+            return [];
+        }
+
+        $title = $page->getTitle()->getText();
+        $trees = self::parseUl($uls->item(0));
 
         return [
             'id' => $id,
-            'title' => substr((string) $parse['title'], 7),
+            'title' => $title,
             'trees' => $trees,
         ];
     }
 
-    private static function optimizeNodes($nodes)
+    private static function parseUl(\DOMElement $ul): array
     {
-        foreach ($nodes as &$node) {
-            if (array_key_exists('nodes', $node)) {
-                $node['nodes'] = self::optimizeNodes($node['nodes']);
-            }
-            if (array_key_exists('new', $node)) {
+        $nodes = [];
+
+        foreach ($ul->childNodes as $li) {
+            if ($li->nodeType !== XML_ELEMENT_NODE || $li->nodeName !== 'li') {
                 continue;
             }
-            if (! array_key_exists('title', $node)) {
-                continue;
+
+            $node = ['text' => ''];
+            $link = null;
+
+            foreach ($li->childNodes as $child) {
+                if ($child->nodeType === XML_ELEMENT_NODE && $child->nodeName === 'a') {
+                    $link = $child;
+                    break;
+                }
             }
-            $t = \Title::newFromText($node['title']);
-            unset($node['title']);
-            if (array_key_exists('redirect', $node)) {
-                unset($node['redirect']);
-                $t = self::resolveRedirects($t);
+
+            if ($link) {
+                $text = trim($link->textContent);
+                $href = $link->getAttribute('href');
+                $titleAttr = $link->getAttribute('title');
+
+                $node['text'] = $text;
+                if ($href !== '') {
+                    $node['href'] = $href;
+                }
+
+                if ($titleAttr !== '') {
+                    $titleText = html_entity_decode($titleAttr, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                    $id = self::titleToIdByText($titleText);
+                    if ($id > 0) {
+                        $node['id'] = $id;
+                    } else {
+                        $node['new'] = 1;
+                    }
+                }
+            } else {
+                foreach ($li->childNodes as $child) {
+                    if ($child->nodeType === XML_TEXT_NODE) {
+                        $text = trim($child->textContent);
+                        if ($text !== '') {
+                            $node['text'] = $text;
+                            break;
+                        }
+                    } elseif ($child->nodeType === XML_ELEMENT_NODE && $child->nodeName === 'ul') {
+                        break;
+                    }
+                }
             }
-            $node['id'] = $t ? $t->getArticleId() : 0;
+
+            foreach ($li->childNodes as $child) {
+                if ($child->nodeType === XML_ELEMENT_NODE && $child->nodeName === 'ul') {
+                    $node['nodes'] = self::parseUl($child);
+                    break;
+                }
+            }
+
+            $nodes[] = $node;
         }
 
         return $nodes;

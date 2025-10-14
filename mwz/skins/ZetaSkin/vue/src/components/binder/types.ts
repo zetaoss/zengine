@@ -6,6 +6,7 @@ export interface Binder {
 }
 
 export interface BinderNodeType {
+  id: number
   href: string
   text: string
   new: boolean

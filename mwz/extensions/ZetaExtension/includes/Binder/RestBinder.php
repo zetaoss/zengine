@@ -20,16 +20,15 @@ class RestBinder extends SimpleHandler
 
     public function run($pageid = null)
     {
-        if ($pageid !== null) {
-            $id = (int) $pageid;
-            if ($id < 1) {
-                return [];
-            }
-            $refresh = isset($_GET['refresh']);
-
-            return BinderService::getBindersForPageId($id, $refresh);
+        if ($pageid === null) {
+            return BinderService::listBinders();
         }
+        $id = (int) $pageid;
+        if ($id < 1) {
+            return [];
+        }
+        $refresh = isset($_GET['refresh']);
 
-        return BinderService::listBinders();
+        return BinderService::getBindersForPageId($id, $refresh);
     }
 }
