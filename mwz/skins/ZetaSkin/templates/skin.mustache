@@ -26,9 +26,7 @@
   <div class="max-w-8xl mx-auto">
     <div class="flex flex-row {{#hasBinders}}has-binders{{/hasBinders}}">
       {{#hasBinders}}
-      <div class="hidden md:block flex-none w-60">
-        <the-binder></the-binder>
-      </div>
+      <binder-main></binder-main>
       {{/hasBinders}}
 
       <div class="flex-auto">

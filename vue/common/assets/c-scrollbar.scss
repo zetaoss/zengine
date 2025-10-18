@@ -1,21 +1,21 @@
-.scrollbar-simple {
-    overflow-y: auto;
+.c-scrollbar {
+    @apply overflow-y-auto;
     scrollbar-gutter: stable;
-
-    &::-webkit-scrollbar-track {
-        background: transparent;
-    }
 
     &::-webkit-scrollbar {
         width: 6px;
     }
 
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
     &::-webkit-scrollbar-corner {
-        background: 0;
+        background: none;
     }
 
     &::-webkit-scrollbar-thumb {
-        background: var(--z-scrollbar);
         border-radius: 6px;
+        background: var(--z-scrollbar);
     }
 }

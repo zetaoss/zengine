@@ -8,27 +8,16 @@ export default defineConfig({
   build: {
     outDir: '../resources/dist',
     emptyOutDir: true,
-    // <terser>
-    // Prevent conflict with MediaWiki (jQuery, VisualEditor)
-    // https://github.com/evanw/esbuild/issues/2338
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        passes: 1,
-      },
-      mangle: {
-        reserved: ['$', 've'],
-      },
+    lib: {
+      entry: 'src/app.ts',
+      name: 'app',
+      formats: ['iife'],
+      fileName: () => 'app.js',
+      cssFileName: 'app',
     },
-    // </terser>
-    rollupOptions: {
-      input: 'src/app.ts',
-      output: {
-        compact: true,
-        entryFileNames: '[name].js',
-        assetFileNames: '[name].[ext]',
-      },
-    },
+  },
+  define: {
+    'process.env.NODE_ENV': JSON.stringify('production'),
   },
   plugins: [
     vue(),
@@ -37,6 +26,7 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       '@common': fileURLToPath(new URL('./common', import.meta.url)),
+      vue: 'vue/dist/vue.esm-bundler.js',
     },
   },
 })

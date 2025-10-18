@@ -5,7 +5,7 @@ import { computed } from 'vue'
 import type { Section } from './types'
 import TocSection from './TocSection.vue'
 import { useScrollSpy } from '@/composables/useScrollSpy'
-import CCapSticky from '@common/components/CCapSticky.vue'
+import CapSticky from '@/components/CapSticky.vue'
 
 const props = defineProps({
   toc: { type: [Object, String] as PropType<Section | string>, required: true },
@@ -39,7 +39,7 @@ const scrollToAnchor = (id: string) => {
 </script>
 
 <template>
-  <CCapSticky :marginY="16">
+  <CapSticky :marginY="16">
     <nav>
       <ul v-if="tocObj"
         class="text-sm text-z-text tracking-tight list-none m-0 p-0 pl-4 border-l-4 border-sky-400 dark:border-sky-600">
@@ -49,5 +49,5 @@ const scrollToAnchor = (id: string) => {
         </li>
       </ul>
     </nav>
-  </CCapSticky>
+  </CapSticky>
 </template>
