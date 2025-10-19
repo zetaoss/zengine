@@ -2,10 +2,10 @@
   max-width: 90rem;
 }
 
-.navbar-link {
-  @apply flex items-center no-underline px-3 text-black dark:text-white;
+.navlink {
+  @apply flex items-center no-underline px-3 text-white;
 
   &:hover {
-    @apply bg-gray-200 dark:bg-gray-800 no-underline;
+    @apply no-underline bg-zinc-800;
   }
 }

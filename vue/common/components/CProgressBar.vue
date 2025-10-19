@@ -7,7 +7,7 @@ defineProps({
 })
 </script>
 <template>
-  <div class="progress-bar" :class="{ invisible: invisible }">
+  <div class="progress-bar" :class="{ invisible }">
     <div class="progress-bar-value" />
   </div>
 </template>

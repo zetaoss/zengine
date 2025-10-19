@@ -12,7 +12,7 @@ final class PageContext
 
     public bool $isView = false;
 
-    public int $articleId = 0;
+    public int $pageId = 0;
 
     public array $binders = [];
 
@@ -33,10 +33,10 @@ final class PageContext
     {
         $title = $out->getTitle();
         $this->isView = ($out->getActionName() === 'view');
-        $this->articleId = $title ? (int) $title->getId() : 0;
+        $this->pageId = ($title && $title->canExist()) ? (int) $title->getId() : 0;
 
-        if ($this->isView && $this->articleId > 0) {
-            $this->binders = $this->fetchBinders($this->articleId);
+        if ($this->isView && $this->pageId > 0) {
+            $this->binders = $this->fetchBinders($this->pageId);
             $this->hasBinders = ! empty($this->binders);
             $this->contributors = $this->fetchContributors($title->getPrefixedText());
             $this->lastmod = $out->getRevisionTimestamp();

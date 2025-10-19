@@ -1,55 +1,60 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { mdiAccount, mdiChevronDown } from '@mdi/js'
-import { onClickOutside } from '@vueuse/core'
 import { useRoute } from 'vue-router'
+import { onClickOutside } from '@vueuse/core'
+import { mdiAccount } from '@mdi/js'
 
 import BaseIcon from '@common/ui/BaseIcon.vue'
 import AvatarCore from '@common/components/avatar/AvatarCore.vue'
-import CNavbarItems from '@common/components/navbar/CNavbarItems.vue'
 import useAuthStore from '@/stores/auth'
 
 import getUserMenuItems from './utils'
 
 const route = useRoute()
 const me = useAuthStore()
-const show = ref(false)
-const inside = ref(null)
+me.update()
 
 const items = computed(() => getUserMenuItems(me.userData.avatar))
 
-function close() {
-  show.value = false
+const cb = ref<HTMLInputElement | null>(null)
+const dd = ref<HTMLElement | null>(null)
+const lb = ref<HTMLElement | null>(null)
+
+const close = () => {
+  const el = cb.value
+  if (el && el.checked) el.checked = false
 }
 
-me.update()
-onClickOutside(inside, close)
+onClickOutside(cb, close, { ignore: [lb] })
+onClickOutside(dd, close, { ignore: [lb] })
+
 watch(() => route.path, close)
 </script>
+
 <template>
-  <div ref="inside" class="h-12 w-12 float-right flex md:flex-none order-2 md:relative">
-    <button type="button" class="w-full hover:bg-zinc-200 dark:hover:bg-zinc-800"
-      :class="{ 'bg-zinc-200 dark:bg-zinc-800': show }" @click="show = !show">
-      <div class="relative">
-        <span v-if="me.isLoggedIn">
-          <AvatarCore :user-avatar="me.userData.avatar" :size="24" />
-        </span>
-        <span v-else>
-          <BaseIcon :path="mdiAccount" />
-        </span>
-        <span
-          class="bg-slate-200 dark:bg-slate-800 rounded-full absolute inline-flex top-[calc(100%-6px)] left-[calc(100%-20px)]">
-          <BaseIcon :path="mdiChevronDown" />
-        </span>
-      </div>
-    </button>
-    <div v-show="show" class="hidden md:block md:absolute z-30 top-full right-0">
-      <div class="rounded-lg overflow-hidden m-1 border bg-z-card">
-        <CNavbarItems :items="items" />
-      </div>
-    </div>
-  </div>
-  <div v-show="show" class="columns-2 py-1 md:hidden bg-zinc-200 dark:bg-zinc-800">
-    <CNavbarItems :items="items" />
+  <input id="usermenu-toggle" type="checkbox" ref="cb" class="peer sr-only" />
+
+  <label ref="lb" for="usermenu-toggle"
+    class="order-2 ml-auto flex h-12 w-12 cursor-pointer items-center justify-center hover:bg-gray-800 peer-checked:bg-gray-800 md:w-auto md:px-3">
+    <span v-if="me.isLoggedIn">
+      <AvatarCore :user-avatar="me.userData.avatar" />
+    </span>
+    <span v-else>
+      <BaseIcon :path="mdiAccount" />
+    </span>
+    <svg class="h-4 w-4 opacity-80 ml-1 hidden md:block" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M7,10L12,15L17,10H7Z" />
+    </svg>
+  </label>
+
+  <div ref="dd" class="order-3 hidden peer-checked:block z-40
+           bg-gray-800 md:absolute md:right-0 md:m-1 md:rounded md:group-hover:block
+           md:border w-full md:w-auto">
+    <nav class="grid grid-cols-3 w-full py-1 md:w-fit md:block md:whitespace-nowrap">
+      <a v-for="item in items" :key="item.text" :href="item.href"
+        class="block p-2 px-8 text-xs text-white hover:bg-gray-700 hover:no-underline">
+        {{ item.text }}
+      </a>
+    </nav>
   </div>
 </template>

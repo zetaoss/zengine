@@ -1,5 +1,5 @@
 <template>
-  <div class="text-center p-6 pb-9 border-t bg-neutral-400 dark:bg-slate-900">
+  <div id="footer" class="text-center p-6 pb-9 border-t bg-neutral-400 dark:bg-slate-900">
     <img alt="logo" class="w-24 mb-3" src="//storage.googleapis.com/zpub/logo.png">
     <p class="text-white mb-3">
       CC-BY-SA 3.0 · Powered by MediaWiki

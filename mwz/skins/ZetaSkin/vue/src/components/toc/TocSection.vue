@@ -19,7 +19,7 @@ const number = computed(() => props.section.number)
 
 const isPrimary = computed(() => anchor.value === props.targetId)
 
-const linkClass = computed(() => ['hover:no-underline', 'hover:text-sky-400', isPrimary.value ? 'text-sky-500 semi-bold' : 'text-z-text'])
+const linkClass = computed(() => ['hover:no-underline', 'hover:text-blue-400', isPrimary.value ? 'text-blue-600 semi-bold' : 'text-z-text'])
 
 const onClick = (e: MouseEvent) => {
   e.preventDefault()

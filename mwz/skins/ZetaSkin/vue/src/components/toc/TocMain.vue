@@ -42,7 +42,7 @@ const scrollToAnchor = (id: string) => {
   <CapSticky :marginY="16">
     <nav>
       <ul v-if="tocObj"
-        class="text-sm text-z-text tracking-tight list-none m-0 p-0 pl-4 border-l-4 border-sky-400 dark:border-sky-600">
+        class="text-sm text-z-text tracking-tight list-none m-0 p-0 pl-4 border-l-4 border-blue-400 dark:border-blue-600">
         <li class="opacity-50 m-0">페이지 목차</li>
         <li v-for="s in tocObj['array-sections'] ?? []" :key="s.index ?? s.anchor" class="m-0">
           <TocSection :section="s" :targetId="activeId ?? ''" @navigate="scrollToAnchor" />
