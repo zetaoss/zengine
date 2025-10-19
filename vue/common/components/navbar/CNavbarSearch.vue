@@ -175,9 +175,11 @@ onBeforeUnmount(() => { aborter.value?.abort() })
     <div class="flex-none flex">
       <a href="/wiki/특수:임의문서" class="navlink" title="랜덤">
         <BaseIcon :path="mdiShuffle" class="w-5 h-5" />
+        <span class="hidden xl:inline ml-1">랜덤</span>
       </a>
-      <a href="/wiki/특수:최근바뀜" class="navlink" title="최근바뀜">
+      <a href="/wiki/특수:최근바뀜" class="navlink" title="바뀐글">
         <BaseIcon :path="mdiHistory" class="w-5 h-5" />
+        <span class="hidden xl:inline ml-1">바뀐글</span>
       </a>
     </div>
   </div>
