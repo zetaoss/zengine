@@ -1,6 +1,7 @@
 {
   "css.lint.unknownAtRules": "ignore",
   "scss.lint.unknownAtRules": "ignore",
+  "makefile.configureOnOpen": false,
   "remote.autoForwardPorts": true,
   "laravel-pint-fixer.pintBinPath": "/app/laravel/vendor/laravel/pint/builds/pint",
   "[php]": {
