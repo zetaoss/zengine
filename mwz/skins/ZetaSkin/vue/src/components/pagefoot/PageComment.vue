@@ -3,7 +3,6 @@ import { ref } from 'vue'
 import BaseModal from '@common/ui/BaseModal.vue'
 import BaseTextarea from '@common/ui/BaseTextarea.vue'
 import AvatarCore from '@common/components/avatar/AvatarCore.vue'
-import AvatarUserLink from '@common/components/avatar/AvatarUserLink.vue'
 import type UserAvatar from '@common/types/userAvatar'
 import { canDelete, canEdit } from '@/utils/auth'
 import http from '@/utils/http'
@@ -18,19 +17,10 @@ interface Row {
   page_title: string
 }
 
-interface CatComments {
-  cats: {
-    name: string
-    cnt: number
-  }[],
-  comments: Row[],
-}
 const { avatar, wgArticleId } = getRLCONF()
 const message = ref('')
 const showModal = ref(false)
 const docComments = ref([] as Row[])
-const catComments = ref({} as CatComments)
-const currentCat = ref('')
 
 const editingRow = ref({} as Row)
 let deletingRow = {} as Row
@@ -39,15 +29,8 @@ async function fetchDocComments() {
   docComments.value = await http.get(`/api/comments/${wgArticleId}`)
 }
 
-async function fetchCatComments() {
-  catComments.value = await http.get(`/api/catcomments/${wgArticleId}`)
-  if (catComments.value.cats.length < 1) return
-  currentCat.value = catComments.value.cats[0].name
-}
-
 function fetchData() {
   fetchDocComments()
-  fetchCatComments()
 }
 
 async function postNew() {
@@ -82,12 +65,6 @@ async function delOK() {
   showModal.value = false
   await http.delete(`/api/comments/${deletingRow.id}`)
   fetchData()
-}
-
-async function fetchCatCommentsCat(cat: string) {
-  currentCat.value = cat
-  const temp: CatComments = await http.get(`/api/catcomments-cat/${cat}`)
-  catComments.value.comments = temp.comments
 }
 
 fetchData()
@@ -155,34 +132,6 @@ fetchData()
               </div>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="py-4">
-    <div class="inline-block w-full border-b">
-      <span class="pl-6 pr-2">분류 댓글:</span>
-      <span v-for="cat in catComments.cats" :key="cat.name">
-        <button type="button" :class="{ active: currentCat === cat.name }"
-          class="p-2 px-3 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
-          @click="fetchCatCommentsCat(cat.name)">
-          {{ cat.name.replace(/_/g, ' ') }} <small>({{ cat.cnt }})</small>
-        </button>
-      </span>
-    </div>
-    <div class="p-6 md:columns-2">
-      <div class="pt-3 w-full inline-block" v-for="row in catComments.comments" :key="row.id">
-        <div class="text-sm">
-          <a :href="'/wiki/' + row.page_title">
-            {{ row.page_title.replace(/_/g, ' ') }}
-          </a>
-        </div>
-        <div>
-          <LinkifyBox :content="row.message" />
-          ―
-          <span class="text-green-600">
-            <AvatarUserLink :userAvatar="row.avatar" />
-          </span>
         </div>
       </div>
     </div>
