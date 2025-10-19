@@ -11,9 +11,13 @@ import RouterLink from '@/components/RouterLink.vue'
 import BinderMain from '@/components/binder/BinderMain.vue'
 import PageFoot from '@/components/pagefoot/PageFoot.vue'
 import TocMain from '@/components/toc/TocMain.vue'
+
+import { runVisibleHeightsUpdater } from '@common/utils/runVisibleHeightsUpdater'
 import { runbox } from '@/components/runbox/runbox'
 
 import '@/assets/app.scss'
+
+runVisibleHeightsUpdater()
 
 const app = createApp({})
 

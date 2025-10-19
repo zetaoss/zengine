@@ -3,7 +3,7 @@ import { ref, watch } from 'vue'
 
 import { useRoute, useRouter } from 'vue-router'
 
-import ProgressBar from '@common/components/ProgressBar.vue'
+import CProgressBar from '@common/components/CProgressBar.vue'
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import type UserAvatar from '@common/types/userAvatar'
 import Pagination from '@/components/pagination/Pagination.vue'
@@ -149,7 +149,7 @@ fetchData()
       <thead>
         <tr>
           <th v-if="loading" colspan="9" class="!p-0">
-            <ProgressBar />
+            <CProgressBar />
           </th>
         </tr>
       </thead>

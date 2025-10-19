@@ -5,36 +5,34 @@ import NavbarUserMenu from './NavbarUserMenu.vue'
 </script>
 
 <template>
-  <header id="header" class="w-full text-sm border-b bg-white dark:bg-slate-700">
-    <div class="max-w-8xl mx-auto w-full md:flex whitespace-nowrap">
-      <div class="inline-block md:flex-none">
-        <div>
-          <div class="flex h-12">
-            <RouterLink class="navbar-link" to="/">
-              <img alt="zetawiki" src="/zeta.svg" class="h-6 w-6" />
-              <span class="hidden lg:inline ml-2 text-lg font-semibold">제타위키</span>
-            </RouterLink>
-            <RouterLink class="navbar-link" to="/"
-              :class="{ '!text-yellow-600 dark:!text-yellow-200': $route.meta.tab == 'wiki' }">
-              위키
-            </RouterLink>
-            <RouterLink class="navbar-link" to="/forum"
-              :class="{ '!text-yellow-600 dark:!text-yellow-200': $route.path.startsWith('/forum') }">
-              포럼
-            </RouterLink>
-            <RouterLink class="navbar-link" to="/tool/common-report"
-              :class="{ '!text-yellow-600 dark:!text-yellow-200': $route.path.startsWith('/tool') }">
-              도구
-            </RouterLink>
+  <nav id="navbar" class="text-sm bg-slate-700 text-white">
+    <div class="flex flex-wrap items-center max-w-8xl mx-auto w-full">
+      <div class="order-1 flex items-stretch h-12">
+        <RouterLink class="navlink" to="/">
+          <img alt="zetawiki" src="/zeta.svg" class="h-6 w-6" />
+          <span class="hidden lg:inline ml-2 text-lg font-semibold">제타위키</span>
+        </RouterLink>
+        <RouterLink class="navlink" to="/" :class="{ '!text-yellow-200': $route.meta.tab == 'wiki' }">
+          위키
+        </RouterLink>
+        <RouterLink class="navlink" to="/forum" :class="{ '!text-yellow-200': $route.path.startsWith('/forum') }">
+          포럼
+        </RouterLink>
+        <RouterLink class="navlink" to="/tool/common-report"
+          :class="{ '!text-yellow-200': $route.path.startsWith('/tool') }">
+          도구
+        </RouterLink>
+      </div>
+      <div class="order-2 contents md:flex md:items-stretch md:ml-auto md:w-auto md:flex-1 md:max-w-2xl">
+        <div class="md:group order-2 ml-auto contents md:relative md:inline-block">
+          <NavbarUserMenu />
+        </div>
+        <div class="order-3 basis-full min-w-0 md:order-1 md:basis-auto md:flex-1">
+          <div v-if="$route.meta.tab == 'wiki'">
+            <CNavbarSearch />
           </div>
         </div>
       </div>
-      <NavbarUserMenu />
-      <div class="w-full">
-        <div v-if="$route.meta.tab == 'wiki'">
-          <CNavbarSearch />
-        </div>
-      </div>
     </div>
-  </header>
+  </nav>
 </template>
