@@ -79,45 +79,4 @@ class CommentController extends MyController
 
         return ['status' => 'ok'];
     }
-
-    public function catcomments($pageID)
-    {
-        $cats = DB::connection('mwdb')->select("SELECT cl.cl_to name, COUNT(c.id) cnt
-        FROM z_comment c, categorylinks cl
-        WHERE cl.cl_to IN (SELECT cl_to FROM categorylinks WHERE cl_from=?)
-        AND c.curid = cl.cl_from
-        AND cl.cl_type = 'page'
-        GROUP BY cl_to
-        ORDER BY cnt DESC", [$pageID]);
-
-        return [
-            'cats' => $cats,
-            'comments' => (count($cats) == 0) ? [] : DB::connection('mwdb')->table('z_comment')
-                ->select('page.page_title', 'z_comment.message', 'z_comment.user_id', 'z_comment.created')
-                ->join('page', 'z_comment.curid', 'page.page_id')
-                ->join('categorylinks', 'z_comment.curid', 'categorylinks.cl_from')
-                ->where([['categorylinks.cl_type', 'page'], ['categorylinks.cl_to', $cats[0]->name]])->get()
-                ->map(function ($row) {
-                    $row->avatar = UserService::getUserAvatar($row->user_id);
-
-                    return $row;
-                }),
-        ];
-    }
-
-    public function catcommentsCat($cat)
-    {
-        return [
-            'comments' => DB::connection('mwdb')->table('z_comment')
-                ->select('page.page_title', 'z_comment.message', 'z_comment.user_id', 'z_comment.created')
-                ->join('page', 'z_comment.curid', 'page.page_id')
-                ->join('categorylinks', 'z_comment.curid', 'categorylinks.cl_from')
-                ->where([['categorylinks.cl_type', 'page'], ['categorylinks.cl_to', $cat]])->get()
-                ->map(function ($row) {
-                    $row->avatar = UserService::getUserAvatar($row->user_id);
-
-                    return $row;
-                }),
-        ];
-    }
 }

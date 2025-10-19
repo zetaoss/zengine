@@ -10,7 +10,7 @@ import NavbarUserMenu from './NavbarUserMenu.vue'
       <div class="order-1 flex items-stretch h-12">
         <RouterLink class="navlink" to="/">
           <img alt="zetawiki" src="/zeta.svg" class="h-6 w-6" />
-          <span class="hidden lg:inline ml-2 text-lg font-semibold">제타위키</span>
+          <span class="hidden xl:inline ml-2 text-lg font-semibold">제타위키</span>
         </RouterLink>
         <RouterLink class="navlink" to="/" :class="{ '!text-yellow-200': $route.meta.tab == 'wiki' }">
           위키

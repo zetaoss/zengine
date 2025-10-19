@@ -25,9 +25,6 @@ Route::post('comments', [CommentController::class, 'store']);
 Route::put('/comments/{comment}', [CommentController::class, 'update']);
 Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
 
-Route::get('/catcomments/{page}', [CommentController::class, 'catcomments']);
-Route::get('/catcomments-cat/{cat}', [CommentController::class, 'catcommentsCat'])->where('cat', '(.*)');
-
 Route::get('/reactions/page/{page}', [PageReactionController::class, 'show']);
 Route::post('/reactions/page', [PageReactionController::class, 'store']);
 
