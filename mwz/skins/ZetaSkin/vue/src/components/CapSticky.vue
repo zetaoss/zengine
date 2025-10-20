@@ -30,12 +30,14 @@ const toggle = () => { collapsed.value = !collapsed.value }
 
 const styleVars = computed(() => {
   const top = `calc(var(--navbar-visible-height) + ${props.marginY}px)`
+  const marginTop = `${props.marginY}px`
   const height = isOverlay.value
     ? `calc(100vh - (var(--navbar-visible-height) + ${props.marginY * 2}px))`
     : `calc(100vh - (var(--navbar-visible-height) + var(--footer-visible-height) + ${props.marginY * 2}px))`
 
   return {
     width: collapsed.value ? '0' : props.widthValue,
+    marginTop,
     top,
     height,
   }
