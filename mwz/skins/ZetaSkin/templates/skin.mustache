@@ -1,4 +1,4 @@
-<div id="app" class="min-h-screen">
+<div id="app" class="min-h-screen flex flex-col">
   <nav id="navbar" class="text-sm bg-slate-700 text-white">
     <div class="flex flex-wrap items-center max-w-8xl mx-auto w-full">
       <div class="order-1 flex items-stretch h-12">
@@ -20,7 +20,7 @@
       </div>
     </div>
   </nav>
-  <div class="max-w-8xl mx-auto">
+  <main class="flex-1 w-full max-w-8xl mx-auto">
     <div class="flex flex-row {{#hasBinders}}has-binders{{/hasBinders}}">
       {{#hasBinders}}
       <binder-main></binder-main>
@@ -80,7 +80,7 @@
       {{/is-specialpage}}
 
     </div>
-  </div>
+  </main>
 
   <c-layout-foot></c-layout-foot>
   <c-layout-remocon></c-layout-remocon>

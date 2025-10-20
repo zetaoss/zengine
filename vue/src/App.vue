@@ -10,9 +10,9 @@ import NavbarMain from '@/components/navbar/NavbarMain.vue'
 <template>
   <div class="h-full min-h-screen flex flex-col">
     <NavbarMain />
-    <div class="flex-grow w-full max-w-8xl mx-auto">
+    <main class="flex-1 w-full max-w-8xl mx-auto">
       <RouterView />
-    </div>
+    </main>
     <CLayoutFoot />
   </div>
   <div class="fixed bottom-0 right-0 z-40">
