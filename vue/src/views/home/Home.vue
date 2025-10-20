@@ -24,13 +24,13 @@ import HomeOnelines from './HomeOnelines.vue'
     <div class="my-5 grid gap-4 md:grid-cols-[2fr_2fr_1fr]">
       <section>
         <header>
-          <a href="/onelines">한줄잡담</a>
+          한줄잡담
         </header>
         <HomeOnelines />
       </section>
       <section>
         <header>
-          <a href="/page-comments">문서댓글</a>
+          문서댓글
         </header>
         <HomeComments />
       </section>
@@ -49,11 +49,7 @@ section {
   @apply p-4 border rounded-md bg-z-card;
 
   header {
-    @apply pb-3 mb-3 border-b;
-  }
-
-  a {
-    @apply text-[1.1rem] font-bold text-z-text leading-5;
+    @apply pb-3 mb-3 border-b text-lg font-semibold;
   }
 }
 </style>
