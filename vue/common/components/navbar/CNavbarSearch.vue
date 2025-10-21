@@ -22,18 +22,28 @@ const expanded = ref(false)
 const searching = ref(false)
 const keyword = ref('')
 const pages = ref<Page[]>([])
-const index = ref(-1)
+
+// 키보드 선택 인덱스(입력창 값을 바꿀 때만 사용)
+const kIndex = ref(-1)
+// 마우스 hover 인덱스(입력창 값에는 영향 X)
+const hIndex = ref(-1)
+
 const aborter = ref<AbortController | null>(null)
 
+// 입력창에 보여줄 값: 키보드로만 제어
 const displayQuery = computed(() =>
-  index.value >= 0 && index.value < pages.value.length
-    ? pages.value[index.value].title
+  kIndex.value >= 0 && kIndex.value < pages.value.length
+    ? pages.value[kIndex.value].title
     : keyword.value
 )
 
+// 리스트에서 실제 포커스 표시용 인덱스: hover가 우선, 없으면 키보드
+const currentIndex = computed(() => (hIndex.value >= 0 ? hIndex.value : kIndex.value))
+
 function close() {
   expanded.value = false
-  index.value = -1
+  kIndex.value = -1
+  hIndex.value = -1
 }
 
 async function fetchData(q: string) {
@@ -52,7 +62,8 @@ async function fetchData(q: string) {
     const json = (await res.json()) as SearchResponse
     pages.value = Array.isArray(json.pages) ? json.pages : []
     expanded.value = true
-    index.value = -1
+    kIndex.value = -1
+    hIndex.value = -1
   } catch (e: unknown) {
     if (e instanceof DOMException && e.name === 'AbortError') return
     console.error('[search]', e)
@@ -67,7 +78,8 @@ const debouncedFetch = useDebounceFn((q: string) => fetchData(q), 400)
 function onInput(e: Event) {
   const val = (e.target as HTMLInputElement).value
   keyword.value = val
-  index.value = -1
+  kIndex.value = -1
+  hIndex.value = -1
 
   if (!val.trim()) {
     aborter.value?.abort()
@@ -83,26 +95,27 @@ function onFocus() {
   if (keyword.value.trim()) expanded.value = true
 }
 
+// 키보드로만 이동 (fulltext 항목까지 포함하여 순환)
 function handleUpDown(offset: number) {
-  const max = pages.value.length
-  let next = index.value + offset
+  const max = pages.value.length // fulltext는 max 인덱스
+  let next = kIndex.value + offset
   if (next < -1) next = max
   if (next > max) next = -1
-  index.value = next
+  kIndex.value = next
 }
 
 function goToSearch() {
   const base = new URL('/w/index.php', window.location.origin)
   base.searchParams.set('title', '특수:검색')
 
-  if (index.value < 0) {
+  if (kIndex.value < 0) {
     base.searchParams.set('search', displayQuery.value)
-  } else if (index.value === pages.value.length) {
+  } else if (kIndex.value === pages.value.length) {
     base.searchParams.set('search', displayQuery.value)
     base.searchParams.set('fulltext', '1')
     base.searchParams.set('ns0', '1')
   } else {
-    base.searchParams.set('search', pages.value[index.value].title)
+    base.searchParams.set('search', pages.value[kIndex.value].title)
   }
 
   close()
@@ -114,7 +127,8 @@ const onKeyDown = () => handleUpDown(1)
 const onKeyEnter = () => goToSearch()
 const onKeyEscape = () => close()
 
-const onClick = () => { index.value = -1; goToSearch() }
+// 돋보기 버튼 클릭: 키보드 선택 무시하고 현재 입력으로 검색
+const onClick = () => { kIndex.value = -1; goToSearch() }
 
 function escapeHTML(s: string) {
   return s
@@ -137,10 +151,10 @@ onBeforeUnmount(() => { aborter.value?.abort() })
 <template>
   <div class="flex ml-auto md:max-w-2xl w-full text-black dark:text-white">
     <div class="grow m-1">
-      <div v-on-click-outside="close" class="relative rounded-t-lg bg-white dark:bg-zinc-900"
-        :class="{ 'rounded-b-lg': !expanded || !keyword.trim().length }" @keydown.up.prevent="onKeyUp"
-        @keydown.down.prevent="onKeyDown" @keydown.enter="onKeyEnter" @keydown.escape.prevent="onKeyEscape">
-        <div class="flex h-10">
+      <div v-on-click-outside="close" class="relative" @keydown.up.prevent="onKeyUp" @keydown.down.prevent="onKeyDown"
+        @keydown.enter="onKeyEnter" @keydown.escape.prevent="onKeyEscape">
+        <div class="flex h-10 bg-white dark:bg-zinc-800 border rounded-t-lg"
+          :class="{ 'rounded-b-lg': !expanded || !keyword.trim().length }">
           <input aria-label="search" type="search" class="grow px-3 h-full outline-0 bg-transparent" name="search"
             placeholder="Search..." title="검색 [alt-shift-f]" accesskey="f" autocomplete="off" :value="displayQuery"
             @input="onInput" @focus="onFocus" />
@@ -150,21 +164,25 @@ onBeforeUnmount(() => { aborter.value?.abort() })
           </button>
         </div>
 
-        <div class="absolute z-40 w-full bg-slate-200 dark:bg-gray-900 rounded-b-lg border-t"
-          :class="{ hidden: !expanded || !keyword.trim().length }">
+        <div class="absolute z-40 w-full bg-white dark:bg-zinc-800 border border-t-0 rounded-b-lg"
+          :class="{ hidden: !expanded || !keyword.trim().length }" @mouseleave="hIndex = -1">
           <CProgressBar :invisible="!searching" />
+
           <div v-if="pages.length">
             <div v-for="(p, i) in pages" :key="p.id">
-              <a class="block p-2 px-3 text-z-text" :class="{ focused: index === i }"
-                :href="`/w/index.php?title=특수:검색&search=${encodeURIComponent(p.title)}`" @mouseover="index = i"
-                @focus="index = i" v-html="highlight(keyword, p.title)" />
+              <a class="block p-2 px-3 text-z-text" :class="{ focused: currentIndex === i }"
+                :href="`/w/index.php?title=특수:검색&search=${encodeURIComponent(p.title)}`" @mouseenter="hIndex = i"
+                @focus="hIndex = i">
+                <span v-html="highlight(keyword, p.title)" />
+              </a>
             </div>
           </div>
 
+          <!-- fulltext 행 -->
           <a class="block p-2 px-3 border-t rounded-b-lg text-z-text"
             :href="`/w/index.php?title=특수:검색&fulltext=1&search=${encodeURIComponent(keyword)}`"
-            :class="{ focused: index === pages.length }" @mouseover="index = pages.length"
-            @focus="index = pages.length">
+            :class="{ focused: currentIndex === pages.length }" @mouseenter="hIndex = pages.length"
+            @focus="hIndex = pages.length">
             <BaseIcon :path="mdiMagnify" />
             <b>{{ keyword }}</b> 항목이 포함된 글 검색
           </a>
