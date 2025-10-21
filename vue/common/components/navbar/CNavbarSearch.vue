@@ -23,21 +23,17 @@ const searching = ref(false)
 const keyword = ref('')
 const pages = ref<Page[]>([])
 
-// 키보드 선택 인덱스(입력창 값을 바꿀 때만 사용)
 const kIndex = ref(-1)
-// 마우스 hover 인덱스(입력창 값에는 영향 X)
 const hIndex = ref(-1)
 
 const aborter = ref<AbortController | null>(null)
 
-// 입력창에 보여줄 값: 키보드로만 제어
 const displayQuery = computed(() =>
   kIndex.value >= 0 && kIndex.value < pages.value.length
     ? pages.value[kIndex.value].title
     : keyword.value
 )
 
-// 리스트에서 실제 포커스 표시용 인덱스: hover가 우선, 없으면 키보드
 const currentIndex = computed(() => (hIndex.value >= 0 ? hIndex.value : kIndex.value))
 
 function close() {
@@ -95,9 +91,8 @@ function onFocus() {
   if (keyword.value.trim()) expanded.value = true
 }
 
-// 키보드로만 이동 (fulltext 항목까지 포함하여 순환)
 function handleUpDown(offset: number) {
-  const max = pages.value.length // fulltext는 max 인덱스
+  const max = pages.value.length
   let next = kIndex.value + offset
   if (next < -1) next = max
   if (next > max) next = -1
@@ -127,7 +122,6 @@ const onKeyDown = () => handleUpDown(1)
 const onKeyEnter = () => goToSearch()
 const onKeyEscape = () => close()
 
-// 돋보기 버튼 클릭: 키보드 선택 무시하고 현재 입력으로 검색
 const onClick = () => { kIndex.value = -1; goToSearch() }
 
 function escapeHTML(s: string) {
