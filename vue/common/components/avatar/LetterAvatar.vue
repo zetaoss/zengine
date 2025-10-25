@@ -1,33 +1,52 @@
+<!-- LetterAvatar.vue -->
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed } from 'vue'
 
 const props = defineProps({
   name: { type: String, required: true },
   size: { type: Number, default: 18 },
 })
-const letter = ref('')
-const background = ref('')
-const dy = ref('30%')
-const ratio = ref(0.8)
 
-onMounted(() => {
-  const n = `${props?.name}`.toUpperCase().split(' ')
-  letter.value = (n.length === 1) ? (n[0] ? n[0].charAt(0) : '?') : (n[0].charAt(0) + n[1].charAt(0))
-  if (letter.value.length > 1) {
-    ratio.value = 0.5
-    dy.value = '20%'
-  }
-  const s = `${props?.name}abcdef`
-  let a = 0
-  for (let i = 0; i < s.length; i++) a = (a << 5) - a + s.charCodeAt(i)
-  const b = ((a.toString(16).match(/[a-f0-9]{6}$/g) || [])[0]?.match(/.{1,2}/g) || []).map((e) => parseInt(e, 16))
-  background.value = `hsla(${(360 * b[0]) / 256},${(60 * b[1]) / 256 + 40}%,${(50 * b[2]) / 256 + 30}%, 0.8)`
+const initial = computed(() => {
+  const trimmed = (props.name || '').trim().toUpperCase().split(' ')
+  if (trimmed.length === 0) return '?'
+  if (trimmed.length === 1) return trimmed[0]?.charAt(0) || '?'
+  return trimmed[0].charAt(0) + trimmed[1].charAt(0)
 })
+
+const bgColor = computed(() => generateColor(props.name))
+
+const fontSize = computed(() => (initial.value.length > 1 ? 60 : 80))
+
+function generateColor(name: string): string {
+  const seed = `${name}abcdef`
+  let hash = 0
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash << 5) - hash + seed.charCodeAt(i)
+  }
+
+  const matches = hash.toString(16).match(/[a-f0-9]{6}$/g)
+  const parts = matches?.[0]?.match(/.{1,2}/g)?.map(hex => parseInt(hex, 16))
+
+  if (!parts || parts.length < 3) {
+    return 'hsla(0, 0%, 70%, 0.8)'
+  }
+
+  const [r, g, b] = parts
+  const h = (360 * r) / 256
+  const s = (60 * g) / 256 + 40
+  const l = (50 * b) / 256 + 30
+
+  return `hsla(${h}, ${s}%, ${l}%, 0.8)`
+}
 </script>
+
 <template>
-  <svg class="w-full h-full" :style="`background:${background}`">
-    <text text-anchor="middle" x="50%" y="50%" :dy="dy" fill="#fff" :font-size="size * ratio" font-family="Arial">
-      {{ letter }}
+  <svg :width="size" :height="size" viewBox="0 0 100 100" class="font-sans" role="img" aria-hidden="true">
+    <rect x="0" y="0" width="100" height="100" rx="20" ry="20" :fill="bgColor" />
+    <text x="50" y="45" fill="white" font-weight="600" :font-size="fontSize" text-anchor="middle"
+      dominant-baseline="central">
+      {{ initial }}
     </text>
   </svg>
 </template>

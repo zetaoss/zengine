@@ -9,7 +9,6 @@ import BaseIcon from '@common/ui/BaseIcon.vue'
 import BaseModal from '@common/ui/BaseModal.vue'
 import BaseTextarea from '@common/ui/BaseTextarea.vue'
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
-import AvatarUserLink from '@common/components/avatar/AvatarUserLink.vue'
 import useAuthStore from '@/stores/auth'
 import http from '@/utils/http'
 import linkify from '@/utils/linkify'
@@ -98,7 +97,7 @@ fetchData()
     <div v-for="reply in replies" :key="reply.id" class="border-b py-3 px-4 text-sm">
       <div class="grid grid-cols-2">
         <div>
-          <AvatarUserLink :user-avatar="reply.userAvatar" />
+          <AvatarUser :user-avatar="reply.userAvatar" />
           {{ useDateFormat(reply.created_at, 'YYYY-MM-DD HH:mm').value }}
         </div>
         <div v-if="me && me.canEdit(reply.userAvatar.id)" v-on-click-outside="dropdownClose" class="text-right">
@@ -133,7 +132,7 @@ fetchData()
           <div class="p-3 border-2 rounded bg-white dark:bg-black">
             <div class="overflow-auto">
               <div class="float-left">
-                <AvatarUser :user-avatar="reply.userAvatar" />
+                <AvatarUser :user-avatar="reply.userAvatar" :showLink="false" />
               </div>
               <div v-if="editingReply.body.length > 0" class="float-right">
                 <div class="text-xs text-gray-400">
@@ -163,7 +162,7 @@ fetchData()
       <div class="p-3 border-2 rounded">
         <div class="overflow-auto">
           <div class="float-left">
-            <AvatarUser :user-avatar="me.userData.avatar" />
+            <AvatarUser :user-avatar="me.userData.avatar" :showLink="false" />
           </div>
           <div v-if="replyBody.length > 0" class="float-right">
             <div class="text-xs text-gray-400">

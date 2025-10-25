@@ -3,7 +3,7 @@ import { ref, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import useAuthStore from '@/stores/auth'
 import http from '@/utils/http'
-import AvatarUserLink from '@common/components/avatar/AvatarUserLink.vue'
+import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import Spinner from '@common/ui/Spinner.vue'
 import Star from './Star.vue'
 import Pagination from '@/components/pagination/Pagination.vue'
@@ -107,7 +107,7 @@ onUnmounted(() => retrier.clear())
               </RouterLink>
               <div>{{ row.created_at.substring(0, 10) }}</div>
               <div>
-                <AvatarUserLink :user-avatar="row.userAvatar" />
+                <AvatarUser :user-avatar="row.userAvatar" />
               </div>
             </td>
             <td class="text-right">
