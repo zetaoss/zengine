@@ -6,7 +6,7 @@ import Prism from 'prismjs'
 import { useRouter } from 'vue-router'
 
 import BaseModal from '@common/ui/BaseModal.vue'
-import AvatarUserLink from '@common/components/avatar/AvatarUserLink.vue'
+import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import useAuthStore from '@/stores/auth'
 import http from '@/utils/http'
 
@@ -78,7 +78,7 @@ fetchData()
         </div>
         <div v-if="post.userAvatar" class="py-3">
           <div>
-            <AvatarUserLink :user-avatar="post.userAvatar" />
+            <AvatarUser :user-avatar="post.userAvatar" />
           </div>
           <div class="text-sm">
             <span class="mr-4">{{ useDateFormat(post.created_at, 'YYYY-MM-DD HH:mm').value }}</span>
