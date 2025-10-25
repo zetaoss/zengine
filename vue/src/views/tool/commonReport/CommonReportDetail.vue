@@ -6,7 +6,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 import BaseIcon from '@common/ui/BaseIcon.vue'
 import Tooltip from '@common/ui/Tooltip.vue'
-import AvatarUserLink from '@common/components/avatar/AvatarUserLink.vue'
+import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import Star from './Star.vue'
 
 import useAuthStore from '@/stores/auth'
@@ -118,7 +118,7 @@ fetchDataWithRetry()
       <div class="h-10">
         <div class="float-left">
           <div>
-            <AvatarUserLink :user-avatar="row.userAvatar" />
+            <AvatarUser :user-avatar="row.userAvatar" />
           </div>
           <div>
             <span class="text-slate-400">{{ useDateFormat(row.created_at, 'YYYY-MM-DD HH:mm').value }}</span>
