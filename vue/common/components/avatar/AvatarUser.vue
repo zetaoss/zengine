@@ -9,7 +9,7 @@ const props = defineProps({
   size: { type: Number, default: 18 },
   showName: { type: Boolean, default: true },
   showLink: { type: Boolean, default: true },
-  showBorder: { type: Boolean, default: true },
+  showBorder: { type: Boolean, default: false },
 })
 
 const tag = props.showLink ? 'a' : 'span'
@@ -23,6 +23,6 @@ const classVar = [
 <template>
   <component :is="tag" :href="href" :class="classVar">
     <AvatarCore :user-avatar="userAvatar" :size="size" :showBorder="showBorder" />
-    <span v-if="showName" class="px-1">{{ userAvatar.name }}</span>
+    <span v-if="showName" class="px-0.5 text-sm">{{ userAvatar.name }}</span>
   </component>
 </template>

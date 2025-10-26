@@ -4,7 +4,6 @@ import { useDebounceFn } from '@vueuse/core'
 import { vOnClickOutside } from '@vueuse/components'
 
 import { mdiHistory, mdiMagnify, mdiShuffle } from '@mdi/js'
-import CProgressBar from '../CProgressBar.vue'
 import BaseIcon from '@common/ui/BaseIcon.vue'
 
 interface Page {
@@ -19,7 +18,6 @@ interface Page {
 interface SearchResponse { pages?: Page[];[k: string]: unknown }
 
 const expanded = ref(false)
-const searching = ref(false)
 const keyword = ref('')
 const pages = ref<Page[]>([])
 
@@ -50,7 +48,6 @@ async function fetchData(q: string) {
   const controller = new AbortController()
   aborter.value = controller
 
-  searching.value = true
   try {
     const url = `/w/rest.php/v1/search/title?${new URLSearchParams({ q: trimmed, limit: '10' })}`
     const res = await fetch(url, { signal: controller.signal })
@@ -65,7 +62,6 @@ async function fetchData(q: string) {
     console.error('[search]', e)
   } finally {
     if (aborter.value === controller) aborter.value = null
-    searching.value = false
   }
 }
 
@@ -81,7 +77,6 @@ function onInput(e: Event) {
     aborter.value?.abort()
     pages.value = []
     expanded.value = false
-    searching.value = false
     return
   }
   debouncedFetch(val)
@@ -144,27 +139,24 @@ onBeforeUnmount(() => { aborter.value?.abort() })
 
 <template>
   <div class="flex ml-auto md:max-w-2xl w-full text-black dark:text-white">
-    <div class="grow m-1">
+    <div class="grow m-1.5">
       <div v-on-click-outside="close" class="relative" @keydown.up.prevent="onKeyUp" @keydown.down.prevent="onKeyDown"
         @keydown.enter="onKeyEnter" @keydown.escape.prevent="onKeyEscape">
-        <div class="flex h-10 bg-white dark:bg-black border rounded-t-lg"
-          :class="{ 'rounded-b-lg': !expanded || !keyword.trim().length }">
+        <div class="flex h-9 bg-white dark:bg-black rounded-t"
+          :class="{ 'rounded-b': !expanded || !keyword.trim().length }">
           <input aria-label="search" type="search" class="grow px-3 h-full outline-0 bg-transparent" name="search"
-            placeholder="Search..." title="검색 [alt-shift-f]" accesskey="f" autocomplete="off" :value="displayQuery"
+            placeholder="검색..." title="검색 [alt-shift-f]" accesskey="f" autocomplete="off" :value="displayQuery"
             @input="onInput" @focus="onFocus" />
-          <button type="button" class="flex-none w-12 h-full focus:z-10 focus:ring-1 bg-transparent focus:text-blue-700"
-            @click="onClick">
+          <button type="button" class="flex-none w-12 h-full z-10 bg-transparent focus:text-blue-700" @click="onClick">
             <BaseIcon :path="mdiMagnify" :size="24" />
           </button>
         </div>
 
-        <div class="absolute z-40 w-full bg-white dark:bg-black border border-t-0 rounded-b-lg"
+        <div class="absolute z-40 w-full bg-white dark:bg-black border rounded-b"
           :class="{ hidden: !expanded || !keyword.trim().length }" @mouseleave="hIndex = -1">
-          <CProgressBar :invisible="!searching" />
-
           <div v-if="pages.length">
             <div v-for="(p, i) in pages" :key="p.id">
-              <a class="block p-2 px-3 text-z-text" :class="{ focused: currentIndex === i }"
+              <a class="block p-1.5 px-3 text-z-text" :class="{ focused: currentIndex === i }"
                 :href="`/w/index.php?title=특수:검색&search=${encodeURIComponent(p.title)}`" @mouseenter="hIndex = i"
                 @focus="hIndex = i">
                 <span v-html="highlight(keyword, p.title)" />
@@ -173,7 +165,7 @@ onBeforeUnmount(() => { aborter.value?.abort() })
           </div>
 
           <!-- fulltext 행 -->
-          <a class="block p-2 px-3 border-t rounded-b-lg text-z-text"
+          <a class="block p-2 px-3 border-t rounded-b text-z-text"
             :href="`/w/index.php?title=특수:검색&fulltext=1&search=${encodeURIComponent(keyword)}`"
             :class="{ focused: currentIndex === pages.length }" @mouseenter="hIndex = pages.length"
             @focus="hIndex = pages.length">
@@ -199,6 +191,6 @@ onBeforeUnmount(() => { aborter.value?.abort() })
 
 <style lang="scss" scoped>
 .focused {
-  @apply bg-[#07c] text-white no-underline;
+  @apply bg-indigo-600/70 text-white no-underline;
 }
 </style>

@@ -8,7 +8,7 @@ import TheIdenticon from './TheIdenticon.vue'
 defineProps({
   userAvatar: { type: Object as PropType<UserAvatar>, required: true },
   size: { type: Number, default: 18 },
-  showBorder: { type: Boolean, default: true },
+  showBorder: { type: Boolean, default: false },
 })
 </script>
 
