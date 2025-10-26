@@ -5,6 +5,15 @@ import vue from '@vitejs/plugin-vue'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // dev
+  base: '/dev5174/',
+  server: {
+    allowedHosts: true,
+    host: true,
+    port: 5174,
+    strictPort: true,
+  },
+  // build
   build: {
     outDir: '../resources/dist',
     emptyOutDir: true,
@@ -16,6 +25,7 @@ export default defineConfig({
       cssFileName: 'app',
     },
   },
+  // common
   define: {
     'process.env.NODE_ENV': JSON.stringify('production'),
   },
