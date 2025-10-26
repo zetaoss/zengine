@@ -3,6 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "vite",
+    "dev:restart": "fuser -k 5174/tcp || true && vite",
     "build": "run-p type-check \"build-only {@}\" --",
     "watch": "vite build --watch",
     "test:unit": "vitest",

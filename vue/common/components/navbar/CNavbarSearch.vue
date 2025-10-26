@@ -147,7 +147,7 @@ onBeforeUnmount(() => { aborter.value?.abort() })
     <div class="grow m-1">
       <div v-on-click-outside="close" class="relative" @keydown.up.prevent="onKeyUp" @keydown.down.prevent="onKeyDown"
         @keydown.enter="onKeyEnter" @keydown.escape.prevent="onKeyEscape">
-        <div class="flex h-10 bg-white dark:bg-zinc-800 border rounded-t-lg"
+        <div class="flex h-10 bg-white dark:bg-black border rounded-t-lg"
           :class="{ 'rounded-b-lg': !expanded || !keyword.trim().length }">
           <input aria-label="search" type="search" class="grow px-3 h-full outline-0 bg-transparent" name="search"
             placeholder="Search..." title="검색 [alt-shift-f]" accesskey="f" autocomplete="off" :value="displayQuery"
@@ -158,7 +158,7 @@ onBeforeUnmount(() => { aborter.value?.abort() })
           </button>
         </div>
 
-        <div class="absolute z-40 w-full bg-white dark:bg-zinc-800 border border-t-0 rounded-b-lg"
+        <div class="absolute z-40 w-full bg-white dark:bg-black border border-t-0 rounded-b-lg"
           :class="{ hidden: !expanded || !keyword.trim().length }" @mouseleave="hIndex = -1">
           <CProgressBar :invisible="!searching" />
 
