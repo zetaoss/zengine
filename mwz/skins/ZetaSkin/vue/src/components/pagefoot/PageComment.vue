@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import BaseModal from '@common/ui/BaseModal.vue'
 import BaseTextarea from '@common/ui/BaseTextarea.vue'
-import AvatarCore from '@common/components/avatar/AvatarCore.vue'
+import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import type UserAvatar from '@common/types/userAvatar'
 import { canDelete, canEdit } from '@/utils/auth'
 import http from '@/utils/http'
@@ -79,7 +79,7 @@ fetchData()
     </div>
     <div class="pt-3 flex" v-if="avatar && avatar.id > 0">
       <div class="pt-1 pr-3">
-        <AvatarCore :user-avatar="avatar" :size="32" />
+        <AvatarUser :user-avatar="avatar" :showName="false" :showLink="false" :size="32" />
       </div>
       <div class="w-full text-sm">
         <div>{{ avatar.name }}</div>
@@ -91,7 +91,7 @@ fetchData()
     </div>
     <div class="pt-3 flex" v-for="row in docComments" :key="row.id">
       <div class="pt-1 pr-3">
-        <AvatarCore :userAvatar="row.avatar" :size="32" />
+        <AvatarUser :userAvatar="row.avatar" :showName="false" :showLink="false" :size="32" />
       </div>
       <div class="w-full">
         <button type="button" v-if="canDelete(row.avatar.id)" class="float-right btn btn-xs btn-danger"
