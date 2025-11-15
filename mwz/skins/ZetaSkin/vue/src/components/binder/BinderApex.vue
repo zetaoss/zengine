@@ -27,10 +27,10 @@ async function refreshBinder() {
 </script>
 
 <template>
-  <CapSticky :showToggle="true" :widthValue="'240px'" class="flex border-x bg-zinc-50 dark:bg-neutral-900">
+  <CapSticky :showToggle="true" :widthValue="'240px'" class="flex bg-[#8881]">
     <div v-for="binder in bindersRef" :key="binder.id">
-      <header class="sticky top-0 z-10 flex items-center justify-between px-3 py-2
-                 bg-gray-100 dark:bg-neutral-800 font-bold" @dblclick.stop="refreshBinder">
+      <header class="book sticky top-0 z-10 flex items-center justify-between px-3 py-2 bg-gray-200/80 dark:bg-gray-800/80  border-gray-400/60 dark:border-gray-600/60
+                 font-bold" @dblclick.stop="refreshBinder">
         <span>{{ binder.title }}</span>
         <a :href="`/wiki/Binder:${binder.title}`"
           class="inline-flex items-center gap-1 rounded-md px-2 py-1 hover:bg-slate-200/70 dark:hover:bg-slate-700/70"
