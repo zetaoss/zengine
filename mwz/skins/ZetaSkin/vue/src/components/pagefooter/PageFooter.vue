@@ -3,7 +3,7 @@ import PageComment from './PageComment.vue'
 </script>
 
 <template>
-  <div id="page-foot">
+  <div id="page-footer">
     <hr />
     <PageComment />
   </div>

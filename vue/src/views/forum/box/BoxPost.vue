@@ -66,7 +66,7 @@ fetchData()
     글을 삭제하시겠습니까?
   </BaseModal>
   <div v-if="post">
-    <div class="border rounded py-4 bg-z-card">
+    <div class="border rounded py-4 z-card">
       <div class="px-4">
         <div>
           <div class="float-left mr-2">

@@ -156,7 +156,7 @@ onBeforeUnmount(() => { aborter.value?.abort() })
           :class="{ hidden: !expanded || !keyword.trim().length }" @mouseleave="hIndex = -1">
           <div v-if="pages.length">
             <div v-for="(p, i) in pages" :key="p.id">
-              <a class="block p-1.5 px-3 text-z-text" :class="{ focused: currentIndex === i }"
+              <a class="block p-1.5 px-3 z-text" :class="{ focused: currentIndex === i }"
                 :href="`/w/index.php?title=특수:검색&search=${encodeURIComponent(p.title)}`" @mouseenter="hIndex = i"
                 @focus="hIndex = i">
                 <span v-html="highlight(keyword, p.title)" />
@@ -165,7 +165,7 @@ onBeforeUnmount(() => { aborter.value?.abort() })
           </div>
 
           <!-- fulltext 행 -->
-          <a class="block p-2 px-3 border-t rounded-b text-z-text"
+          <a class="block p-2 px-3 border-t rounded-b z-text"
             :href="`/w/index.php?title=특수:검색&fulltext=1&search=${encodeURIComponent(keyword)}`"
             :class="{ focused: currentIndex === pages.length }" @mouseenter="hIndex = pages.length"
             @focus="hIndex = pages.length">

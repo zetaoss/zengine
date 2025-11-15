@@ -1,9 +1,7 @@
 html,
 body {
-  @apply bg-z-bg text-z-text;
-}
-
-body {
+  background-color: var(--bg);
+  color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", sans-serif;
   letter-spacing: -0.4px;
 }
@@ -56,14 +54,16 @@ h6 {
 }
 
 a {
-  @apply text-z-link break-all hover:underline underline-offset-4;
+  color: var(--link);
+  @apply break-all hover:underline underline-offset-4;
 
   &.external {
-    @apply border-b border-[#4a43] text-[#4a4];
+    color: var(--link-ext);
+    @apply border-b;
   }
 
   &.new {
-    @apply text-[#b00];
+    color: var(--link-new);
   }
 }
 

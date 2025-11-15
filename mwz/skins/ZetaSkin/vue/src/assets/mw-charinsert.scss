@@ -1,7 +1,7 @@
 .mw-charinsert-item {
-  @apply rounded m-1 p-1 px-2 border text-z-text bg-[#8881];
+  @apply rounded m-1 p-1 px-2 border z-text;
 
   &:hover {
-    @apply bg-[#8884] no-underline;
+    @apply no-underline;
   }
 }
