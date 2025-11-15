@@ -57,7 +57,7 @@ watch(() => [route.params.id, route.params.page], fetchData, { immediate: true }
       <BoxPost :post-i-d="postID" />
     </div>
     <div v-if="posts.length > 0" class="text-sm">
-      <div class="bg-z-card">
+      <div class="z-card">
         <div class="hidden md:flex p-2 bg-z-head font-bold text-center">
           <div class="flex w-[65%]">
             <span class="w-[10%]">번호</span>

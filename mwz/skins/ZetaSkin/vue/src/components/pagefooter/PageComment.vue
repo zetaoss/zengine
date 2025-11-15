@@ -137,12 +137,13 @@ fetchData()
     </div>
   </div>
 </template>
+
 <style scoped>
 a.avatar {
   @apply text-gray-400;
 }
 
 .active {
-  @apply border border-b-transparent mb-[-3px] bg-z-card;
+  @apply border border-b-transparent mb-[-3px];
 }
 </style>

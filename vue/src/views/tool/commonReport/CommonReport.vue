@@ -84,7 +84,7 @@ onUnmounted(() => retrier.clear())
     <h2 class="my-5 text-2xl font-bold">통용 보고서</h2>
     <CommonReportNew :show="showModal" @close="closeModal" />
     <div v-if="reportData">
-      <table class="w-full bg-z-card">
+      <table class="w-full z-card">
         <thead class="bg-z-head">
           <tr>
             <th class="not-mobile">

@@ -8,7 +8,7 @@
   }
 
   a {
-    @apply border p-1.5 px-3 mr-2 text-xs text-z-text2 rounded-full no-underline;
+    @apply border p-1.5 px-3 mr-2 text-xs z-muted rounded-full no-underline;
 
     &:hover {
       @apply brightness-75 dark:brightness-150;

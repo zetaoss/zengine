@@ -1,5 +1,5 @@
 .page-btn {
-  @apply inline-block rounded-full text-z-text py-1.5 px-3;
+  @apply inline-block rounded-full z-text py-1.5 px-3;
 
   &:hover {
     @apply no-underline bg-gray-100 dark:bg-gray-700;

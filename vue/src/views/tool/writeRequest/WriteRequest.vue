@@ -134,7 +134,7 @@ fetchData()
         완료 <span class="text-xs rounded-full px-2 bg-gray-400 text-white">{{ count.done }}</span>
       </button>
     </div>
-    <table class="mytable w-full bg-z-card">
+    <table class="mytable w-full z-card">
       <thead class="bg-z-head">
         <tr>
           <th>번호</th>

@@ -7,43 +7,48 @@
   *,
   ::before,
   ::after {
-    @apply border-z-border;
+    border-color: var(--border);
   }
 }
 
 :root {
-  --z-link: #09d;
   --z-text2: theme('colors.neutral.400');
 }
 
+
 :root {
-  color-scheme: light;
-  --z-bg: theme('colors.neutral.100');
-  --z-border: theme('colors.neutral.300');
+  --bg: #fff;
+  --text: #222;
+  --muted: #666;
+  --muted2: #bbb;
+  --border: #8884;
+
+  --link: #00f;
+  --link-ext: #077;
+  --link-new: #933;
+  --link-bg: #00f1;
+  --link-new-bg: #9331;
+
   --z-card: theme('colors.white');
   --z-card-hover: theme('colors.neutral.100');
   --z-head: theme('colors.slate.200');
-  --z-scrollbar: theme('colors.gray.200');
   --z-text: theme('colors.zinc.700');
-
-  --z-btn: theme('colors.gray.200');
-  --z-primary: theme('colors.blue.400');
-  --z-secondary: theme('colors.gray.400');
-  --z-danger: theme('colors.orange.300');
 }
 
 .dark {
-  color-scheme: dark;
-  --z-bg: theme('colors.black');
-  --z-border: theme('colors.neutral.700');
+  --bg: #222;
+  --text: #fff;
+  --muted: #ccc;
+  --muted2: #888;
+
+  --link: #9cf;
+  --link-ext: #9cc;
+  --link-new: #faa;
+  --link-bg: #9cf1;
+  --link-new-bg: #faa1;
+
   --z-card: theme('colors.neutral.900');
   --z-card-hover: theme('colors.neutral.800');
   --z-head: theme('colors.zinc.800');
-  --z-scrollbar: theme('colors.gray.700');
   --z-text: theme('colors.zinc.300');
-
-  --z-btn: theme('colors.gray.800');
-  --z-primary: theme('colors.blue.600');
-  --z-secondary: theme('colors.gray.900');
-  --z-danger: theme('colors.yellow.950');
 }
