@@ -138,12 +138,11 @@ onBeforeUnmount(() => { aborter.value?.abort() })
 </script>
 
 <template>
-  <div class="flex ml-auto md:max-w-2xl w-full text-black dark:text-white">
+  <div class="flex ml-auto md:max-w-2xl w-full z-text">
     <div class="grow m-1.5">
       <div v-on-click-outside="close" class="relative" @keydown.up.prevent="onKeyUp" @keydown.down.prevent="onKeyDown"
         @keydown.enter="onKeyEnter" @keydown.escape.prevent="onKeyEscape">
-        <div class="flex h-9 bg-white dark:bg-black rounded-t"
-          :class="{ 'rounded-b': !expanded || !keyword.trim().length }">
+        <div class="flex h-9 z-bg rounded-t" :class="{ 'rounded-b': !expanded || !keyword.trim().length }">
           <input aria-label="search" type="search" class="grow px-3 h-full outline-0 bg-transparent" name="search"
             placeholder="검색..." title="검색 [alt-shift-f]" accesskey="f" autocomplete="off" :value="displayQuery"
             @input="onInput" @focus="onFocus" />
@@ -152,8 +151,8 @@ onBeforeUnmount(() => { aborter.value?.abort() })
           </button>
         </div>
 
-        <div class="absolute z-40 w-full bg-white dark:bg-black border rounded-b"
-          :class="{ hidden: !expanded || !keyword.trim().length }" @mouseleave="hIndex = -1">
+        <div class="absolute z-40 w-full z-bg border rounded-b" :class="{ hidden: !expanded || !keyword.trim().length }"
+          @mouseleave="hIndex = -1">
           <div v-if="pages.length">
             <div v-for="(p, i) in pages" :key="p.id">
               <a class="block p-1.5 px-3 z-text" :class="{ focused: currentIndex === i }"
@@ -164,7 +163,6 @@ onBeforeUnmount(() => { aborter.value?.abort() })
             </div>
           </div>
 
-          <!-- fulltext 행 -->
           <a class="block p-2 px-3 border-t rounded-b z-text"
             :href="`/w/index.php?title=특수:검색&fulltext=1&search=${encodeURIComponent(keyword)}`"
             :class="{ focused: currentIndex === pages.length }" @mouseenter="hIndex = pages.length"

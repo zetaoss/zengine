@@ -1,8 +1,4 @@
 .z-scrollbar {
-  // &::-webkit-scrollbar-track {
-  //   background: transparent;
-  // }
-
   &::-webkit-scrollbar {
     height: 8px;
     width: 8px;
@@ -16,5 +12,4 @@
     background: var(--z-scrollbar);
     border-radius: 8px;
   }
-
 }
