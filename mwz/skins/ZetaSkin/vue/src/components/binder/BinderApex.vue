@@ -1,4 +1,3 @@
-<!-- TheBinder.vue -->
 <script setup lang="ts">
 import { ref } from 'vue'
 import { mdiCog } from '@mdi/js'

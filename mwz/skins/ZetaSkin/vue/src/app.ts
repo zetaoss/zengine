@@ -8,7 +8,7 @@ import NavbarUserMenu from '@/components/NavbarUserMenu.vue'
 import PageMenu from '@/components/PageMenu.vue'
 import PageMeta from '@/components/PageMeta.vue'
 import RouterLink from '@/components/RouterLink.vue'
-import BinderMain from '@/components/binder/BinderMain.vue'
+import BinderApex from '@/components/binder/BinderApex.vue'
 import PageFooter from '@/components/pagefooter/PageFooter.vue'
 import TocMain from '@/components/toc/TocMain.vue'
 
@@ -29,7 +29,7 @@ app.component('NavbarUserMenu', NavbarUserMenu)
 app.component('PageMenu', PageMenu)
 app.component('PageMeta', PageMeta)
 app.component('RouterLink', RouterLink)
-app.component('BinderMain', BinderMain)
+app.component('BinderApex', BinderApex)
 app.component('PageFooter', PageFooter)
 app.component('TocMain', TocMain)
 
