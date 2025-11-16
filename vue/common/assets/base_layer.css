@@ -19,6 +19,7 @@
     --z-text: var(--color-zinc-700);
 
     --bg: #fff;
+    --bg-muted: #f9f9f9;
     --text: #1e1e1e;
     --muted: #444;
     --muted2: #bbb;
@@ -29,6 +30,7 @@
     --link-new: #933;
 
     --link-bg: #09c1;
+    --link-bg-hover: #09c3;
     --link-new-bg: #9331;
   }
 }
@@ -40,6 +42,7 @@
   --z-text: var(--color-zinc-300);
 
   --bg: #1e1e1e;
+  --bg-muted: #2a2a2a;
   --text: #fff;
   --muted: #ddd;
   --muted2: #888;

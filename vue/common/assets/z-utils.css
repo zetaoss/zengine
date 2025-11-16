@@ -3,6 +3,10 @@
     background-color: var(--bg);
 }
 
+.z-bg-muted {
+    background-color: var(--bg-muted);
+}
+
 .z-break-word {
     word-break: break-word;
     /* TODO: deprecated https://developer.mozilla.org/en-US/docs/Web/CSS/word-break#values */
@@ -14,6 +18,10 @@
     &:hover {
         background-color: var(--z-card-hover);
     }
+}
+
+.z-link {
+    color: var(--link);
 }
 
 .z-muted {

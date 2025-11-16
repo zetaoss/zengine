@@ -1,0 +1,24 @@
+.page-cats {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+
+  ul {
+    padding: 0;
+  }
+
+  li {
+    display: inline-block;
+  }
+
+  a {
+    padding: 0.375rem 0.75rem;
+    margin-right: 0.5rem;
+    border-radius: 9em;
+    text-decoration: none;
+    background-color: var(--link-bg);
+
+    &:hover {
+      background-color: var(--link-bg-hover);
+    }
+  }
+}

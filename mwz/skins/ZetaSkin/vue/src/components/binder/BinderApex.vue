@@ -27,7 +27,7 @@ async function refreshBinder() {
 </script>
 
 <template>
-  <CapSticky :showToggle="true" :widthValue="'240px'" class="flex bg-[#8881]">
+  <CapSticky :showToggle="true" :widthValue="'240px'" navBlurColor="var(--bg-muted)" class="flex z-bg-muted">
     <div v-for="binder in bindersRef" :key="binder.id">
       <header class="book sticky top-0 z-10 flex items-center justify-between px-3 py-2 bg-gray-200/80 dark:bg-gray-800/80  border-gray-400/60 dark:border-gray-600/60
                  font-bold" @dblclick.stop="refreshBinder">
@@ -38,10 +38,11 @@ async function refreshBinder() {
         </a>
       </header>
 
-      <ul class="m-0 p-0 pt-2 pb-8 list-none text-[.9rem] tracking-tighter">
+      <ul class="m-0 p-0 pt-2 pb-10 list-none text-[.9rem]">
         <BinderNode v-for="(tree, i) in binder.trees" :key="tree.text" :node="tree" :depth="0"
           :wgArticleId="wgArticleId" :binderId="binder.id" :idx="i" />
       </ul>
+
     </div>
   </CapSticky>
 </template>
