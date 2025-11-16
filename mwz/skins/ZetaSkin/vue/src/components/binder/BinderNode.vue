@@ -60,13 +60,13 @@ onMounted(centerScrollIfCurrent)
 
 <template>
   <li class="flex flex-col">
-    <div class="flex items-stretch hover:bg-gray-500/20 rounded-r-full" ref="rowRef">
+    <div class="row flex items-stretch hover:bg-gray-500/15" ref="rowRef">
       <component :is="isLink ? 'a' : 'div'" :href="node.href || undefined" class="flex flex-1 px-2 hover:no-underline"
-        :class="{ 'font-bold': isCurrent, 'new': node.new }">
+        :class="{ 'current': isCurrent, 'new': node.new }" :title="node.text">
         <span :style="{ paddingLeft: `${depth}rem` }">{{ node.text }}</span>
       </component>
 
-      <button v-if="hasChildren" class="w-5 h-5 grid place-items-center text-gray-500 rounded-full hover:bg-gray-500/20"
+      <button v-if="hasChildren" class="w-6 h-6 grid place-items-center text-gray-500 rounded-full hover:bg-gray-500/30"
         @click.stop.prevent="toggle">
         <BaseIcon :path="mdiChevronRight" class="transition-transform" :class="{ 'rotate-90': expanded }" />
       </button>
@@ -78,3 +78,14 @@ onMounted(centerScrollIfCurrent)
     </ul>
   </li>
 </template>
+
+<style scoped>
+a {
+  color: var(--muted);
+}
+
+.current {
+  color: var(--text);
+  font-weight: 700;
+}
+</style>

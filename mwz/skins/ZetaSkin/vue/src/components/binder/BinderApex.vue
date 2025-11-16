@@ -32,23 +32,16 @@ async function refreshBinder() {
       <header class="book sticky top-0 z-10 flex items-center justify-between px-3 py-2 bg-gray-200/80 dark:bg-gray-800/80  border-gray-400/60 dark:border-gray-600/60
                  font-bold" @dblclick.stop="refreshBinder">
         <span>{{ binder.title }}</span>
-        <a :href="`/wiki/Binder:${binder.title}`"
-          class="inline-flex items-center gap-1 rounded-md px-2 py-1 hover:bg-gray-200/70 dark:hover:bg-gray-700/70"
+        <a :href="`/wiki/Binder:${binder.title}`" class="inline-flex items-center gap-1 rounded-md px-2 py-1"
           @click.stop>
           <BaseIcon :path="mdiCog" :class="['h-4 w-4', busy ? 'animate-spin' : '']" />
         </a>
       </header>
 
-      <ul class="m-0 p-0 pt-2 pb-8 list-none text-sm tracking-tighter">
+      <ul class="m-0 p-0 pt-2 pb-8 list-none text-[.9rem] tracking-tighter">
         <BinderNode v-for="(tree, i) in binder.trees" :key="tree.text" :node="tree" :depth="0"
           :wgArticleId="wgArticleId" :binderId="binder.id" :idx="i" />
       </ul>
     </div>
   </CapSticky>
 </template>
-
-<style scoped>
-ul a {
-  @apply text-sky-800 dark:text-sky-600;
-}
-</style>

@@ -20,7 +20,7 @@
 
     --bg: #fff;
     --text: #1e1e1e;
-    --muted: #666;
+    --muted: #444;
     --muted2: #bbb;
     --border: #8884;
 
@@ -28,7 +28,7 @@
     --link-ext: #093;
     --link-new: #933;
 
-    --link-bg: #00f1;
+    --link-bg: #09c1;
     --link-new-bg: #9331;
   }
 }
@@ -41,7 +41,7 @@
 
   --bg: #1e1e1e;
   --text: #fff;
-  --muted: #ccc;
+  --muted: #ddd;
   --muted2: #888;
 
   --border: #8884;
@@ -50,6 +50,6 @@
   --link-ext: #3a6;
   --link-new: #faa;
 
-  --link-bg: #9cf1;
+  --link-bg: #0ad1;
   --link-new-bg: #faa1;
 }
