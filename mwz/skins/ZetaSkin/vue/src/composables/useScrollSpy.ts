@@ -5,36 +5,49 @@ export function useScrollSpy(
   anchorsRef: { value: string[] },
   offset: number = 64
 ) {
-  const activeId = ref<string | null>(null)
+  const activeIds = ref<string[]>([])
 
   const getSections = () => {
     return anchorsRef.value
       .map((id) => {
         const el = document.getElementById(id)
-        const top = el ? el.getBoundingClientRect().top + window.scrollY : Infinity
-        return { id, top }
+        if (!el) return null
+
+        const rect = el.getBoundingClientRect()
+        const top = rect.top + window.scrollY
+        const bottom = rect.bottom + window.scrollY
+
+        return { id, top, bottom }
       })
-      .filter((x) => x.top !== Infinity)
+      .filter((x): x is { id: string; top: number; bottom: number } => !!x)
       .sort((a, b) => a.top - b.top)
   }
 
-  const computeActiveId = () => {
+  const computeActiveIds = () => {
     const list = getSections()
     if (!list.length) {
-      activeId.value = null
+      activeIds.value = []
       return
     }
 
-    const y = window.scrollY + offset
-    let current: string | null = null
+    const viewportTop = window.scrollY + offset
+    const viewportBottom = window.scrollY + window.innerHeight
 
-    for (const s of list) {
-      if (s.top <= y) current = s.id
-      else break
+    const visible = list.filter(
+      (s) => s.bottom > viewportTop && s.top < viewportBottom
+    )
+
+    if (visible.length) {
+      activeIds.value = visible.map((s) => s.id)
+    } else {
+      let current: string | null = null
+      for (const s of list) {
+        if (s.top <= viewportTop) current = s.id
+        else break
+      }
+      if (!current) current = list[0].id
+      activeIds.value = [current]
     }
-    if (!current) current = list[0].id
-
-    activeId.value = current
   }
 
   let raf = 0
@@ -42,7 +55,7 @@ export function useScrollSpy(
     if (raf) return
     raf = requestAnimationFrame(() => {
       raf = 0
-      computeActiveId()
+      computeActiveIds()
     })
   }
 
@@ -60,5 +73,5 @@ export function useScrollSpy(
 
   watch(() => anchorsRef.value, scheduleRecalc)
 
-  return { activeId }
+  return { activeIds }
 }
