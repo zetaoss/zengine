@@ -33,7 +33,7 @@ const onClick = (e: MouseEvent) => {
 </script>
 
 <template>
-  <a :href="`#${anchor}`" :class="{ 'border-[#888] bg-[#8881]': isInView }"
+  <a :href="`#${anchor}`" :class="{ 'border-[#888]': isInView }"
     class="block w-full border-l-2 pl-2 z-muted hover:no-underline hover:text-[var(--link)]" @click="onClick">
     <span class="opacity-50" :style="{ paddingLeft: `calc(${props.depth} * 0.75rem)` }">{{ number }}</span>
     {{ label }}
