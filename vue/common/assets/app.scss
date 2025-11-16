@@ -1,13 +1,7 @@
-@use 'base_layer.scss';
-@use 'base_tags.scss';
-@use 'base_z.scss';
+@use 'base_layer.css';
+@use 'base_tags.css';
 
-@use 'navbar.scss';
-@use 'textarea.scss';
+@use 'navbar.css';
+@use 'textarea.css';
 
-@use 'c-scrollbar.scss';
-
-@use 'z-base.scss';
-@use 'z-btn.scss';
-@use 'z-break-word.scss';
-@use 'z-scrollbar.scss';
+@use 'z-utils.css';

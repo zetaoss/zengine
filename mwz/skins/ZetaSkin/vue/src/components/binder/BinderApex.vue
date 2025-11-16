@@ -33,7 +33,7 @@ async function refreshBinder() {
                  font-bold" @dblclick.stop="refreshBinder">
         <span>{{ binder.title }}</span>
         <a :href="`/wiki/Binder:${binder.title}`"
-          class="inline-flex items-center gap-1 rounded-md px-2 py-1 hover:bg-slate-200/70 dark:hover:bg-slate-700/70"
+          class="inline-flex items-center gap-1 rounded-md px-2 py-1 hover:bg-gray-200/70 dark:hover:bg-gray-700/70"
           @click.stop>
           <BaseIcon :path="mdiCog" :class="['h-4 w-4', busy ? 'animate-spin' : '']" />
         </a>
