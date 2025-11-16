@@ -1,3 +1,4 @@
+<!-- TocNode.vue -->
 <script setup lang="ts">
 import type { PropType } from 'vue'
 import { computed } from 'vue'
@@ -32,60 +33,15 @@ const onClick = (e: MouseEvent) => {
 </script>
 
 <template>
-  <div :class="{ 'is-in-view': isInView }" :style="{ '--depth': props.depth }">
-    <div class="border-l-2 pl-2" :class="{ 'border-[#888] bg-[#aaa1]': isInView }">
-      <a :href="`#${anchor}`" class="toc-link" @click="onClick">
-        <span class="toc-number">{{ number }}</span>
-        <span class="toc-label">{{ label }}</span>
-      </a>
-    </div>
-
-    <ul v-if="children?.length > 0" class="toc-children list-none m-0 p-0" role="list">
-      <li v-for="s in children" :key="s.index ?? s.anchor" class="m-0">
-        <TocNode :section="s" :target-ids="targetIds" :depth="props.depth + 1" @navigate="$emit('navigate', $event)" />
-      </li>
-    </ul>
+  <div class="border-l-2 pl-2 py-0.5 transition" :class="{ 'border-[#888] bg-[#9991]': isInView }">
+    <a :href="`#${anchor}`" class="z-muted" @click="onClick" :style="{ paddingLeft: `calc(${props.depth} * 0.75rem)` }">
+      <span class="opacity-50">{{ number }}</span>&nbsp;<span>{{ label }}</span>
+    </a>
   </div>
+
+  <ul v-if="children?.length > 0" class="p-0" role="list">
+    <li v-for="s in children" :key="s.index ?? s.anchor" class="m-0">
+      <TocNode :section="s" :target-ids="targetIds" :depth="props.depth + 1" @navigate="$emit('navigate', $event)" />
+    </li>
+  </ul>
 </template>
-
-<style scoped>
-.toc-node.is-in-view .toc-rail::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0.1rem;
-  bottom: 0.1rem;
-  width: 2px;
-  background-color: var(--link);
-  border-radius: 999px;
-}
-
-.toc-link {
-  flex: 1;
-  display: inline-flex;
-  align-items: baseline;
-  padding: 0.15rem 0;
-  text-decoration: none;
-  color: var(--muted);
-  font-weight: 400;
-  padding-left: calc(var(--depth, 0) * 0.75rem);
-}
-
-.toc-number {
-  opacity: 0.5;
-  margin-right: 0.25rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.toc-label {
-  transition: color 0.18s ease-out;
-}
-
-.toc-node.is-in-view .toc-label {
-  color: var(--text);
-}
-
-.toc-children {
-  margin-left: 0;
-}
-</style>
