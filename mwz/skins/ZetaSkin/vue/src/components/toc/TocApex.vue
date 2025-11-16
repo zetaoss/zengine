@@ -1,9 +1,9 @@
-<!-- TocMain.vue -->
+<!-- TocApex.vue -->
 <script setup lang="ts">
 import type { PropType } from 'vue'
 import { computed } from 'vue'
 import type { Section } from './types'
-import TocSection from './TocSection.vue'
+import TocNode from './TocNode.vue'
 import { useScrollSpy } from '@/composables/useScrollSpy'
 import CapSticky from '@/components/CapSticky.vue'
 
@@ -28,7 +28,7 @@ const flattenAnchors = (root?: Section | null): string[] => {
 }
 
 const anchors = computed(() => flattenAnchors(tocObj.value))
-const { activeId } = useScrollSpy(anchors, props.headerOffset)
+const { activeIds } = useScrollSpy(anchors, props.headerOffset)
 
 const scrollToAnchor = (id: string) => {
   const el = document.getElementById(id)
@@ -41,11 +41,10 @@ const scrollToAnchor = (id: string) => {
 <template>
   <CapSticky :marginY="16">
     <nav>
-      <ul v-if="tocObj"
-        class="text-sm z-text tracking-tight list-none m-0 p-0 pl-4 border-l-4 border-blue-400 dark:border-blue-600">
-        <li class="opacity-50 m-0">페이지 목차</li>
+      <ul v-if="tocObj" class="text-sm tracking-tight list-none m-0 p-0 z-muted">
+        <li class="m-0 mb-1">페이지 목차</li>
         <li v-for="s in tocObj['array-sections'] ?? []" :key="s.index ?? s.anchor" class="m-0">
-          <TocSection :section="s" :targetId="activeId ?? ''" @navigate="scrollToAnchor" />
+          <TocNode :section="s" :target-ids="activeIds" :depth="0" @navigate="scrollToAnchor" />
         </li>
       </ul>
     </nav>
