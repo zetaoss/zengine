@@ -19,7 +19,7 @@
     --z-text: var(--color-zinc-700);
 
     --bg: #fff;
-    --text: #222;
+    --text: #1e1e1e;
     --muted: #666;
     --muted2: #bbb;
     --border: #8884;
@@ -39,7 +39,7 @@
   --z-head: var(--color-zinc-800);
   --z-text: var(--color-zinc-300);
 
-  --bg: #222;
+  --bg: #1e1e1e;
   --text: #fff;
   --muted: #ccc;
   --muted2: #888;

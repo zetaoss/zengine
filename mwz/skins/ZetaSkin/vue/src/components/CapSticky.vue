@@ -53,7 +53,7 @@ const styleVars = computed(() => {
       <BaseIcon :path="mdiMenu" />
     </button>
 
-    <div class="c-scrollbar h-full w-full overflow-y-auto">
+    <div class="z-scrollbar h-full w-full overflow-y-auto">
       <slot />
     </div>
   </div>

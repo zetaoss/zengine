@@ -55,11 +55,16 @@ h6 {
 
 a {
   color: var(--link);
-  @apply break-all hover:underline underline-offset-4;
+  text-underline-offset: 4px;
+  word-break: break-all;
+
+  &:hover {
+    text-decoration-line: underline;
+  }
 
   &.external {
     color: var(--link-ext);
-    @apply border-b;
+    border-bottom-width: 1px;
   }
 
   &.new {
@@ -69,11 +74,14 @@ a {
 
 ul {
   list-style: disc;
-  @apply py-2 pl-6;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  padding-left: 1.5rem;
 }
 
 li {
-  @apply my-1;
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
 }
 
 pre {
