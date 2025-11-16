@@ -33,11 +33,11 @@ const onClick = (e: MouseEvent) => {
 </script>
 
 <template>
-  <div class="border-l-2 pl-2 py-0.5 transition" :class="{ 'border-[#888] bg-[#9991]': isInView }">
-    <a :href="`#${anchor}`" class="z-muted" @click="onClick" :style="{ paddingLeft: `calc(${props.depth} * 0.75rem)` }">
-      <span class="opacity-50">{{ number }}</span>&nbsp;<span>{{ label }}</span>
-    </a>
-  </div>
+  <a :href="`#${anchor}`" :class="{ 'border-[#888] bg-[#8881]': isInView }"
+    class="block w-full border-l-2 pl-2 z-muted hover:no-underline hover:text-[var(--link)]" @click="onClick">
+    <span class="opacity-50" :style="{ paddingLeft: `calc(${props.depth} * 0.75rem)` }">{{ number }}</span>
+    {{ label }}
+  </a>
 
   <ul v-if="children?.length > 0" class="p-0" role="list">
     <li v-for="s in children" :key="s.index ?? s.anchor" class="m-0">
