@@ -28,38 +28,41 @@
 
       <div class="flex-auto">
         <div class="p-4 py-8 md:p-8">
-          <div class="text-3xl font-semibold">{{{ html-title }}}</div>
-          <div>{{{ html-subtitle }}}</div>
+          <div class="py-4">
+            <div class="text-3xl font-semibold">{{{ html-title }}}</div>
+            <div>{{{ html-subtitle }}}</div>
+          </div>
+          <div class="text-sm"> 
+            <div class="flow-root mt-2">
+              <div class="float-left">
+                {{#is-article}}
+                {{#isView}}
+                <page-meta historyhref="{{ zPageMenu.history.href }}"></page-meta>
+                {{/isView}}
+                {{/is-article}}
+              </div>
 
-          <div class="flow-root mt-2 text-sm">
-            <div class="float-left">
-              {{#is-article}}
-              {{#isView}}
-              <page-meta historyhref="{{ zPageMenu.history.href }}"></page-meta>
-              {{/isView}}
-              {{/is-article}}
+              <div class="flex float-right">
+                {{#arrayButtons}}
+                {{^current}}
+                <a class="page-btn" {{#id}}id="{{.}}"{{/id}} href="{{href}}">{{text}}</a>
+                {{/current}}
+                {{/arrayButtons}}
+
+                <page-menu>
+                  {{#arrayMenu}}
+                  <li><a href="{{href}}">{{text}}</a></li>
+                  {{/arrayMenu}}
+                </page-menu>
+              </div>
             </div>
 
-            <div class="flex float-right">
-              {{#arrayButtons}}
-              {{^current}}
-              <a class="page-btn" {{#id}}id="{{.}}"{{/id}} href="{{href}}">{{text}}</a>
-              {{/current}}
-              {{/arrayButtons}}
-
-              <page-menu>
-                {{#arrayMenu}}
-                <li><a href="{{href}}">{{text}}</a></li>
-                {{/arrayMenu}}
-              </page-menu>
+            {{#data-portlets.data-category-normal.html-items}}
+            <div class="page-cats">
+              <ul>{{{ . }}}</ul>
             </div>
+            {{/data-portlets.data-category-normal.html-items}}
           </div>
-
-          {{#data-portlets.data-category-normal.html-items}}
-          <div class="page-cats">
-            <ul>{{{ . }}}</ul>
-          </div>
-          {{/data-portlets.data-category-normal.html-items}}
           <hr />
 
           <article id="content" data-mw-ve-target-container class="py-6" v-pre>

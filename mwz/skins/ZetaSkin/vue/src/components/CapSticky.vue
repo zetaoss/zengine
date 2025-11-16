@@ -10,6 +10,7 @@ const props = defineProps({
   marginY: { type: Number, default: 0 },
   showToggle: { type: Boolean, default: false },
   widthValue: { type: String, default: '100%' },
+  navBlurColor: { type: String, default: '' },
 })
 
 const root = ref<HTMLElement | null>(null)
@@ -48,7 +49,7 @@ const styleVars = computed(() => {
   <div ref="root" class="flex-none shrink-0 z-30 transition-[width]" :class="isOverlay ? 'fixed' : 'sticky'"
     :style="styleVars">
     <button v-if="showToggle"
-      class="absolute p-2 z-10 flex rounded-r-lg opacity-75 bg-gray-200 hover:bg-gray-300 dark:bg-neutral-700 dark:hover:bg-neutral-600 right-0 translate-x-full"
+      class="absolute p-2 z-20 flex rounded-r-lg opacity-75 bg-gray-200 hover:bg-gray-300 dark:bg-neutral-700 dark:hover:bg-neutral-600 right-0 translate-x-full"
       :aria-expanded="!collapsed" @click="toggle">
       <BaseIcon :path="mdiMenu" />
     </button>
@@ -56,5 +57,18 @@ const styleVars = computed(() => {
     <div class="z-scrollbar h-full w-full overflow-y-auto">
       <slot />
     </div>
+    <footer v-if="navBlurColor" :style="{ backgroundColor: navBlurColor }" />
   </div>
 </template>
+
+<style scoped>
+footer {
+  width: calc(100% - 6px);
+  mask-image: linear-gradient(transparent, #000 64px);
+  bottom: 0;
+  height: 64px;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+}
+</style>
