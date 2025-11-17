@@ -11,16 +11,9 @@
   }
 
   :root {
-    --z-text2: var(--color-neutral-400);
-
-    --z-card: var(--color-white);
-    --z-card-hover: var(--color-neutral-100);
-    --z-head: var(--color-slate-200);
-    --z-text: var(--color-zinc-700);
-
     --bg: #fff;
-    --bg-muted: #f9f9f9;
-    --text: #1e1e1e;
+    --bg-muted: #f6f6f6;
+    --text: #111;
     --muted: #444;
     --muted2: #bbb;
     --border: #8884;
@@ -36,15 +29,10 @@
 }
 
 .dark {
-  --z-card: var(--color-neutral-900);
-  --z-card-hover: var(--color-neutral-800);
-  --z-head: var(--color-zinc-800);
-  --z-text: var(--color-zinc-300);
-
-  --bg: #1e1e1e;
-  --bg-muted: #2a2a2a;
+  --bg: #111;
+  --bg-muted: #222;
   --text: #fff;
-  --muted: #ddd;
+  --muted: #eee;
   --muted2: #888;
 
   --border: #8884;
