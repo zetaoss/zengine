@@ -11,10 +11,10 @@ import HomeOnelines from './HomeOnelines.vue'
   <div class="p-5">
     <h2 class="my-5 text-2xl font-bold">제타위키</h2>
     <div class="my-5 grid gap-4 md:grid-cols-2">
-      <section class="z-card">
+      <section>
         <HomeAbout />
       </section>
-      <section class="z-card">
+      <section>
         <header>
           <a href="/forum">포럼</a>
         </header>
@@ -22,19 +22,19 @@ import HomeOnelines from './HomeOnelines.vue'
       </section>
     </div>
     <div class="my-5 grid gap-4 md:grid-cols-[2fr_2fr_1fr]">
-      <section class="z-card">
+      <section>
         <header>
           한줄잡담
         </header>
         <HomeOnelines />
       </section>
-      <section class="z-card">
+      <section>
         <header>
           문서댓글
         </header>
         <HomeComments />
       </section>
-      <section class="z-card">
+      <section>
         <header>
           <a href="/wiki/특수:새문서">새 문서</a>
         </header>
@@ -44,12 +44,18 @@ import HomeOnelines from './HomeOnelines.vue'
   </div>
 </template>
 
-<style lang="scss" scoped>
+<style scoped>
 section {
-  @apply p-4 border rounded-md;
+  background-color: var(--bg-muted);
+  border-radius: 0.25rem;
+  padding: 1rem;
 
   header {
-    @apply pb-3 mb-3 border-b text-lg font-semibold;
+    border-bottom-width: 1px;
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
   }
 }
 </style>
