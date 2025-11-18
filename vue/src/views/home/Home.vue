@@ -46,7 +46,8 @@ import HomeOnelines from './HomeOnelines.vue'
 
 <style scoped>
 section {
-  background-color: var(--bg-muted);
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
   border-radius: 0.25rem;
   padding: 1rem;
 
