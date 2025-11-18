@@ -21,3 +21,9 @@ vue-audit:
 
 checks: vue-install vue-build vue-diff vue-audit
 	@echo "✅ All checks passed"
+
+audit-fix:
+	@echo "Running audit-fix"
+	cd mwz/skins/ZetaSkin/vue && pnpm audit --fix && pnpm install
+	cd vue && pnpm audit --fix && pnpm install
+
