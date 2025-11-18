@@ -13,34 +13,39 @@
   :root {
     --bg: #fff;
     --bg-muted: #f6f6f6;
-    --text: #111;
+    --text: #090909;
     --muted: #444;
     --muted2: #bbb;
     --border: #8884;
 
     --link: #09c;
     --link-ext: #093;
-    --link-new: #933;
+    --link-new: #d38;
 
     --link-bg: #09c1;
     --link-bg-hover: #09c3;
-    --link-new-bg: #9331;
+
+    --card-bg: #fff;
+    --card-border: #e4e4e4;
   }
 }
 
 .dark {
-  --bg: #111;
+  --bg: #090909;
   --bg-muted: #222;
-  --text: #fff;
-  --muted: #eee;
+  --text: #eee;
+  --muted: #bbb;
   --muted2: #888;
 
   --border: #8884;
 
-  --link: #0ad;
+  --link: #6af;
   --link-ext: #3a6;
-  --link-new: #faa;
+  --link-new: #e77;
 
-  --link-bg: #0ad1;
-  --link-new-bg: #faa1;
+  --link-bg: #6af3;
+  --link-bg-hover: #6af4;
+
+  --card-bg: #151515;
+  --card-border: #252525;
 }
