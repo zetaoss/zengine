@@ -38,6 +38,6 @@ watch(() => props.modelValue, () => { nextTick(adjustHeight) }, { immediate: tru
 </script>
 
 <template>
-  <textarea ref="textareaEl" class="w-full p-2 bg-inherit resize-none outline-none overflow-y-hidden box-border"
-    :id="id" :value="modelValue" :placeholder="placeholder" @input="handleInput" />
+  <textarea ref="textareaEl" class="w-full p-2 bg-inherit resize-none outline-none overflow-y-hidden" :id="id"
+    :value="modelValue" :placeholder="placeholder" @input="handleInput" />
 </template>
