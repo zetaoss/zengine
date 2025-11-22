@@ -28,11 +28,11 @@ class PostController extends MyController
     public function store(Request $req)
     {
         $err = $this->validateRequest($req);
-        if ($err !== false) {
+        if (! empty($err)) {
             return $err;
         }
         $err = $this->shouldCreatable();
-        if ($err !== false) {
+        if (! empty($err)) {
             return $err;
         }
         $post = new Post;
@@ -50,18 +50,17 @@ class PostController extends MyController
     public function update(Request $request, Post $post)
     {
         $err = $this->validateRequest($request);
-        if ($err !== false) {
+        if (! empty($err)) {
             return $err;
         }
         $err = $this->shouldEditable($post->user_id);
-        if ($err !== false) {
+        if (! empty($err)) {
             return $err;
         }
         $post->cat = request('cat');
         $post->tags_str = '';
         $post->title = request('title');
         $post->body = request('body');
-        // $post->is_notice = request()->has('is_notice');
         $post->channel_id = 1;
         $post->user_id = $this->getUserID();
         $post->save();
@@ -72,7 +71,7 @@ class PostController extends MyController
     public function destroy(Post $post)
     {
         $err = $this->shouldDeletable($post->user_id);
-        if ($err !== false) {
+        if (! empty($err)) {
             return $err;
         }
         $post->delete();
