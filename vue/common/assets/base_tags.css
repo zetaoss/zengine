@@ -78,12 +78,11 @@ a {
 
 ul {
   list-style: disc;
-  padding: 0;
+  padding: 0 0 0 1.5rem;
 }
 
 li {
-  margin-top: 0.25rem;
-  margin-bottom: 0.25rem;
+  margin: .25rem 0;
 }
 
 pre {
