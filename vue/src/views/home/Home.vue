@@ -47,13 +47,14 @@ import HomeOnelines from './HomeOnelines.vue'
 <style scoped>
 section {
   background-color: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 0.25rem;
+  box-shadow: 0 0 0 1px var(--card-border), 0 1px 2px 0 rgba(0, 0, 0, .04);
+  border-radius: 8px;
+
   padding: 1rem;
 
   header {
     border-bottom-width: 1px;
-    font-size: 1.125rem;
+    font-size: 1.1rem;
     font-weight: 600;
     margin-bottom: 0.75rem;
     padding-bottom: 0.75rem;
