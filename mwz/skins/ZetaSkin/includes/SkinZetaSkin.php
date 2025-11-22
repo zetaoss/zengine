@@ -95,6 +95,7 @@ class SkinZetaSkin extends SkinMustache
             'info' => $toolbox['info'] ?? null,
         ]));
 
+        $data['hasTOC'] = ! empty($data['data-toc']);
         $data['jsonTOC'] = json_encode($data['data-toc'] ?? []);
         $data['jsonUserMenu'] = json_encode(array_filter([
             'login' => $userMenu['login'] ?? null,

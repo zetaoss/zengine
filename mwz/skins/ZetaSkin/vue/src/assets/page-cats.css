@@ -1,11 +1,4 @@
 .page-cats {
-  padding-top: 0.75rem;
-  padding-bottom: 0.75rem;
-
-  ul {
-    padding: 0;
-  }
-
   li {
     display: inline-block;
   }

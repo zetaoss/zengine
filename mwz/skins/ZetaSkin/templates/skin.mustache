@@ -32,7 +32,7 @@
             <div class="text-3xl font-semibold">{{{ html-title }}}</div>
             <div>{{{ html-subtitle }}}</div>
           </div>
-          <div class="text-sm"> 
+          <div class="pb-4"> 
             <div class="flow-root mt-2">
               <div class="float-left">
                 {{#is-article}}
@@ -58,9 +58,7 @@
             </div>
 
             {{#data-portlets.data-category-normal.html-items}}
-            <div class="page-cats">
-              <ul>{{{ . }}}</ul>
-            </div>
+            <ul class="page-cats pt-2">{{{ . }}}</ul>
             {{/data-portlets.data-category-normal.html-items}}
           </div>
           <hr />
@@ -76,11 +74,11 @@
       </div>
 
 
-      {{^is-specialpage}}
+      {{#hasTOC}}
       <div class="hidden hb-lg-md-block flex-none w-60 pr-3">
         <toc-apex :toc='{{{ jsonTOC }}}'></toc-apex>
       </div>
-      {{/is-specialpage}}
+      {{/hasTOC}}
 
     </div>
   </main>
