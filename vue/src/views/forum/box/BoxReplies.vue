@@ -7,7 +7,8 @@ import { useDateFormat } from '@vueuse/core'
 
 import BaseIcon from '@common/ui/BaseIcon.vue'
 import BaseModal from '@common/ui/BaseModal.vue'
-import BaseTextarea from '@common/ui/BaseTextarea.vue'
+import UiTextarea from '@common/ui/UiTextarea.vue'
+import UiButton from '@common/ui/UiButton.vue'
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import useAuthStore from '@/stores/auth'
 import http from '@/utils/http'
@@ -159,26 +160,12 @@ fetchData()
       </div>
     </div>
     <div v-if="me.isLoggedIn" class="p-3">
-      <div class="p-3 border-2 rounded">
-        <div class="overflow-auto">
-          <div class="float-left">
-            <AvatarUser :user-avatar="me.userData.avatar" :showLink="false" />
-          </div>
-          <div v-if="replyBody.length > 0" class="float-right">
-            <div class="text-xs text-gray-400">
-              {{ replyBody.length }} characters
-            </div>
-          </div>
-        </div>
-        <div class="pt-2">
-          <BaseTextarea v-model="replyBody" />
-        </div>
-        <div class="overflow-auto">
-          <div class="float-right">
-            <button type="button" class="btn btn-primary" :disabled="replyBody.length == 0" @click="postReply">
-              등록
-            </button>
-          </div>
+      <div class="p-4 border z-bg-muted rounded">
+        <AvatarUser :user-avatar="me.userData.avatar" :showLink="false" />
+        <UiTextarea v-model="replyBody" class="mt-2" id="box-replies" placeholder="댓글을 남겨보세요" />
+        <div class="flex items-center">
+          <div class="text-xs text-gray-400 ml-auto">{{ replyBody.length }} 자</div>
+          <UiButton :disabled="replyBody.length == 0" @click="postReply" class="w-20 ml-3">등록</UiButton>
         </div>
       </div>
     </div>

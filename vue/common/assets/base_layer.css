@@ -11,6 +11,8 @@
   }
 
   :root {
+    color-scheme: light;
+
     --site-font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", "Apple SD Gothic Neo", Roboto, "Noto Sans KR", "Noto Sans", sans-serif;
 
     --bg: #fff;
@@ -29,10 +31,19 @@
 
     --card-bg: #fff;
     --card-border: #e2e2e2;
+
+    --table-header-bg: #f2f2f2;
+
+    --btn-text: #222;
+    --btn-ring: #ddd;
+    --btn-bg: #fff;
+    --btn-bg-hover: #eee;
   }
 }
 
 .dark {
+  color-scheme: dark;
+
   --bg: #131313;
   --bg-muted: #222;
   --text: #eee;
@@ -50,4 +61,11 @@
 
   --card-bg: #1f1f1f;
   --card-border: #2b2b2b;
+
+  --table-header-bg: #2a2a2a;
+
+  --btn-text: #ddd;
+  --btn-ring: #555;
+  --btn-bg: #333;
+  --btn-bg-hover: #444;
 }

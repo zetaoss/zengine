@@ -17,11 +17,11 @@ class ReplyController extends MyController
     public function store(Post $post, Request $request)
     {
         $err = $this->validateRequest($request);
-        if ($err !== false) {
+        if (! empty($err)) {
             return $err;
         }
         $err = $this->shouldCreatable();
-        if ($err !== false) {
+        if (! empty($err)) {
             return $err;
         }
 
@@ -35,11 +35,11 @@ class ReplyController extends MyController
     public function update(Post $post, Reply $reply, Request $request)
     {
         $err = $this->validateRequest($request);
-        if ($err !== false) {
+        if (! empty($err)) {
             return $err;
         }
         $err = $this->shouldEditable($reply->user_id);
-        if ($err !== false) {
+        if (! empty($err)) {
             return $err;
         }
         $reply->body = $request->body;
@@ -51,7 +51,7 @@ class ReplyController extends MyController
     public function destroy(Post $post, Reply $reply)
     {
         $err = $this->shouldDeletable($reply->user_id);
-        if ($err !== false) {
+        if (! empty($err)) {
             return $err;
         }
         $reply->delete();

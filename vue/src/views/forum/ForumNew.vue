@@ -6,6 +6,7 @@ import BaseModal from '@common/ui/BaseModal.vue'
 import TiptapMain from './tiptap/TiptapMain.vue'
 import { useErrors, type ErrorResponse } from './errors'
 import './tiptap/ProseMirror.scss'
+import UiButton from '@common/ui/UiButton.vue'
 
 const router = useRouter()
 const errors = useErrors()
@@ -94,9 +95,9 @@ const modalOK = () => {
         </div>
       </div>
 
-      <div class="mt-4 mb-8 text-center">
-        <button type="button" class="btn btn-primary" @click="post">등록</button>
-        <button type="button" class="btn" @click="showModal = true">취소</button>
+      <div class="my-4 flex justify-center space-x-3">
+        <UiButton @click="post">등록</UiButton>
+        <UiButton @click="showModal = true">취소</UiButton>
       </div>
     </div>
   </div>

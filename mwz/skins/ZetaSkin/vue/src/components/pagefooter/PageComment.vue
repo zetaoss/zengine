@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import BaseModal from '@common/ui/BaseModal.vue'
-import BaseTextarea from '@common/ui/BaseTextarea.vue'
+import UiTextarea from '@common/ui/UiTextarea.vue'
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import type UserAvatar from '@common/types/userAvatar'
 import { canDelete, canEdit } from '@/utils/auth'
@@ -118,7 +118,7 @@ fetchData()
               </div>
             </div>
             <div class="py-2 rounded-t">
-              <BaseTextarea v-model="editingRow.message" />
+              <UiTextarea v-model="editingRow.message" id="page-comment" />
             </div>
             <div class="overflow-auto">
               <div class="float-right">

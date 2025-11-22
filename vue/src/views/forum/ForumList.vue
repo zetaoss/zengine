@@ -9,6 +9,7 @@ import useAuthStore from '@/stores/auth'
 import http from '@/utils/http'
 import BoxPost from './box/BoxPost.vue'
 import type { Post } from './types'
+import UiButton from '@common/ui/UiButton.vue'
 
 const auth = useAuthStore()
 const route = useRoute()
@@ -47,18 +48,16 @@ watch(() => [route.params.id, route.params.page], fetchData, { immediate: true }
       포럼
     </h2>
     <div v-if="postID > 0">
-      <div class="py-2 overflow-auto">
-        <div class="float-right">
-          <RouterLink :to="{ path: `/forum/page/${page}` }" class="btn">
-            목록
-          </RouterLink>
+      <div class="py-2">
+        <div class="flex justify-end">
+          <UiButton :to="{ path: `/forum/page/${page}` }">목록</UiButton>
         </div>
       </div>
       <BoxPost :post-i-d="postID" />
     </div>
     <div v-if="posts.length > 0" class="text-sm">
       <div class="z-card">
-        <div class="hidden md:flex p-2 bg-z-head font-bold text-center">
+        <div class="hidden md:flex p-2 font-bold text-center bg-[var(--table-header-bg)]">
           <div class="flex w-[65%]">
             <span class="w-[10%]">번호</span>
             <span class="w-[90%] text-left">제목</span>
@@ -97,9 +96,7 @@ watch(() => [route.params.id, route.params.page], fetchData, { immediate: true }
         </RouterLink>
       </div>
       <div class="mt-4 text-right">
-        <RouterLink :to="{ path: `/forum/new` }" class="btn" :class="{ disabled: !auth.canWrite() }">
-          글쓰기
-        </RouterLink>
+        <UiButton :to="{ path: `/forum/new` }" :disabled="!auth.canWrite()">글쓰기</UiButton>
       </div>
       <div class="text-center py-4">
         <ThePagination :paginate-data="paginateData" />
@@ -107,13 +104,3 @@ watch(() => [route.params.id, route.params.page], fetchData, { immediate: true }
     </div>
   </div>
 </template>
-
-<style>
-#post-body p {
-  margin-bottom: 1rem;
-}
-
-.cnt:before {
-  content: '| 조회';
-}
-</style>

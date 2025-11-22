@@ -75,7 +75,17 @@
     }
 
     &::-webkit-scrollbar-thumb {
-        background: #8884;
+        background-color: #9993;
         border-radius: 1em;
+    }
+
+    &:hover {
+        &::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background-color: #9998;
+        }
     }
 }
