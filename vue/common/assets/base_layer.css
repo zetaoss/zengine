@@ -11,9 +11,11 @@
   }
 
   :root {
+    --site-font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", "Apple SD Gothic Neo", Roboto, "Noto Sans KR", "Noto Sans", sans-serif;
+
     --bg: #fff;
     --bg-muted: #f6f6f6;
-    --text: #090909;
+    --text: #131313;
     --muted: #444;
     --muted2: #bbb;
     --border: #8884;
@@ -26,12 +28,12 @@
     --link-bg-hover: #09c3;
 
     --card-bg: #fff;
-    --card-border: #e4e4e4;
+    --card-border: #e2e2e2;
   }
 }
 
 .dark {
-  --bg: #090909;
+  --bg: #131313;
   --bg-muted: #222;
   --text: #eee;
   --muted: #bbb;
@@ -46,6 +48,6 @@
   --link-bg: #6af3;
   --link-bg-hover: #6af4;
 
-  --card-bg: #151515;
-  --card-border: #252525;
+  --card-bg: #1f1f1f;
+  --card-border: #2b2b2b;
 }

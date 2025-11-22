@@ -1,8 +1,12 @@
-html,
+html {
+  font-size: 16px;
+  background-color: var(--bg);
+}
+
 body {
   background-color: var(--bg);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", sans-serif;
+  font: 400 .9rem / 24px var(--site-font-family);
   letter-spacing: -0.4px;
 }
 
