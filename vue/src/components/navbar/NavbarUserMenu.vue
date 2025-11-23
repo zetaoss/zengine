@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router'
 import { onClickOutside } from '@vueuse/core'
 import { mdiAccount } from '@mdi/js'
 
-import BaseIcon from '@common/ui/BaseIcon.vue'
+import ZIcon from '@common/ui/ZIcon.vue'
 import AvatarCore from '@common/components/avatar/AvatarCore.vue'
 import useAuthStore from '@/stores/auth'
 
@@ -40,7 +40,7 @@ watch(() => route.path, close)
       <AvatarCore :user-avatar="me.userData.avatar" />
     </span>
     <span v-else>
-      <BaseIcon :path="mdiAccount" />
+      <ZIcon :path="mdiAccount" />
     </span>
     <svg class="h-4 w-4 opacity-80 ml-1 hidden md:block" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M7,10L12,15L17,10H7Z" />

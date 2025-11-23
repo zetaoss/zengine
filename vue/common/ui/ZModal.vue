@@ -3,15 +3,16 @@ import { onMounted, onUnmounted } from 'vue'
 
 import { mdiClose } from '@mdi/js'
 
-import BaseIcon from '@common/ui/BaseIcon.vue'
+import ZIcon from '@common/ui/ZIcon.vue'
+import ZButton from '@common/ui/ZButton.vue'
 
 const props = defineProps({
   show: { type: Boolean, required: true },
   title: { type: String, default: '' },
-  okText: { type: String, default: 'OK' },
-  okClass: { type: String, default: '' },
+  okText: { type: String, default: '확인' },
+  okColor: { type: String, default: 'danger' },
   okDisabled: { type: Boolean, default: false },
-  cancelText: { type: String, default: 'Cancel' },
+  cancelText: { type: String, default: '취소' },
 })
 
 const emit = defineEmits(['ok', 'cancel'])
@@ -42,7 +43,7 @@ onUnmounted(() => {
         <div class="relative">
           <div class="absolute right-0">
             <button type="button" class="w-8 h-8" @click="emit('cancel')">
-              <BaseIcon :path="mdiClose" />
+              <ZIcon :path="mdiClose" />
             </button>
           </div>
         </div>
@@ -50,13 +51,13 @@ onUnmounted(() => {
           <slot />
         </div>
         <hr class="border-0">
-        <div class="p-3 text-center rounded-b">
-          <button type="button" class="btn" :class="[okDisabled ? 'disabled' : '', okClass]" @click="clickOK()">
+        <div class="p-3 flex justify-center gap-3">
+          <ZButton :disabled="okDisabled" :color="okColor" @click="clickOK()">
             {{ okText }}
-          </button>
-          <button type="button" class="btn" @click="emit('cancel')">
+          </ZButton>
+          <ZButton @click="emit('cancel')">
             {{ cancelText }}
-          </button>
+          </ZButton>
         </div>
       </div>
     </div>

@@ -1,58 +1,51 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
-import { computed, type PropType, watch } from 'vue'
+import { computed, type PropType } from 'vue'
+import { RouterLink } from 'vue-router'
 import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
-import BaseIcon from '@common/ui/BaseIcon.vue'
+import ZIcon from '@common/ui/ZIcon.vue'
 import type { PaginateData } from './types'
 
 const props = defineProps({
-  paginateData: { type: Object as PropType<PaginateData>, required: true },
+  paginateData: {
+    type: Object as PropType<PaginateData>,
+    required: true,
+  },
 })
 
-const startPage = computed(() => {
-  return Math.floor((props.paginateData.current_page - 1) / 10) * 10 + 1
+const block = computed(() => {
+  const { current_page, last_page } = props.paginateData
+  const blockSize = 10
+
+  const blockStart = Math.floor((current_page - 1) / blockSize) * blockSize + 1
+  const blockEnd = Math.min(blockStart + blockSize - 1, last_page)
+  const pages = Array.from({ length: blockEnd - blockStart + 1 }, (_, i) => blockStart + i)
+
+  return { blockStart, blockEnd, pages }
 })
 
-const endPage = computed(() => {
-  return Math.min(startPage.value + 9, props.paginateData.last_page)
-})
-
-const prevPage = computed(() => {
-  return startPage.value > 1 ? startPage.value - 1 : 0
-})
-
-const nextPage = computed(() => {
-  return endPage.value < props.paginateData.last_page ? endPage.value + 1 : 0
-})
-
-const pages = computed(() => {
-  return Array.from({ length: endPage.value - startPage.value + 1 }, (_, i) => startPage.value + i)
-})
-
-watch(() => props.paginateData, () => { }, { immediate: true })
+const baseLinkClass = 'inline-flex items-center justify-center px-3 py-2 border transition z-text hover:no-underline hover:bg-zinc-100 dark:hover:bg-zinc-800'
+const disabledClass = 'opacity-40 cursor-default pointer-events-none'
+const activeClass = 'font-bold bg-[#8883]'
 </script>
 
 <template>
-  <div v-if="paginateData.path" class="leading-4 py-2">
-    <span v-if="prevPage">
-      <RouterLink :to="{ path: `${paginateData.path}/${prevPage}` }" class="btn btn-light !px-2">
-        <BaseIcon :path="mdiChevronLeft" />
-        이전
+  <nav class="w-full flex justify-center">
+    <div v-if="paginateData.path" class="grid w-full max-w-[900px] mx-auto grid-flow-col -space-x-px  rounded-lg">
+      <RouterLink :to="{ path: `${paginateData.path}/${block.blockStart - 1}` }" :class="[baseLinkClass,
+        block.blockStart < 2 && disabledClass, 'rounded-l-lg']">
+        <ZIcon :path="mdiChevronLeft" />
       </RouterLink>
-    </span>
-
-    <span v-for="page in pages" :key="page">
-      <RouterLink :to="{ path: `${paginateData.path}/${page}` }" class="btn btn-light !px-3"
-        :class="{ disabled: page == paginateData.current_page }">
+      <RouterLink v-for="page in block.pages" :key="page" :to="{ path: `${paginateData.path}/${page}` }" :class="[
+        baseLinkClass,
+        page === paginateData.current_page && activeClass,
+      ]">
         {{ page }}
       </RouterLink>
-    </span>
-
-    <span v-if="nextPage">
-      <RouterLink :to="{ path: `${paginateData.path}/${nextPage}` }" class="btn btn-light !px-2">
-        다음
-        <BaseIcon :path="mdiChevronRight" />
+      <RouterLink :to="{ path: `${paginateData.path}/${block.blockEnd + 1}` }"
+        :class="[baseLinkClass, block.blockEnd >= paginateData.last_page && disabledClass, 'rounded-r-lg']">
+        <ZIcon :path="mdiChevronRight" />
       </RouterLink>
-    </span>
-  </div>
+    </div>
+  </nav>
 </template>

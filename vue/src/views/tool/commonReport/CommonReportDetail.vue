@@ -4,8 +4,8 @@ import { mdiCheckBold, mdiContentCopy } from '@mdi/js'
 import { useDateFormat, useDebounceFn } from '@vueuse/core'
 import { useRoute, useRouter } from 'vue-router'
 
-import BaseIcon from '@common/ui/BaseIcon.vue'
-import Tooltip from '@common/ui/Tooltip.vue'
+import ZIcon from '@common/ui/ZIcon.vue'
+import ZTooltip from '@common/ui/ZTooltip.vue'
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import Star from './Star.vue'
 
@@ -125,43 +125,43 @@ fetchDataWithRetry()
           </div>
         </div>
         <div class="float-right">
-          <Tooltip :style="tooltipStyle" :show="tooltips[2]" content="Copied!">
+          <ZTooltip :style="tooltipStyle" :show="tooltips[2]" content="Copied!">
             <button type="button" class="btn" @click="copyTableWikitext">
               표 복사(위키)
               <span v-if="!tooltips[2]">
-                <BaseIcon :path="mdiContentCopy" />
+                <ZIcon :path="mdiContentCopy" />
               </span>
               <span v-else class="text-green-500">
-                <BaseIcon :path="mdiCheckBold" />
+                <ZIcon :path="mdiCheckBold" />
               </span>
             </button>
-          </Tooltip>
+          </ZTooltip>
         </div>
         <div class="float-right">
-          <Tooltip :style="tooltipStyle" :show="tooltips[1]" content="Copied!">
+          <ZTooltip :style="tooltipStyle" :show="tooltips[1]" content="Copied!">
             <button type="button" class="btn" @click="copyTableHTML">
               표 복사(HTML)
               <span v-if="!tooltips[1]">
-                <BaseIcon :path="mdiContentCopy" />
+                <ZIcon :path="mdiContentCopy" />
               </span>
               <span v-else class="text-green-500">
-                <BaseIcon :path="mdiCheckBold" />
+                <ZIcon :path="mdiCheckBold" />
               </span>
             </button>
-          </Tooltip>
+          </ZTooltip>
         </div>
         <div class="float-right">
-          <Tooltip :style="tooltipStyle" :show="tooltips[0]" content="Copied!">
+          <ZTooltip :style="tooltipStyle" :show="tooltips[0]" content="Copied!">
             <button type="button" class="btn" @click="copyURL">
               URL 복사
               <span v-if="!tooltips[0]">
-                <BaseIcon :path="mdiContentCopy" />
+                <ZIcon :path="mdiContentCopy" />
               </span>
               <span v-else class="text-green-500">
-                <BaseIcon :path="mdiCheckBold" />
+                <ZIcon :path="mdiCheckBold" />
               </span>
             </button>
-          </Tooltip>
+          </ZTooltip>
         </div>
       </div>
       <hr class="my-4 border-0 border-b">

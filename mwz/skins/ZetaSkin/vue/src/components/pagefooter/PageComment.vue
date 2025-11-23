@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import BaseModal from '@common/ui/BaseModal.vue'
-import UiTextarea from '@common/ui/UiTextarea.vue'
+import ZModal from '@common/ui/ZModal.vue'
+import ZTextarea from '@common/ui/ZTextarea.vue'
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import type UserAvatar from '@common/types/userAvatar'
 import { canDelete, canEdit } from '@/utils/auth'
@@ -70,9 +70,9 @@ async function delOK() {
 fetchData()
 </script>
 <template>
-  <BaseModal :show="showModal" ok-class="btn-danger" @ok="delOK()" @cancel="showModal = false">
+  <ZModal :show="showModal" okColor="danger" @ok="delOK()" @cancel="showModal = false">
     댓글을 삭제하시겠습니까?
-  </BaseModal>
+  </ZModal>
   <div class="p-6 py-4">
     <div>
       문서 댓글 ({{ docComments.length }})
@@ -118,7 +118,7 @@ fetchData()
               </div>
             </div>
             <div class="py-2 rounded-t">
-              <UiTextarea v-model="editingRow.message" id="page-comment" />
+              <ZTextarea v-model="editingRow.message" id="page-comment" />
             </div>
             <div class="overflow-auto">
               <div class="float-right">

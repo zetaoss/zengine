@@ -5,10 +5,10 @@ import { mdiDotsVertical } from '@mdi/js'
 import { vOnClickOutside } from '@vueuse/components'
 import { useDateFormat } from '@vueuse/core'
 
-import BaseIcon from '@common/ui/BaseIcon.vue'
-import BaseModal from '@common/ui/BaseModal.vue'
-import UiTextarea from '@common/ui/UiTextarea.vue'
-import UiButton from '@common/ui/UiButton.vue'
+import ZIcon from '@common/ui/ZIcon.vue'
+import ZModal from '@common/ui/ZModal.vue'
+import ZTextarea from '@common/ui/ZTextarea.vue'
+import ZButton from '@common/ui/ZButton.vue'
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import useAuthStore from '@/stores/auth'
 import http from '@/utils/http'
@@ -88,9 +88,9 @@ fetchData()
 </script>
 
 <template>
-  <BaseModal :show="showModal" ok-class="btn-danger" @ok="modalOK()" @cancel="showModal = false">
+  <ZModal :show="showModal" @ok="modalOK()" @cancel="showModal = false">
     댓글을 삭제하시겠습니까?
-  </BaseModal>
+  </ZModal>
   <div>
     <h3 class="py-2 px-4 text-lg">
       댓글 ({{ replies.length }})
@@ -103,7 +103,7 @@ fetchData()
         </div>
         <div v-if="me && me.canEdit(reply.userAvatar.id)" v-on-click-outside="dropdownClose" class="text-right">
           <button type="button" @click="dropdown(reply)">
-            <BaseIcon :path="mdiDotsVertical" />
+            <ZIcon :path="mdiDotsVertical" />
           </button>
         </div>
       </div>
@@ -142,18 +142,11 @@ fetchData()
               </div>
             </div>
             <div class="py-2 rounded-t bg-white dark:bg-black">
-              <BaseTextarea v-model="editingReply.body" />
+              <ZTextarea v-model="editingReply.body" id="edit-reply" />
             </div>
-            <div class="overflow-auto">
-              <div class="float-right">
-                <button type="button" class="btn btn-xs" @click="editCancel">
-                  취소
-                </button>
-                <button type="button" class="btn btn-xs btn-primary" :disabled="editingReply.body.length == 0"
-                  @click="editOK">
-                  등록
-                </button>
-              </div>
+            <div class="flex justify-end gap-3">
+              <ZButton @click="editCancel">취소</ZButton>
+              <ZButton :disabled="editingReply.body.length == 0" @click="editOK" color="primary">등록</ZButton>
             </div>
           </div>
         </div>
@@ -162,10 +155,10 @@ fetchData()
     <div v-if="me.isLoggedIn" class="p-3">
       <div class="p-4 border z-bg-muted rounded">
         <AvatarUser :user-avatar="me.userData.avatar" :showLink="false" />
-        <UiTextarea v-model="replyBody" class="mt-2" id="box-replies" placeholder="댓글을 남겨보세요" />
-        <div class="flex items-center">
-          <div class="text-xs text-gray-400 ml-auto">{{ replyBody.length }} 자</div>
-          <UiButton :disabled="replyBody.length == 0" @click="postReply" class="w-20 ml-3">등록</UiButton>
+        <ZTextarea v-model="replyBody" class="mt-2" id="new-reply" placeholder="댓글을 남겨보세요" />
+        <div class="flex justify-end gap-3">
+          <div class="text-xs text-gray-400">{{ replyBody.length }} 자</div>
+          <ZButton :disabled="replyBody.length == 0" @click="postReply" class="w-20" color="primary">등록</ZButton>
         </div>
       </div>
     </div>

@@ -3,7 +3,7 @@ import { onMounted } from 'vue'
 
 import { useRoute } from 'vue-router'
 
-import TheSpinner from '@common/ui/Spinner.vue'
+import ZSpinner from '@common/ui/ZSpinner.vue'
 
 import doLogin from './login'
 
@@ -37,7 +37,7 @@ onMounted(() => {
 
 <template>
   <div class="py-40 text-center">
-    <TheSpinner />
+    <ZSpinner />
     <div>Logging in...</div>
   </div>
 </template>

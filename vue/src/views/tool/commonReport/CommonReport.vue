@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import useAuthStore from '@/stores/auth'
 import http from '@/utils/http'
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
-import Spinner from '@common/ui/Spinner.vue'
+import ZSpinner from '@common/ui/ZSpinner.vue'
 import Star from './Star.vue'
 import Pagination from '@/components/pagination/Pagination.vue'
 import type { PaginateData } from '@/components/pagination/types'
@@ -145,7 +145,7 @@ onUnmounted(() => retrier.clear())
       </div>
     </div>
     <div v-else class="text-center">
-      <Spinner size="2rem" />
+      <ZSpinner size="2rem" />
     </div>
   </div>
 </template>
