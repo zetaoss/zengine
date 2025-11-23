@@ -10,10 +10,10 @@
     margin-right: .5rem;
     border-radius: 9em;
     text-decoration: none;
-    background-color: var(--link-bg);
+    background-color: var(--z-link-bg);
 
     &:hover {
-      background-color: var(--link-bg-hover);
+      background-color: var(--z-link-bg-hover);
     }
   }
 }

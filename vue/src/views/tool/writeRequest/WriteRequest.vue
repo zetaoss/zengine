@@ -4,6 +4,7 @@ import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import CProgressBar from '@common/components/CProgressBar.vue'
+import ZButton from '@common/ui/ZButton.vue'
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import type UserAvatar from '@common/types/userAvatar'
 import Pagination from '@/components/pagination/Pagination.vue'
@@ -135,7 +136,7 @@ fetchData()
       </button>
     </div>
     <table class="mytable w-full z-card">
-      <thead class="bg-z-head">
+      <thead class="z-table-header">
         <tr>
           <th>번호</th>
           <th>제목</th>
@@ -162,10 +163,9 @@ fetchData()
             <a v-if="mode == 'todo'" :href="`/w/index.php?search=${row.title}`" class="new">{{ row.title }}</a>
             <a v-else-if="mode == 'todo-top'" :href="`/w/index.php?search=${row.title}`" class="new">{{ row.title }}</a>
             <a v-else :href="`/wiki/${row.title}`">{{ row.title }}</a>
-            <button v-if="auth.canDelete(row.user_id)" type="button" class="btn-xs !px-1 ml-2 bg-orange-400 text-white"
-              @click="del(row)">
+            <ZButton v-if="auth.canDelete(row.user_id)" color="danger" class="ml-2 text-xs" @click="del(row)">
               삭제
-            </button>
+            </ZButton>
           </td>
           <td class="text-center">
             {{ row.rate }}
@@ -187,25 +187,16 @@ fetchData()
         </tr>
       </tbody>
     </table>
-    <div class=" py-4 overflow-auto">
-      <div class="float-right">
-        <button type="button" class="btn" :class="{ disabled: !auth.canWrite() }" @click="openModal">
-          등록
-        </button>
-      </div>
+    <div class="py-4 text-right">
+      <ZButton :disabled="!auth.canWrite()" @click="openModal">등록</ZButton>
     </div>
-    <div class="text-center py-4 bg-slate-100 dark:bg-slate-900">
-      <Pagination :paginate-data="paginateData" />
-    </div>
+    <Pagination class="pb-4" :paginate-data="paginateData" />
   </div>
 </template>
 
-<style lang="scss" scoped>
-.mytable {
-
-  th,
-  td {
-    @apply p-2 px-1 md:px-2;
-  }
+<style scoped>
+th,
+td {
+  padding: 1rem;
 }
 </style>

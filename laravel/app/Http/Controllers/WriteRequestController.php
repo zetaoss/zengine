@@ -32,7 +32,7 @@ class WriteRequestController extends MyController
     public function store()
     {
         $err = $this->shouldCreatable();
-        if ($err !== false) {
+        if (! empty($err)) {
             return $ok;
         }
         $title = trim(request('title'));
@@ -40,7 +40,7 @@ class WriteRequestController extends MyController
             return $this->newHTTPError(422, '제목을 입력해주세요.');
         }
         $wr = new WriteRequest;
-        $wr->user_id = $this->me()['id'];
+        $wr->user_id = $this->getUserID();
         $wr->title = $title;
         $wr->save();
     }
