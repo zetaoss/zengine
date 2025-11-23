@@ -4,12 +4,15 @@ import { useRoute, useRouter } from 'vue-router'
 import useAuthStore from '@/stores/auth'
 import http from '@/utils/http'
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
-import ZSpinner from '@common/ui/ZSpinner.vue'
+import ZFold from '@common/ui/ZFold.vue'
+import ZSpin from '@common/ui/ZSpin.vue'
+import ZButton from '@common/ui/ZButton.vue'
 import Star from './Star.vue'
 import Pagination from '@/components/pagination/Pagination.vue'
 import type { PaginateData } from '@/components/pagination/types'
 import CommonReportNew from './CommonReportNew.vue'
 import type { Row } from './types'
+import RouterLinkButton from '@/ui/RouterLinkButton.vue'
 import { getRatio, getScore } from './utils'
 import { useRetrier } from './retrier'
 
@@ -70,9 +73,7 @@ function closeModal() {
 
 watch(
   () => route.params,
-  () => {
-    retrier.start()
-  },
+  () => { retrier.start() },
   { immediate: true }
 )
 
@@ -84,12 +85,10 @@ onUnmounted(() => retrier.clear())
     <h2 class="my-5 text-2xl font-bold">통용 보고서</h2>
     <CommonReportNew :show="showModal" @close="closeModal" />
     <div v-if="reportData">
-      <table class="w-full z-card">
-        <thead class="bg-z-head">
+      <table class="w-full">
+        <thead class="z-table-header">
           <tr>
-            <th class="not-mobile">
-              번호
-            </th>
+            <th class="not-mobile">번호</th>
             <th>이름</th>
             <th>건수</th>
             <th>비율</th>
@@ -99,60 +98,66 @@ onUnmounted(() => retrier.clear())
         <tbody v-for="(row, rowKey) in reportData.data" :key="rowKey" class="align-top border-b border-[#88888866]">
           <tr v-for="(item, idx) in row.items" :key="idx">
             <td v-if="idx === 0" :rowspan="row.items.length" class="text-center text-sm">
-              <RouterLink :to="`/tool/common-report/${row.id}`" class="btn dark:black w-full block border !p-1">
-                #{{ row.id }} 상세보기
-                <span v-if="row.phase === 'pending'">⏳</span>
-                <span v-else-if="row.phase === 'running'" class="inline-block animate-spin">⏳</span>
-                <span v-else-if="row.phase === 'failed'">❌</span>
-              </RouterLink>
+              <RouterLinkButton class="w-full flex items-center justify-center gap-1"
+                :to="`/tool/common-report/${row.id}`">
+                <span>#{{ row.id }} 상세보기</span>
+              </RouterLinkButton>
               <div>{{ row.created_at.substring(0, 10) }}</div>
               <div>
                 <AvatarUser :user-avatar="row.userAvatar" />
               </div>
             </td>
+
             <td class="text-right">
               <a :href="`/wiki/${item.name}`">{{ item.name }}</a>
             </td>
             <td class="text-right">
               {{ item.total.toLocaleString('en-US') }}
             </td>
-            <td v-if="getRatio(row, idx)">
-              <div class="inline-block bg-[#77889966]" :style="{ width: (100 * getRatio(row, idx)) + '%' }">
+            <td>
+              <div v-if="getRatio(row, idx)" class="inline-block bg-[#77889966]"
+                :style="{ width: (100 * getRatio(row, idx)) + '%' }">
                 {{ (100 * getRatio(row, idx)).toFixed(1) }}%
               </div>
             </td>
-            <td v-else>
-              <br>
-            </td>
-            <td v-if="idx === 0">
-              <Star :n="getScore(row)" />
-            </td>
-            <td v-else>
-              —
+            <td>
+              <template v-if="idx === 0">
+                <span v-if="row.phase === 'pending'">
+                  <ZFold>⏳</ZFold> Pending
+                </span>
+                <span v-else-if="row.phase === 'running'">
+                  <ZSpin>⏳</ZSpin> Running
+                </span>
+                <span v-else-if="row.phase === 'failed'">
+                  ❌ Error
+                </span>
+                <Star v-else :n="getScore(row)" />
+              </template>
             </td>
           </tr>
         </tbody>
       </table>
-      <div class="py-4 overflow-auto">
-        <div class="float-right">
-          <button type="button" class="btn" :class="{ disabled: !auth.canWrite() }" @click="openModal">
-            등록
-          </button>
-        </div>
+
+      <div class="py-2 flex justify-end">
+        <ZButton :class="{ disabled: !auth.canWrite() }" @click="openModal">
+          등록
+        </ZButton>
       </div>
-      <div class="text-center pb-8">
-        <Pagination v-if="paginateData" :paginate-data="paginateData" />
-      </div>
+
+      <Pagination v-if="paginateData" :paginate-data="paginateData" />
     </div>
     <div v-else class="text-center">
-      <ZSpinner size="2rem" />
+      <ZSpin style="font-size:3rem">⏳</ZSpin>
     </div>
   </div>
 </template>
 
-<style lang="scss" scoped>
-th,
-td {
-  @apply p-2 px-1 md:px-2;
+<style scoped>
+table {
+
+  th,
+  td {
+    padding: 0.5rem;
+  }
 }
 </style>
