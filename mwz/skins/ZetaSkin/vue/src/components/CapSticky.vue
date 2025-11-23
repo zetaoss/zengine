@@ -3,7 +3,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { onClickOutside } from '@vueuse/core'
 import { mdiMenu } from '@mdi/js'
-import BaseIcon from '@common/ui/BaseIcon.vue'
+import ZIcon from '@common/ui/ZIcon.vue'
 import { useIsMobile } from '@common/composables/useIsMobile'
 
 const props = defineProps({
@@ -51,7 +51,7 @@ const styleVars = computed(() => {
     <button v-if="showToggle"
       class="absolute p-2 z-20 flex rounded-r-lg opacity-75 bg-gray-200 hover:bg-gray-300 dark:bg-neutral-700 dark:hover:bg-neutral-600 right-0 translate-x-full"
       :aria-expanded="!collapsed" @click="toggle">
-      <BaseIcon :path="mdiMenu" />
+      <ZIcon :path="mdiMenu" />
     </button>
 
     <div class="z-scrollbar h-full w-full overflow-y-auto">

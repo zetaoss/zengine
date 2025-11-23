@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { PropType } from 'vue'
 
-import BaseIcon from '@common/ui/BaseIcon.vue'
+import ZIcon from '@common/ui/ZIcon.vue'
 
 import type { ItemData } from './types'
 
@@ -13,6 +13,6 @@ defineProps({
 <template>
   <button type="button" class="menu-item" :class="{ 'is-active': itemData.isActive ? itemData.isActive() : null }"
     :title="itemData.title" @click="itemData.action">
-    <BaseIcon :path="itemData.icon" />
+    <ZIcon :path="itemData.icon" />
   </button>
 </template>

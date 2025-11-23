@@ -4,7 +4,7 @@ import { computed, ref, watch } from 'vue'
 import { useClipboard } from '@vueuse/core'
 import { type Job } from './types'
 import { mdiContentCopy, mdiCheck, mdiLoading } from '@mdi/js'
-import BaseIcon from '@common/ui/BaseIcon.vue'
+import ZIcon from '@common/ui/ZIcon.vue'
 
 const props = defineProps<{ job: Job; seq?: number }>();
 
@@ -35,18 +35,18 @@ watch(() => job.value?.phase, (newPhase) => {
 
       <span v-if="!copied" class="font-bold flex items-center space-x-1">
         <span>{{ box.lang }}</span>
-        <BaseIcon v-if="isJobInProgress" :size="16" :path="mdiLoading" :spin="true" />
+        <ZIcon v-if="isJobInProgress" :size="16" :path="mdiLoading" :spin="true" />
       </span>
 
       <div v-else class="items-center space-x-1 text-green-500 inline-flex">
-        <BaseIcon :size="16" :path="mdiCheck" />
+        <ZIcon :size="16" :path="mdiCheck" />
         <span>copied</span>
       </div>
 
       <button v-if="!copied"
         class="p-1 mt-1 rounded bg-[#8882] hover:bg-[#8884] hidden group-hover:inline-flex items-center"
         @click="copy(box.text)">
-        <BaseIcon :size="18" :path="mdiContentCopy" />
+        <ZIcon :size="18" :path="mdiContentCopy" />
       </button>
     </div>
 

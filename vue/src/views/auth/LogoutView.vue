@@ -4,7 +4,7 @@ import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 import http from '@/utils/http'
-import TheSpinner from '@common/ui/Spinner.vue'
+import ZSpinner from '@common/ui/ZSpinner.vue'
 import useAuthStore from '@/stores/auth'
 
 const me = useAuthStore()
@@ -20,7 +20,7 @@ onMounted(() => {
 
 <template>
   <div class="py-40 text-center">
-    <TheSpinner />
+    <ZSpinner />
     <div>Logging out...</div>
   </div>
 </template>

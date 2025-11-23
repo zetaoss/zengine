@@ -1,12 +1,12 @@
 html {
   font-size: 16px;
-  background-color: var(--bg);
+  background-color: var(--z-bg);
 }
 
 body {
-  background-color: var(--bg);
-  color: var(--text);
-  font: 400 .9rem / 24px var(--site-font-family);
+  background-color: var(--z-bg);
+  color: var(--z-text);
+  font: 400 .9rem / 24px var(--z-site-font-family);
   letter-spacing: -0.4px;
 }
 
@@ -58,7 +58,7 @@ h6 {
 }
 
 a {
-  color: var(--link);
+  color: var(--z-link);
   text-underline-offset: 4px;
   word-break: break-all;
 
@@ -67,12 +67,12 @@ a {
   }
 
   &.external {
-    color: var(--link-ext);
+    color: var(--z-link-ext);
     border-bottom-width: 1px;
   }
 
   &.new {
-    color: var(--link-new);
+    color: var(--z-link-new);
   }
 }
 

@@ -1,10 +1,10 @@
 /* simple classes */
 .z-bg {
-    background-color: var(--bg);
+    background-color: var(--z-bg);
 }
 
 .z-bg-muted {
-    background-color: var(--bg-muted);
+    background-color: var(--z-bg-muted);
 }
 
 .z-break-word {
@@ -21,19 +21,19 @@
 }
 
 .z-link {
-    color: var(--link);
+    color: var(--z-link);
 }
 
 .z-muted {
-    color: var(--muted);
+    color: var(--z-muted);
 }
 
 .z-muted2 {
-    color: var(--muted2);
+    color: var(--z-muted2);
 }
 
 .z-text {
-    color: var(--text);
+    color: var(--z-text);
 }
 
 /* component classes */

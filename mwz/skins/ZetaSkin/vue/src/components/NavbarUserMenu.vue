@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type PropType, ref } from 'vue'
-import BaseIcon from '@common/ui/BaseIcon.vue'
+import ZIcon from '@common/ui/ZIcon.vue'
 import AvatarCore from '@common/components/avatar/AvatarCore.vue'
 import type Item from '@common/components/navbar/types'
 import { mdiAccount } from '@mdi/js'
@@ -35,7 +35,7 @@ onClickOutside(dd, close, { ignore: [lb] })
       <AvatarCore :user-avatar="avatar" />
     </span>
     <span v-else>
-      <BaseIcon :path="mdiAccount" />
+      <ZIcon :path="mdiAccount" />
     </span>
     <svg class="h-4 w-4 opacity-80" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M7,10L12,15L17,10H7Z" />

@@ -4,7 +4,7 @@ import { mdiCog } from '@mdi/js'
 import CapSticky from '@/components/CapSticky.vue'
 import getRLCONF from '@/utils/rlconf'
 import BinderNode from './BinderNode.vue'
-import BaseIcon from '@common/ui/BaseIcon.vue'
+import ZIcon from '@common/ui/ZIcon.vue'
 
 const { wgArticleId, binders } = getRLCONF()
 
@@ -34,7 +34,7 @@ async function refreshBinder() {
         <span>{{ binder.title }}</span>
         <a :href="`/wiki/Binder:${binder.title}`" class="inline-flex items-center gap-1 rounded-md px-2 py-1"
           @click.stop>
-          <BaseIcon :path="mdiCog" :class="['h-4 w-4', busy ? 'animate-spin' : '']" />
+          <ZIcon :path="mdiCog" :class="['h-4 w-4', busy ? 'animate-spin' : '']" />
         </a>
       </header>
 

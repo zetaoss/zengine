@@ -4,7 +4,7 @@ import { useDebounceFn } from '@vueuse/core'
 import { vOnClickOutside } from '@vueuse/components'
 
 import { mdiHistory, mdiMagnify, mdiShuffle } from '@mdi/js'
-import BaseIcon from '@common/ui/BaseIcon.vue'
+import ZIcon from '@common/ui/ZIcon.vue'
 
 interface Page {
   description: string
@@ -147,7 +147,7 @@ onBeforeUnmount(() => { aborter.value?.abort() })
             placeholder="검색..." title="검색 [alt-shift-f]" accesskey="f" autocomplete="off" :value="displayQuery"
             @input="onInput" @focus="onFocus" />
           <button type="button" class="flex-none w-12 h-full z-10 bg-transparent focus:text-blue-700" @click="onClick">
-            <BaseIcon :path="mdiMagnify" :size="24" />
+            <ZIcon :path="mdiMagnify" :size="24" />
           </button>
         </div>
 
@@ -167,7 +167,7 @@ onBeforeUnmount(() => { aborter.value?.abort() })
             :href="`/w/index.php?title=특수:검색&fulltext=1&search=${encodeURIComponent(keyword)}`"
             :class="{ focused: currentIndex === pages.length }" @mouseenter="hIndex = pages.length"
             @focus="hIndex = pages.length">
-            <BaseIcon :path="mdiMagnify" />
+            <ZIcon :path="mdiMagnify" />
             <b>{{ keyword }}</b> 항목이 포함된 글 검색
           </a>
         </div>
@@ -176,11 +176,11 @@ onBeforeUnmount(() => { aborter.value?.abort() })
 
     <div class="flex-none flex">
       <a href="/wiki/특수:임의문서" class="navlink" title="랜덤">
-        <BaseIcon :path="mdiShuffle" class="w-5 h-5" />
+        <ZIcon :path="mdiShuffle" class="w-5 h-5" />
         <span class="hidden xl:inline ml-1">랜덤</span>
       </a>
       <a href="/wiki/특수:최근바뀜" class="navlink" title="바뀐글">
-        <BaseIcon :path="mdiHistory" class="w-5 h-5" />
+        <ZIcon :path="mdiHistory" class="w-5 h-5" />
         <span class="hidden xl:inline ml-1">바뀐글</span>
       </a>
     </div>

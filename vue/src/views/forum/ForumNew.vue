@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import http from '@/utils/http'
-import BaseModal from '@common/ui/BaseModal.vue'
+import ZModal from '@common/ui/ZModal.vue'
 import TiptapMain from './tiptap/TiptapMain.vue'
 import { useErrors, type ErrorResponse } from './errors'
 import './tiptap/ProseMirror.scss'
-import UiButton from '@common/ui/UiButton.vue'
+import ZButton from '@common/ui/ZButton.vue'
 
 const router = useRouter()
 const errors = useErrors()
@@ -50,6 +50,10 @@ const post = async () => {
   }
 }
 
+const postDisabled = computed(() => {
+  return !title.value.trim() || !body.value.trim()
+})
+
 const modalOK = () => {
   showModal.value = false
   gotoList()
@@ -57,9 +61,9 @@ const modalOK = () => {
 </script>
 
 <template>
-  <BaseModal :show="showModal" @ok="modalOK" @cancel="showModal = false">
+  <ZModal :show="showModal" @ok="modalOK" @cancel="showModal = false">
     새 글 쓰기를 취소하시겠습니까?
-  </BaseModal>
+  </ZModal>
 
   <div class="p-5">
     <div class="container mx-auto px-4 max-w-[1140px]">
@@ -67,19 +71,15 @@ const modalOK = () => {
         포럼 새 글 쓰기
       </h2>
 
-      <div class="flex items-center">
-        <select v-model="cat" aria-label="category"
-          class="my-3 border text-sm rounded focus:ring-blue-500 focus:border-blue-500 w-auto p-1 bg-white dark:bg-black text-gray-900 dark:text-gray-100">
+      <div class="flex items-center gap-2">
+        <select v-model="cat" class="w-20 border rounded px-2 py-1">
           <option value="질문">질문</option>
           <option value="잡담">잡담</option>
           <option value="인사">인사</option>
           <option value="기타">기타</option>
         </select>
-      </div>
-
-      <div>
         <input v-model="title" @input="errors.clear('title')" type="text" placeholder="제목을 입력해 주세요"
-          class="border rounded block w-full px-4 py-2 outline-0 bg-white dark:bg-black text-gray-900 dark:text-gray-300"
+          class="flex-1 border rounded px-2 py-1"
           :class="{ 'border-red-300 dark:border-red-700': errors.has('title') }">
         <div v-if="errors.has('title')" class="text-sm text-red-400">
           {{ errors.get('title').join('') }}
@@ -96,8 +96,8 @@ const modalOK = () => {
       </div>
 
       <div class="my-4 flex justify-center space-x-3">
-        <UiButton @click="post">등록</UiButton>
-        <UiButton @click="showModal = true">취소</UiButton>
+        <ZButton @click="post" color="primary" :disabled="postDisabled">등록</ZButton>
+        <ZButton @click="showModal = true">취소</ZButton>
       </div>
     </div>
   </div>

@@ -9,7 +9,7 @@ import useAuthStore from '@/stores/auth'
 import http from '@/utils/http'
 import BoxPost from './box/BoxPost.vue'
 import type { Post } from './types'
-import UiButton from '@common/ui/UiButton.vue'
+import ZButton from '@common/ui/ZButton.vue'
 
 const auth = useAuthStore()
 const route = useRoute()
@@ -50,14 +50,14 @@ watch(() => [route.params.id, route.params.page], fetchData, { immediate: true }
     <div v-if="postID > 0">
       <div class="py-2">
         <div class="flex justify-end">
-          <UiButton :to="{ path: `/forum/page/${page}` }">목록</UiButton>
+          <ZButton :to="{ path: `/forum/page/${page}` }">목록</ZButton>
         </div>
       </div>
       <BoxPost :post-i-d="postID" />
     </div>
     <div v-if="posts.length > 0" class="text-sm">
       <div class="z-card">
-        <div class="hidden md:flex p-2 font-bold text-center bg-[var(--table-header-bg)]">
+        <div class="hidden md:flex p-2 font-bold text-center bg-[var(--z-table-header-bg)]">
           <div class="flex w-[65%]">
             <span class="w-[10%]">번호</span>
             <span class="w-[90%] text-left">제목</span>
@@ -69,7 +69,7 @@ watch(() => [route.params.id, route.params.page], fetchData, { immediate: true }
           </div>
         </div>
         <RouterLink v-for="p in posts" :key="p.id" :to="{ path: `/forum/${p.id}` }"
-          class="block md:flex py-2 px-3 md:px-2 border-b hover:no-underline text-black dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+          class="block md:flex py-2 px-3 md:px-2 border-b hover:no-underline z-text hover:bg-gray-50 dark:hover:bg-gray-800"
           :class="{ 'bg-slate-100 dark:bg-stone-900': postID == p.id }">
           <div class="flex py-1 md:w-[65%]">
             <span class="hidden md:inline w-[10%] text-center">{{ p.id }}</span>
@@ -96,7 +96,7 @@ watch(() => [route.params.id, route.params.page], fetchData, { immediate: true }
         </RouterLink>
       </div>
       <div class="mt-4 text-right">
-        <UiButton :to="{ path: `/forum/new` }" :disabled="!auth.canWrite()">글쓰기</UiButton>
+        <ZButton :to="{ path: `/forum/new` }" :disabled="!auth.canWrite()">글쓰기</ZButton>
       </div>
       <div class="text-center py-4">
         <ThePagination :paginate-data="paginateData" />

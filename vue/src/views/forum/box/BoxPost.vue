@@ -5,7 +5,8 @@ import { useDateFormat } from '@vueuse/core'
 import Prism from 'prismjs'
 import { useRouter } from 'vue-router'
 
-import BaseModal from '@common/ui/BaseModal.vue'
+import ZModal from '@common/ui/ZModal.vue'
+import ZButton from '@common/ui/ZButton.vue'
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import useAuthStore from '@/stores/auth'
 import http from '@/utils/http'
@@ -20,7 +21,6 @@ import 'prismjs/components/prism-cpp'
 import 'prismjs/components/prism-go'
 import 'prismjs/components/prism-markup-templating'
 import 'prismjs/components/prism-php'
-
 import 'prismjs/themes/prism-okaidia.css'
 
 const props = defineProps({
@@ -62,9 +62,9 @@ fetchData()
 </script>
 
 <template>
-  <BaseModal :show="showModal" ok-class="btn-danger" @ok="modalOK" @cancel="showModal = false">
+  <ZModal :show="showModal" @ok="modalOK" @cancel="showModal = false">
     글을 삭제하시겠습니까?
-  </BaseModal>
+  </ZModal>
   <div v-if="post">
     <div class="border rounded py-4 z-card">
       <div class="px-4">
@@ -96,17 +96,11 @@ fetchData()
       </div>
     </div>
     <div>
-      <div class="py-4">
-        <RouterLink :to="{ path: `/forum/new` }" class="btn btn-primary" :class="{ disabled: !auth.canWrite() }">
-          글쓰기
-        </RouterLink>
+      <div class="py-4 flex gap-3">
+        <ZButton :to="{ path: `/forum/new` }" :disabled="!auth.canWrite()">글쓰기</ZButton>
         <template v-if="auth.canEdit(post.user_id)">
-          <button type="button" class="btn" @click="edit">
-            수정
-          </button>
-          <button type="button" class="ml-2 btn" @click="del">
-            삭제
-          </button>
+          <ZButton @click="edit">수정</ZButton>
+          <ZButton @click="del">삭제</ZButton>
         </template>
       </div>
     </div>

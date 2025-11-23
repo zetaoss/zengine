@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import { type PropType, computed, ref, onMounted, nextTick, watchEffect } from 'vue'
 import type { BinderNodeType } from './types'
-import BaseIcon from '@common/ui/BaseIcon.vue'
+import ZIcon from '@common/ui/ZIcon.vue'
 import { mdiChevronRight } from '@mdi/js'
 import { useStorage } from '@vueuse/core'
 
@@ -69,7 +69,7 @@ onMounted(centerScrollIfCurrent)
 
       <button v-if="hasChildren" class="w-6 h-6 grid place-items-center rounded-full hover:bg-gray-500/30"
         @click.stop.prevent="toggle">
-        <BaseIcon :path="mdiChevronRight" class="transition-transform" :class="{ 'rotate-90': expanded }" />
+        <ZIcon :path="mdiChevronRight" class="transition-transform" :class="{ 'rotate-90': expanded }" />
       </button>
     </div>
 

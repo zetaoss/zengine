@@ -1,10 +1,10 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import Spinner from '../Spinner.vue'
+import ZSpinner from '../ZSpinner.vue'
 
-describe('Spinner.vue', () => {
+describe('ZSpinner.vue', () => {
   it('renders with default props', () => {
-    const wrapper = mount(Spinner);
+    const wrapper = mount(ZSpinner);
     const svg = wrapper.find('svg');
 
     expect(svg.exists()).toBe(true);
@@ -15,7 +15,7 @@ describe('Spinner.vue', () => {
   });
 
   it('accepts a custom size', () => {
-    const wrapper = mount(Spinner, {
+    const wrapper = mount(ZSpinner, {
       props: { size: '3rem' }
     });
     expect(wrapper.find('svg').attributes('style')).toContain('width: 3rem');
@@ -23,7 +23,7 @@ describe('Spinner.vue', () => {
   });
 
   it('accepts extraClass prop', () => {
-    const wrapper = mount(Spinner, {
+    const wrapper = mount(ZSpinner, {
       props: { extraClass: 'custom-class' }
     });
     expect(wrapper.find('svg').attributes('class')).toContain('custom-class');
