@@ -36,6 +36,10 @@
     color: var(--z-text);
 }
 
+.z-table-header {
+    background-color: var(--z-table-header-bg);
+}
+
 /* component classes */
 .z-btn {
     background-color: var(--z-btn);
