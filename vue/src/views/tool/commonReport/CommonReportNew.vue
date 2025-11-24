@@ -2,6 +2,9 @@
 import { nextTick, ref, watch, computed } from 'vue'
 import ZModal from '@common/ui/ZModal.vue'
 import http from '@/utils/http'
+import { useToast } from '@common/composables/toast/useToast'
+
+const toast = useToast()
 
 const emit = defineEmits<{
   (e: 'close'): void
@@ -22,7 +25,6 @@ const trimmedNames = computed(() =>
 )
 
 async function ok() {
-  // 초기화
   errorMessage.value = ''
 
   if (trimmedNames.value.length < 2) {
@@ -30,10 +32,8 @@ async function ok() {
     return
   }
 
-  await http.post('/api/common-report', {
-    names: trimmedNames.value,
-  })
-
+  await http.post('/api/common-report', { names: trimmedNames.value, })
+  toast.show("등록 완료")
   emit('close')
 }
 
@@ -54,7 +54,8 @@ watch(
 </script>
 
 <template>
-  <ZModal :show="show" @ok="ok" okColor="primary" :okDisabled="trimmedNames.length < 2" @cancel="cancel">
+  <ZModal :show="show" @ok="ok" okColor="primary" :backdropClosable="false" :okDisabled="trimmedNames.length < 2"
+    @cancel="cancel">
     <div class="block w-full">
       <div class="text-lg mb-2">새로운 비교 등록하기</div>
       <div v-if="errorMessage" class="text-red-600 text-sm mb-2">

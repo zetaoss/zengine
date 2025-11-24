@@ -5,6 +5,9 @@ import ZModal from '@common/ui/ZModal.vue'
 import CProgressBar from '@common/components/CProgressBar.vue'
 import http from '@/utils/http'
 import titleExist from '@/utils/mediawiki'
+import { useToast } from '@common/composables/toast/useToast'
+
+const toast = useToast();
 
 const emit = defineEmits<{
   (e: 'close'): void
@@ -57,6 +60,7 @@ async function ok() {
   try {
     await http.post('/api/write-request', { title: trimmedTitle.value })
     emit('close')
+    toast.show('등록 완료')
     reset()
   } finally {
     isSubmitting.value = false
@@ -80,7 +84,7 @@ watch(
 </script>
 
 <template>
-  <ZModal :show="show" :ok-disabled="!canSubmit" okColor="primary" @ok="ok" @cancel="cancel">
+  <ZModal :show="show" :okDisabled="!canSubmit" okColor="primary" @ok="ok" @cancel="cancel">
     <div class="w-full">
       <h5 class="mb-3 font-semibold">새 작성 요청 등록하기</h5>
       <div class="flex items-center gap-2">

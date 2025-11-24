@@ -2,8 +2,12 @@
 import { ref, watch } from 'vue'
 
 import { useRoute, useRouter } from 'vue-router'
+import { mdiDelete } from '@mdi/js';
 
+import { useConfirm } from '@common/composables/confirm/useConfirm'
+import { useToast } from '@common/composables/toast/useToast'
 import CProgressBar from '@common/components/CProgressBar.vue'
+import ZIcon from '@common/ui/ZIcon.vue'
 import ZButton from '@common/ui/ZButton.vue'
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import type UserAvatar from '@common/types/userAvatar'
@@ -45,6 +49,8 @@ interface Count {
 const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
+const toast = useToast()
+const confirm = useConfirm()
 
 const mode = ref('todo')
 const respData = ref({} as RespData)
@@ -97,12 +103,13 @@ function setMode(m: string) {
 }
 
 async function del(row: Row) {
-  if (!window.confirm(`'${row.title}' 작성요청을 삭제하시겠습니까?`)) {
-    return
-  }
+  const ok = await confirm(`'${row.title}' 작성요청을 삭제하시겠습니까 ? `)
+  if (!ok) return
+
   try {
     await http.delete(`/api/write-request/${row.id}`)
     fetchData()
+    toast.show(`삭제 완료`)
   } catch (err) {
     console.error(err)
   }
@@ -163,8 +170,9 @@ fetchData()
             <a v-if="mode == 'todo'" :href="`/w/index.php?search=${row.title}`" class="new">{{ row.title }}</a>
             <a v-else-if="mode == 'todo-top'" :href="`/w/index.php?search=${row.title}`" class="new">{{ row.title }}</a>
             <a v-else :href="`/wiki/${row.title}`">{{ row.title }}</a>
-            <ZButton v-if="auth.canDelete(row.user_id)" color="danger" class="ml-2 text-xs" @click="del(row)">
-              삭제
+            <ZButton v-if="auth.canDelete(row.user_id)" color="ghost" class="text-[#888] py-1 align-middle leading-none"
+              @click="del(row)">
+              <ZIcon :path="mdiDelete" />
             </ZButton>
           </td>
           <td class="text-center">
@@ -197,6 +205,6 @@ fetchData()
 <style scoped>
 th,
 td {
-  padding: 1rem;
+  padding: .5rem 1rem;
 }
 </style>
