@@ -10,6 +10,8 @@ import ZSpin from '@common/ui/ZSpin.vue'
 import ZButton from '@common/ui/ZButton.vue'
 import ZTooltip from '@common/ui/ZTooltip.vue'
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
+import { useToast } from '@common/composables/toast/useToast'
+import { useConfirm } from '@common/composables/confirm/useConfirm'
 import Star from './Star.vue'
 
 import RouterLinkButton from '@/ui/RouterLinkButton.vue'
@@ -23,6 +25,8 @@ import { getRatio, getScore, getWikitextTable } from './utils'
 const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
+const toast = useToast()
+const confirm = useConfirm()
 
 const id = Number(route.params.id as string)
 const row = ref({} as Row)
@@ -83,10 +87,11 @@ function handleCopy(action: CopyAction) {
 }
 
 async function del(r: Row) {
-  if (!window.confirm(`${r.items[0].name} 등에 관한 #${r.id}번 통용보고서를 삭제하시겠습니까?`)) {
-    return
-  }
+  const ok = await confirm(`'${r.items[0].name}' 등에 관한 #${r.id}번 통용보고서를 삭제하시겠습니까?`)
+  if (!ok) return
+
   await http.delete(`/api/common-report/${r.id}`)
+  toast.show('삭제 완료')
   router.push({ path: '/tool/common-report' })
 }
 

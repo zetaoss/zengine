@@ -1,84 +1,70 @@
+<!-- ZModal.vue -->
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
-
 import { mdiClose } from '@mdi/js'
 
 import ZIcon from '@common/ui/ZIcon.vue'
 import ZButton from '@common/ui/ZButton.vue'
 
-const props = defineProps({
-  show: { type: Boolean, required: true },
-  title: { type: String, default: '' },
-  okText: { type: String, default: '확인' },
-  okColor: { type: String, default: 'danger' },
-  okDisabled: { type: Boolean, default: false },
-  cancelText: { type: String, default: '취소' },
-})
+const props = withDefaults(
+  defineProps<{
+    show: boolean
+    title?: string
+    okText?: string
+    okColor?: 'ghost' | 'default' | 'danger' | 'primary'
+    okDisabled?: boolean
+    cancelText?: string
+    closable?: boolean
+    backdropClosable?: boolean
+  }>(),
+  {
+    title: '',
+    okText: '확인',
+    okColor: 'danger',
+    okDisabled: false,
+    cancelText: '취소',
+    closable: true,
+    backdropClosable: true,
+  },
+)
 
 const emit = defineEmits(['ok', 'cancel'])
 
-function keyup(event: KeyboardEvent) {
-  if (event.key === 'Escape') {
+function onKeyup(e: KeyboardEvent) {
+  if (e.key === 'Escape' && props.show && props.closable)
     emit('cancel')
-  }
 }
 
-function clickOK() {
-  if (props.okDisabled) return
-  emit('ok')
-}
-
-onMounted(() => {
-  document.addEventListener('keyup', keyup)
-})
-onUnmounted(() => {
-  document.removeEventListener('keyup', keyup)
-})
+onMounted(() => document.addEventListener('keyup', onKeyup))
+onUnmounted(() => document.removeEventListener('keyup', onKeyup))
 </script>
 
 <template>
-  <div class="fixed table z-40 top-0 left-0 w-full h-full transition bg-[#000a]" :class="show ? '' : 'hidden'">
-    <div class="table-cell align-middle">
-      <div class="w-full max-w-[60vw] md:max-w-[40vw] border rounded bg-white dark:bg-gray-900 transition m-auto">
-        <div class="relative">
-          <div class="absolute right-0">
-            <button type="button" class="w-8 h-8" @click="emit('cancel')">
-              <ZIcon :path="mdiClose" />
-            </button>
-          </div>
-        </div>
-        <div class="flex w-full items-start justify-between p-5 border-b rounded-t">
+  <Teleport to="body">
+    <div v-if="show" class="fixed inset-0 z-40 flex items-center justify-center bg-black/40"
+      @click.self="backdropClosable && emit('cancel')">
+      <div class="w-full max-w-[60vw] md:max-w-[40vw] border rounded-md bg-white dark:bg-gray-900">
+        <ZButton v-if="closable" color="ghost" class="float-right m-1" @click="emit('cancel')">
+          <ZIcon :path="mdiClose" />
+        </ZButton>
+
+        <header v-if="title" class="px-5 py-3 border-b">
+          <h2 class="text-base font-semibold m-0">{{ title }}</h2>
+        </header>
+
+        <section class="p-5">
           <slot />
-        </div>
-        <hr class="border-0">
-        <div class="p-3 flex justify-center gap-3">
-          <ZButton :disabled="okDisabled" :color="okColor" @click="clickOK()">
+        </section>
+
+        <footer class="flex justify-center gap-3 px-4 py-3 border-t">
+          <ZButton :disabled="okDisabled" :color="okColor" @click="!okDisabled && emit('ok')">
             {{ okText }}
           </ZButton>
           <ZButton @click="emit('cancel')">
             {{ cancelText }}
           </ZButton>
-        </div>
+        </footer>
       </div>
     </div>
-  </div>
+  </Teleport>
 </template>
-
-<style scoped>
-.btn {
-  @apply rounded mx-0.5 text-xs p-2 px-4;
-  background-color: var(--z-btn);
-  color: var(--z-text);
-  transition: 80ms cubic-bezier(0.33, 1, 0.68, 1);
-  transition-property: color, background-color, box-shadow, border-color;
-
-  &:hover {
-    @apply no-underline brightness-90 dark:brightness-150 text-inherit;
-  }
-
-  &:disabled,
-  &.disabled {
-    @apply opacity-50 cursor-not-allowed;
-  }
-}
-</style>
