@@ -8,6 +8,7 @@ import { useConfirm } from '@common/composables/confirm/useConfirm'
 import { useToast } from '@common/composables/toast/useToast'
 import CProgressBar from '@common/components/CProgressBar.vue'
 import ZIcon from '@common/ui/ZIcon.vue'
+import ZSpinner from '@common/ui/ZSpinner.vue'
 import ZButton from '@common/ui/ZButton.vue'
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import type UserAvatar from '@common/types/userAvatar'
@@ -154,10 +155,13 @@ fetchData()
           <th>요청자</th>
         </tr>
       </thead>
-      <thead>
+      <thead v-if="loading">
         <tr>
-          <th v-if="loading" colspan="9" class="!p-0">
+          <th colspan="9" class="!p-0">
             <CProgressBar />
+            <div v-if="!respData.data" class="h-32 flex items-center justify-center">
+              <ZSpinner />
+            </div>
           </th>
         </tr>
       </thead>
