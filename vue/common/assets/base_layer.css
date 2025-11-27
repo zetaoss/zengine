@@ -35,6 +35,19 @@
 
     --z-primary-bg: #09c4;
     --z-primary-hover: #09c8;
+
+    --console-bg: theme(colors.zinc.100);
+    --console-string: theme(colors.sky.600);
+    --console-number: theme(colors.purple.600);
+    --console-null: #6b7280;
+    --console-circular: #f87171;
+
+    --console-warn-bg: #fef9c3;
+    --console-error-bg: #fee2e2;
+    --console-detail-bg: #f1f5f9;
+
+    --console-arrkey: #60a5fa;
+    --console-objkey: #9ca3af;
   }
 }
 
@@ -63,6 +76,14 @@
 
   --z-btn-bg: #333;
   --z-btn-hover: #555;
+
+  --console-bg: theme(colors.zinc.800);
+  --console-string: theme(colors.sky.400);
+  --console-number: theme(colors.purple.400);
+
+  --console-warn-bg: #713f12;
+  --console-error-bg: #7f1d1d;
+  --console-detail-bg: #1e293b;
 }
 
 @layer base {
