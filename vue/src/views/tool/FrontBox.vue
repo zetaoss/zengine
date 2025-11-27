@@ -1,75 +1,112 @@
+<!-- FrontBox.vue -->
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 
-import TheConsole from '@common/components/console/Console.vue';
-import { type Log } from '@common/components/console/utils';
+import ZButton from '@common/ui/ZButton.vue'
+import ConsoleApex from '@common/components/console/ConsoleApex.vue'
+import type { Log } from '@common/components/console/types'
 
 declare global {
   interface Window {
-    console: Console;
+    __sandboxLog?: (log: Log) => void
   }
 }
 
-const htmlCode = ref('<h1>Hello, World!</h1>');
+const htmlCode = ref('<h1>Hello, World!</h1>')
 const jsCode = ref(`console.log('hello');`);
-const iframe = ref<HTMLIFrameElement | null>(null);
-const logs = ref<Log[]>([]);
+const iframe = ref<HTMLIFrameElement | null>(null)
+const logs = ref<Log[]>([])
+
+const handleSandboxLog = (log: Log) => {
+  logs.value.push(log)
+}
 
 function getContent(): string {
-  const sanitizedHtml = htmlCode.value.trim();
-  const wrappedHtml = sanitizedHtml.startsWith('<html>') ? sanitizedHtml : `<html><body>${sanitizedHtml}</body></html>`;
-  const fullHtml = `${wrappedHtml}<script>try{new Function(\`${jsCode.value.replace(/\\/g, '\\\\')}\`)();}catch(e){console.error(\`Uncaught \${e.name}: \${e.message} \${e.stack.split('\\n')[2]}\`);}<\/script>`;
-  return fullHtml;
+  const raw = htmlCode.value.trim()
+  const hasHtmlTag = /^<html[\s>]/i.test(raw)
+  let baseHtml: string
+  if (hasHtmlTag) {
+    baseHtml = raw
+  } else {
+    baseHtml = `<html><body>${raw}</body></html>`
+  }
+
+  const escapedJs = jsCode.value
+    .replace(/\\/g, '\\\\')
+    .replace(/`/g, '\\`')
+    .replace(/\$\{/g, '\\${')
+
+  const scriptBlock = `
+<script>
+(function () {
+  function send(level, args) {
+    var argArray = Array.prototype.slice.call(args);
+    if (window.parent && typeof window.parent.__sandboxLog === 'function') {
+      window.parent.__sandboxLog({ level: level, args: argArray });
+    }
+  }
+  var proxy = {};
+  ['log','info','warn','error','debug'].forEach(function (level) {
+    proxy[level] = function () {
+      send(level, arguments);
+    };
+  });
+  window.console = proxy;
+  try {
+    new Function(\`${escapedJs}\`)();
+  } catch (e) {
+    console.error('Uncaught ' + e.name + ': ' + e.message);
+  }
+})();
+<\/script>`
+
+  if (/<\/body>/i.test(baseHtml)) return baseHtml.replace(/<\/body>/i, scriptBlock + '\n</body>')
+  if (/<\/html>/i.test(baseHtml)) return baseHtml.replace(/<\/html>/i, scriptBlock + '\n</html>')
+  return baseHtml + scriptBlock
 }
 
 const run = () => {
-  logs.value = [];
-  if (iframe.value) {
-    const { contentDocument: doc, contentWindow: win } = iframe.value;
-    if (doc && win) {
-      win.console = new Proxy(console, {
-        get(_, p) {
-          if (p === 'constructor') {
-            return { name: 'console' };
-          }
-          return (...args: unknown[]) => {
-            const level = p as string
-            logs.value.push({ level, args })
-          }
-        }
-      })
-      doc.open();
-      doc.write(getContent());
-      doc.close();
-    }
-  }
-};
+  logs.value = []
+  if (!iframe.value) return
+  iframe.value.srcdoc = getContent()
+}
 
 onMounted(() => {
-  run();
-});
+  window.__sandboxLog = handleSandboxLog
+  run()
+})
+
+onBeforeUnmount(() => {
+  delete window.__sandboxLog
+})
 </script>
 
 <template>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
     <div>
-      <div class="py-2">
+      <div class="py-2 flex items-center">
         <b>Playground</b>
-        <button @click="run" class="ml-2 bg-blue-500 dark:bg-blue-400 text-white dark:text-gray-900 text-sm font-semibold py-1.5 px-4 rounded
-                   hover:bg-blue-600 dark:hover:bg-blue-500 transition">
-          Run
-        </button>
+        <ZButton class="ml-2" @click="run">Run</ZButton>
       </div>
-      <textarea v-model="htmlCode" class="w-full h-[35vh]" />
-      <textarea v-model="jsCode" class="w-full h-[35vh]" />
+
+      <div class="space-y-2">
+        <textarea v-model="htmlCode" class="h-[35vh] w-full resize-none font-mono border rounded p-2" />
+        <textarea v-model="jsCode" class="h-[35vh] w-full resize-none font-mono border rounded p-2" />
+      </div>
     </div>
-    <div>
-      <div class="bg-white h-[50vh]">
-        <iframe ref="iframe" class="w-full h-full border-none" />
+
+    <div class="flex flex-col gap-2">
+      <div class="h-[50vh] border rounded overflow-hidden">
+        <iframe ref="iframe" class="w-full h-full border-0" />
       </div>
-      <div class="text-center font-bold bg-slate-400 dark:bg-slate-600 text-white">Console</div>
-      <div class="h-[30vh] overflow-hidden overflow-y-scroll bg-slate-300 dark:bg-slate-800">
-        <TheConsole :logs="logs" />
+
+      <div class="flex-1 flex flex-col min-h-0">
+        <header class="text-center font-bold bg-slate-400 dark:bg-slate-600 text-white py-1">
+          Console
+        </header>
+        <div class="h-[30vh] overflow-y-auto bg-[var(--console-bg)]">
+          <ConsoleApex :logs="logs" />
+        </div>
       </div>
     </div>
   </div>

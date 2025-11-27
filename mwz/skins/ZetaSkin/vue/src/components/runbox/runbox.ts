@@ -2,7 +2,7 @@
 import { createApp, reactive, h } from 'vue'
 import http from '@/utils/http'
 import getRLCONF from '@/utils/rlconf'
-import BoxVue from './Box.vue'
+import BoxApex from './BoxApex.vue'
 import { type Box, BoxType, type Job, JobType } from './types'
 
 const jobs: Job[] = reactive([])
@@ -148,7 +148,7 @@ export function runbox() {
       el.innerHTML = ''
       createApp({
         render() {
-          return h(BoxVue, null, {
+          return h(BoxApex, null, {
             default: () => h('div', { innerHTML: originalHTML })
           })
         }

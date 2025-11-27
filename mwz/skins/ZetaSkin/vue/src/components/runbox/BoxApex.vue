@@ -15,7 +15,6 @@ const seq = inject('seq') as number
 <template>
   <div v-if="job">
     <template v-if="job.type == 'front'">
-      BoxFront
       <BoxFront :job="job" :seq="seq">
         <slot />
       </BoxFront>

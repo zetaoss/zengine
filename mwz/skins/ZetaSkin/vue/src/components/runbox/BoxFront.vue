@@ -1,12 +1,14 @@
+<!-- BoxFront.vue -->
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, onBeforeUnmount, ref } from 'vue'
 import type { Job } from './types'
-import Console from '@common/components/console/Console.vue'
-import type { Log } from '@common/components/console/utils'
+
+import ConsoleApex from '@common/components/console/ConsoleApex.vue'
+import type { Log } from '@common/components/console/types'
 
 declare global {
   interface Window {
-    console: Console;
+    __sandboxLog?: (log: Log) => void
   }
 }
 
@@ -16,38 +18,82 @@ const props = defineProps<{
 }>()
 
 const { job, seq } = props
+
 const iframe = ref<HTMLIFrameElement | null>(null)
 const logs = ref<Log[]>([])
 
-function generateJobScript(job: Job): string {
-  return job.boxes.map(b => {
-    if (b.lang !== 'javascript') return b.text
-    return `<script>
-      try {
-        new Function(\`${b.text}\`)();
-      } catch(e) {
-        console.error("Uncaught " + e.name + ": " + e.message + " at " + e.stack);
-      }
-    <\/script>`
-  }).join('')
+const handleSandboxLog = (log: Log) => {
+  logs.value.push(log)
+}
+
+function getContentFromJob(job: Job): string {
+  const htmlParts = job.boxes
+    .filter((b) => b.lang === 'html')
+    .map((b) => b.text.trim())
+    .filter(Boolean)
+
+  let baseHtml = htmlParts.join('\n')
+
+  const hasHtmlTag = /^<html[\s>]/i.test(baseHtml)
+
+  if (!baseHtml) baseHtml = '<html><body></body></html>'
+  else if (!hasHtmlTag) baseHtml = `<html><body>${baseHtml}</body></html>`
+
+  const jsCode = job.boxes
+    .filter((b) => b.lang === 'javascript')
+    .map((b) => b.text)
+    .join('\n')
+
+  const escapedJs = jsCode
+    .replace(/\\/g, '\\\\')
+    .replace(/`/g, '\\`')
+    .replace(/\$\{/g, '\\${')
+
+  const scriptBlock = `
+<script>
+(function () {
+  function send(level, args) {
+    var argArray = Array.prototype.slice.call(args);
+    if (window.parent && typeof window.parent.__sandboxLog === 'function') {
+      window.parent.__sandboxLog({ level: level, args: argArray });
+    }
+  }
+
+  var proxy = {};
+  ['log', 'info', 'warn', 'error', 'debug'].forEach(function (level) {
+    proxy[level] = function () {
+      send(level, arguments);
+    };
+  });
+
+  window.console = proxy;
+
+  try {
+    new Function(\`${escapedJs}\`)();
+  } catch (e) {
+    console.error('Uncaught ' + e.name + ': ' + e.message + (e.stack ? ' at ' + e.stack : ''));
+  }
+})();
+<\/script>`
+
+  if (/<\/body>/i.test(baseHtml)) return baseHtml.replace(/<\/body>/i, scriptBlock + '\n</body>')
+  if (/<\/html>/i.test(baseHtml)) return baseHtml.replace(/<\/html>/i, scriptBlock + '\n</html>')
+  return baseHtml + scriptBlock
+}
+
+function run() {
+  logs.value = []
+  if (!iframe.value) return
+  iframe.value.srcdoc = getContentFromJob(job)
 }
 
 onMounted(() => {
-  const doc = iframe.value?.contentDocument
-  const win = iframe.value?.contentWindow
-  if (!doc || !win) return
+  window.__sandboxLog = handleSandboxLog
+  run()
+})
 
-  win.console = new Proxy(console, {
-    get(_, level) {
-      return (...args: unknown[]) => {
-        logs.value.push({ level: level as string, args })
-      }
-    }
-  })
-
-  doc.open()
-  doc.write(generateJobScript(job))
-  doc.close()
+onBeforeUnmount(() => {
+  delete window.__sandboxLog
 })
 </script>
 
@@ -56,28 +102,16 @@ onMounted(() => {
     <slot />
     <div v-if="job.main === seq">
       <iframe ref="iframe" class="w-full h-32 border bg-white"
-        :class="{ hidden: !job.boxes.some(b => b.lang === 'html') }" />
-      <div v-if="logs.length > 0" class="border font-mono text-sm p-2 pb-5">
-        <Console :logs="logs" />
+        :class="{ hidden: !job.boxes.some((b) => b.lang === 'html') }" />
+
+      <div v-if="logs.length > 0" class="mt-2 flex flex-col min-h-0">
+        <header class="text-center font-bold bg-slate-400 dark:bg-slate-600 text-white py-1">
+          Console
+        </header>
+        <div class="max-h-40 overflow-y-auto bg-[var(--console-bg)]">
+          <ConsoleApex :logs="logs" />
+        </div>
       </div>
     </div>
   </div>
 </template>
-
-<style scoped lang="scss">
-.line {
-  @apply m-0.5 grid grid-cols-[30px_1fr] rounded border-b;
-}
-
-.warn {
-  @apply bg-yellow-400 bg-opacity-15 text-orange-400;
-}
-
-.error {
-  @apply bg-red-400 bg-opacity-15 text-red-400;
-}
-
-.log+.log .col {
-  @apply border-t pt-0.5;
-}
-</style>
