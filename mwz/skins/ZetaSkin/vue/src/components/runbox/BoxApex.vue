@@ -1,4 +1,4 @@
-<!-- eslint-disable vue/multi-word-component-names -->
+<!-- BoxApex.vue -->
 <script setup lang="ts">
 import { inject } from 'vue'
 
