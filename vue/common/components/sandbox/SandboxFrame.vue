@@ -1,6 +1,7 @@
 <!-- SandboxFrame.vue -->
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, withDefaults } from 'vue'
+import ResizableBox from './ResizableBox.vue'
 import type { SandboxLog } from './types'
 import buildHtml from './buildHtml'
 
@@ -10,11 +11,17 @@ declare global {
   }
 }
 
-const props = defineProps<{
-  id: string
-  html: string
-  js: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    id: string
+    html: string
+    js: string
+    resizable?: boolean
+  }>(),
+  {
+    resizable: false,
+  },
+)
 
 const emit = defineEmits<{
   (e: 'update:logs', logs: SandboxLog[]): void
@@ -52,5 +59,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <iframe ref="iframe" class="w-full h-full border-0" />
+  <component :is="props.resizable ? ResizableBox : 'div'" class="h-full">
+    <iframe ref="iframe" class="w-full h-full border-0" />
+  </component>
 </template>

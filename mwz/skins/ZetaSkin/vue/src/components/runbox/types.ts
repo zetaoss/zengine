@@ -21,6 +21,7 @@ export interface Box {
   text: string;
   isMain: boolean;
   isAsciinema: boolean;
+  outResize: boolean;
   el: Element;
 }
 
@@ -66,5 +67,6 @@ export interface Job {
   payload: Payload | null;
   langOuts: LangOut | null;
   notebookOuts: Output[][];
+  outResize: boolean;
 }
 
