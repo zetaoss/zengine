@@ -1,84 +1,28 @@
 <!-- FrontBox.vue -->
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref } from 'vue'
 
 import ZButton from '@common/ui/ZButton.vue'
-import ConsoleApex from '@common/components/console/ConsoleApex.vue'
-import type { Log } from '@common/components/console/types'
+import { SandboxFrame, SandboxConsole, type SandboxLog } from '@common/components/sandbox'
 
-declare global {
-  interface Window {
-    __sandboxLog?: (log: Log) => void
-  }
-}
+const htmlCode = ref(`<h1>Hello, World!</h1>
 
-const htmlCode = ref('<h1>Hello, World!</h1>')
-const jsCode = ref(`console.log('hello');`);
-const iframe = ref<HTMLIFrameElement | null>(null)
-const logs = ref<Log[]>([])
-
-const handleSandboxLog = (log: Log) => {
-  logs.value.push(log)
-}
-
-function getContent(): string {
-  const raw = htmlCode.value.trim()
-  const hasHtmlTag = /^<html[\s>]/i.test(raw)
-  let baseHtml: string
-  if (hasHtmlTag) {
-    baseHtml = raw
-  } else {
-    baseHtml = `<html><body>${raw}</body></html>`
-  }
-
-  const escapedJs = jsCode.value
-    .replace(/\\/g, '\\\\')
-    .replace(/`/g, '\\`')
-    .replace(/\$\{/g, '\\${')
-
-  const scriptBlock = `
 <script>
-(function () {
-  function send(level, args) {
-    var argArray = Array.prototype.slice.call(args);
-    if (window.parent && typeof window.parent.__sandboxLog === 'function') {
-      window.parent.__sandboxLog({ level: level, args: argArray });
-    }
-  }
-  var proxy = {};
-  ['log','info','warn','error','debug'].forEach(function (level) {
-    proxy[level] = function () {
-      send(level, arguments);
-    };
-  });
-  window.console = proxy;
-  try {
-    new Function(\`${escapedJs}\`)();
-  } catch (e) {
-    console.error('Uncaught ' + e.name + ': ' + e.message);
-  }
-})();
-<\/script>`
+console.log("Hello HTML");
+<\/script>`)
 
-  if (/<\/body>/i.test(baseHtml)) return baseHtml.replace(/<\/body>/i, scriptBlock + '\n</body>')
-  if (/<\/html>/i.test(baseHtml)) return baseHtml.replace(/<\/html>/i, scriptBlock + '\n</html>')
-  return baseHtml + scriptBlock
-}
+const jsCode = ref(`console.log('Hello JS');`)
+
+const logs = ref<SandboxLog[]>([])
+const sandboxRef = ref<InstanceType<typeof SandboxFrame> | null>(null)
 
 const run = () => {
-  logs.value = []
-  if (!iframe.value) return
-  iframe.value.srcdoc = getContent()
+  sandboxRef.value?.run()
 }
 
-onMounted(() => {
-  window.__sandboxLog = handleSandboxLog
-  run()
-})
-
-onBeforeUnmount(() => {
-  delete window.__sandboxLog
-})
+const updateLogs = (newLogs: SandboxLog[]) => {
+  logs.value = newLogs
+}
 </script>
 
 <template>
@@ -97,7 +41,7 @@ onBeforeUnmount(() => {
 
     <div class="flex flex-col gap-2">
       <div class="h-[50vh] border rounded overflow-hidden">
-        <iframe ref="iframe" class="w-full h-full border-0" />
+        <SandboxFrame ref="sandboxRef" :html="htmlCode" :js="jsCode" class="w-full h-full" @update:logs="updateLogs" />
       </div>
 
       <div class="flex-1 flex flex-col min-h-0">
@@ -105,7 +49,7 @@ onBeforeUnmount(() => {
           Console
         </header>
         <div class="h-[30vh] overflow-y-auto bg-[var(--console-bg)]">
-          <ConsoleApex :logs="logs" />
+          <SandboxConsole :logs="logs" />
         </div>
       </div>
     </div>

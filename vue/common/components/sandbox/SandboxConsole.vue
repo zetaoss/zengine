@@ -1,11 +1,11 @@
-<!-- ConsoleApex.vue -->
+<!-- SandboxConsole.vue -->
 <script setup lang="ts">
 import ConsoleLog from './ConsoleLog.vue'
 
-import type { Log } from './types'
+import type { SandboxLog } from './types'
 
 defineProps<{
-  logs: Log[]
+  logs: SandboxLog[]
 }>()
 </script>
 
