@@ -6,11 +6,12 @@ import buildHtml from './buildHtml'
 
 declare global {
   interface Window {
-    __sandboxLog?: (log: SandboxLog) => void
+    [key: string]: unknown
   }
 }
 
 const props = defineProps<{
+  id: string
   html: string
   js: string
 }>()
@@ -32,19 +33,21 @@ const run = () => {
   emit('update:logs', logs.value)
 
   if (!iframe.value) return
-  const content = buildHtml(props.html, props.js)
+  const content = buildHtml(props.id, props.html, props.js)
   iframe.value.srcdoc = content
 }
 
 defineExpose({ run })
 
 onMounted(() => {
-  window.__sandboxLog = handleSandboxLog
+  window[props.id] = handleSandboxLog
   run()
 })
 
 onBeforeUnmount(() => {
-  delete window.__sandboxLog
+  if (window[props.id] === handleSandboxLog) {
+    delete window[props.id]
+  }
 })
 </script>
 

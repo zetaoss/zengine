@@ -1,5 +1,9 @@
-// buildSandboxHtml.ts
-export default function buildSandboxHtml(html: string, js: string): string {
+// buildHtml.ts
+export default function buildHtml(
+  id: string,
+  html: string,
+  js: string,
+): string {
   const raw = html.trim()
   const hasHtmlTag = /^<html[\s>]/i.test(raw)
 
@@ -13,14 +17,21 @@ export default function buildSandboxHtml(html: string, js: string): string {
 (function () {
   function send(level, args) {
     var argArray = Array.prototype.slice.call(args);
-    if (window.parent && typeof window.parent.__sandboxLog === 'function') {
-      window.parent.__sandboxLog({ level: level, args: argArray });
+    try {
+      if (window.parent && window.parent !== window) {
+        var fn = window.parent[${JSON.stringify(id)}];
+        if (typeof fn === 'function') {
+          fn({ level: level, args: argArray });
+        }
+      }
+    } catch (e) {
+      // ignore
     }
   }
 
   // console proxy
   var proxy = {};
-  ['log','info','warn','error','debug'].forEach(function (level) {
+  ['log','info','warn','error','debug','trace'].forEach(function (level) {
     proxy[level] = function () {
       send(level, arguments);
     };
@@ -29,7 +40,7 @@ export default function buildSandboxHtml(html: string, js: string): string {
 
   window.addEventListener('error', function (event) {
     try {
-      var msg = event.message;
+      var msg;
       if (event.error && event.error.name && event.error.message) {
         msg = event.error.name + ': ' + event.error.message;
       } else {
