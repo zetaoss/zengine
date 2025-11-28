@@ -19,7 +19,7 @@ export default function buildHtml(
     var argArray = Array.prototype.slice.call(args);
     try {
       if (window.parent && window.parent !== window) {
-        var fn = window.parent[${JSON.stringify(id)}];
+        var fn = window.parent['${id}'];
         if (typeof fn === 'function') {
           fn({ level: level, args: argArray });
         }

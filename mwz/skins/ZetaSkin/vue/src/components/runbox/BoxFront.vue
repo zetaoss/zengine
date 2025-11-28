@@ -12,13 +12,7 @@ const props = defineProps<{
 
 const { job, seq } = props
 
-const getCode = (lang: string) =>
-  job.boxes
-    .filter((b) => b.lang === lang)
-    .map((b) => b.text)
-    .join('\n')
-    .trim()
-
+const getCode = (lang: string) => job.boxes.filter((b) => b.lang === lang).map((b) => b.text).join('\n').trim()
 const htmlCode = computed(() => getCode('html'))
 const jsCode = computed(() => getCode('javascript'))
 
@@ -38,9 +32,9 @@ const sandboxRef = ref<InstanceType<typeof SandboxFrame> | null>(null)
     <slot />
 
     <div v-if="job.main === seq">
-      <SandboxFrame ref="sandboxRef" v-if="htmlCode.length > 0" :id="sandboxId" :html="htmlCode" :js="jsCode"
-        class="w-full h-32 border bg-white" :class="{ hidden: !job.boxes.some((b) => b.lang === 'html') }"
-        @update:logs="updateLogs" />
+      <SandboxFrame ref="sandboxRef" v-show="htmlCode.length > 0" :id="sandboxId" :html="htmlCode" :js="jsCode"
+        :resizable="job.outResize" class="w-full h-32 border bg-white"
+        :class="{ hidden: !job.boxes.some((b) => b.lang === 'html') }" @update:logs="updateLogs" />
 
       <div v-if="logs.length > 0" class="mt-2">
         <SandboxConsole :logs="logs" />

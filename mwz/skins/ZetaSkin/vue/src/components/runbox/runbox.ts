@@ -87,6 +87,7 @@ export function runbox() {
       title: el.getAttribute('title') || '',
       isMain: el.hasAttribute('main'),
       isAsciinema: el.hasAttribute('asciinema'),
+      outResize: el.hasAttribute('outresize'),
       text: el.textContent || '',
       el
     }
@@ -103,6 +104,7 @@ export function runbox() {
         payload: null,
         langOuts: null,
         notebookOuts: [],
+        outResize: box.outResize,
       }) - 1]
 
     job.boxes.push(box)
