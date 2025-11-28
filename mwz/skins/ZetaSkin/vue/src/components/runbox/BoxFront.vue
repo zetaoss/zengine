@@ -12,21 +12,18 @@ const props = defineProps<{
 
 const { job, seq } = props
 
-const htmlCode = computed(() => {
-  const merged = job.boxes
-    .filter((b) => b.lang === 'html')
+const getCode = (lang: string) =>
+  job.boxes
+    .filter((b) => b.lang === lang)
     .map((b) => b.text)
     .join('\n')
-  if (merged.length === 0) return `<html><body></body></html>`
-  return merged
-})
+    .trim()
 
-const jsCode = computed(() => {
-  return job.boxes
-    .filter((b) => b.lang === 'javascript')
-    .map((b) => b.text)
-    .join('\n')
-})
+const htmlCode = computed(() => getCode('html'))
+const jsCode = computed(() => getCode('javascript'))
+
+const sandboxId = `sandbox-${job.id}-${seq}`
+console.log(sandboxId)
 
 const logs = ref<SandboxLog[]>([])
 const updateLogs = (newLogs: SandboxLog[]) => {
@@ -34,7 +31,6 @@ const updateLogs = (newLogs: SandboxLog[]) => {
 }
 
 const sandboxRef = ref<InstanceType<typeof SandboxFrame> | null>(null)
-// const run = () => sandboxRef.value?.run()
 </script>
 
 <template>
@@ -42,8 +38,9 @@ const sandboxRef = ref<InstanceType<typeof SandboxFrame> | null>(null)
     <slot />
 
     <div v-if="job.main === seq">
-      <SandboxFrame ref="sandboxRef" :html="htmlCode" :js="jsCode" class="w-full h-32 border bg-white"
-        :class="{ hidden: !job.boxes.some((b) => b.lang === 'html') }" @update:logs="updateLogs" />
+      <SandboxFrame ref="sandboxRef" v-if="htmlCode.length > 0" :id="sandboxId" :html="htmlCode" :js="jsCode"
+        class="w-full h-32 border bg-white" :class="{ hidden: !job.boxes.some((b) => b.lang === 'html') }"
+        @update:logs="updateLogs" />
 
       <div v-if="logs.length > 0" class="mt-2">
         <SandboxConsole :logs="logs" />

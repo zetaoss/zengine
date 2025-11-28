@@ -41,7 +41,8 @@ const updateLogs = (newLogs: SandboxLog[]) => {
 
     <div class="flex flex-col gap-2">
       <div class="h-[50vh] border rounded overflow-hidden">
-        <SandboxFrame ref="sandboxRef" :html="htmlCode" :js="jsCode" class="w-full h-full" @update:logs="updateLogs" />
+        <SandboxFrame id="x" ref="sandboxRef" :html="htmlCode" :js="jsCode" class="w-full h-full"
+          @update:logs="updateLogs" />
       </div>
 
       <div class="flex-1 flex flex-col min-h-0">
