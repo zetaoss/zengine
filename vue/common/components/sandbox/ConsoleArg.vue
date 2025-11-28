@@ -114,12 +114,12 @@ function handleToggle(e: Event) {
 </script>
 
 <template>
-  <!-- 원시값 -->
+  <!-- Single -->
   <span v-if="isSingle">
     <span :class="getClassFromKind(kind)">{{ formatValue(value) }}</span>
   </span>
 
-  <!-- 배열/객체 -->
+  <!-- Complex(Array/Object) -->
   <template v-else>
     <details class="inline-block align-top" :open="isOpen" @toggle="handleToggle">
       <summary>
