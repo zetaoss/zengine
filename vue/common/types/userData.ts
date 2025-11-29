@@ -1,6 +1,6 @@
-import type UserAvatar from './userAvatar'
+import type { Avatar } from '@common/components/avatar/avatar'
 
 export default interface UserData {
-  avatar: UserAvatar
+  avatar: Avatar
   groups: string[]
 }

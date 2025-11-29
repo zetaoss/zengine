@@ -1,4 +1,4 @@
-import type UserAvatar from '@common/types/userAvatar'
+import type { Avatar } from '@common/components/avatar/avatar'
 
 import type { Binder } from '@/components/binder/types'
 
@@ -7,9 +7,9 @@ interface RLCONF {
   wgCategories: string[],
   wgUserId: number,
   wgUserGroups: string[],
-  avatar: UserAvatar,
+  avatar: Avatar,
   binders: Binder[],
-  contributors: UserAvatar[],
+  contributors: Avatar[],
   lastmod: string,
 }
 

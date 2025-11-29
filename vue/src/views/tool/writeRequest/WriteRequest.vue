@@ -10,8 +10,8 @@ import CProgressBar from '@common/components/CProgressBar.vue'
 import ZIcon from '@common/ui/ZIcon.vue'
 import ZSpinner from '@common/ui/ZSpinner.vue'
 import ZButton from '@common/ui/ZButton.vue'
-import AvatarUser from '@common/components/avatar/AvatarUser.vue'
-import type UserAvatar from '@common/types/userAvatar'
+import UserAvatar from '@common/components/avatar/UserAvatar.vue'
+import type { Avatar } from '@common/components/avatar/avatar'
 import Pagination from '@/components/pagination/Pagination.vue'
 import type { PaginateData } from '@/components/pagination/types'
 import useAuthStore from '@/stores/auth'
@@ -26,7 +26,7 @@ interface Row {
   rate: number
   ref: number
   title: string
-  userAvatar: UserAvatar
+  userAvatar: Avatar
   writed_at: string
   updated_at: string
 }
@@ -194,7 +194,7 @@ fetchData()
             {{ row.updated_at.substring(0, 10) }}
           </td>
           <td class="user">
-            <AvatarUser :user-avatar="row.userAvatar" />
+            <UserAvatar :user-avatar="row.userAvatar" />
           </td>
         </tr>
       </tbody>

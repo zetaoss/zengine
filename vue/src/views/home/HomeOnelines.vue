@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import AvatarUser from '@common/components/avatar/AvatarUser.vue'
-import type UserAvatar from '@common/types/userAvatar'
+import UserAvatar from '@common/components/avatar/UserAvatar.vue'
+import type { Avatar } from '@common/components/avatar/avatar'
 import http from '@/utils/http'
 import linkify from '@/utils/linkify'
 
 interface Row {
   id: number
-  userAvatar: UserAvatar
+  userAvatar: Avatar
   created: string
   message: string
 }
@@ -32,7 +32,7 @@ onMounted(async () => {
 <template>
   <div v-for="r in rows" :key="r.id" class="py-2">
     <span class="silver">
-      <AvatarUser :user-avatar="r.userAvatar" />
+      <UserAvatar :user-avatar="r.userAvatar" />
     </span>
     <span class="message ml-1" v-html="r.message" />
     <span class="silver ml-1 text-xs">{{ r.created.substring(0, 10) }}</span>

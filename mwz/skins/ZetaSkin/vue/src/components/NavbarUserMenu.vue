@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type PropType, ref } from 'vue'
 import ZIcon from '@common/ui/ZIcon.vue'
-import AvatarCore from '@common/components/avatar/AvatarCore.vue'
+import AvatarIcon from '@common/components/avatar/AvatarIcon.vue'
 import type Item from '@common/components/navbar/types'
 import { mdiAccount } from '@mdi/js'
 import { onClickOutside } from '@vueuse/core'
@@ -32,7 +32,7 @@ onClickOutside(dd, close, { ignore: [lb] })
   <label ref="lb" for="usermenu-toggle"
     class="order-2 ml-auto flex h-12 cursor-pointer items-center px-3 hover:bg-gray-800 peer-checked:bg-gray-800">
     <span v-if="avatar && avatar.id > 0">
-      <AvatarCore :user-avatar="avatar" />
+      <AvatarIcon :user-avatar="avatar" />
     </span>
     <span v-else>
       <ZIcon :path="mdiAccount" />

@@ -1,5 +1,4 @@
-<!-- eslint-disable vue/multi-word-component-names -->
-<!-- TheIdenticon.vue -->
+<!-- AvatarIdenticon.vue -->
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Md5 } from 'ts-md5'
