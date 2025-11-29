@@ -1,3 +1,6 @@
+<!-- BoxZero.vue -->
 <template>
-  <slot />
+  <div>
+    <slot />
+  </div>
 </template>

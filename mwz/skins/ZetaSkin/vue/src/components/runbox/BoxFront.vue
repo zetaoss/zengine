@@ -46,7 +46,7 @@ watch(
     <SandboxFrame ref="sandboxRef" v-show="htmlCode.length > 0" :id="sandboxId" :html="htmlCode" :js="jsCode"
       :resizable="job.outResize" class="mt-1 h-32 rounded"
       :class="{ hidden: !job.boxes.some((b) => b.lang === 'html') }" @update:logs="updateLogs" />
-    <div v-if="logs.length > 0" class="max-h-40 overflow-y-auto mt-1" ref="consoleRef">
+    <div v-if="logs.length > 0" class="max-h-40 overflow-y-auto mt-1 bg-[var(--console-bg)]" ref="consoleRef">
       <SandboxConsole :logs="logs" class="rounded-lg" />
     </div>
   </div>
