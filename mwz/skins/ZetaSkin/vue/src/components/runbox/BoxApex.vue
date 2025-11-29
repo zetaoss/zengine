@@ -42,12 +42,12 @@ const { copy, copied } = useClipboard()
 
 <template>
   <div v-if="job">
-    <div class="mb-1 bg-[var(--runbox-bg)] p-1 border rounded-lg">
+    <div class="mb-1 bg-[var(--code-bg)] p-1 border rounded-lg">
       <component :is="CurrentComponent" :job="job" :seq="seq">
-        <div class="bg-[var(--code-bg)] rounded-lg pt-1 px-4">
+        <div class="pt-1 px-4">
           <div class="sticky top-0 z-10 h-0">
             <div class="flex justify-end">
-              <button class="p-1 rounded text-xs inline-flex items-center space-x-1 cursor-pointer"
+              <button class="p-1 rounded text-xs z-muted2 inline-flex items-center space-x-1 cursor-pointer"
                 @click="copy(box.text)">
                 <template v-if="!copied">
                   <ZIcon :size="14" :path="mdiContentCopy" />
@@ -61,10 +61,10 @@ const { copy, copied } = useClipboard()
               </button>
             </div>
           </div>
-          <div class="text-xs opacity-50 select-none flex items-center gap-2">
+          <div class="text-xs z-muted2 select-none flex items-center gap-2">
             <span>{{ box.lang }}</span>
             <span v-if="job.boxes.length > 1">
-              <span v-for="(_, i) in job.boxes" :key="i" :class="{ 'opacity-25': i != seq }">●</span>
+              <span v-for="(_, i) in job.boxes" :key="i" :class="{ 'opacity-30': i != seq }">●</span>
             </span>
           </div>
 

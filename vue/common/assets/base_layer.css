@@ -12,7 +12,7 @@
     --z-bg-muted: #f6f6f6;
     --z-text: #131313;
     --z-muted: #444;
-    --z-muted2: #bbb;
+    --z-muted2: #888;
     --z-border: #8884;
 
     --z-link: #09c;
@@ -36,7 +36,7 @@
     --z-primary-bg: #09c4;
     --z-primary-hover: #09c8;
 
-    --console-bg: #edeef0;
+    --console-bg: #eee;
     --console-string: theme(colors.sky.600);
     --console-number: theme(colors.purple.600);
     --console-null: #6b7280;
@@ -55,8 +55,8 @@
     --console-emoji-trace: 🔍;
     --console-emoji-warn: ⚠️;
 
-    --code-bg: #fff;
-    --runbox-bg: #f2f2f2;
+    --code-bg: #f9f9f9;
+    --nbout-error: #fee2e2;
   }
 }
 
@@ -66,8 +66,8 @@
   --z-bg: #131313;
   --z-bg-muted: #222;
   --z-text: #eee;
-  --z-muted: #bbb;
-  --z-muted2: #888;
+  --z-muted: #ccc;
+  --z-muted2: #aaa;
 
   --z-border: #8884;
 
@@ -86,7 +86,7 @@
   --z-btn-bg: #333;
   --z-btn-hover: #555;
 
-  --console-bg: #18181b;
+  --console-bg: #000;
   --console-string: theme(colors.sky.400);
   --console-number: theme(colors.purple.400);
 
@@ -94,8 +94,8 @@
   --console-error-bg: #4E3534;
   --console-detail-bg: #1e293b;
 
-  --code-bg: #282c34;
-  --runbox-bg: #14161c;
+  --code-bg: #1c2029;
+  --nbout-error: #4E3534;
 }
 
 @layer base {
