@@ -10,7 +10,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="console space-y-1 font-mono text-sm">
+  <div class="console font-mono text-sm">
     <ConsoleLog v-for="(log, i) in logs" :key="i" v-bind="log" />
   </div>
 </template>
