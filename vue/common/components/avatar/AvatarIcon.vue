@@ -1,12 +1,12 @@
-<!-- @common/components/avatar/AvatarCore.vue -->
+<!-- AvatarIcon.vue -->
 <script setup lang="ts">
 import type { PropType } from 'vue'
-import type UserAvatar from '@common/types/userAvatar'
-import LetterAvatar from './LetterAvatar.vue'
-import TheIdenticon from './TheIdenticon.vue'
+import type { Avatar } from './avatar'
+import AvatarLetter from './AvatarLetter.vue'
+import AvatarIdenticon from './AvatarIdenticon.vue'
 
 defineProps({
-  userAvatar: { type: Object as PropType<UserAvatar>, required: true },
+  userAvatar: { type: Object as PropType<Avatar>, required: true },
   size: { type: Number, default: 18 },
   showBorder: { type: Boolean, default: false },
 })
@@ -19,10 +19,10 @@ defineProps({
       <img class="w-full h-full" alt="gravatar" :src="`//www.gravatar.com/avatar/${userAvatar.ghash}?s=32`">
     </template>
     <template v-else-if="userAvatar.t == 2">
-      <LetterAvatar :name="userAvatar.name" :size="size" />
+      <AvatarLetter :name="userAvatar.name" :size="size" />
     </template>
     <template v-else>
-      <TheIdenticon :name="userAvatar.name" :size="size" />
+      <AvatarIdenticon :name="userAvatar.name" :size="size" />
     </template>
   </span>
 </template>

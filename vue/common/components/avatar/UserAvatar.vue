@@ -1,11 +1,11 @@
-<!-- @common/components/avatar/AvatarUser.vue -->
+<!-- UserAvatar.vue -->
 <script setup lang="ts">
 import type { PropType } from 'vue'
-import type UserAvatar from '@common/types/userAvatar'
-import AvatarCore from './AvatarCore.vue'
+import type { Avatar } from './avatar'
+import AvatarIcon from './AvatarIcon.vue'
 
 const props = defineProps({
-  userAvatar: { type: Object as PropType<UserAvatar>, required: true },
+  userAvatar: { type: Object as PropType<Avatar>, required: true },
   size: { type: Number, default: 18 },
   showName: { type: Boolean, default: true },
   showLink: { type: Boolean, default: true },
@@ -22,7 +22,7 @@ const classVar = [
 
 <template>
   <component :is="tag" :href="href" :class="classVar">
-    <AvatarCore :user-avatar="userAvatar" :size="size" :showBorder="showBorder" />
+    <AvatarIcon :user-avatar="userAvatar" :size="size" :showBorder="showBorder" />
     <span v-if="showName" class="px-1">{{ userAvatar.name }}</span>
   </component>
 </template>

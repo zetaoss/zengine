@@ -3,7 +3,7 @@ import { ref, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import useAuthStore from '@/stores/auth'
 import http from '@/utils/http'
-import AvatarUser from '@common/components/avatar/AvatarUser.vue'
+import UserAvatar from '@common/components/avatar/UserAvatar.vue'
 import ZFold from '@common/ui/ZFold.vue'
 import ZSpin from '@common/ui/ZSpin.vue'
 import ZSpinner from '@common/ui/ZSpinner.vue'
@@ -124,7 +124,7 @@ onUnmounted(() => retrier.clear())
               </RouterLinkButton>
               <div>{{ row.created_at.substring(0, 10) }}</div>
               <div>
-                <AvatarUser :user-avatar="row.userAvatar" />
+                <UserAvatar :user-avatar="row.userAvatar" />
               </div>
             </td>
 

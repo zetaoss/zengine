@@ -2,15 +2,15 @@
 import { ref } from 'vue'
 import ZModal from '@common/ui/ZModal.vue'
 import ZTextarea from '@common/ui/ZTextarea.vue'
-import AvatarUser from '@common/components/avatar/AvatarUser.vue'
-import type UserAvatar from '@common/types/userAvatar'
+import UserAvatar from '@common/components/avatar/UserAvatar.vue'
+import type { Avatar } from '@common/components/avatar/avatar'
 import { canDelete, canEdit } from '@/utils/auth'
 import http from '@/utils/http'
 import getRLCONF from '@/utils/rlconf'
 import LinkifyBox from '../LinkifyBox.vue'
 
 interface Row {
-  avatar: UserAvatar
+  avatar: Avatar
   id: number
   message: string
   created: string
@@ -79,7 +79,7 @@ fetchData()
     </div>
     <div class="pt-3 flex" v-if="avatar && avatar.id > 0">
       <div class="pt-1 pr-3">
-        <AvatarUser :user-avatar="avatar" :showName="false" :showLink="false" :size="32" />
+        <UserAvatar :user-avatar="avatar" :showName="false" :showLink="false" :size="32" />
       </div>
       <div class="w-full text-sm">
         <div>{{ avatar.name }}</div>
@@ -91,7 +91,7 @@ fetchData()
     </div>
     <div class="pt-3 flex" v-for="row in docComments" :key="row.id">
       <div class="pt-1 pr-3">
-        <AvatarUser :userAvatar="row.avatar" :showName="false" :showLink="false" :size="32" />
+        <UserAvatar :userAvatar="row.avatar" :showName="false" :showLink="false" :size="32" />
       </div>
       <div class="w-full">
         <button type="button" v-if="canDelete(row.avatar.id)" class="float-right btn btn-xs btn-danger"

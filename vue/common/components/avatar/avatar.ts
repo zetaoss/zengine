@@ -1,4 +1,5 @@
-export default interface UserAvatar {
+// avatar.ts
+export interface Avatar {
   id: number
   name: string
   t: number

@@ -9,7 +9,7 @@ import ZIcon from '@common/ui/ZIcon.vue'
 import ZModal from '@common/ui/ZModal.vue'
 import ZTextarea from '@common/ui/ZTextarea.vue'
 import ZButton from '@common/ui/ZButton.vue'
-import AvatarUser from '@common/components/avatar/AvatarUser.vue'
+import UserAvatar from '@common/components/avatar/UserAvatar.vue'
 import useAuthStore from '@/stores/auth'
 import http from '@/utils/http'
 import linkify from '@/utils/linkify'
@@ -98,7 +98,7 @@ fetchData()
     <div v-for="reply in replies" :key="reply.id" class="border-b py-3 px-4 text-sm">
       <div class="grid grid-cols-2">
         <div>
-          <AvatarUser :user-avatar="reply.userAvatar" />
+          <UserAvatar :user-avatar="reply.userAvatar" />
           {{ useDateFormat(reply.created_at, 'YYYY-MM-DD HH:mm').value }}
         </div>
         <div v-if="me && me.canEdit(reply.userAvatar.id)" v-on-click-outside="dropdownClose" class="text-right">
@@ -133,7 +133,7 @@ fetchData()
           <div class="p-3 border-2 rounded bg-white dark:bg-black">
             <div class="overflow-auto">
               <div class="float-left">
-                <AvatarUser :user-avatar="reply.userAvatar" :showLink="false" />
+                <UserAvatar :user-avatar="reply.userAvatar" :showLink="false" />
               </div>
               <div v-if="editingReply.body.length > 0" class="float-right">
                 <div class="text-xs text-gray-400">
@@ -154,7 +154,7 @@ fetchData()
     </div>
     <div v-if="me.isLoggedIn" class="p-3">
       <div class="p-4 border z-bg-muted rounded">
-        <AvatarUser :user-avatar="me.userData.avatar" :showLink="false" />
+        <UserAvatar :user-avatar="me.userData.avatar" :showLink="false" />
         <ZTextarea v-model="replyBody" class="mt-2" id="new-reply" placeholder="댓글을 남겨보세요" />
         <div class="flex justify-end gap-3">
           <div class="text-xs text-gray-400">{{ replyBody.length }} 자</div>

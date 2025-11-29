@@ -2,7 +2,7 @@
 import { ref, watch } from 'vue'
 import { useDateFormat } from '@vueuse/core'
 import { useRoute } from 'vue-router'
-import AvatarCore from '@common/components/avatar/AvatarCore.vue'
+import AvatarIcon from '@common/components/avatar/AvatarIcon.vue'
 import ThePagination from '@/components/pagination/Pagination.vue'
 import type { PaginateData } from '@/components/pagination/types'
 import useAuthStore from '@/stores/auth'
@@ -118,7 +118,7 @@ watch(() => [route.params.id, route.params.page], fetchData, { immediate: true }
 
           <div class="py-1 flex md:w-[35%]">
             <span class="flex-1 w-auto md:inline md:w-[45%] truncate">
-              <AvatarCore :user-avatar="p.userAvatar" :size="15" />
+              <AvatarIcon :user-avatar="p.userAvatar" :size="15" />
               {{ p.userAvatar.name }}
             </span>
             <span class="w-auto md:w-[40%] md:text-center">
