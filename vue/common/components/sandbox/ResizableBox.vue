@@ -64,7 +64,7 @@ const onHandleDown = (e: MouseEvent) => {
     <div v-if="isDragging" class="absolute inset-0 z-10 cursor-col-resize" />
 
     <div class="absolute inset-y-0 z-20 flex w-4 cursor-col-resize select-none
-         items-center justify-center bg-white hover:bg-slate-200 text-sm text-slate-400 rounded-r"
+         items-center justify-center bg-white hover:bg-slate-200 text-xs text-slate-400 rounded-r"
       :style="{ right: `${marginPx}px` }" @mousedown.stop.prevent="onHandleDown">
       ◀
     </div>
