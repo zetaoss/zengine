@@ -36,7 +36,7 @@
     --z-primary-bg: #09c4;
     --z-primary-hover: #09c8;
 
-    --console-bg: theme(colors.zinc.100);
+    --console-bg: #edeef0;
     --console-string: theme(colors.sky.600);
     --console-number: theme(colors.purple.600);
     --console-null: #6b7280;
@@ -54,6 +54,9 @@
     --console-emoji-info: ℹ️;
     --console-emoji-trace: 🔍;
     --console-emoji-warn: ⚠️;
+
+    --code-bg: #fff;
+    --runbox-bg: #f2f2f2;
   }
 }
 
@@ -83,13 +86,16 @@
   --z-btn-bg: #333;
   --z-btn-hover: #555;
 
-  --console-bg: theme(colors.zinc.800);
+  --console-bg: #18181b;
   --console-string: theme(colors.sky.400);
   --console-number: theme(colors.purple.400);
 
   --console-warn-bg: #413C26;
   --console-error-bg: #4E3534;
   --console-detail-bg: #1e293b;
+
+  --code-bg: #282c34;
+  --runbox-bg: #14161c;
 }
 
 @layer base {

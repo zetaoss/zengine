@@ -30,6 +30,6 @@ interface NavItem {
 const navItems: NavItem[] = [
   { to: "/tool/common-report", label: "통용" },
   { to: "/tool/write-request", label: "작성요청" },
-  { to: "/tool/frontbox", label: "FrontBox" },
+  { to: "/tool/frontplay", label: "FrontPlay" },
 ]
 </script>
