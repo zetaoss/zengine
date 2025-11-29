@@ -7,45 +7,35 @@ const props = defineProps({
   size: { type: Number, default: 18 },
 })
 
+const safeName = computed(() => props.name.trim() || '?')
+
 const initial = computed(() => {
-  const trimmed = (props.name || '').trim().toUpperCase().split(' ')
-  if (trimmed.length === 0) return '?'
-  if (trimmed.length === 1) return trimmed[0]?.charAt(0) || '?'
-  return trimmed[0].charAt(0) + trimmed[1].charAt(0)
+  const parts = safeName.value.toUpperCase().split(/\s+/).filter(Boolean)
+  const letters = parts.map(p => p[0] ?? '').join('').slice(0, 2)
+  return letters || '?'
 })
 
-const bgColor = computed(() => generateColor(props.name))
+const bgColor = computed(() => {
+  let hash = 5381
+  const str = safeName.value
 
-const fontSize = computed(() => (initial.value.length > 1 ? 60 : 80))
-
-function generateColor(name: string): string {
-  const seed = `${name}abcdef`
-  let hash = 0
-  for (let i = 0; i < seed.length; i++) {
-    hash = (hash << 5) - hash + seed.charCodeAt(i)
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) + str.charCodeAt(i)
   }
 
-  const matches = hash.toString(16).match(/[a-f0-9]{6}$/g)
-  const parts = matches?.[0]?.match(/.{1,2}/g)?.map(hex => parseInt(hex, 16))
+  const hue = ((hash % 360) + 360) % 360
+  return `oklch(60% 0.18 ${hue})`
+})
 
-  if (!parts || parts.length < 3) {
-    return 'hsla(0, 0%, 70%, 0.8)'
-  }
-
-  const [r, g, b] = parts
-  const h = (360 * r) / 256
-  const s = (60 * g) / 256 + 40
-  const l = (50 * b) / 256 + 30
-
-  return `hsla(${h}, ${s}%, ${l}%, 0.8)`
-}
+const fontSize = computed(() =>
+  initial.value.length > 1 ? 42 : 64
+)
 </script>
 
 <template>
-  <svg :width="size" :height="size" viewBox="0 0 100 100" class="font-sans" role="img" aria-hidden="true">
-    <rect x="0" y="0" width="100" height="100" rx="20" ry="20" :fill="bgColor" />
-    <text x="50" y="45" fill="white" font-weight="600" :font-size="fontSize" text-anchor="middle"
-      dominant-baseline="central">
+  <svg :width="size" :height="size" viewBox="0 0 100 100" :style="{ background: bgColor }">
+    <text x="50" y="50" fill="#fff" font-weight="800" :font-size="fontSize" text-anchor="middle"
+      dominant-baseline="central" dy="-.05em">
       {{ initial }}
     </text>
   </svg>
