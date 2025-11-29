@@ -12,13 +12,9 @@ const emoji = computed(() => getComputedStyle(document.documentElement).getPrope
 </script>
 
 <template>
-  <div class="px-2 py-0.5 rounded border-b" :class="level">
-    <div class="flex gap-2 items-start">
-      <span class="w-4 text-center">
-        <span v-if="emoji">{{ emoji }}</span>
-        <span v-else class="inline-block opacity-0 w-4">&nbsp;</span>
-      </span>
-
+  <div class="px-2 py-0.5 border-t" :class="level">
+    <div class="flex gap-2">
+      <span class="w-4">{{ emoji ?? '' }}</span>
       <ConsoleArg v-for="(arg, i) in args" :key="i" :value="arg" />
     </div>
   </div>

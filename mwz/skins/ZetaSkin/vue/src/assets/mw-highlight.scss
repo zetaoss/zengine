@@ -1,56 +1,36 @@
-.mw-highlight-header {
-  display: table;
-  border-left: 4px solid #59b;
-  padding: 0 12px;
-  margin-bottom: -5px;
-  word-break: break-all;
-  background: #cee;
-  border-radius: 5px 5px 0 0;
-}
+.dark .mw-highlight {
+  // .m {
+  //   color: #ccc;
+  // }
 
-.mw-highlight {
-
-  &.mw-highlight-lang-console,
-  &.mw-highlight-lang-doscon {
-    @apply bg-black text-white;
-  }
-}
-
-.mw-highlight-lang-console,
-.mw-highlight-lang-doscon {
-
-  .m {
-    color: #ccc !important;
-  }
-
-  .o {
-    color: #ccc !important;
-  }
+  // .o {
+  //   color: #ccc;
+  // }
 
   .gp {
-    color: #aaf !important;
+    color: #36f;
   }
 
-  .go {
-    color: #ddd !important;
-  }
+  // .go {
+  //   color: #ddd;
+  // }
 
-  .nv {
-    color: #ffc !important;
-  }
+  // .nv {
+  //   color: #ffc;
+  // }
 
-  .c1 {
-    color: #cff !important;
-    font-style: normal !important;
-  }
+  // .c1 {
+  //   color: #cff;
+  //   font-style: normal;
+  // }
 
-  .s1,
-  .s2 {
-    color: #fcc !important;
-  }
+  // .s1,
+  // .s2 {
+  //   color: #fcc;
+  // }
 
-  .nb,
-  .k {
-    color: #cfc !important;
-  }
+  // .nb,
+  // .k {
+  //   color: #cfc;
+  // }
 }

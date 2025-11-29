@@ -1,4 +1,4 @@
-<!-- FrontBox.vue -->
+<!-- FrontPlay.vue -->
 <script setup lang="ts">
 import { ref } from 'vue'
 
@@ -29,7 +29,7 @@ const updateLogs = (newLogs: SandboxLog[]) => {
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
     <div>
       <div class="py-2 flex items-center">
-        <b>Playground</b>
+        <b>Front Play</b>
         <ZButton class="ml-2" @click="run">Run</ZButton>
       </div>
 
