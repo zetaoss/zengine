@@ -1,8 +1,6 @@
-<!-- BoxFront.vue -->
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch, nextTick } from 'vue'
 import type { Job } from './types'
-
 import { SandboxFrame, SandboxConsole, type SandboxLog } from '@common/components/sandbox'
 
 const props = defineProps<{
@@ -12,12 +10,16 @@ const props = defineProps<{
 
 const { job, seq } = props
 
-const getCode = (lang: string) => job.boxes.filter((b) => b.lang === lang).map((b) => b.text).join('\n').trim()
+const getCode = (lang: string) => job.boxes
+  .filter((b) => b.lang === lang)
+  .map((b) => b.text)
+  .join('\n')
+  .trim()
+
 const htmlCode = computed(() => getCode('html'))
 const jsCode = computed(() => getCode('javascript'))
 
 const sandboxId = `sandbox-${job.id}-${seq}`
-console.log(sandboxId)
 
 const logs = ref<SandboxLog[]>([])
 const updateLogs = (newLogs: SandboxLog[]) => {
@@ -25,6 +27,17 @@ const updateLogs = (newLogs: SandboxLog[]) => {
 }
 
 const sandboxRef = ref<InstanceType<typeof SandboxFrame> | null>(null)
+const consoleRef = ref<HTMLElement | null>(null)
+
+watch(
+  () => logs.value.length,
+  async () => {
+    await nextTick()
+    const el = consoleRef.value
+    if (!el) return
+    el.scrollTop = el.scrollHeight
+  }
+)
 </script>
 
 <template>
@@ -32,11 +45,12 @@ const sandboxRef = ref<InstanceType<typeof SandboxFrame> | null>(null)
     <slot />
 
     <div v-if="job.main === seq">
-      <SandboxFrame ref="sandboxRef" v-show="htmlCode.length > 0" :id="sandboxId" :html="htmlCode" :js="jsCode"
-        :resizable="job.outResize" class="w-full h-32 border bg-white"
-        :class="{ hidden: !job.boxes.some((b) => b.lang === 'html') }" @update:logs="updateLogs" />
-
-      <div v-if="logs.length > 0" class="mt-2">
+      <div class="bg-gray-500/20 rounded">
+        <SandboxFrame ref="sandboxRef" v-show="htmlCode.length > 0" :id="sandboxId" :html="htmlCode" :js="jsCode"
+          :resizable="job.outResize" class="h-32 rounded" :class="{ hidden: !job.boxes.some((b) => b.lang === 'html') }"
+          @update:logs="updateLogs" />
+      </div>
+      <div v-if="logs.length > 0" class="max-h-40 overflow-y-auto" ref="consoleRef">
         <SandboxConsole :logs="logs" />
       </div>
     </div>

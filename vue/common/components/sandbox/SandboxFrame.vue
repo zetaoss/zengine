@@ -59,7 +59,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <component :is="props.resizable ? ResizableBox : 'div'" class="h-full">
-    <iframe ref="iframe" class="w-full h-full border-0" />
+  <component :is="props.resizable ? ResizableBox : 'div'" class="h-full rounded">
+    <iframe ref="iframe" class="w-full h-full border-0 bg-white" />
   </component>
 </template>

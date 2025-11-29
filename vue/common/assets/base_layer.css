@@ -48,6 +48,12 @@
 
     --console-arrkey: #60a5fa;
     --console-objkey: #9ca3af;
+
+    --console-emoji-debug: 🐛;
+    --console-emoji-error: ❌;
+    --console-emoji-info: ℹ️;
+    --console-emoji-trace: 🔍;
+    --console-emoji-warn: ⚠️;
   }
 }
 
@@ -81,8 +87,8 @@
   --console-string: theme(colors.sky.400);
   --console-number: theme(colors.purple.400);
 
-  --console-warn-bg: #713f12;
-  --console-error-bg: #7f1d1d;
+  --console-warn-bg: #413C26;
+  --console-error-bg: #4E3534;
   --console-detail-bg: #1e293b;
 }
 
