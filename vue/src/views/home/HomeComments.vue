@@ -35,7 +35,7 @@ onMounted(fetchData)
   <div v-for="r in rows" :key="r.page_title" class="py-2">
     <a :href="`/wiki/${r.page_title}`">{{ r.page_title.replace(/_/g, ' ') }}</a>
     <span class="silver ml-3">
-      <UserAvatar :user-avatar="r.avatar" />
+      <UserAvatar :avatar="r.avatar" />
     </span>
     <div class="line-clamp-3 text-ellipsis break-words" v-html="r.message" />
   </div>

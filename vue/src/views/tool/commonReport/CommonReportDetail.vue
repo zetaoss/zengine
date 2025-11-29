@@ -142,7 +142,7 @@ fetchDataWithRetry()
       </div>
       <div class="flex items-center">
         <div class="flex-1">
-          <UserAvatar :user-avatar="row.userAvatar" />
+          <UserAvatar :avatar="row.userAvatar" />
           <div>{{ useDateFormat(row.created_at, 'YYYY-MM-DD HH:mm').value }}</div>
         </div>
         <div class="flex">

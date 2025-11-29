@@ -1,8 +1,8 @@
 import type Item from '@common/components/navbar/types'
-import type UserAvatar from '@common/types/userAvatar'
+import type { Avatar } from '@common/components/avatar/avatar'
 
-export default function getUserMenuItems(userAvatar: UserAvatar) {
-  const isLoggedIn = (userAvatar?.id ?? 0) > 0;
+export default function getUserMenuItems(avatar: Avatar) {
+  const isLoggedIn = (avatar?.id ?? 0) > 0;
 
   const items: Item[] = isLoggedIn
     ? [

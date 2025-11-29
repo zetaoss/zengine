@@ -124,7 +124,7 @@ onUnmounted(() => retrier.clear())
               </RouterLinkButton>
               <div>{{ row.created_at.substring(0, 10) }}</div>
               <div>
-                <UserAvatar :user-avatar="row.userAvatar" />
+                <UserAvatar :avatar="row.userAvatar" />
               </div>
             </td>
 

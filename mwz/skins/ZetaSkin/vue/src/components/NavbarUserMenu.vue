@@ -32,7 +32,7 @@ onClickOutside(dd, close, { ignore: [lb] })
   <label ref="lb" for="usermenu-toggle"
     class="order-2 ml-auto flex h-12 cursor-pointer items-center px-3 hover:bg-gray-800 peer-checked:bg-gray-800">
     <span v-if="avatar && avatar.id > 0">
-      <AvatarIcon :user-avatar="avatar" />
+      <AvatarIcon :avatar="avatar" />
     </span>
     <span v-else>
       <ZIcon :path="mdiAccount" />

@@ -37,7 +37,7 @@ watch(() => route.path, close)
   <label ref="lb" for="usermenu-toggle"
     class="order-2 ml-auto flex h-12 w-12 cursor-pointer items-center justify-center hover:bg-gray-800 peer-checked:bg-gray-800 md:w-auto md:px-3">
     <span v-if="me.isLoggedIn">
-      <AvatarIcon :user-avatar="me.userData.avatar" />
+      <AvatarIcon :avatar="me.userData.avatar" />
     </span>
     <span v-else>
       <ZIcon :path="mdiAccount" />
