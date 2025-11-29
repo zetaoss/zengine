@@ -194,7 +194,7 @@ fetchData()
             {{ row.updated_at.substring(0, 10) }}
           </td>
           <td class="user">
-            <UserAvatar :user-avatar="row.userAvatar" />
+            <UserAvatar :avatar="row.userAvatar" />
           </td>
         </tr>
       </tbody>

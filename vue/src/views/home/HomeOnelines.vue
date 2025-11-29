@@ -32,7 +32,7 @@ onMounted(async () => {
 <template>
   <div v-for="r in rows" :key="r.id" class="py-2">
     <span class="silver">
-      <UserAvatar :user-avatar="r.userAvatar" />
+      <UserAvatar :avatar="r.userAvatar" />
     </span>
     <span class="message ml-1" v-html="r.message" />
     <span class="silver ml-1 text-xs">{{ r.created.substring(0, 10) }}</span>

@@ -98,7 +98,7 @@ fetchData()
     <div v-for="reply in replies" :key="reply.id" class="border-b py-3 px-4 text-sm">
       <div class="grid grid-cols-2">
         <div>
-          <UserAvatar :user-avatar="reply.userAvatar" />
+          <UserAvatar :avatar="reply.userAvatar" />
           {{ useDateFormat(reply.created_at, 'YYYY-MM-DD HH:mm').value }}
         </div>
         <div v-if="me && me.canEdit(reply.userAvatar.id)" v-on-click-outside="dropdownClose" class="text-right">
@@ -133,7 +133,7 @@ fetchData()
           <div class="p-3 border-2 rounded bg-white dark:bg-black">
             <div class="overflow-auto">
               <div class="float-left">
-                <UserAvatar :user-avatar="reply.userAvatar" :showLink="false" />
+                <UserAvatar :avatar="reply.userAvatar" :showLink="false" />
               </div>
               <div v-if="editingReply.body.length > 0" class="float-right">
                 <div class="text-xs text-gray-400">
@@ -154,7 +154,7 @@ fetchData()
     </div>
     <div v-if="me.isLoggedIn" class="p-3">
       <div class="p-4 border z-bg-muted rounded">
-        <UserAvatar :user-avatar="me.userData.avatar" :showLink="false" />
+        <UserAvatar :avatar="me.userData.avatar" :showLink="false" />
         <ZTextarea v-model="replyBody" class="mt-2" id="new-reply" placeholder="댓글을 남겨보세요" />
         <div class="flex justify-end gap-3">
           <div class="text-xs text-gray-400">{{ replyBody.length }} 자</div>

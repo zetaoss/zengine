@@ -1,4 +1,4 @@
-import type UserAvatar from '@common/types/userAvatar'
+import type { Avatar } from '@common/components/avatar/avatar'
 
 export interface Post {
   body: string
@@ -12,7 +12,7 @@ export interface Post {
   tags_str: string
   title: string
   updated_at: string
-  userAvatar: UserAvatar
+  userAvatar: Avatar
   user_id: number
 }
 
@@ -21,5 +21,5 @@ export interface Reply {
   created_at: string
   id: number
   post_id: number
-  userAvatar: UserAvatar
+  userAvatar: Avatar
 }

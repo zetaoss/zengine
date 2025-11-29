@@ -10,7 +10,7 @@ import getRLCONF from '@/utils/rlconf'
 import LinkifyBox from '../LinkifyBox.vue'
 
 interface Row {
-  avatar: Avatar
+  userAvatar: Avatar
   id: number
   message: string
   created: string
@@ -79,7 +79,7 @@ fetchData()
     </div>
     <div class="pt-3 flex" v-if="avatar && avatar.id > 0">
       <div class="pt-1 pr-3">
-        <UserAvatar :user-avatar="avatar" :showName="false" :showLink="false" :size="32" />
+        <UserAvatar :avatar="avatar" :showName="false" :showLink="false" :size="32" />
       </div>
       <div class="w-full text-sm">
         <div>{{ avatar.name }}</div>
@@ -91,17 +91,17 @@ fetchData()
     </div>
     <div class="pt-3 flex" v-for="row in docComments" :key="row.id">
       <div class="pt-1 pr-3">
-        <UserAvatar :userAvatar="row.avatar" :showName="false" :showLink="false" :size="32" />
+        <UserAvatar :avatar="row.userAvatar" :showName="false" :showLink="false" :size="32" />
       </div>
       <div class="w-full">
-        <button type="button" v-if="canDelete(row.avatar.id)" class="float-right btn btn-xs btn-danger"
+        <button type="button" v-if="canDelete(row.userAvatar.id)" class="float-right btn btn-xs btn-danger"
           @click="del(row)">
           삭제
         </button>
-        <button type="button" v-if="canEdit(row.avatar.id)" class="float-right btn btn-xs"
+        <button type="button" v-if="canEdit(row.userAvatar.id)" class="float-right btn btn-xs"
           @click="edit(row)">수정</button>
         <div class="text-sm">
-          <a :href="`/profile/${row.avatar.name}`">{{ row.avatar.name }}</a>
+          <a :href="`/profile/${row.userAvatar.name}`">{{ row.userAvatar.name }}</a>
           <span class="ml-3 text-neutral-400">{{ row.created.substring(0, 10) }}</span>
         </div>
         <LinkifyBox :content="row.message" />
@@ -109,7 +109,7 @@ fetchData()
           <div class="p-3 border-2 rounded">
             <div class="overflow-auto">
               <div class="float-left">
-                <AvatarUser :user-avatar="row.avatar" />
+                <UserAvatar :avatar="row.userAvatar" />
               </div>
               <div v-if="editingRow.message.length > 0" class="float-right">
                 <div class="text-xs text-gray-400">
