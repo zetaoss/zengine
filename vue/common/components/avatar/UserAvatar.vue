@@ -4,24 +4,18 @@ import type { PropType } from 'vue'
 import type { Avatar } from './avatar'
 import AvatarIcon from './AvatarIcon.vue'
 
-const props = defineProps({
+defineProps({
   userAvatar: { type: Object as PropType<Avatar>, required: true },
   size: { type: Number, default: 18 },
   showName: { type: Boolean, default: true },
   showLink: { type: Boolean, default: true },
   showBorder: { type: Boolean, default: false },
 })
-
-const tag = props.showLink ? 'a' : 'span'
-const href = props.showLink ? `/wiki/User:${props.userAvatar.name}` : undefined
-const classVar = [
-  'inline-flex items-center align-middle',
-  props.showLink ? 'rounded-lg text-gray-400 hover:no-underline hover:bg-gray-200 dark:hover:bg-gray-700' : '',
-]
 </script>
 
 <template>
-  <component :is="tag" :href="href" :class="classVar">
+  <component :is="showLink ? 'a' : 'span'" :href="showLink ? `/wiki/User:${userAvatar.name}` : undefined"
+    :class="['inline-flex items-center align-middle', showLink ? 'rounded-lg text-gray-400 hover:no-underline hover:bg-gray-200 dark:hover:bg-gray-700' : '']">
     <AvatarIcon :user-avatar="userAvatar" :size="size" :showBorder="showBorder" />
     <span v-if="showName" class="px-1">{{ userAvatar.name }}</span>
   </component>
