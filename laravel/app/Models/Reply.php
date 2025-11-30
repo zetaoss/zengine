@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Services\AuthService;
-use App\Services\UserService;
+use App\Services\AvatarService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -15,11 +15,11 @@ class Reply extends Model
 
     protected $fillable = ['user_id', 'body'];
 
-    protected $appends = ['userAvatar'];
+    protected $appends = ['avatar'];
 
-    public function getUserAvatarAttribute()
+    public function getAvatarAttribute()
     {
-        return UserService::getUserAvatar($this->user_id);
+        return AvatarService::getAvatarById($this->user_id);
     }
 
     protected static function boot()

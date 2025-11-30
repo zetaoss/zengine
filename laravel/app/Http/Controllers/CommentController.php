@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Comment;
-use App\Services\UserService;
+use App\Services\AvatarService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -16,7 +16,7 @@ class CommentController extends MyController
             ->join('page', 'z_comment.curid', 'page.page_id')
             ->orderBy('z_comment.created', 'desc')->limit(10)->get()
             ->map(function ($row) {
-                $row->avatar = UserService::getUserAvatar($row->user_id);
+                $row->avatar = AvatarService::getAvatarById($row->user_id);
 
                 return $row;
             });
@@ -27,7 +27,7 @@ class CommentController extends MyController
         return DB::connection('mwdb')->table('z_comment')
             ->select('id', 'user_id', 'created', 'message')->where('curid', $pageID)->orderBy('created', 'desc')->get()
             ->map(function ($row) {
-                $row->avatar = UserService::getUserAvatar($row->user_id);
+                $row->avatar = AvatarService::getAvatarById($row->user_id);
 
                 return $row;
             });

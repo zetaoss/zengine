@@ -118,8 +118,8 @@ watch(() => [route.params.id, route.params.page], fetchData, { immediate: true }
 
           <div class="py-1 flex md:w-[35%]">
             <span class="flex-1 w-auto md:inline md:w-[45%] truncate">
-              <AvatarIcon :avatar="p.userAvatar" :size="15" />
-              {{ p.userAvatar.name }}
+              <AvatarIcon :avatar="p.avatar" :size="15" />
+              {{ p.avatar.name }}
             </span>
             <span class="w-auto md:w-[40%] md:text-center">
               {{ formatDate(p.created_at) }}

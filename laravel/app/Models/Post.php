@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Services\UserService;
+use App\Services\AvatarService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -10,7 +10,7 @@ class Post extends Model
 {
     use SoftDeletes;
 
-    protected $appends = ['userAvatar', 'tag_names'];
+    protected $appends = ['avatar', 'tag_names'];
 
     protected $dates = ['deleted_at'];
 
@@ -18,9 +18,9 @@ class Post extends Model
 
     protected $fillable = ['user_id', 'cat', 'title', 'body', 'is_notice', 'tags_str', 'replies_count'];
 
-    public function getUserAvatarAttribute()
+    public function getAvatarAttribute()
     {
-        return UserService::getUserAvatar($this->user_id);
+        return AvatarService::getAvatarById($this->user_id);
     }
 
     public function getTagNamesAttribute()
@@ -32,7 +32,7 @@ class Post extends Model
     {
         parent::boot();
         static::deleting(function ($post) {
-            $me = UserService::me();
+            $me = AvatarService::me();
             if (! $me) {
                 return;
             }

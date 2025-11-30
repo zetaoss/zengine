@@ -1,25 +1,24 @@
-// File: mwz/skins/ZetaSkin/vue/src/components/runbox/runbox.ts
+// runbox.ts
 import { createApp, reactive, h } from 'vue'
 import http from '@/utils/http'
 import getRLCONF from '@/utils/rlconf'
 import BoxApex from './BoxApex.vue'
 import { type Box, BoxType, type Job, JobType } from './types'
+import { enqueue, buildLangPayload, buildNotebookPayload, sha256 } from './runbox.helpers'
 
 const jobs: Job[] = reactive([])
 const pageId = getRLCONF().wgArticleId
+
 let delay = 1000
 
-const queue: Promise<void>[] = [Promise.resolve()]
-
-type JobHandler = (job: Job, done: () => void) => void;
-
-async function getJob(job: Job, resolve: () => void) {
+async function getJob(job: Job): Promise<void> {
   try {
     const { phase, outs } = await http.get(`/api/runbox/${job.hash}`)
     job.phase = phase
 
     if (phase === 'none') {
-      return enqueue(postJob, job)
+      enqueue(postJob, job)
+      return
     }
 
     if (phase === 'pending' || phase === 'running') {
@@ -31,19 +30,18 @@ async function getJob(job: Job, resolve: () => void) {
 
     if (phase === 'succeeded') {
       if (job.type === JobType.Lang) {
-        job.langOuts = outs;
-      } else {
-        job.notebookOuts = outs;
+        job.langOuts = outs
+      } else if (job.type === JobType.Notebook) {
+        job.notebookOuts = outs
       }
     }
   } catch (error) {
     console.error(`Error fetching job ${job.id}:`, error)
-  } finally {
-    resolve()
+    job.phase = 'error'
   }
 }
 
-async function postJob(job: Job, resolve: () => void) {
+async function postJob(job: Job): Promise<void> {
   try {
     await http.post(`/api/runbox`, {
       hash: job.hash,
@@ -56,13 +54,15 @@ async function postJob(job: Job, resolve: () => void) {
     enqueue(getJob, job)
   } catch (error) {
     console.error(`Error posting job ${job.id}:`, error)
-  } finally {
-    resolve()
+    job.phase = 'error'
   }
 }
 
 export function runbox() {
-  document.querySelectorAll<HTMLElement>('.mw-highlight').forEach((el, idx) => {
+  const highlights = document.querySelectorAll<HTMLElement>('.mw-highlight')
+  if (!highlights.length) return
+
+  highlights.forEach((el, idx) => {
     const lang = el.className.match(/mw-highlight-lang-([a-z0-9]+)/)?.[1] || ''
     const run = el.getAttribute('run')
     const notebookAttr = el.getAttribute('notebook')
@@ -89,11 +89,12 @@ export function runbox() {
       isAsciinema: el.hasAttribute('asciinema'),
       outResize: el.hasAttribute('outresize'),
       text: el.textContent || '',
-      el
+      el,
     }
 
-    const job = jobs.find(j => j.id === jobId)
-      || jobs[jobs.push({
+    const job = jobs.find(j => j.id === jobId) ||
+      jobs[
+      jobs.push({
         id: jobId,
         type: JobType.Zero,
         hash: '',
@@ -105,12 +106,15 @@ export function runbox() {
         langOuts: null,
         notebookOuts: [],
         outResize: box.outResize,
-      }) - 1]
+      }) - 1
+      ]
 
     job.boxes.push(box)
   })
 
   jobs.forEach(async job => {
+    if (!job.boxes.length) return
+
     const mainIdx = job.boxes.findIndex(b => b.isMain)
     job.main = mainIdx !== -1 ? mainIdx : job.boxes.length - 1
     const mainBox = job.boxes[job.main]
@@ -120,63 +124,40 @@ export function runbox() {
         job.type = JobType.Front
       } else {
         job.type = JobType.Lang
-        const fileMap = new Map()
-        job.boxes.forEach(b => {
-          if (fileMap.has(b.file)) {
-            fileMap.get(b.file).body += b.text
-          } else {
-            fileMap.set(b.file, { name: b.file || undefined, body: b.text })
-          }
-        })
-        job.payload = {
-          lang: mainBox.lang,
-          files: [...fileMap.values()],
-          main: job.main,
-        }
+        job.payload = buildLangPayload(job)
       }
     } else if (mainBox.type === BoxType.Notebook) {
       job.type = JobType.Notebook
-      job.payload = {
-        lang: mainBox.lang,
-        sources: job.boxes.map(b => b.text),
-      }
+      job.payload = buildNotebookPayload(job)
+    } else {
+      job.type = JobType.Zero
     }
 
-    job.hash = await sha256(job.id, job.pageId, job.type, job.payload)
+    if (job.type === JobType.Lang || job.type === JobType.Notebook) {
+      job.hash = await sha256(job.id, job.pageId, job.type, job.payload)
+    }
 
     job.boxes.forEach((box, seq) => {
-      const el = box.el
-      const originalHTML = el.innerHTML
-      el.innerHTML = ''
-      createApp({
-        render() {
-          return h(BoxApex, null, {
-            default: () => h('div', { innerHTML: originalHTML })
-          })
-        }
-      })
-        .provide('job', job)
-        .provide('seq', seq)
-        .mount(el)
+      mountBox(job, box.el, seq)
     })
 
-    if ([JobType.Notebook, JobType.Lang].includes(job.type)) {
+    if (job.type === JobType.Lang || job.type === JobType.Notebook) {
       enqueue(getJob, job)
     }
   })
 }
 
-function enqueue(f: JobHandler, j: Job) {
-  const prev = queue.length > 0 ? queue[queue.length - 1] : Promise.resolve();
-  queue.push(
-    prev.then(() => new Promise<void>((resolve) => f(j, resolve)))
-  );
-}
-
-async function sha256(...args: unknown[]) {
-  const msgBuffer = new TextEncoder().encode(JSON.stringify(args));
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex;
+function mountBox(job: Job, el: Element, seq: number) {
+  const originalHTML = el.innerHTML
+  el.innerHTML = ''
+  createApp({
+    setup() {
+      return () =>
+        h(
+          BoxApex,
+          { job, seq },
+          { default: () => h('div', { innerHTML: originalHTML }) },
+        )
+    },
+  }).mount(el)
 }

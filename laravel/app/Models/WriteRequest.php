@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Services\UserService;
+use App\Services\AvatarService;
 use DB;
 use Illuminate\Database\Eloquent\Model;
 
@@ -10,11 +10,11 @@ class WriteRequest extends Model
 {
     protected $attributes = ['rate' => 0];
 
-    protected $appends = ['hit', 'userAvatar'];
+    protected $appends = ['hit', 'avatar'];
 
-    public function getUserAvatarAttribute()
+    public function getAvatarAttribute()
     {
-        return UserService::getUserAvatar($this->user_id);
+        return AvatarService::getAvatarById($this->user_id);
     }
 
     public function getHitAttribute()
