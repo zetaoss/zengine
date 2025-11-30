@@ -26,7 +26,7 @@ interface Row {
   rate: number
   ref: number
   title: string
-  userAvatar: Avatar
+  avatar: Avatar
   writed_at: string
   updated_at: string
 }
@@ -194,7 +194,7 @@ fetchData()
             {{ row.updated_at.substring(0, 10) }}
           </td>
           <td class="user">
-            <UserAvatar :avatar="row.userAvatar" />
+            <UserAvatar :avatar="row.avatar" />
           </td>
         </tr>
       </tbody>

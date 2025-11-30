@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/me', [AuthController::class, 'me']);
 Route::get('/logout', [AuthController::class, 'logout']);
+Route::get('/avatar/{username}', [AvatarController::class, 'show']);
 
 Route::get('/runbox/{hash}', [RunboxController::class, 'get']);
 Route::post('/runbox', [RunboxController::class, 'post']);

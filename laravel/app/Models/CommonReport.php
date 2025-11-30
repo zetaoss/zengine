@@ -2,18 +2,18 @@
 
 namespace App\Models;
 
-use App\Services\UserService;
+use App\Services\AvatarService;
 use Illuminate\Database\Eloquent\Model;
 
 class CommonReport extends Model
 {
-    protected $appends = ['userAvatar', 'total'];
+    protected $appends = ['avatar', 'total'];
 
     protected $fillable = ['user_id', 'phase'];
 
-    public function getUserAvatarAttribute()
+    public function getAvatarAttribute()
     {
-        return UserService::getUserAvatar($this->user_id);
+        return AvatarService::getAvatarById($this->user_id);
     }
 
     public function getTotalAttribute()

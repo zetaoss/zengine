@@ -10,33 +10,33 @@ class AuthService
 {
     public static function me(): array|false
     {
-        $userID = self::getValidUserID();
+        $userId = self::getValidUserId();
 
-        return $userID ? self::getUserInfo($userID) : false;
+        return $userId ? self::getUserInfo($userId) : false;
     }
 
-    private static function getValidUserID(): ?int
+    private static function getValidUserId(): ?int
     {
         $prefix = config('app.wg_cookie_prefix');
-        $userID = (int) request()->cookie("{$prefix}UserID");
+        $userId = (int) request()->cookie("{$prefix}UserID");
         $userName = request()->cookie("{$prefix}UserName");
 
-        if (! $userID || ! $userName) {
+        if (! $userId || ! $userName) {
             return null;
         }
 
-        if (self::isValidSession($prefix, $userID)) {
-            return $userID;
+        if (self::isValidSession($prefix, $userId)) {
+            return $userId;
         }
 
-        if (self::isValidToken($prefix, $userID, $userName)) {
-            return $userID;
+        if (self::isValidToken($prefix, $userId, $userName)) {
+            return $userId;
         }
 
         return null;
     }
 
-    private static function isValidSession(string $prefix, int $userID): bool
+    private static function isValidSession(string $prefix, int $userId): bool
     {
         $sessionKey = request()->cookie("{$prefix}_session");
         if (! $sessionKey) {
@@ -50,10 +50,10 @@ class AuthService
 
         $data = @unserialize($sessionData, ['allowed_classes' => false]);
 
-        return is_array($data) && ($data['data']['wsUserID'] ?? 0) == $userID;
+        return is_array($data) && ($data['data']['wsUserID'] ?? 0) == $userId;
     }
 
-    private static function isValidToken(string $prefix, int $userID, string $userName): bool
+    private static function isValidToken(string $prefix, int $userId, string $userName): bool
     {
         $token = request()->cookie("{$prefix}Token");
         if (! $token) {
@@ -62,7 +62,7 @@ class AuthService
 
         $row = DB::connection('mwdb')->table('user')
             ->select('user_token')
-            ->where('user_id', $userID)
+            ->where('user_id', $userId)
             ->where('user_name', $userName)
             ->first();
 
@@ -75,21 +75,21 @@ class AuthService
         return hash_equals($expected, $token);
     }
 
-    private static function getUserInfo(int $userID): array
+    private static function getUserInfo(int $userId): array
     {
-        $cacheKey = 'userInfo:'.$userID;
+        $cacheKey = 'userInfo:'.$userId;
         $cached = Cache::get($cacheKey);
         if ($cached !== null) {
             return $cached;
         }
 
         $groups = DB::connection('mwdb')->table('user_groups')
-            ->where('ug_user', $userID)
+            ->where('ug_user', $userId)
             ->pluck('ug_group')
             ->toArray();
 
         $userInfo = [
-            'avatar' => UserService::getUserAvatar($userID),
+            'avatar' => AvatarService::getAvatarById($userId),
             'groups' => $groups,
         ];
         Cache::put($cacheKey, $userInfo, now()->addHours(1));

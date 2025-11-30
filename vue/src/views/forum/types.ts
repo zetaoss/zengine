@@ -12,7 +12,7 @@ export interface Post {
   tags_str: string
   title: string
   updated_at: string
-  userAvatar: Avatar
+  avatar: Avatar
   user_id: number
 }
 
@@ -21,5 +21,5 @@ export interface Reply {
   created_at: string
   id: number
   post_id: number
-  userAvatar: Avatar
+  avatar: Avatar
 }

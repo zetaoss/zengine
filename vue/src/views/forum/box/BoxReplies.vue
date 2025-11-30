@@ -98,10 +98,10 @@ fetchData()
     <div v-for="reply in replies" :key="reply.id" class="border-b py-3 px-4 text-sm">
       <div class="grid grid-cols-2">
         <div>
-          <UserAvatar :avatar="reply.userAvatar" />
+          <UserAvatar :avatar="reply.avatar" />
           {{ useDateFormat(reply.created_at, 'YYYY-MM-DD HH:mm').value }}
         </div>
-        <div v-if="me && me.canEdit(reply.userAvatar.id)" v-on-click-outside="dropdownClose" class="text-right">
+        <div v-if="me && me.canEdit(reply.avatar.id)" v-on-click-outside="dropdownClose" class="text-right">
           <button type="button" @click="dropdown(reply)">
             <ZIcon :path="mdiDotsVertical" />
           </button>
@@ -133,7 +133,7 @@ fetchData()
           <div class="p-3 border-2 rounded bg-white dark:bg-black">
             <div class="overflow-auto">
               <div class="float-left">
-                <UserAvatar :avatar="reply.userAvatar" :showLink="false" />
+                <UserAvatar :avatar="reply.avatar" :showLink="false" />
               </div>
               <div v-if="editingReply.body.length > 0" class="float-right">
                 <div class="text-xs text-gray-400">

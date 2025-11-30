@@ -1,4 +1,4 @@
-import type UserAvatar from '@common/types/userAvatar'
+import type { Avatar } from '@common/components/avatar/avatar'
 
 export interface Item {
   id: number
@@ -15,7 +15,7 @@ export interface Item {
 export interface Row {
   id: number
   total: number
-  userAvatar: UserAvatar
+  avatar: Avatar
   created_at: string
   updated_at: string
   phase: string

@@ -7,7 +7,7 @@ import linkify from '@/utils/linkify'
 
 interface Row {
   id: number
-  userAvatar: Avatar
+  avatar: Avatar
   created: string
   message: string
 }
@@ -31,16 +31,8 @@ onMounted(async () => {
 
 <template>
   <div v-for="r in rows" :key="r.id" class="py-2">
-    <span class="silver">
-      <UserAvatar :avatar="r.userAvatar" />
-    </span>
-    <span class="message ml-1" v-html="r.message" />
-    <span class="silver ml-1 text-xs">{{ r.created.substring(0, 10) }}</span>
+    <UserAvatar :avatar="r.avatar" />
+    <span class="ml-1" v-html="r.message" />
+    <span class="z-muted2 ml-1 text-xs">{{ r.created.substring(0, 10) }}</span>
   </div>
 </template>
-
-<style scoped>
-span {
-  @apply break-all;
-}
-</style>

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\UserService;
+use App\Services\AvatarService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -88,7 +88,7 @@ class SocialController extends Controller
     {
         $otp = sha1(rand());
         Cache::store('redis')->put("otp:$otp", $user_id, 30);
-        $username = UserService::getUserAvatar($user_id)['name'] ?? '';
+        $username = AvatarService::getAvatarById($user_id)['name'] ?? '';
 
         return "/social-bridge?otp=$otp&username=$username";
     }

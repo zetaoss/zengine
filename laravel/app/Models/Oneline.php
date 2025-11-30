@@ -2,15 +2,15 @@
 
 namespace App\Models;
 
-use App\Services\UserService;
+use App\Services\AvatarService;
 use Illuminate\Database\Eloquent\Model;
 
 class Oneline extends Model
 {
-    protected $appends = ['userAvatar'];
+    protected $appends = ['avatar'];
 
-    public function getUserAvatarAttribute()
+    public function getAvatarAttribute()
     {
-        return UserService::getUserAvatar($this->user_id);
+        return AvatarService::getAvatarById($this->user_id);
     }
 }

@@ -81,8 +81,8 @@ watch(() => props.postID, fetchData, { immediate: true })
         </h3>
       </div>
 
-      <div v-if="post?.userAvatar" class="py-3">
-        <UserAvatar :avatar="post.userAvatar" />
+      <div v-if="post?.avatar" class="py-3">
+        <UserAvatar :avatar="post.avatar" />
         <div class="text-sm">
           <span class="mr-4">
             {{ useDateFormat(post.created_at, 'YYYY-MM-DD HH:mm').value }}

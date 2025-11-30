@@ -28,9 +28,9 @@ const identicon = computed(() => {
 </script>
 
 <template>
-  <svg :width="size" :height="size" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"
-    role="img" :aria-label="`Identicon for ${props.name}`" class="bg-white">
-    <rect v-for="(c, i) in identicon.cells" :key="i" :x="c.x * 2 + 1" :y="c.y * 2 + 1" width="2" height="2"
+  <svg :width="size" :height="size" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg" role="img"
+    :aria-label="`Identicon for ${props.name}`">
+    <rect v-for="(c, i) in identicon.cells" :key="i" :x="c.x * 2 + 2" :y="c.y * 2 + 2" width="2" height="2"
       :fill="identicon.color" />
   </svg>
 </template>
