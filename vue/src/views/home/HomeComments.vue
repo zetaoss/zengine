@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import UserAvatar from '@common/components/avatar/UserAvatar.vue'
+import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import type { Avatar } from '@common/components/avatar/avatar'
 import http from '@/utils/http'
 import linkify from '@/utils/linkify'
@@ -35,7 +35,7 @@ onMounted(fetchData)
   <div v-for="r in rows" :key="r.page_title" class="py-2">
     <a :href="`/wiki/${r.page_title}`">{{ r.page_title.replace(/_/g, ' ') }}</a>
     <span class="silver ml-3">
-      <UserAvatar :avatar="r.avatar" />
+      <AvatarUser :avatar="r.avatar" />
     </span>
     <div class="line-clamp-3 text-ellipsis break-words" v-html="r.message" />
   </div>

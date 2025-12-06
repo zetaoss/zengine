@@ -2,13 +2,13 @@
 <script setup lang="ts">
 import { RouterLink, type RouteLocationRaw } from "vue-router"
 import { useAttrs } from "vue"
-import ZButton from "@common/ui/ZButton.vue"
+import ZButton, { type Color } from "@common/ui/ZButton.vue"
 
 const props = defineProps<{
   to: RouteLocationRaw
   replace?: boolean
   disabled?: boolean
-  color?: string
+  color?: Color
 }>()
 
 const emit = defineEmits<{

@@ -1,4 +1,4 @@
-<!-- UserAvatar.vue -->
+<!-- AvatarUser.vue -->
 <script setup lang="ts">
 import type { PropType } from 'vue'
 import type { Avatar } from './avatar'
@@ -14,7 +14,7 @@ defineProps({
 </script>
 
 <template>
-  <component :is="showLink ? 'a' : 'span'" :href="showLink ? `/wiki/User:${avatar.name}` : undefined"
+  <component :is="showLink ? 'a' : 'span'" :href="showLink ? `/user/${avatar.name}` : undefined"
     :class="['inline-flex items-center align-middle', showLink ? 'rounded-lg text-gray-400 hover:no-underline hover:bg-gray-200 dark:hover:bg-gray-700' : '']">
     <AvatarIcon :avatar="avatar" :size="size" :showBorder="showBorder" />
     <span v-if="showName" class="px-1">{{ avatar.name }}</span>

@@ -77,9 +77,8 @@ class AuthService
 
     private static function getUserInfo(int $userId): array
     {
-        $cacheKey = 'userInfo:'.$userId;
-        $cached = Cache::get($cacheKey);
-        if ($cached !== null) {
+        $key = "userInfo:$userId";
+        if ($cached = Cache::get($key)) {
             return $cached;
         }
 
@@ -92,7 +91,7 @@ class AuthService
             'avatar' => AvatarService::getAvatarById($userId),
             'groups' => $groups,
         ];
-        Cache::put($cacheKey, $userInfo, now()->addHours(1));
+        Cache::put($key, $userInfo, 3600);
 
         return $userInfo;
     }

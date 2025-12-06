@@ -9,7 +9,7 @@ import ZIcon from '@common/ui/ZIcon.vue'
 import ZSpin from '@common/ui/ZSpin.vue'
 import ZButton from '@common/ui/ZButton.vue'
 import ZTooltip from '@common/ui/ZTooltip.vue'
-import UserAvatar from '@common/components/avatar/UserAvatar.vue'
+import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import { useToast } from '@common/composables/toast/useToast'
 import { useConfirm } from '@common/composables/confirm/useConfirm'
 import Star from './Star.vue'
@@ -142,7 +142,7 @@ fetchDataWithRetry()
       </div>
       <div class="flex items-center">
         <div class="flex-1">
-          <UserAvatar :avatar="row.avatar" />
+          <AvatarUser :avatar="row.avatar" />
           <div>{{ useDateFormat(row.created_at, 'YYYY-MM-DD HH:mm').value }}</div>
         </div>
         <div class="flex">

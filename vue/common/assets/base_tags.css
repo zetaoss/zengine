@@ -6,7 +6,7 @@ html {
 body {
   background-color: var(--z-bg);
   color: var(--z-text);
-  font: 400 .9rem / 24px var(--z-site-font-family);
+  font: var(--z-site-font-family);
   letter-spacing: -0.4px;
 }
 

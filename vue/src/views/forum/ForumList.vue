@@ -63,7 +63,7 @@ watch(() => [route.params.id, route.params.page], fetchData, { immediate: true }
     <div v-if="postID > 0">
       <div class="py-2">
         <div class="flex justify-end">
-          <RouterLinkButton :to="{ path: `/forum/page/${page}` }">목록</RouterLinkButton>
+          <a :href="`/forum/page/${page}`">목록</a>
         </div>
       </div>
       <BoxPost :post-i-d="postID" />
@@ -102,7 +102,7 @@ watch(() => [route.params.id, route.params.page], fetchData, { immediate: true }
         </div>
 
         <!-- 정상 목록 -->
-        <RouterLink v-else v-for="p in posts" :key="p.id" :to="{ path: `/forum/${p.id}` }"
+        <a v-else v-for="p in posts" :key="p.id" :href="`/forum/${p.id}`"
           class="block md:flex py-2 px-3 md:px-2 border-b hover:no-underline z-text hover:bg-gray-50 dark:hover:bg-gray-800"
           :class="{ 'bg-slate-100 dark:bg-stone-900': postID == p.id }">
           <div class="flex py-1 md:w-[65%]">
@@ -119,7 +119,7 @@ watch(() => [route.params.id, route.params.page], fetchData, { immediate: true }
           <div class="py-1 flex md:w-[35%]">
             <span class="flex-1 w-auto md:inline md:w-[45%] truncate">
               <AvatarIcon :avatar="p.avatar" :size="15" />
-              {{ p.avatar.name }}
+              {{ p.avatar?.name }}
             </span>
             <span class="w-auto md:w-[40%] md:text-center">
               {{ formatDate(p.created_at) }}
@@ -129,11 +129,11 @@ watch(() => [route.params.id, route.params.page], fetchData, { immediate: true }
               {{ p.hit }}
             </span>
           </div>
-        </RouterLink>
+        </a>
       </div>
 
       <div v-if="!isLoading && !loadError" class="mt-4 text-right">
-        <RouterLinkButton :to="{ path: `/forum/new` }" :disabled="!auth.canWrite()">글쓰기</RouterLinkButton>
+        <RouterLinkButton to="/forum/new" :disabled="!auth.canWrite()">글쓰기</RouterLinkButton>
       </div>
 
       <div v-if="!isLoading && !loadError" class="text-center py-4">

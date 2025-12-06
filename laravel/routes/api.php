@@ -10,12 +10,14 @@ use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\ReplyController;
 use App\Http\Controllers\RunboxController;
 use App\Http\Controllers\SocialController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\WriteRequestController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/me', [AuthController::class, 'me']);
 Route::get('/logout', [AuthController::class, 'logout']);
-Route::get('/avatar/{username}', [AvatarController::class, 'show']);
+Route::get('/user/{userName}', [UserController::class, 'show']);
+Route::get('/user/{userId}/stats', [UserController::class, 'stats']);
 
 Route::get('/runbox/{hash}', [RunboxController::class, 'get']);
 Route::post('/runbox', [RunboxController::class, 'post']);
