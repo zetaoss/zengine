@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, useAttrs, type Component } from "vue"
 
+export type Color = "default" | "danger" | "ghost" | "primary"
+
 const props = defineProps<{
   as?: string | Component
   disabled?: boolean
-  color?: "default" | "danger" | "ghost" | "primary"
+  color?: Color
   size?: "small" | "medium"
 }>()
 
@@ -30,7 +32,7 @@ const colorClasses: Record<string, string> = {
   primary: "bg-[var(--z-primary-bg)] ring-[var(--z-primary-hover)] hover:bg-[var(--z-primary-hover)]",
 }
 
-const disabledClasses = "opacity-40 cursor-not-allowed pointer-events-none text-[var(--z-btn-text-disabled)]"
+const disabledClasses = "opacity-50 brightness-[.9] cursor-not-allowed pointer-events-none text-[var(--z-btn-text-disabled)]"
 
 const classes = computed(() => {
   const color = props.color || "default"

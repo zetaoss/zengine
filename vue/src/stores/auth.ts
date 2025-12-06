@@ -4,6 +4,7 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 
 import type UserData from '@common/types/userData'
+
 import http from '@/utils/http'
 
 const useAuthStore = defineStore('auth', () => {

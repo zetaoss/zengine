@@ -1,5 +1,6 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
+import ZCard from '@common/ui/ZCard.vue'
 import HomeAbout from './HomeAbout.vue'
 import HomeComments from './HomeComments.vue'
 import HomeForum from './HomeForum.vue'
@@ -11,53 +12,35 @@ import HomeOnelines from './HomeOnelines.vue'
   <div class="p-5">
     <h2 class="my-5 text-2xl font-bold">제타위키</h2>
     <div class="my-5 grid gap-4 md:grid-cols-2">
-      <section>
+      <ZCard>
         <HomeAbout />
-      </section>
-      <section>
-        <header>
+      </ZCard>
+      <ZCard>
+        <template #header>
           <a href="/forum">포럼</a>
-        </header>
+        </template>
         <HomeForum />
-      </section>
+      </ZCard>
     </div>
     <div class="my-5 grid gap-4 md:grid-cols-[2fr_2fr_1fr]">
-      <section>
-        <header>
+      <ZCard>
+        <template #header>
           한줄잡담
-        </header>
+        </template>
         <HomeOnelines />
-      </section>
-      <section>
-        <header>
+      </ZCard>
+      <ZCard>
+        <template #header>
           문서댓글
-        </header>
+        </template>
         <HomeComments />
-      </section>
-      <section>
-        <header>
+      </ZCard>
+      <ZCard>
+        <template #header>
           <a href="/wiki/특수:새문서">새 문서</a>
-        </header>
+        </template>
         <HomeNewPages />
-      </section>
+      </ZCard>
     </div>
   </div>
 </template>
-
-<style scoped>
-section {
-  background-color: var(--z-card-bg);
-  box-shadow: 0 0 0 1px var(--z-card-border), 0 1px 2px 0 rgba(0, 0, 0, .04);
-  border-radius: 8px;
-
-  padding: 1rem;
-
-  header {
-    border-bottom-width: 1px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 0.75rem;
-    padding-bottom: 0.75rem;
-  }
-}
-</style>

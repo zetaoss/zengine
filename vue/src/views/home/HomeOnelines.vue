@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import UserAvatar from '@common/components/avatar/UserAvatar.vue'
+import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import type { Avatar } from '@common/components/avatar/avatar'
 import http from '@/utils/http'
 import linkify from '@/utils/linkify'
@@ -31,7 +31,7 @@ onMounted(async () => {
 
 <template>
   <div v-for="r in rows" :key="r.id" class="py-2">
-    <UserAvatar :avatar="r.avatar" />
+    <AvatarUser :avatar="r.avatar" />
     <span class="ml-1" v-html="r.message" />
     <span class="z-muted2 ml-1 text-xs">{{ r.created.substring(0, 10) }}</span>
   </div>

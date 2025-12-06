@@ -1,4 +1,4 @@
-<!-- AvatarIdenticon.vue -->
+<!-- IconIdenticon.vue -->
 <script setup lang="ts">
 import { computed } from 'vue'
 
@@ -30,7 +30,7 @@ const identicon = computed(() => {
 <template>
   <svg :width="size" :height="size" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg" role="img"
     :aria-label="`Identicon for ${props.name}`">
-    <rect v-for="(c, i) in identicon.cells" :key="i" :x="c.x * 2 + 2" :y="c.y * 2 + 2" width="2" height="2"
+    <rect v-for="(c, i) in identicon.cells" :key="i" :x="c.x * 2 + 2" :y="c.y * 2 + 2" width="2.08" height="2.08"
       :fill="identicon.color" />
   </svg>
 </template>

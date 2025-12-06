@@ -36,7 +36,7 @@
     --z-primary-bg: #09c4;
     --z-primary-hover: #09c8;
 
-    --console-bg: #eee;
+    --console-bg: #e4e4e4;
     --console-string: theme(colors.sky.600);
     --console-number: theme(colors.purple.600);
     --console-null: #6b7280;

@@ -7,7 +7,7 @@ import { useRouter } from 'vue-router'
 import ZModal from '@common/ui/ZModal.vue'
 import ZButton from '@common/ui/ZButton.vue'
 import ZSpinner from '@common/ui/ZSpinner.vue'
-import UserAvatar from '@common/components/avatar/UserAvatar.vue'
+import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import useAuthStore from '@/stores/auth'
 import http from '@/utils/http'
 
@@ -82,7 +82,7 @@ watch(() => props.postID, fetchData, { immediate: true })
       </div>
 
       <div v-if="post?.avatar" class="py-3">
-        <UserAvatar :avatar="post.avatar" />
+        <AvatarUser :avatar="post.avatar" />
         <div class="text-sm">
           <span class="mr-4">
             {{ useDateFormat(post.created_at, 'YYYY-MM-DD HH:mm').value }}
