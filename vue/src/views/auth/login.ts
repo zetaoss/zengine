@@ -1,19 +1,46 @@
-import http from '@/utils/http'
+// login.ts
+import httpy, { type HttpyError } from '@common/utils/httpy'
 
-async function getLogintoken() {
-  const resp = await http.get('/w/api.php', {
-    params: {
-      format: 'json',
-      action: 'query',
-      meta: 'tokens',
-      type: 'login',
-    },
-  })
-  return resp.data.query.tokens.logintoken
+interface LoginTokenData {
+  query: {
+    tokens: {
+      logintoken: string
+    }
+  }
 }
 
-export default async function doLogin(username: string, password: string, loginreturnurl: string) {
-  const logintoken = await getLogintoken()
+interface ClientLogin {
+  status: string
+  message?: string
+  username?: string
+  redirecturl?: string
+}
+
+interface ClientLoginData {
+  clientlogin: ClientLogin
+}
+
+async function getLogintoken(): Promise<[string, HttpyError | null]> {
+  const [data, err] = await httpy.get<LoginTokenData>('/w/api.php', {
+    format: 'json',
+    action: 'query',
+    meta: 'tokens',
+    type: 'login',
+  })
+
+  if (err) return ['', err]
+
+  return [data.query.tokens.logintoken, null]
+}
+
+export default async function doLogin(
+  username: string,
+  password: string,
+  loginreturnurl: string,
+): Promise<[ClientLogin | null, HttpyError | null]> {
+  const [logintoken, err] = await getLogintoken()
+  if (err) return [null, err]
+
   const params = {
     format: 'json',
     action: 'clientlogin',
@@ -23,7 +50,14 @@ export default async function doLogin(username: string, password: string, loginr
     password,
     rememberMe: '1',
   }
-  const headers = { 'Content-Type': 'multipart/form-data' }
-  const resp = await http.post('/w/api.php', params, { headers })
-  return resp.data.clientlogin
+
+  const form = new FormData()
+  Object.entries(params).forEach(([k, v]) => {
+    if (v != null) form.append(k, String(v))
+  })
+
+  const [data, err2] = await httpy.post<ClientLoginData>('/w/api.php', form)
+  if (err2) return [null, err2]
+
+  return [data.clientlogin, null]
 }

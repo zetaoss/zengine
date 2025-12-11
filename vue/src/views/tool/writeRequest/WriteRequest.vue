@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-
 import { useRoute, useRouter } from 'vue-router'
-import { mdiDelete } from '@mdi/js';
+import { mdiDelete } from '@mdi/js'
 
 import { useConfirm } from '@common/composables/confirm/useConfirm'
 import { useToast } from '@common/composables/toast/useToast'
@@ -15,7 +14,7 @@ import type { Avatar } from '@common/components/avatar/avatar'
 import Pagination from '@/components/pagination/Pagination.vue'
 import type { PaginateData } from '@/components/pagination/types'
 import useAuthStore from '@/stores/auth'
-import http from '@/utils/http'
+import httpy from '@common/utils/httpy'
 
 import WriteRequestNew from './WriteRequestNew.vue'
 
@@ -34,10 +33,10 @@ interface Row {
 interface RespData {
   current_page: number
   data: Row[]
-  next_page_url: string
+  next_page_url: string | null
   path: string
   per_page: number
-  prev_page_url: string
+  prev_page_url: string | null
   to: number
   total: number
 }
@@ -53,7 +52,7 @@ const router = useRouter()
 const toast = useToast()
 const confirm = useConfirm()
 
-const mode = ref('todo')
+const mode = ref<'todo' | 'todo-top' | 'done'>('todo')
 const respData = ref({} as RespData)
 const paginateData = ref({} as PaginateData)
 const page = ref(1)
@@ -64,25 +63,45 @@ const loading = ref(true)
 const retries = 0
 
 async function fetchCount() {
-  const resp = await http.get('/api/write-request/count')
-  count.value = resp.data
+  const [data, err] = await httpy.get<Count>('/api/write-request/count')
+  if (err) {
+    console.error(err)
+    return
+  }
+
+  count.value = data
 }
 
 async function fetchPage() {
-  const resp = await http.get(`/api/write-request/${mode.value}`, { params: { page: String(page.value) } })
-  respData.value = resp.data
-  paginateData.value = resp.data
-  paginateData.value.path = '/tool/write-request/page'
+  const [data, err] = await httpy.get<RespData>(
+    `/api/write-request/${mode.value}`,
+    { page: String(page.value) },
+  )
+  if (err) {
+    console.error(err)
+    loading.value = false
+    return
+  }
+
+  respData.value = data
+  paginateData.value = {
+    ...(data as PaginateData),
+    path: '/tool/write-request/page',
+  }
+
   loading.value = false
 }
 
 function fetchData() {
   loading.value = true
+
   fetchCount()
+
   if (route.params.page) {
     page.value = Number(String(route.params.page))
     if (retries < 1) window.scrollTo(0, 0)
   }
+
   fetchPage()
 }
 
@@ -93,12 +112,13 @@ function openModal() {
   }
   showModal.value = true
 }
+
 function closeModal() {
   showModal.value = false
   fetchData()
 }
 
-function setMode(m: string) {
+function setMode(m: 'todo' | 'todo-top' | 'done') {
   mode.value = m
   fetchData()
 }
@@ -107,18 +127,20 @@ async function del(row: Row) {
   const ok = await confirm(`'${row.title}' 작성요청을 삭제하시겠습니까 ? `)
   if (!ok) return
 
-  try {
-    await http.delete(`/api/write-request/${row.id}`)
-    fetchData()
-    toast.show(`삭제 완료`)
-  } catch (err) {
+  const [, err] = await httpy.delete(`/api/write-request/${row.id}`)
+  if (err) {
     console.error(err)
+    return
   }
+
+  fetchData()
+  toast.show('삭제 완료')
 }
 
 watch(() => route.params, fetchData)
 fetchData()
 </script>
+
 
 <template>
   <div class="p-5">

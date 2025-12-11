@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import http from '@/utils/http'
+import httpy from '@common/utils/httpy'
 import ZModal from '@common/ui/ZModal.vue'
 import TiptapMain from './tiptap/TiptapMain.vue'
-import { useErrors, type ErrorResponse } from './errors'
+import { useErrors } from './errors'
 import './tiptap/ProseMirror.scss'
 import ZButton from '@common/ui/ZButton.vue'
 
@@ -31,23 +31,17 @@ const post = async () => {
   }
   if (errors.isError()) return
 
-  try {
-    await http.post('/api/posts', {
-      cat: cat.value,
-      title: title.value,
-      body: body.value,
-    })
-    gotoList()
-  } catch (err) {
-    if (err instanceof Error && 'response' in err) {
-      const resp = err?.response as ErrorResponse
-      Object.entries(resp?.data?.error || {}).forEach(([field, messages]) => {
-        messages.forEach((msg) => errors.add(field, msg))
-      })
-    } else {
-      console.error('API request error:', err)
-    }
+  const [, err] = await httpy.post('/api/posts', {
+    cat: cat.value,
+    title: title.value,
+    body: body.value,
+  })
+  if (err) {
+    console.error('POST posts', err)
+    return
   }
+
+  gotoList()
 }
 
 const postDisabled = computed(() => {
@@ -96,8 +90,12 @@ const modalOK = () => {
       </div>
 
       <div class="my-4 flex justify-center space-x-3">
-        <ZButton @click="post" color="primary" :disabled="postDisabled">등록</ZButton>
-        <ZButton @click="showModal = true">취소</ZButton>
+        <ZButton @click="post" color="primary" :disabled="postDisabled">
+          등록
+        </ZButton>
+        <ZButton @click="showModal = true">
+          취소
+        </ZButton>
       </div>
     </div>
   </div>

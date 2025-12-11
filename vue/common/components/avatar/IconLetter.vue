@@ -18,6 +18,9 @@ const initial = computed(() => {
 const bgColor = computed(() => {
   let hash = 5381
   const str = safeName.value
+  if (str == '?') {
+    return '#888'
+  }
 
   for (let i = 0; i < str.length; i++) {
     hash = ((hash << 5) + hash) + str.charCodeAt(i)

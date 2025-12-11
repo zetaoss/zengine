@@ -1,10 +1,12 @@
+<!-- ForumEdit.vue -->
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import http from '@/utils/http'
+import httpy from '@common/utils/httpy'
+
 import ZModal from '@common/ui/ZModal.vue'
 import TiptapMain from './tiptap/TiptapMain.vue'
-import { useErrors, type ErrorResponse } from './errors'
+import { useErrors } from './errors'
 import './tiptap/ProseMirror.scss'
 
 const route = useRoute()
@@ -17,22 +19,30 @@ const title = ref<string>('')
 const body = ref<string>('')
 const showModal = ref<boolean>(false)
 
+interface Post {
+  id: number
+  cat: string
+  title: string
+  body: string
+}
+
 const gotoPost = () => {
   router.push({ path: `/forum/${id.value}` })
 }
 
 const fetchData = async () => {
-  try {
-    id.value = Number(route.params.id)
-    const { data } = await http.get(`/api/posts/${id.value}`)
-    cat.value = data.cat
-    title.value = data.title
-    body.value = data.body
-  } catch (error) {
-    console.error('Failed to fetch data:', error)
-  }
-}
+  id.value = Number(route.params.id)
 
+  const [data, err] = await httpy.get<Post>(`/api/posts/${id.value}`)
+  if (err) {
+    console.error('Failed to fetch data:', err)
+    return
+  }
+
+  cat.value = data.cat ?? '질문'
+  title.value = data.title ?? ''
+  body.value = data.body ?? ''
+}
 
 const put = async () => {
   errors.clearAll()
@@ -45,23 +55,19 @@ const put = async () => {
   }
   if (errors.isError()) return
 
-  try {
-    await http.put(`/api/posts/${id.value}`, {
+  const [, err] = await httpy.put(`/api/posts/${id.value}`,
+    {
       cat: cat.value,
       title: title.value,
-      body: body.value
-    })
-    gotoPost()
-  } catch (err) {
-    if (err instanceof Error && 'response' in err) {
-      const resp = err?.response as ErrorResponse
-      Object.entries(resp?.data?.error || {}).forEach(([field, messages]) => {
-        messages.forEach((msg) => errors.add(field, msg))
-      })
-    } else {
-      console.error('API request error:', err)
-    }
+      body: body.value,
+    },
+  )
+  if (err) {
+    console.error(err)
+    return
   }
+
+  gotoPost()
 }
 
 const ModalOK = () => {

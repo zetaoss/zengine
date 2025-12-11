@@ -9,7 +9,7 @@ import ZButton from '@common/ui/ZButton.vue'
 import ZSpinner from '@common/ui/ZSpinner.vue'
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import useAuthStore from '@/stores/auth'
-import http from '@/utils/http'
+import httpy from '@common/utils/httpy'
 
 import type { Post } from '../types'
 
@@ -36,8 +36,14 @@ async function fetchData() {
   if (!props.postID) return
   isLoading.value = true
   try {
-    const resp = await http.get(`/api/posts/${props.postID}`)
-    post.value = resp.data
+    const [data, err] = await httpy.get<Post>(`/api/posts/${props.postID}`)
+    if (err) {
+      console.error('Failed to load post:', err)
+      post.value = null
+      return
+    }
+
+    post.value = data
     await nextTick()
     Prism.highlightAll()
   } finally {
@@ -55,7 +61,11 @@ function del() {
 
 async function modalOK() {
   showModal.value = false
-  await http.delete(`/api/posts/${props.postID}`)
+  const [, err] = await httpy.delete(`/api/posts/${props.postID}`)
+  if (err) {
+    console.error(err)
+    return
+  }
   window.location.href = '/forum'
 }
 
@@ -69,7 +79,6 @@ watch(() => props.postID, fetchData, { immediate: true })
 
   <div class="border rounded py-4">
     <div class="px-4">
-      <!-- 상단 메타 정보: post 있으면 내용, 없으면 비워두거나 스켈레톤 -->
       <div>
         <div class="float-left mr-2" v-if="post">
           <span class="text-xs p-1 rounded border text-gray-600 dark:text-gray-400">
@@ -93,7 +102,6 @@ watch(() => props.postID, fetchData, { immediate: true })
 
       <hr>
 
-      <!-- ✨ 여기서부터 내용 영역만 로딩/본문 전환 -->
       <div v-if="isLoading" class="py-10 text-center text-gray-500 min-h-[9rem]">
         <ZSpinner />
       </div>

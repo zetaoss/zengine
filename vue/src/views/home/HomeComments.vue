@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import type { Avatar } from '@common/components/avatar/avatar'
-import http from '@/utils/http'
+import httpy from '@common/utils/httpy'
 import linkify from '@/utils/linkify'
 
 interface Row {
@@ -14,21 +14,22 @@ interface Row {
 
 const rows = ref<Row[]>([])
 
-const fetchData = async () => {
-  try {
-    const { data } = await http.get('/api/comments/recent')
-    rows.value = await Promise.all(
-      data.map(async (x: Row) => ({
-        ...x,
-        message: await linkify(x.message),
-      }))
-    )
-  } catch (error) {
-    console.error('Failed to fetch comments:', error)
+const load = async () => {
+  const [data, err] = await httpy.get<Row[]>('/api/comments/recent')
+  if (err) {
+    console.error('recent comments', err)
+    return
   }
+
+  rows.value = await Promise.all(
+    data.map(async (x) => ({
+      ...x,
+      message: await linkify(x.message),
+    })),
+  )
 }
 
-onMounted(fetchData)
+onMounted(load)
 </script>
 
 <template>

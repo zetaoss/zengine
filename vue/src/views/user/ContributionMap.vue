@@ -10,7 +10,7 @@ import {
   mdiChevronRight,
   mdiChevronDoubleRight,
 } from '@mdi/js'
-import { pad, toDate } from './util'
+import { useDateFormat } from '@vueuse/core'
 
 const isAnimating = ref(false)
 
@@ -160,7 +160,7 @@ const cells = computed<DayCell[]>(() => {
   while (cur <= gridEnd) {
     const weekIndex = Math.floor(idx / 7)
     const weekday = cur.getDay()
-    const key = toDate(cur)
+    const key = useDateFormat(cur, 'YYYY-MM-DD').value
     const value = valueMap.value.get(key) ?? 0
 
     items.push({
@@ -205,9 +205,7 @@ const monthLabels = computed<MonthLabel[]>(() => {
   const groups = new Map<string, DayCell[]>()
 
   for (const cell of cells.value) {
-    const year = cell.date.getFullYear()
-    const m = cell.date.getMonth()
-    const key = `${year}-${m}`
+    const key = useDateFormat(cell.date, 'YYYY-MM').value
     if (!groups.has(key)) groups.set(key, [])
     groups.get(key)!.push(cell)
   }
@@ -221,10 +219,8 @@ const monthLabels = computed<MonthLabel[]>(() => {
 
     if (!sundayInFirstWeek) continue
 
-    const year = sundayInFirstWeek.date.getFullYear()
-    const m = sundayInFirstWeek.date.getMonth()
     labels.push({
-      name: `'${pad(year % 100)}.${pad(m + 1)}`,
+      name: useDateFormat(sundayInFirstWeek.date, "'YY.MM").value,
       weekIndex: sundayInFirstWeek.weekIndex,
     })
   }
