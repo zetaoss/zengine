@@ -5,7 +5,7 @@ import ZTextarea from '@common/ui/ZTextarea.vue'
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import type { Avatar } from '@common/components/avatar/avatar'
 import { canDelete, canEdit } from '@/utils/auth'
-import http from '@/utils/http'
+import httpy from '@common/utils/httpy'
 import getRLCONF from '@/utils/rlconf'
 import LinkifyBox from '../LinkifyBox.vue'
 
@@ -25,19 +25,26 @@ const docComments = ref([] as Row[])
 const editingRow = ref({} as Row)
 let deletingRow = {} as Row
 
-async function fetchDocComments() {
-  docComments.value = await http.get(`/api/comments/${wgArticleId}`)
-}
+async function fetchData() {
+  const [rows, err] = await httpy.get<Row[]>(`/api/comments/${wgArticleId}`)
+  if (err) {
+    console.log(err)
+    return
+  }
 
-function fetchData() {
-  fetchDocComments()
+  docComments.value = rows
 }
 
 async function postNew() {
-  await http.post('/api/comments', {
+  const [, err] = await httpy.post('/api/comments', {
     pageid: wgArticleId,
     message: message.value,
   })
+  if (err) {
+    console.log(err)
+    return
+  }
+
   message.value = ''
   fetchData()
 }
@@ -47,7 +54,17 @@ function edit(row: Row) {
 }
 
 async function editOK() {
-  await http.put(`/api/comments/${editingRow.value.id}`, { message: editingRow.value.message })
+  const id = editingRow.value.id
+  if (!id) return
+
+  const [, err] = await httpy.put(`/api/comments/${id}`, {
+    message: editingRow.value.message,
+  })
+  if (err) {
+    console.log(err)
+    return
+  }
+
   editingRow.value.id = 0
   fetchData()
 }
@@ -63,12 +80,19 @@ function del(row: Row) {
 
 async function delOK() {
   showModal.value = false
-  await http.delete(`/api/comments/${deletingRow.id}`)
+
+  const [, err] = await httpy.delete(`/api/comments/${deletingRow.id}`)
+  if (err) {
+    console.log(err)
+    return
+  }
+
   fetchData()
 }
 
 fetchData()
 </script>
+
 <template>
   <ZModal :show="showModal" okColor="danger" @ok="delOK()" @cancel="showModal = false">
     댓글을 삭제하시겠습니까?
@@ -85,7 +109,9 @@ fetchData()
         <div>{{ avatar.name }}</div>
         <div class="grid grid-cols-[5fr_1fr]">
           <textarea v-model="message" class="border rounded p-2" placeholder="댓글을 쓸 수 있습니다..." />
-          <button type="button" class="btn btn-primary" @click="postNew">저장</button>
+          <button type="button" class="btn btn-primary" @click="postNew">
+            저장
+          </button>
         </div>
       </div>
     </div>
@@ -98,8 +124,9 @@ fetchData()
           @click="del(row)">
           삭제
         </button>
-        <button type="button" v-if="canEdit(row.avatar.id)" class="float-right btn btn-xs"
-          @click="edit(row)">수정</button>
+        <button type="button" v-if="canEdit(row.avatar.id)" class="float-right btn btn-xs" @click="edit(row)">
+          수정
+        </button>
         <div class="text-sm">
           <a :href="`/profile/${row.avatar.name}`">{{ row.avatar.name }}</a>
           <span class="ml-3 text-neutral-400">{{ row.created.substring(0, 10) }}</span>

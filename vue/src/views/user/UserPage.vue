@@ -4,14 +4,14 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import type { Avatar } from '@common/components/avatar/avatar'
 import AvatarIcon from '@common/components/avatar/AvatarIcon.vue'
-import { getContributions } from '@/api/action'
-import { getUserInfo, getStats } from '@/api/laravel'
 import ZIcon from '@common/ui/ZIcon.vue'
 import ZCard from '@common/ui/ZCard.vue'
 import ZSpinner from '@common/ui/ZSpinner.vue'
 import { mdiVectorDifference } from '@mdi/js'
 import ContributionMap from './ContributionMap.vue'
-import { toDate } from './util'
+import { useDateFormat } from '@vueuse/core'
+
+import httpy from '@common/utils/httpy'
 
 const route = useRoute()
 const username = computed(() => route.params.username as string)
@@ -29,70 +29,107 @@ const minDate = ref(new Date())
 type StatsMap = Record<string, number>
 const stats = ref<StatsMap | null>(null)
 
-interface Contrib {
+interface Contribution {
   timestamp: string
   title: string
   revid: number
 }
 
-const contribs = ref<Contrib[]>([])
+interface UserContribsResponse {
+  usercontribs?: Contribution[]
+}
+
+interface ActionQueryResponse<T> {
+  query?: T
+  error?: { info?: string }
+}
+
+interface UserInfo {
+  user_id: number
+  user_name: string
+  user_registration: string
+  user_editcount: number
+  avatar: Avatar
+}
+
+const contribs = ref<Contribution[]>([])
+
 const isLoading = ref(false)
+const loadError = ref<string | null>(null)
 
 const today = new Date()
 today.setHours(12, 0, 0, 0)
 
-function toAgeDate(d: Date): string {
+function agoDate(d: Date): string {
   const diffSec = Math.floor((Date.now() - d.getTime()) / 1000)
-
   if (diffSec < 60) return `${diffSec}초 전`
-
   const min = Math.floor(diffSec / 60)
   if (min < 60) return `${min}분 전`
-
   const hour = Math.floor(min / 60)
   if (hour < 24) return `${hour}시간 전`
-
-  return toDate(d)
+  return useDateFormat(d, 'YYYY-MM-DD').value
 }
 
-function parseRegistrationDate(reg: string | undefined): Date {
+function parseRegistrationDate(reg: string): Date {
   if (!reg || reg.length < 8) return new Date()
-  const year = Number(reg.slice(0, 4))
-  const month = Number(reg.slice(4, 6)) - 1
-  const day = Number(reg.slice(6, 8))
-  return new Date(year, month, day, 12, 0, 0, 0)
+  const [y, m, d] = [reg.slice(0, 4), reg.slice(4, 6), reg.slice(6, 8)].map(Number)
+  return new Date(y, m - 1, d, 12)
 }
 
-onMounted(async () => {
-  isLoading.value = true
-  try {
-    const [userInfo, err1] = await getUserInfo(username.value)
-    if (err1 || !userInfo) {
-      console.error('getUserInfo error', err1)
-      return
-    }
-
-    avatar.value = userInfo.avatar ?? null
-    userId.value = userInfo.user_id ?? 0
-    editCount.value = userInfo.user_editcount ?? 0
-    minDate.value = parseRegistrationDate(userInfo.user_registration)
-
-    const [contributions, err2] = await getContributions(userId.value)
-    if (err2) {
-      console.error('getContributions error', err2)
-    } else {
-      contribs.value = contributions ?? []
-    }
-
-    const [rawStats, err3] = await getStats(userId.value)
-    if (err3) {
-      console.error('getStats error', err3)
-    } else {
-      stats.value = rawStats ?? {}
-    }
-  } finally {
-    isLoading.value = false
+async function fetchOrSetError<T>(
+  resource: string,
+  promise: ReturnType<typeof httpy.get<T>>,
+): Promise<T | null> {
+  const [data, err] = await promise
+  if (err) {
+    loadError.value = `failed to get ${resource}`
+    return null
   }
+  return data
+}
+
+async function load() {
+  const userInfo = await fetchOrSetError<UserInfo>(
+    'UserInfo',
+    httpy.get(`/api/user/${encodeURIComponent(username.value)}`)
+  )
+  if (!userInfo) return
+
+  avatar.value = userInfo.avatar
+  userId.value = userInfo.user_id
+  editCount.value = userInfo.user_editcount
+  minDate.value = parseRegistrationDate(userInfo.user_registration)
+
+  const contribRes = await fetchOrSetError<ActionQueryResponse<UserContribsResponse>>(
+    'UserContribs',
+    httpy.get('/w/api.php', {
+      action: 'query',
+      format: 'json',
+      list: 'usercontribs',
+      ucuser: username.value,
+      uclimit: '10',
+      ucprop: 'ids|title|timestamp',
+    }),
+  )
+  if (!contribRes) return
+  contribs.value = contribRes.query?.usercontribs ?? []
+
+  const rawStats = await fetchOrSetError<StatsMap>(
+    'StatsMap',
+    httpy.get(`/api/user/${userId.value}/stats`)
+  )
+  if (!rawStats) return
+
+  stats.value = rawStats
+}
+
+onMounted(() => {
+  isLoading.value = true
+  loadError.value = null
+
+  load().finally(() => {
+    isLoading.value = false
+  })
 })
 </script>
 
@@ -100,6 +137,10 @@ onMounted(async () => {
   <div class="max-w-4xl mx-auto py-6">
     <div v-if="isLoading" class="text-center">
       <ZSpinner />
+    </div>
+
+    <div v-else-if="loadError" class="mt-4 text-center text-sm text-red-500">
+      {{ loadError }}
     </div>
 
     <div v-else>
@@ -110,10 +151,7 @@ onMounted(async () => {
           </div>
 
           <div class="flex-1 p-6 border-l">
-            <h1 class="text-xl font-semibold">
-              {{ username }}
-            </h1>
-
+            <h1 class="text-xl font-semibold">{{ username }}</h1>
             <div class="space-y-1 text-sm z-muted2">
               <p>
                 편집수:
@@ -123,7 +161,7 @@ onMounted(async () => {
               </p>
               <p>
                 가입일:
-                <span>{{ toDate(minDate) }}</span>
+                {{ useDateFormat(minDate, 'YYYY-MM-DD') }}
               </p>
               <p>
                 <a :href="userPageHref">사용자 문서 바로가기</a>
@@ -148,7 +186,7 @@ onMounted(async () => {
           </thead>
           <tbody>
             <tr v-for="c in contribs" :key="c.revid" class="border-b">
-              <td>{{ toAgeDate(new Date(c.timestamp)) }}</td>
+              <td>{{ agoDate(new Date(c.timestamp)) }}</td>
               <td>
                 <a :href="`/wiki/${encodeURIComponent(c.title.replace(/ /g, '_'))}`">
                   {{ c.title }}
@@ -164,7 +202,7 @@ onMounted(async () => {
         </table>
       </ZCard>
 
-      <ContributionMap v-if="stats" :stats="stats" :min-date="minDate" :max-date="today" :range-months="12" />
+      <ContributionMap v-if="stats" :stats="stats" :min-date="minDate" :max-date="today" />
     </div>
   </div>
 </template>

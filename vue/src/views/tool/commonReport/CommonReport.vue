@@ -2,7 +2,8 @@
 import { ref, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import useAuthStore from '@/stores/auth'
-import http from '@/utils/http'
+import httpy from '@common/utils/httpy'
+
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import ZFold from '@common/ui/ZFold.vue'
 import ZSpin from '@common/ui/ZSpin.vue'
@@ -46,23 +47,27 @@ async function fetchData() {
   if (route.params.page) {
     page.value = Number(route.params.page)
   }
-  try {
-    const response = await http.get<RespData>('/api/common-report', {
-      params: { page: String(page.value) }
-    })
-    reportData.value = response.data
-    paginateData.value = { ...response.data, path: '/tool/common-report/page' } as PaginateData
 
-    if (response.data.data.some(row => ['pending', 'running'].includes(row.phase))) {
-      retrier.schedule()
-    } else {
-      retrier.clear()
-    }
-  } catch (error) {
-    console.error('Error fetching common report data:', error)
-  } finally {
+  const [data, err] = await httpy.get<RespData>('/api/common-report', {
+    page: String(page.value),
+  })
+
+  if (err) {
+    console.error('Error fetching common report data:', err)
     loading.value = false
+    return
   }
+
+  reportData.value = data
+  paginateData.value = { ...data, path: '/tool/common-report/page' } as PaginateData
+
+  if (data.data.some(row => ['pending', 'running'].includes(row.phase))) {
+    retrier.schedule()
+  } else {
+    retrier.clear()
+  }
+
+  loading.value = false
 }
 
 function openModal() {
@@ -81,11 +86,12 @@ function closeModal() {
 watch(
   () => route.params,
   () => { retrier.start() },
-  { immediate: true }
+  { immediate: true },
 )
 
 onUnmounted(() => retrier.clear())
 </script>
+
 
 <template>
   <div class="p-5">

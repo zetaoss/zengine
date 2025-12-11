@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, ref, watch, computed } from 'vue'
 import ZModal from '@common/ui/ZModal.vue'
-import http from '@/utils/http'
+import httpy from '@common/utils/httpy'
 import { useToast } from '@common/composables/toast/useToast'
 
 const toast = useToast()
@@ -32,8 +32,16 @@ async function ok() {
     return
   }
 
-  await http.post('/api/common-report', { names: trimmedNames.value, })
-  toast.show("등록 완료")
+  const [, err] = await httpy.post<unknown>('/api/common-report', {
+    names: trimmedNames.value,
+  })
+  if (err) {
+    console.error(err)
+    errorMessage.value = '등록에 실패했습니다. 잠시 후 다시 시도해 주세요.'
+    return
+  }
+
+  toast.show('등록 완료')
   emit('close')
 }
 
@@ -49,7 +57,7 @@ watch(
         inputs.value[0]?.focus()
       })
     }
-  }
+  },
 )
 </script>
 

@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-
 import { useRoute } from 'vue-router'
-
-import http from '@/utils/http'
+import httpy from '@common/utils/httpy'
 
 enum Status {
   Unknown = '',
@@ -19,8 +17,9 @@ const status = ref(Status.Unknown)
 let code = ''
 
 async function validateCode() {
-  const { data } = await http.get(`/api/auth/social/check/${code}`)
-  if (!data) {
+  const [, err] = await httpy.get<unknown>(`/api/auth/social/check/${code}`)
+  if (err) {
+    console.error(err)
     alert('invalid code')
     window.location.href = '/'
   }
@@ -31,53 +30,79 @@ function changed() {
 }
 
 async function checkUsername() {
-  const { data } = await http.get('/w/api.php', {
-    params: {
-      action: 'query',
-      list: 'users',
-      ususers: username.value,
-      usprop: 'cancreate',
-      formatversion: '2',
-      format: 'json',
-      errorformat: 'html',
-      errorsuselocal: 'true',
-      uselang: 'ko',
-    },
+  const [data, err] = await httpy.get<{
+    query: {
+      users: Array<{
+        cancreate?: boolean
+      }>
+    }
+  }>('/w/api.php', {
+    action: 'query',
+    list: 'users',
+    ususers: username.value,
+    usprop: 'cancreate',
+    formatversion: '2',
+    format: 'json',
   })
-  if (data.query.users[0].cancreate) {
-    status.value = Status.Can
+
+  if (err) {
+    console.error(err)
+    alert('사용자명 중복 확인에 실패했습니다. 잠시 후 다시 시도해주세요.')
     return
   }
-  status.value = Status.Cannot
+
+  const canCreate = data.query?.users?.[0]?.cancreate
+  status.value = canCreate ? Status.Can : Status.Cannot
+}
+
+interface SocialLoginResponse {
+  status: string
+  data: string
 }
 
 async function login() {
-  const { data } = await http.get(`/api/auth/social/login/${code}`, {
-    params: { username: username.value },
-  })
-  if (data.status !== 'success') {
-    alert('error on login');
-    window.location.href = '/';
-    return;
+  const [data, err] = await httpy.get<SocialLoginResponse>(
+    `/api/auth/social/login/${code}`,
+    { username: username.value },
+  )
+
+  if (err || !data || data.status !== 'success') {
+    console.error(err)
+    alert('error on login')
+    window.location.href = '/'
+    return
   }
-  window.location.href = data.data;
+
+  window.location.href = data.data
 }
 
 async function create() {
-  const { data } = await http.get(`/w/rest.php/auth/${code}`, {
-    params: { username: username.value },
-  })
-  if (data.status !== 'success') {
-    alert('error on create');
-    window.location.href = '/';
-    return;
+  const [data, err] = await httpy.get<{
+    status: string
+    data?: unknown
+  }>(
+    `/w/rest.php/auth/${code}`,
+    { username: username.value },
+  )
+
+  if (err || !data || data.status !== 'success') {
+    console.error(err)
+    alert('error on create')
+    window.location.href = '/'
+    return
   }
-  login();
+
+  await login()
 }
 
 onMounted(() => {
-  code = route.params.code as string;
-  validateCode();
+  code = route.params.code as string
+  if (!code) {
+    alert('invalid code')
+    window.location.href = '/'
+    return
+  }
+  void validateCode()
 })
 </script>
 

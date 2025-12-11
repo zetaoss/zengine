@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import http from '@/utils/http'
+import httpy from '@common/utils/httpy'
 
 interface Row {
   id: number
@@ -10,16 +10,17 @@ interface Row {
 
 const rows = ref<Row[]>([])
 
-async function fetchData() {
-  try {
-    const { data } = await http.get('/api/posts/recent')
-    rows.value = data
-  } catch (error) {
-    console.error('Failed to fetch posts:', error)
+const load = async () => {
+  const [data, err] = await httpy.get<Row[]>('/api/posts/recent')
+  if (err) {
+    console.error('recent posts', err)
+    return
   }
+
+  rows.value = data
 }
 
-onMounted(fetchData)
+onMounted(load)
 </script>
 
 <template>

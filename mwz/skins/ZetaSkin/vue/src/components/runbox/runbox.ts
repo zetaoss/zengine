@@ -1,6 +1,6 @@
 // runbox.ts
 import { createApp, reactive, h } from 'vue'
-import http from '@/utils/http'
+import httpy from '@common/utils/httpy'
 import getRLCONF from '@/utils/rlconf'
 import BoxApex from './BoxApex.vue'
 import { type Box, BoxType, type Job, JobType } from './types'
@@ -11,51 +11,58 @@ const pageId = getRLCONF().wgArticleId
 
 let delay = 1000
 
+interface JobStatus {
+  phase: Job['phase'] | 'none' | 'pending' | 'running' | 'succeeded' | 'error'
+  outs: unknown
+}
+
 async function getJob(job: Job): Promise<void> {
-  try {
-    const { phase, outs } = await http.get(`/api/runbox/${job.hash}`)
-    job.phase = phase
-
-    if (phase === 'none') {
-      enqueue(postJob, job)
-      return
-    }
-
-    if (phase === 'pending' || phase === 'running') {
-      console.log(`Job ${job.id}: Retrying in ${delay}ms`)
-      delay *= 1.1
-      setTimeout(() => enqueue(getJob, job), delay)
-      return
-    }
-
-    if (phase === 'succeeded') {
-      if (job.type === JobType.Lang) {
-        job.langOuts = outs
-      } else if (job.type === JobType.Notebook) {
-        job.notebookOuts = outs
-      }
-    }
-  } catch (error) {
-    console.error(`Error fetching job ${job.id}:`, error)
+  const [data, err] = await httpy.get<JobStatus>(`/api/runbox/${job.hash}`)
+  if (err) {
+    console.error(err)
     job.phase = 'error'
+    return
+  }
+
+  const { phase, outs } = data
+  job.phase = phase
+  if (phase === 'none') {
+    enqueue(postJob, job)
+    return
+  }
+
+  if (phase === 'pending' || phase === 'running') {
+    console.log(`Job ${job.id}: Retrying in ${delay}ms`)
+    delay *= 1.1
+    setTimeout(() => enqueue(getJob, job), delay)
+    return
+  }
+
+  if (phase === 'succeeded') {
+    if (job.type === JobType.Lang) {
+      job.langOuts = outs as typeof job.langOuts
+    } else if (job.type === JobType.Notebook) {
+      job.notebookOuts = outs as typeof job.notebookOuts
+    }
   }
 }
 
 async function postJob(job: Job): Promise<void> {
-  try {
-    await http.post(`/api/runbox`, {
-      hash: job.hash,
-      user_id: 0,
-      page_id: job.pageId,
-      type: job.type,
-      payload: job.payload,
-    })
-    job.phase = 'pending'
-    enqueue(getJob, job)
-  } catch (error) {
-    console.error(`Error posting job ${job.id}:`, error)
+  const [, err] = await httpy.post('/api/runbox', {
+    hash: job.hash,
+    user_id: 0,
+    page_id: job.pageId,
+    type: job.type,
+    payload: job.payload,
+  })
+  if (err) {
+    console.error(err)
     job.phase = 'error'
+    return
   }
+
+  job.phase = 'pending'
+  enqueue(getJob, job)
 }
 
 export function runbox() {
@@ -92,7 +99,8 @@ export function runbox() {
       el,
     }
 
-    const job = jobs.find(j => j.id === jobId) ||
+    const job =
+      jobs.find(j => j.id === jobId) ||
       jobs[
       jobs.push({
         id: jobId,

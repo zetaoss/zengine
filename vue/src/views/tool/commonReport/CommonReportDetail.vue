@@ -17,7 +17,7 @@ import Star from './Star.vue'
 import RouterLinkButton from '@/ui/RouterLinkButton.vue'
 import useAuthStore from '@/stores/auth'
 import copyToClipboard from '@/utils/clipboard'
-import http from '@/utils/http'
+import httpy from '@common/utils/httpy'
 
 import type { Row } from './types'
 import { getRatio, getScore, getWikitextTable } from './utils'
@@ -90,15 +90,27 @@ async function del(r: Row) {
   const ok = await confirm(`'${r.items[0].name}' 등에 관한 #${r.id}번 통용보고서를 삭제하시겠습니까?`)
   if (!ok) return
 
-  await http.delete(`/api/common-report/${r.id}`)
+  const [, err] = await httpy.delete(`/api/common-report/${r.id}`)
+
+  if (err) {
+    console.error(err)
+    toast.show('삭제 실패')
+    return
+  }
+
   toast.show('삭제 완료')
   router.push({ path: '/tool/common-report' })
 }
 
 async function fetchData() {
-  console.log('fetchData')
-  const resp = await http.get(`/api/common-report/${id}`)
-  row.value = resp.data
+  const [data, err] = await httpy.get<Row>(`/api/common-report/${id}`)
+
+  if (err) {
+    console.error('Error fetching common report data:', err)
+    return
+  }
+
+  row.value = data
 }
 
 async function fetchDataWithRetry(retryDelay = 1000) {
@@ -106,19 +118,23 @@ async function fetchDataWithRetry(retryDelay = 1000) {
 
   const phase = row.value.phase
   if (phase === 'pending' || phase === 'running') {
-    setTimeout(() => {
-      fetchDataWithRetry(retryDelay * 2)
-    }, retryDelay)
+    setTimeout(() => fetchDataWithRetry(retryDelay * 2), retryDelay)
   }
 }
 
 async function rerun(r: Row) {
-  await http.post(`/api/common-report/${r.id}/rerun`)
+  const [, err] = await httpy.post(`/api/common-report/${r.id}/rerun`)
+  if (err) {
+    toast.show('재실행 실패')
+    return
+  }
+
   await fetchDataWithRetry()
 }
 
 fetchDataWithRetry()
 </script>
+
 
 <template>
   <div v-if="row.avatar" class="p-5">

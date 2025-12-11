@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import type { Avatar } from '@common/components/avatar/avatar'
-import http from '@/utils/http'
+import httpy from '@common/utils/httpy'
 import linkify from '@/utils/linkify'
 
 interface Row {
@@ -14,19 +14,22 @@ interface Row {
 
 const rows = ref<Row[]>([])
 
-onMounted(async () => {
-  try {
-    const { data } = await http.get('/api/onelines/recent')
-    rows.value = await Promise.all(
-      data.map(async (r: Row) => ({
-        ...r,
-        message: await linkify(r.message),
-      }))
-    )
-  } catch (error) {
-    console.error('Error fetching onelines:', error)
+const load = async () => {
+  const [data, err] = await httpy.get<Row[]>('/api/onelines/recent')
+  if (err) {
+    console.error(err)
+    return
   }
-})
+
+  rows.value = await Promise.all(
+    data.map(async (r) => ({
+      ...r,
+      message: await linkify(r.message),
+    })),
+  )
+}
+
+onMounted(load)
 </script>
 
 <template>

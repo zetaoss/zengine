@@ -1,20 +1,23 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
-
 import { useRouter } from 'vue-router'
 
-import http from '@/utils/http'
+import httpy from '@common/utils/httpy'
 import ZSpinner from '@common/ui/ZSpinner.vue'
 import useAuthStore from '@/stores/auth'
 
 const me = useAuthStore()
 const router = useRouter()
 
-onMounted(() => {
-  http.get('/api/logout').then(() => {
-    me.update()
-    router.push({ path: '/login' })
-  })
+onMounted(async () => {
+  const [, err] = await httpy.get<unknown>('/api/logout')
+  if (err) {
+    console.error(err)
+    return
+  }
+
+  await me.update()
+  router.push({ path: '/login' })
 })
 </script>
 

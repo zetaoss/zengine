@@ -6,7 +6,7 @@ import AvatarIcon from '@common/components/avatar/AvatarIcon.vue'
 import ThePagination from '@/components/pagination/Pagination.vue'
 import type { PaginateData } from '@/components/pagination/types'
 import useAuthStore from '@/stores/auth'
-import http from '@/utils/http'
+import httpy from '@common/utils/httpy'
 import BoxPost from './box/BoxPost.vue'
 import type { Post } from './types'
 import ZSpinner from '@common/ui/ZSpinner.vue'
@@ -28,6 +28,7 @@ const fetchData = async () => {
 
   if (postID.value > 0) {
     isLoading.value = false
+    loadError.value = null
     posts.value = []
     return
   }
@@ -36,16 +37,21 @@ const fetchData = async () => {
   isLoading.value = true
   loadError.value = null
 
-  try {
-    const { data } = await http.get(`/api/posts?page=${page.value}`)
-    paginateData.value = { ...data, path: '/forum/page' }
-    posts.value = data.data
-  } catch (error) {
-    console.error('failed to fetchData', error)
+  const [data, err] = await httpy.get<PaginateData & { data: Post[] }>('/api/posts', {
+    page: page.value,
+  })
+
+  if (err) {
+    console.error('failed to fetchData', err)
     loadError.value = '목록을 불러오지 못했습니다.'
-  } finally {
+    posts.value = []
     isLoading.value = false
+    return
   }
+
+  paginateData.value = { ...data, path: '/forum/page' }
+  posts.value = data.data
+  isLoading.value = false
 }
 
 const formatDate = (date: string) => {
@@ -59,7 +65,6 @@ watch(() => [route.params.id, route.params.page], fetchData, { immediate: true }
   <div class="p-5">
     <h2 class="my-5 text-2xl font-bold">포럼</h2>
 
-    <!-- 상세 페이지 -->
     <div v-if="postID > 0">
       <div class="py-2">
         <div class="flex justify-end">
@@ -69,11 +74,8 @@ watch(() => [route.params.id, route.params.page], fetchData, { immediate: true }
       <BoxPost :post-i-d="postID" />
     </div>
 
-    <!-- 목록 페이지 -->
     <div v-else class="text-sm">
       <div class="z-card">
-
-        <!-- 항상 보이는 헤더 -->
         <div class="hidden md:flex p-2 font-bold text-center bg-[var(--z-table-header-bg)]">
           <div class="flex w-[65%]">
             <span class="w-[10%]">번호</span>
@@ -86,28 +88,24 @@ watch(() => [route.params.id, route.params.page], fetchData, { immediate: true }
           </div>
         </div>
 
-        <!-- 로딩 -->
         <div v-if="isLoading" class="py-10 flex items-center justify-center text-gray-500">
           <ZSpinner />
         </div>
 
-        <!-- 에러 -->
         <div v-else-if="loadError" class="py-10 text-center text-red-500">
           {{ loadError }}
         </div>
 
-        <!-- 비어 있음 -->
         <div v-else-if="posts.length === 0" class="py-10 text-center text-gray-500">
           아직 등록된 글이 없습니다.
         </div>
 
-        <!-- 정상 목록 -->
         <a v-else v-for="p in posts" :key="p.id" :href="`/forum/${p.id}`"
           class="block md:flex py-2 px-3 md:px-2 border-b hover:no-underline z-text hover:bg-gray-50 dark:hover:bg-gray-800"
           :class="{ 'bg-slate-100 dark:bg-stone-900': postID == p.id }">
           <div class="flex py-1 md:w-[65%]">
             <span class="hidden md:inline w-[10%] text-center">{{ p.id }}</span>
-            <span class="w-full md:w-[90%] truncate">
+            <span class="w-full md:w-[90%] pr-2 truncate">
               <span class="rounded-lg px-1.5 text-xs text-white dark:text-gray-200 bg-[#6668]">
                 {{ p.cat }}
               </span>
@@ -133,7 +131,9 @@ watch(() => [route.params.id, route.params.page], fetchData, { immediate: true }
       </div>
 
       <div v-if="!isLoading && !loadError" class="mt-4 text-right">
-        <RouterLinkButton to="/forum/new" :disabled="!auth.canWrite()">글쓰기</RouterLinkButton>
+        <RouterLinkButton to="/forum/new" :disabled="!auth.canWrite()">
+          글쓰기
+        </RouterLinkButton>
       </div>
 
       <div v-if="!isLoading && !loadError" class="text-center py-4">

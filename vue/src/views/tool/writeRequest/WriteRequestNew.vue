@@ -3,7 +3,7 @@ import { ref, computed, watch, nextTick } from 'vue'
 
 import ZModal from '@common/ui/ZModal.vue'
 import CProgressBar from '@common/components/CProgressBar.vue'
-import http from '@/utils/http'
+import httpy from '@common/utils/httpy'
 import titleExist from '@/utils/mediawiki'
 import { useToast } from '@common/composables/toast/useToast'
 
@@ -57,14 +57,19 @@ async function ok() {
   if (!canSubmit.value) return
 
   isSubmitting.value = true
-  try {
-    await http.post('/api/write-request', { title: trimmedTitle.value })
-    emit('close')
-    toast.show('등록 완료')
+  const [, err] = await httpy.post<unknown>('/api/write-request', {
+    title: trimmedTitle.value,
+  })
+  if (err) {
+    console.error(err)
+    toast.show('등록에 실패했습니다. 잠시 후 다시 시도해주세요.')
     reset()
-  } finally {
-    isSubmitting.value = false
+    return
   }
+
+  emit('close')
+  toast.show('등록 완료')
+  reset()
 }
 
 function cancel() {
@@ -79,7 +84,7 @@ watch(
       reset()
       nextTick(() => input.value?.focus())
     }
-  }
+  },
 )
 </script>
 

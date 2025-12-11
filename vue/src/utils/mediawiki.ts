@@ -1,12 +1,30 @@
-import http from '@/utils/http'
+// mediawiki.ts
+import httpy from '@common/utils/httpy'
+
+interface Page {
+  pageid?: number
+  ns?: number
+  title?: string
+  missing?: string
+}
+
+interface Data {
+  query?: {
+    pages?: Record<string, Page>
+  }
+}
 
 export default async function titleExist(title: string): Promise<boolean> {
-  try {
-    const { data } = await http.get('/w/api.php', { params: { action: 'query', format: 'json', titles: title } })
-    const pages = data?.query?.pages;
-    return pages && Object.keys(pages).some(key => key !== '-1');
-  } catch (error) {
-    console.error('Error fetching title existence:', error);
-    return false;
+  const [data, err] = await httpy.get<Data>('/w/api.php', {
+    action: 'query',
+    format: 'json',
+    titles: title,
+  })
+  if (err) {
+    console.error(err)
+    return false
   }
+  const pages = data?.query?.pages
+  if (!pages) return false
+  return Object.keys(pages).some(key => key !== '-1')
 }

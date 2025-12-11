@@ -17,7 +17,6 @@
     "@vueuse/components": "^12.2.0",
     "@vueuse/core": "^12.2.0",
     "autolinker": "^4.1.0",
-    "axios": "^1.12.2",
     "isomorphic-dompurify": "^2.19.0",
     "pinia": "^3.0.3",
     "prismjs": "^1.29.0",
