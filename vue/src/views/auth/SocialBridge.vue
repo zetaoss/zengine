@@ -1,38 +1,44 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
-
 import { useRoute } from 'vue-router'
-
 import ZSpinner from '@common/ui/ZSpinner.vue'
-
 import doLogin from './login'
 
 const route = useRoute()
 
-async function login() {
-  const username = route.query.username as string;
-  const password = route.query.otp as string;
-  const loginreturnurl = window.location.origin;
+function redirect() {
+  const returnto = route.query.returnto as string | undefined
 
-  const result = await doLogin(username, password, loginreturnurl)
-  if (result.status === 'PASS') {
-    const returnto = route.query.returnto as string;
-    if (returnto === undefined || returnto.length < 1) {
-      window.location.href = '/';
-      return
-    }
-    if (returnto?.startsWith(`//${window.location.host}/`)) {
-      window.location.href = returnto;
-      return
-    }
-    window.location.href = `/wiki/${returnto.replace(/\+/g, ' ')}`;
+  if (returnto && returnto.length > 0) {
+    window.location.href = `/wiki/${returnto.replace(/\+/g, ' ')}`
+  } else {
+    window.location.href = '/'
   }
-  console.error('doLogin error', result);
 }
 
-onMounted(() => {
-  login();
-})
+async function login() {
+  try {
+    const username = route.query.username as string
+    const password = route.query.otp as string
+    const loginreturnurl = window.location.origin
+
+    const [clientLogin, err] = await doLogin(username, password, loginreturnurl)
+    if (err) {
+      console.error(err)
+      return
+    }
+
+    if (clientLogin?.status !== 'PASS') {
+      console.error('not pass', clientLogin)
+    }
+  } catch (e) {
+    console.error('unexpected', e)
+  } finally {
+    redirect()
+  }
+}
+
+onMounted(login)
 </script>
 
 <template>

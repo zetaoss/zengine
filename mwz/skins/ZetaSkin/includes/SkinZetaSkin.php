@@ -34,13 +34,18 @@ class SkinZetaSkin extends SkinMustache
     public static function onSkinTemplateNavigation__Universal($skinTemplate, &$links)
     {
         if (isset($links['user-menu']['userpage'])) {
-            $links['user-menu']['profile'] = ['text' => '프로필', 'href' => '/user/profile'];
+            $links['user-menu']['profile'] = [
+                'text' => '사용자 페이지',
+                'href' => '/user/'.rawurlencode($skinTemplate->getUser()->getName()),
+            ];
             $links['user-menu']['userpage']['text'] = '사용자 문서';
             $links['user-menu']['mytalk']['text'] = '사용자 토론';
         }
+
         if (isset($links['views']['edit'])) {
             $links['views']['edit']['id'] = 'ca-edit';
         }
+
         self::$links = $links;
     }
 

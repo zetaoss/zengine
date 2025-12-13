@@ -15,25 +15,25 @@ import RouterLinkButton from '@/ui/RouterLinkButton.vue'
 const auth = useAuthStore()
 const route = useRoute()
 
-const postID = ref<number>(0)
+const postId = ref(0)
 const posts = ref<Post[]>([])
 const paginateData = ref<PaginateData>({} as PaginateData)
-const page = ref<number>(1)
+const page = ref(1)
 
 const isLoading = ref(false)
 const loadError = ref<string | null>(null)
 
 const fetchData = async () => {
-  postID.value = Number(route.params.id) || 0
+  postId.value = Number(route.params.id) || 0
+  page.value = Number(route.query.page) || 1
 
-  if (postID.value > 0) {
+  if (postId.value > 0) {
     isLoading.value = false
     loadError.value = null
     posts.value = []
     return
   }
 
-  page.value = Number(route.params.page) || 1
   isLoading.value = true
   loadError.value = null
 
@@ -49,7 +49,7 @@ const fetchData = async () => {
     return
   }
 
-  paginateData.value = { ...data, path: '/forum/page' }
+  paginateData.value = { ...data, path: '/forum' }
   posts.value = data.data
   isLoading.value = false
 }
@@ -58,20 +58,23 @@ const formatDate = (date: string) => {
   return useDateFormat(date, 'YY-MM-DD HH:mm').value
 }
 
-watch(() => [route.params.id, route.params.page], fetchData, { immediate: true })
+watch(() => [route.params.id, route.query.page], fetchData, { immediate: true })
 </script>
 
 <template>
   <div class="p-5">
     <h2 class="my-5 text-2xl font-bold">포럼</h2>
 
-    <div v-if="postID > 0">
+    <div v-if="postId > 0">
       <div class="py-2">
         <div class="flex justify-end">
-          <a :href="`/forum/page/${page}`">목록</a>
+          <RouterLinkButton :to="{ path: '/forum', query: page === 1 ? {} : { page } }">
+            목록
+          </RouterLinkButton>
         </div>
       </div>
-      <BoxPost :post-i-d="postID" />
+
+      <BoxPost :postId="postId" />
     </div>
 
     <div v-else class="text-sm">
@@ -100,9 +103,10 @@ watch(() => [route.params.id, route.params.page], fetchData, { immediate: true }
           아직 등록된 글이 없습니다.
         </div>
 
-        <a v-else v-for="p in posts" :key="p.id" :href="`/forum/${p.id}`"
+        <RouterLink v-else v-for="p in posts" :key="p.id"
+          :to="{ path: `/forum/${p.id}`, query: page === 1 ? {} : { page } }"
           class="block md:flex py-2 px-3 md:px-2 border-b hover:no-underline z-text hover:bg-gray-50 dark:hover:bg-gray-800"
-          :class="{ 'bg-slate-100 dark:bg-stone-900': postID == p.id }">
+          :class="{ 'bg-slate-100 dark:bg-stone-900': postId == p.id }">
           <div class="flex py-1 md:w-[65%]">
             <span class="hidden md:inline w-[10%] text-center">{{ p.id }}</span>
             <span class="w-full md:w-[90%] pr-2 truncate">
@@ -127,7 +131,7 @@ watch(() => [route.params.id, route.params.page], fetchData, { immediate: true }
               {{ p.hit }}
             </span>
           </div>
-        </a>
+        </RouterLink>
       </div>
 
       <div v-if="!isLoading && !loadError" class="mt-4 text-right">

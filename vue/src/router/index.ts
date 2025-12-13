@@ -25,9 +25,8 @@ const router = createRouter({
       children: [
         { path: '', component: ForumList },
         { path: 'new', component: ForumNew, meta: { requiresAuth: true } },
-        { path: ':id', component: ForumList },
         { path: ':id/edit', component: ForumEdit, meta: { requiresAuth: true } },
-        { path: 'page/:page', component: ForumList },
+        { path: ':id', component: ForumList },
       ],
     },
     {

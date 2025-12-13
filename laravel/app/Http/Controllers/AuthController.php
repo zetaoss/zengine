@@ -14,11 +14,11 @@ class AuthController extends Controller
         setcookie($prefix.'UserName', '', time() - 3600, '/');
         setcookie($prefix.'_session', '', time() - 3600, '/');
 
-        return ['message' => 'logged out'];
+        return response()->noContent();
     }
 
     public function me()
     {
-        return AuthService::me();
+        return AuthService::me() ?? (object) [];
     }
 }
