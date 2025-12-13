@@ -284,18 +284,18 @@ const monthLabels = computed<MonthLabel[]>(() => {
 
 <style scoped>
 .mycard {
-  --level0: #EFF2F5;
-  --level1: #ACEEBB;
-  --level2: #4AC26B;
-  --level3: #2DA44E;
+  --level0: #eff2f5;
+  --level1: #aceebb;
+  --level2: #4ac26b;
+  --level3: #2da44e;
   --level4: #116329;
 }
 
-:global(html.dark) .mycard {
+.dark .mycard {
   --level0: #282828;
-  --level1: #033A16;
-  --level2: #196C2E;
-  --level3: #2EA043;
-  --level4: #56D364;
+  --level1: #033a16;
+  --level2: #196c2e;
+  --level3: #2ea043;
+  --level4: #56d364;
 }
 </style>
