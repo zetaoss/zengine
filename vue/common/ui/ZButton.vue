@@ -50,7 +50,6 @@ const classes = computed(() => {
 })
 
 function handleClick(event: MouseEvent) {
-  console.log('ZButton handleClick', { disabled: props.disabled, tag: tag.value })
   if (props.disabled) {
     event.preventDefault()
     event.stopImmediatePropagation()
