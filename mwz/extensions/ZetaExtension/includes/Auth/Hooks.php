@@ -4,18 +4,32 @@ namespace ZetaExtension\Auth;
 
 class Hooks
 {
+    private static function redirectToSpa($special, string $path): bool
+    {
+        $req = $special->getRequest();
+        $returnto = $req->getVal('returnto', '');
+
+        $target = $path;
+        if ($returnto !== '') {
+            $target .= '?returnto='.rawurlencode($returnto);
+        }
+
+        $special->getOutput()->redirect($target);
+
+        return false;
+    }
+
     public static function onSpecialPageBeforeExecute($special, $subPage)
     {
-        if (get_class($special) != 'SpecialUserLogin') {
-            return;
+        if ($special instanceof \SpecialUserLogin) {
+            return self::redirectToSpa($special, '/login');
         }
-        $returnto = $_GET['returnto'] ?? false;
-        if (! $returnto) {
-            header('Location: /login');
-            exit;
+
+        if ($special instanceof \SpecialUserLogout) {
+            return self::redirectToSpa($special, '/logout');
         }
-        header("Location: /login?returnto=$returnto");
-        exit;
+
+        return true;
     }
 
     public static function onPostLoginRedirect($returnTo, $returnToQuery, $type)

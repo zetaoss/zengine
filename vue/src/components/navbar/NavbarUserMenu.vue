@@ -24,8 +24,8 @@ const items = computed<Item[]>(() =>
       { text: '환경 설정', href: '/wiki/특수:환경설정' },
       { text: '주시문서 목록', href: '/wiki/특수:주시문서목록' },
       { text: '기여', href: '/wiki/특수:내기여' },
-      { text: '업로드', href: '#' },
-      { text: '특수문서', href: '#' },
+      { text: '업로드', href: '/wiki/특수:올리기' },
+      { text: '특수문서', href: '/wiki/특수:특수문서' },
       { text: '로그아웃', href: '/logout' },
     ]
     : [
