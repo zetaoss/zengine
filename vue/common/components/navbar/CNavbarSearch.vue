@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onBeforeUnmount } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
-import { vOnClickOutside } from '@vueuse/components'
+import { useDismissable } from '@common/composables/useDismissable'
 
 import { mdiHistory, mdiMagnify, mdiShuffle } from '@mdi/js'
 import ZIcon from '@common/ui/ZIcon.vue'
@@ -17,6 +17,7 @@ interface Page {
 }
 interface SearchResponse { pages?: Page[];[k: string]: unknown }
 
+const root = ref<HTMLElement | null>(null)
 const expanded = ref(false)
 const keyword = ref('')
 const pages = ref<Page[]>([])
@@ -39,6 +40,11 @@ function close() {
   kIndex.value = -1
   hIndex.value = -1
 }
+
+useDismissable(root, {
+  enabled: expanded,
+  onDismiss: close,
+})
 
 async function fetchData(q: string) {
   const trimmed = q.trim()
@@ -140,7 +146,7 @@ onBeforeUnmount(() => { aborter.value?.abort() })
 <template>
   <div class="flex ml-auto md:max-w-2xl w-full z-text">
     <div class="grow m-1.5">
-      <div v-on-click-outside="close" class="relative" @keydown.up.prevent="onKeyUp" @keydown.down.prevent="onKeyDown"
+      <div ref="root" class="relative" @keydown.up.prevent="onKeyUp" @keydown.down.prevent="onKeyDown"
         @keydown.enter="onKeyEnter" @keydown.escape.prevent="onKeyEscape">
         <div class="flex h-9 z-bg rounded-t" :class="{ 'rounded-b': !expanded || !keyword.trim().length }">
           <input aria-label="search" type="search" class="grow px-3 h-full outline-0 bg-transparent" name="search"

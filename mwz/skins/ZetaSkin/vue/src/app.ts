@@ -9,7 +9,7 @@ import NavbarUserMenu from '@/components/NavbarUserMenu.vue'
 import PageMenu from '@/components/PageMenu.vue'
 import PageMeta from '@/components/PageMeta.vue'
 import BinderApex from '@/components/binder/BinderApex.vue'
-import PageFooter from '@/components/pagefooter/PageFooter.vue'
+import PageFooter from '@/components/PageFooter.vue'
 import TocApex from '@/components/toc/TocApex.vue'
 
 import { runVisibleHeightsUpdater } from '@common/utils/runVisibleHeightsUpdater'

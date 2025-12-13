@@ -3,13 +3,14 @@
 import { ref, watch } from 'vue'
 
 import { mdiDotsVertical } from '@mdi/js'
-import { vOnClickOutside } from '@vueuse/components'
 import { useDateFormat } from '@vueuse/core'
 
 import ZIcon from '@common/ui/ZIcon.vue'
 import ZModal from '@common/ui/ZModal.vue'
 import ZTextarea from '@common/ui/ZTextarea.vue'
 import ZButton from '@common/ui/ZButton.vue'
+import ZMenu from '@common/ui/ZMenu.vue'
+import ZMenuItem from '@common/ui/ZMenuItem.vue'
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import useAuthStore from '@/stores/auth'
 import httpy from '@common/utils/httpy'
@@ -27,7 +28,6 @@ const replies = ref<Reply[]>([])
 const replyBody = ref('')
 const editingReply = ref({} as Reply)
 const showModal = ref(false)
-const dropdownReplyID = ref(0)
 
 let deletingReply = {} as Reply
 
@@ -99,14 +99,6 @@ async function modalOK() {
   fetchData()
 }
 
-function dropdown(reply: Reply) {
-  dropdownReplyID.value = reply.id
-}
-
-function dropdownClose() {
-  dropdownReplyID.value = 0
-}
-
 watch(() => props.postID, fetchData)
 fetchData()
 </script>
@@ -127,31 +119,26 @@ fetchData()
           <AvatarUser :avatar="reply.avatar" />
           {{ useDateFormat(reply.created_at, 'YYYY-MM-DD HH:mm').value }}
         </div>
-        <div v-if="me && me.canEdit(reply.avatar.id)" v-on-click-outside="dropdownClose" class="text-right">
-          <button type="button" @click="dropdown(reply)">
-            <ZIcon :path="mdiDotsVertical" />
-          </button>
-        </div>
-      </div>
 
-      <div v-if="dropdownReplyID == reply.id" class="relative">
-        <div class="z-10 absolute right-0 bg-white divide-y divide-gray-100 rounded shadow dark:bg-gray-700">
-          <ul class="list-none p-0 text-xs text-gray-700 dark:text-gray-200">
-            <li>
-              <button type="button"
-                class="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                @click="edit(reply)">
-                수정
+        <div v-if="me && me.canEdit(reply.avatar.id)" class="text-right">
+          <ZMenu>
+            <template #trigger="{ toggle }">
+              <button type="button" @click="toggle">
+                <ZIcon :path="mdiDotsVertical" />
               </button>
-            </li>
-            <li>
-              <button type="button"
-                class="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                @click="del(reply)">
-                삭제
-              </button>
-            </li>
-          </ul>
+            </template>
+
+            <template #menu="{ close }">
+              <div class="text-xs">
+                <ZMenuItem @click="edit(reply); close()">
+                  수정
+                </ZMenuItem>
+                <ZMenuItem @click="del(reply); close()">
+                  삭제
+                </ZMenuItem>
+              </div>
+            </template>
+          </ZMenu>
         </div>
       </div>
 
@@ -179,7 +166,7 @@ fetchData()
               <ZButton @click="editCancel">
                 취소
               </ZButton>
-              <ZButton :disabled="editingReply.body.length == 0" @click="editOK" color="primary">
+              <ZButton :disabled="editingReply.body.length === 0" @click="editOK" color="primary">
                 등록
               </ZButton>
             </div>
@@ -196,7 +183,7 @@ fetchData()
           <div class="text-xs text-gray-400">
             {{ replyBody.length }} 자
           </div>
-          <ZButton :disabled="replyBody.length == 0" @click="postReply" class="w-20" color="primary">
+          <ZButton :disabled="replyBody.length === 0" @click="postReply" class="w-20" color="primary">
             등록
           </ZButton>
         </div>
