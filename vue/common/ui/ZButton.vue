@@ -1,3 +1,4 @@
+<!-- ZButton.vue -->
 <script setup lang="ts">
 import { computed, useAttrs, type Component } from "vue"
 
@@ -49,12 +50,13 @@ const classes = computed(() => {
 })
 
 function handleClick(event: MouseEvent) {
+  console.log('ZButton handleClick', { disabled: props.disabled, tag: tag.value })
   if (props.disabled) {
     event.preventDefault()
     event.stopImmediatePropagation()
     return
   }
-  emit("click", event)
+  emit('click', event)
 }
 </script>
 

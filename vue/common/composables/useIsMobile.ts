@@ -1,9 +1,21 @@
 // @common/composables/useIsMobile.ts
-import { computed } from 'vue'
-import { useWindowSize } from '@vueuse/core'
+import { ref, onMounted, onUnmounted } from 'vue'
 
 export function useIsMobile() {
-  const { width } = useWindowSize()
-  const isMobile = computed(() => width.value < 900)
+  const isMobile = ref(false)
+
+  const update = () => {
+    isMobile.value = window.innerWidth < 900
+  }
+
+  onMounted(() => {
+    update()
+    window.addEventListener('resize', update)
+  })
+
+  onUnmounted(() => {
+    window.removeEventListener('resize', update)
+  })
+
   return { isMobile }
 }

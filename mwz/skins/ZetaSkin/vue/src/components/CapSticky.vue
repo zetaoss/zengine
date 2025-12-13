@@ -1,10 +1,10 @@
-<!-- @/components/CapSticky.vue -->
+<!-- CapSticky.vue -->
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { onClickOutside } from '@vueuse/core'
 import { mdiMenu } from '@mdi/js'
 import ZIcon from '@common/ui/ZIcon.vue'
 import { useIsMobile } from '@common/composables/useIsMobile'
+import { useDismissable } from '@common/composables/useDismissable'
 
 const props = defineProps({
   marginY: { type: Number, default: 0 },
@@ -23,11 +23,18 @@ onMounted(() => {
   collapsed.value = isOverlay.value ? true : false
 })
 
-onClickOutside(root, () => {
-  if (isOverlay.value && !collapsed.value) collapsed.value = true
-})
+function toggle() {
+  collapsed.value = !collapsed.value
+}
 
-const toggle = () => { collapsed.value = !collapsed.value }
+function close() {
+  collapsed.value = true
+}
+
+useDismissable(root, {
+  enabled: isOverlay,
+  onDismiss: close,
+})
 
 const styleVars = computed(() => {
   const top = `calc(var(--navbar-visible-height) + ${props.marginY}px)`
