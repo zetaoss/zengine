@@ -19,7 +19,7 @@ import linkify from '@/utils/linkify'
 import type { Reply } from '../types'
 
 const props = defineProps({
-  postID: { type: Number, default: 0 },
+  postId: { type: Number, default: 0 },
 })
 
 const me = useAuthStore()
@@ -32,7 +32,7 @@ const showModal = ref(false)
 let deletingReply = {} as Reply
 
 async function fetchData() {
-  const [data, err] = await httpy.get<Reply[]>(`/api/posts/${props.postID}/replies`)
+  const [data, err] = await httpy.get<Reply[]>(`/api/posts/${props.postId}/replies`)
   if (err) {
     console.error(err)
     return
@@ -49,7 +49,7 @@ async function fetchData() {
 }
 
 async function postReply() {
-  const [, err] = await httpy.post(`/api/posts/${props.postID}/replies`, {
+  const [, err] = await httpy.post(`/api/posts/${props.postId}/replies`, {
     body: replyBody.value,
   })
   if (err) {
@@ -67,7 +67,7 @@ function edit(reply: Reply) {
 
 async function editOK() {
   const [, err] = await httpy.put(
-    `/api/posts/${props.postID}/replies/${editingReply.value.id}`,
+    `/api/posts/${props.postId}/replies/${editingReply.value.id}`,
     { body: editingReply.value.body },
   )
   if (err) {
@@ -90,7 +90,7 @@ function del(reply: Reply) {
 
 async function modalOK() {
   showModal.value = false
-  const [, err] = await httpy.delete(`/api/posts/${props.postID}/replies/${deletingReply.id}`)
+  const [, err] = await httpy.delete(`/api/posts/${props.postId}/replies/${deletingReply.id}`)
   if (err) {
     console.error(err)
     return
@@ -99,7 +99,7 @@ async function modalOK() {
   fetchData()
 }
 
-watch(() => props.postID, fetchData)
+watch(() => props.postId, fetchData)
 fetchData()
 </script>
 

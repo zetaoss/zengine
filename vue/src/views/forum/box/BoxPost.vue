@@ -24,7 +24,7 @@ import 'prismjs/components/prism-php'
 import 'prismjs/themes/prism-okaidia.css'
 import RouterLinkButton from '@/ui/RouterLinkButton.vue'
 
-const props = defineProps({ postID: Number })
+const props = defineProps({ postId: Number })
 const router = useRouter()
 const auth = useAuthStore()
 
@@ -33,10 +33,10 @@ const showModal = ref(false)
 const isLoading = ref(false)
 
 async function fetchData() {
-  if (!props.postID) return
+  if (!props.postId) return
   isLoading.value = true
   try {
-    const [data, err] = await httpy.get<Post>(`/api/posts/${props.postID}`)
+    const [data, err] = await httpy.get<Post>(`/api/posts/${props.postId}`)
     if (err) {
       console.error('Failed to load post:', err)
       post.value = null
@@ -52,7 +52,7 @@ async function fetchData() {
 }
 
 function edit() {
-  router.push({ path: `/forum/${props.postID}/edit` })
+  router.push({ path: `/forum/${props.postId}/edit` })
 }
 
 function del() {
@@ -61,7 +61,7 @@ function del() {
 
 async function modalOK() {
   showModal.value = false
-  const [, err] = await httpy.delete(`/api/posts/${props.postID}`)
+  const [, err] = await httpy.delete(`/api/posts/${props.postId}`)
   if (err) {
     console.error(err)
     return
@@ -69,7 +69,7 @@ async function modalOK() {
   window.location.href = '/forum'
 }
 
-watch(() => props.postID, fetchData, { immediate: true })
+watch(() => props.postId, fetchData, { immediate: true })
 </script>
 
 <template>
@@ -109,7 +109,7 @@ watch(() => props.postID, fetchData, { immediate: true })
       <div v-else-if="post">
         <BoxHTML class="py-4 min-h-[9rem]" :body="post.body" />
         <hr>
-        <BoxReplies :post-i-d="postID" />
+        <BoxReplies :postId="postId" />
       </div>
 
       <div v-else class="py-10 text-center text-gray-500 min-h-[9rem]">

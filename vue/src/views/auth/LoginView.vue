@@ -1,9 +1,8 @@
+<!-- LoginView.vue -->
 <script setup lang="ts">
 import { ref } from 'vue'
-
 import { mdiAccount, mdiLock } from '@mdi/js'
 import { useRoute } from 'vue-router'
-
 import ZIcon from '@common/ui/ZIcon.vue'
 
 import GithubIcon from './icons/GithubIcon.vue'
@@ -16,21 +15,35 @@ const message = ref('')
 const username = ref('')
 const password = ref('')
 
-async function login() {
-  const result = await doLogin(username.value, password.value, window.location.origin)
-  if (result.status === 'PASS') {
-    const returnto = route.query.returnto?.toString()
-    if (returnto === undefined || returnto.length < 1) {
-      window.location.href = '/'
-      return
-    }
-    if (returnto?.startsWith(`//${window.location.host}/`)) {
-      window.location.href = returnto
-      return
-    }
-    window.location.href = `/wiki/${returnto.replace(/\+/g, ' ')}`
+function redirectAfterLogin() {
+  const returnto = route.query.returnto?.toString()
+  if (!returnto || returnto.length < 1) {
+    window.location.href = '/'
+    return
   }
-  message.value = result.message
+  window.location.href = `/wiki/${returnto.replace(/\+/g, ' ')}`
+}
+
+async function login() {
+  message.value = ''
+
+  const [clientLogin, err] = await doLogin(username.value, password.value, window.location.origin)
+  if (err) {
+    message.value = err.message
+    return
+  }
+
+  if (!clientLogin) {
+    message.value = 'Login failed (empty response).'
+    return
+  }
+
+  if (clientLogin.status === 'PASS') {
+    redirectAfterLogin()
+    return
+  }
+
+  message.value = clientLogin.message || `Login failed: ${clientLogin.status}`
 }
 </script>
 

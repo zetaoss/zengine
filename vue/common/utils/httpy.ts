@@ -62,11 +62,11 @@ class Httpy {
     const text = await res.text()
 
     if (!res.ok) {
-      console.log('res', res)
-      return [
-        null,
-        new HttpyError(res.status, 'HTTP', `${res.status}`),
-      ]
+      return [null, new HttpyError(res.status, 'HTTP', `${res.status}`)]
+    }
+
+    if (res.status === 204 || res.status === 205) {
+      return [undefined as unknown as TSelected, null]
     }
 
     let parsed: TRaw

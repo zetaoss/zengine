@@ -9,7 +9,7 @@ interface LoginTokenData {
   }
 }
 
-interface ClientLogin {
+export interface ClientLogin {
   status: string
   message?: string
   username?: string
@@ -29,7 +29,6 @@ async function getLogintoken(): Promise<[string, HttpyError | null]> {
   })
 
   if (err) return ['', err]
-
   return [data.query.tokens.logintoken, null]
 }
 

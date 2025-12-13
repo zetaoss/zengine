@@ -8,11 +8,11 @@ use Illuminate\Support\Facades\Redis;
 
 class AuthService
 {
-    public static function me(): array|false
+    public static function me(): ?array
     {
         $userId = self::getValidUserId();
 
-        return $userId ? self::getUserInfo($userId) : false;
+        return $userId ? self::getUserInfo($userId) : null;
     }
 
     private static function getValidUserId(): ?int
