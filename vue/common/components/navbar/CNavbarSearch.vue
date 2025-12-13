@@ -1,3 +1,4 @@
+<!-- CNavbarSearch.vue -->
 <script setup lang="ts">
 import { ref, computed, onBeforeUnmount } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
