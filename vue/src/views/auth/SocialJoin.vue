@@ -47,7 +47,7 @@ async function checkUsername() {
 
   if (err) {
     console.error(err)
-    alert('사용자명 중복 확인에 실패했습니다. 잠시 후 다시 시도해주세요.')
+    alert('사용자명 중복 확인에 실패했습니다. 잠시 후 다시 시도하세요.')
     return
   }
 
@@ -112,7 +112,7 @@ onMounted(() => {
       사용자명 생성
     </div>
     <p class="py-5">
-      사용할 사용자명을 입력해주세요.
+      사용할 사용자명을 입력하세요.
     </p>
     <p class="text-sm">
       사용자명:
