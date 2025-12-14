@@ -28,8 +28,9 @@ class User extends Model
         return [
             'id' => $this->user_id,
             'name' => $this->user_name,
-            'type' => $avatar?->type ?? 1,
-            'ghash' => $avatar?->ghash ?? '',
+            't' => (int) ($avatar?->t ?? 1),
+            'gravatar' => (string) ($avatar?->gravatar ?? ''),
+            'ghash' => (string) ($avatar?->ghash ?? ''),
         ];
     }
 }

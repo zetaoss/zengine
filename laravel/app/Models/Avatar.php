@@ -12,8 +12,12 @@ class Avatar extends Model
 
     public $timestamps = false;
 
+    public $incrementing = false;
+
+    protected $keyType = 'int';
+
     protected $fillable = [
-        'type',
+        't',
         'gravatar',
         'ghash',
     ];

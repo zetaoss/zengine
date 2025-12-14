@@ -95,4 +95,11 @@ class AuthService
 
         return $userInfo;
     }
+
+    public static function forgetUserInfo(int $userId): void
+    {
+        Cache::forget("userInfo:$userId");
+
+        AvatarService::forgetAvatar($userId);
+    }
 }

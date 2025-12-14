@@ -1,3 +1,4 @@
+// index.ts
 import { createRouter, createWebHistory } from 'vue-router'
 
 const Home = () => import('@/views/home/Home.vue')
@@ -13,6 +14,7 @@ const LoginView = () => import('@/views/auth/LoginView.vue')
 const LogoutView = () => import('@/views/auth/LogoutView.vue')
 const SocialBridge = () => import('@/views/auth/SocialBridge.vue')
 const SocialJoin = () => import('@/views/auth/SocialJoin.vue')
+const EditProfile = () => import('@/views/user/EditProfile.vue')
 const UserPage = () => import('@/views/user/UserPage.vue')
 
 const router = createRouter({
@@ -47,10 +49,11 @@ const router = createRouter({
     { path: '/social-bridge', component: SocialBridge },
     { path: '/social-join/:code', component: SocialJoin },
 
+    { path: '/user/:username/edit', component: EditProfile, meta: { requiresAuth: true } },
     { path: '/user/:username', component: UserPage },
 
     // catch-all (dummy route for wiki)
-    { path: '/wiki/:any', component: () => null },
+    { path: '/wiki/:any(.*)', component: () => null },
   ],
 })
 
