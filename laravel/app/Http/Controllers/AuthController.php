@@ -3,41 +3,38 @@
 namespace App\Http\Controllers;
 
 use App\Models\Avatar;
-use App\Services\AuthService;
+use App\Services\AvatarService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
 
 class AuthController extends Controller
 {
-    public function logout()
+    public function me()
     {
-        $prefix = getenv('WG_COOKIE_PREFIX');
-        setcookie($prefix.'Token', '', time() - 3600, '/');
-        setcookie($prefix.'UserID', '', time() - 3600, '/');
-        setcookie($prefix.'UserName', '', time() - 3600, '/');
-        setcookie($prefix.'_session', '', time() - 3600, '/');
+        $id = auth()->id();
+        if (! $id) {
+            return response()->json(['me' => null]);
+        }
 
-        return response()->noContent();
-    }
+        $me = auth()->user()->toArray();
+        $me['avatar'] = AvatarService::getAvatarById((int) $id);
 
-    public function me(Request $request)
-    {
-        $me = $request->attributes->get('me');
-
-        return $me ?? (object) [];
+        return response()->json(['me' => $me]);
     }
 
     public function verifyGravatar(Request $request)
     {
-        $request->validate([
-            'email' => ['required', 'email'],
+        Gate::authorize('unblocked');
+
+        $data = $request->validate([
+            'ghash' => ['required', 'string', 'size:32', 'regex:/^[0-9a-f]{32}$/'],
         ]);
 
-        $email = strtolower(trim((string) $request->query('email')));
-        $hash = md5($email);
+        $hash = strtolower($data['ghash']);
 
         if (! $this->gravatarExists($hash)) {
-            return response()->json(['ok' => 0], 404);
+            return response()->json(['ok' => false], 404);
         }
 
         return response()->json([
@@ -48,56 +45,43 @@ class AuthController extends Controller
 
     public function updateAvatar(Request $request)
     {
-        $me = $request->attributes->get('me');
-        $userId = (int) (($me['avatar']['id'] ?? 0));
+        Gate::authorize('unblocked');
 
+        $userId = (int) auth()->id();
         if ($userId < 1) {
             return response()->json(['message' => 'Unauthenticated'], 401);
         }
 
         $data = $request->validate([
             't' => ['required', 'integer', 'min:1', 'max:3'],
-            'gravatar' => ['sometimes', 'nullable', 'string'],
+            'ghash' => ['sometimes', 'nullable', 'string', 'size:32', 'regex:/^[0-9a-f]{32}$/'],
         ]);
 
-        $t = (int) $data['t'];
-
         $avatar = Avatar::firstOrNew(['user_id' => $userId]);
-        $avatar->t = $t;
+        $avatar->t = (int) $data['t'];
 
-        if (array_key_exists('gravatar', $data)) {
-            $g = $data['gravatar'];
+        if (array_key_exists('ghash', $data)) {
+            $hash = $data['ghash'];
 
-            if ($g === null || trim((string) $g) === '') {
-                $avatar->gravatar = null;
+            if ($hash === null || trim($hash) === '') {
                 $avatar->ghash = null;
             } else {
-                $request->validate([
-                    'gravatar' => ['required', 'email'],
-                ]);
-
-                $email = strtolower(trim((string) $g));
-                $hash = md5($email);
+                $hash = strtolower($hash);
 
                 if (! $this->gravatarExists($hash)) {
                     return response()->json(['message' => 'Gravatar not found'], 400);
                 }
 
-                $avatar->gravatar = $email;
                 $avatar->ghash = $hash;
             }
         }
 
         $avatar->save();
 
-        AuthService::forgetUserInfo($userId);
+        AvatarService::forgetAvatar($userId);
 
         return response()->json([
-            'avatar' => [
-                't' => (int) ($avatar->t ?? 1),
-                'gravatar' => (string) ($avatar->gravatar ?? ''),
-                'ghash' => (string) ($avatar->ghash ?? ''),
-            ],
+            'avatar' => AvatarService::getAvatarById($userId),
         ]);
     }
 

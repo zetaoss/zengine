@@ -5,69 +5,56 @@ namespace App\Http\Controllers;
 use App\Models\Post;
 use App\Models\Reply;
 use Illuminate\Http\Request;
-use Validator;
+use Illuminate\Support\Facades\Gate;
 
-class ReplyController extends MyController
+class ReplyController extends Controller
 {
     public function index(Post $post)
     {
-        return $post->replies()->get();
+        return $post->replies()
+            ->latest('created_at')
+            ->get();
     }
 
     public function store(Post $post, Request $request)
     {
-        $err = $this->validateRequest($request);
-        if (! empty($err)) {
-            return $err;
-        }
-        $err = $this->shouldCreatable();
-        if (! empty($err)) {
-            return $err;
-        }
+        Gate::authorize('unblocked');
 
-        return $post->createReply([
-            'body' => $request->body,
-            'user_id' => $this->getUserID(),
-            'user_name' => $this->getUserName(),
+        $validated = $request->validate([
+            'body' => 'required|string|min:1|max:5000',
+        ]);
+
+        return $post->replies()->create([
+            'body' => (string) $validated['body'],
+            'user_id' => (int) auth()->id(),
         ]);
     }
 
     public function update(Post $post, Reply $reply, Request $request)
     {
-        $err = $this->validateRequest($request);
-        if (! empty($err)) {
-            return $err;
-        }
-        $err = $this->shouldEditable($reply->user_id);
-        if (! empty($err)) {
-            return $err;
-        }
-        $reply->body = $request->body;
-        $reply->save();
+        abort_unless((int) $reply->post_id === (int) $post->id, 404);
 
-        return ['status' => 'ok'];
+        Gate::authorize('owner', (int) $reply->user_id);
+
+        $validated = $request->validate([
+            'body' => 'required|string|min:1|max:5000',
+        ]);
+
+        $reply->update([
+            'body' => (string) $validated['body'],
+        ]);
+
+        return ['ok' => true];
     }
 
     public function destroy(Post $post, Reply $reply)
     {
-        $err = $this->shouldDeletable($reply->user_id);
-        if (! empty($err)) {
-            return $err;
-        }
+        abort_unless((int) $reply->post_id === (int) $post->id, 404);
+
+        Gate::authorize('ownerOrSysop', (int) $reply->user_id);
+
         $reply->delete();
 
-        return ['status' => 'ok'];
-    }
-
-    private function validateRequest(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'body' => 'required|string|max:5000',
-        ]);
-        if ($validator->fails()) {
-            return $this->newHTTPError(400, 'bad_request', $validator->getMessageBag()->toArray());
-        }
-
-        return null;
+        return ['ok' => true];
     }
 }

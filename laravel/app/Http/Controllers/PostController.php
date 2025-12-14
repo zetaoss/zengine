@@ -4,18 +4,23 @@ namespace App\Http\Controllers;
 
 use App\Models\Post;
 use Illuminate\Http\Request;
-use Validator;
+use Illuminate\Support\Facades\Gate;
 
-class PostController extends MyController
+class PostController extends Controller
 {
     public function recent()
     {
-        return Post::orderBy('id', 'desc')->take(6)->get();
+        return Post::query()
+            ->latest('id')
+            ->take(6)
+            ->get();
     }
 
     public function index()
     {
-        return Post::orderBy('id', 'desc')->paginate(15);
+        return Post::query()
+            ->latest('id')
+            ->paginate(15);
     }
 
     public function show(Post $post)
@@ -25,71 +30,57 @@ class PostController extends MyController
         return $post;
     }
 
-    public function store(Request $req)
+    public function store(Request $request)
     {
-        $err = $this->validateRequest($req);
-        if (! empty($err)) {
-            return $err;
-        }
-        $err = $this->shouldCreatable();
-        if (! empty($err)) {
-            return $err;
-        }
-        $post = new Post;
-        $post->cat = request('cat');
-        $post->tags_str = '';
-        $post->title = request('title');
-        $post->body = request('body');
-        $post->channel_id = 1;
-        $post->user_id = $this->getUserID();
-        $post->save();
+        Gate::authorize('unblocked');
 
-        return ['status' => 'ok'];
+        $validated = $request->validate([
+            'cat' => 'required|in:질문,잡담,인사,기타',
+            'title' => 'required|string|max:100',
+            'body' => 'required|string|min:1|max:5000',
+        ]);
+
+        $post = Post::create([
+            'cat' => (string) $validated['cat'],
+            'title' => (string) $validated['title'],
+            'body' => (string) $validated['body'],
+            'tags_str' => '',
+            'channel_id' => 1,
+            'user_id' => (int) auth()->id(),
+            'hit' => 0,
+            'is_notice' => false,
+        ]);
+
+        return $post;
     }
 
     public function update(Request $request, Post $post)
     {
-        $err = $this->validateRequest($request);
-        if (! empty($err)) {
-            return $err;
-        }
-        $err = $this->shouldEditable($post->user_id);
-        if (! empty($err)) {
-            return $err;
-        }
-        $post->cat = request('cat');
-        $post->tags_str = '';
-        $post->title = request('title');
-        $post->body = request('body');
-        $post->channel_id = 1;
-        $post->user_id = $this->getUserID();
-        $post->save();
+        Gate::authorize('owner', (int) $post->user_id);
 
-        return ['status' => 'ok'];
+        $validated = $request->validate([
+            'cat' => 'required|in:질문,잡담,인사,기타',
+            'title' => 'required|string|max:100',
+            'body' => 'required|string|min:1|max:5000',
+        ]);
+
+        $post->update([
+            'cat' => (string) $validated['cat'],
+            'title' => (string) $validated['title'],
+            'body' => (string) $validated['body'],
+            'tags_str' => '',
+            'channel_id' => 1,
+        ]);
+
+        return ['ok' => true];
     }
 
     public function destroy(Post $post)
     {
-        $err = $this->shouldDeletable($post->user_id);
-        if (! empty($err)) {
-            return $err;
-        }
+        Gate::authorize('ownerOrSysop', (int) $post->user_id);
+
         $post->delete();
 
-        return ['status' => 'ok'];
-    }
-
-    private function validateRequest(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'cat' => 'required|in:질문,잡담,인사,기타',
-            'title' => 'required|string|max:100',
-            'body' => 'required|string|min:1,max:5000',
-        ]);
-        if ($validator->fails()) {
-            return $this->newHTTPError(400, $validator->getMessageBag()->toArray());
-        }
-
-        return null;
+        return ['ok' => true];
     }
 }
