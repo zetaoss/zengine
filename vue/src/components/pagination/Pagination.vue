@@ -36,10 +36,8 @@ const activeClass = 'font-bold bg-[#8883]'
         :class="[baseLinkClass, block.blockStart < 2 && disabledClass]">
         <ZIcon :path="mdiChevronLeft" />
       </RouterLink>
-      <RouterLink v-for="page in block.pages" :key="page" :to="{ path: `${paginateData.path}/${page}` }" :class="[
-        baseLinkClass,
-        page === paginateData.current_page && activeClass,
-      ]">
+      <RouterLink v-for="page in block.pages" :key="page" :to="{ path: paginateData.path, query: { page } }"
+        :class="[baseLinkClass, page === paginateData.current_page && activeClass]">
         {{ page }}
       </RouterLink>
       <RouterLink :to="{ path: `${paginateData.path}/${block.blockEnd + 1}` }"

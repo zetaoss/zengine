@@ -5,8 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\CommonReport;
 use App\Services\CommonReportService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
-class CommonReportController extends MyController
+class CommonReportController extends Controller
 {
     public function __construct(protected CommonReportService $service) {}
 
@@ -22,16 +23,19 @@ class CommonReportController extends MyController
 
     public function store(Request $request)
     {
-        if ($err = $this->shouldCreatable()) {
-            return $err;
+        Gate::authorize('unblocked');
+
+        $names = $request->input('names', []);
+        if (! is_array($names)) {
+            return response()->json(['message' => '비교 대상을 2개 이상 입력해 주세요.'], 422);
         }
 
-        $names = array_filter($request->input('names', []));
-        if (! is_array($names) || count($names) < 2) {
-            return $this->newHTTPError(422, '비교 대상을 2개 이상 입력해 주세요.');
+        $names = array_values(array_filter($names, fn ($v) => is_string($v) && trim($v) !== ''));
+        if (count($names) < 2) {
+            return response()->json(['message' => '비교 대상을 2개 이상 입력해 주세요.'], 422);
         }
 
-        $userId = $this->getMe()['avatar']['id'];
+        $userId = (int) auth()->id();
 
         return $this->service->create($names, $userId);
     }
@@ -39,38 +43,33 @@ class CommonReportController extends MyController
     public function rerun(int $id)
     {
         $report = CommonReport::findOrFail($id);
-        if ($err = $this->shouldDeletable($report->user_id)) {
-            return $err;
-        }
+        Gate::authorize('ownerOrSysop', (int) $report->user_id);
 
         $this->service->rerun($report);
+
+        return ['ok' => true];
     }
 
     public function clone(int $id)
     {
+        Gate::authorize('unblocked');
         $original = CommonReport::findOrFail($id);
-        if ($err = $this->shouldCreatable()) {
-            return $err;
-        }
 
-        $userId = $this->getMe()['avatar']['id'];
+        $userId = (int) auth()->id();
 
         return $this->service->clone($original, $userId);
     }
 
-    public function destroy($id)
+    public function destroy(int $id)
     {
         $report = CommonReport::find($id);
         if (! $report) {
-            return $this->newHTTPError(404, '해당 리포트가 없습니다.');
+            return response()->json(['message' => '해당 리포트가 없습니다.'], 404);
         }
 
-        if ($err = $this->shouldDeletable($report->user_id)) {
-            return $err;
-        }
-
+        Gate::authorize('ownerOrSysop', (int) $report->user_id);
         $this->service->delete($report);
 
-        return ['status' => 'ok'];
+        return ['ok' => true];
     }
 }

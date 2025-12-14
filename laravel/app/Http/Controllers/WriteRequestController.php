@@ -3,57 +3,79 @@
 namespace App\Http\Controllers;
 
 use App\Models\WriteRequest;
-use DB;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
-class WriteRequestController extends MyController
+class WriteRequestController extends Controller
 {
     public function count()
     {
         return DB::table('write_requests')
-            ->selectRaw('COUNT(CASE WHEN writer_id>-1 THEN 1 ELSE NULL END) AS done')
-            ->selectRaw('COUNT(CASE WHEN writer_id=-1 THEN 1 ELSE NULL END) AS todo')->first();
+            ->selectRaw('COUNT(CASE WHEN writer_id > -1 THEN 1 ELSE NULL END) AS done')
+            ->selectRaw('COUNT(CASE WHEN writer_id = -1 THEN 1 ELSE NULL END) AS todo')
+            ->first();
     }
 
     public function indexTodo()
     {
-        return WriteRequest::where('writer_id', '<', 0)->orderBy('id', 'desc')->paginate(25);
+        return WriteRequest::where('writer_id', '<', 0)
+            ->orderBy('id', 'desc')
+            ->paginate(25);
     }
 
     public function indexTodoTop()
     {
-        return WriteRequest::where('writer_id', '<', 0)->orderByRaw('rate DESC, hit DESC, ref DESC, id DESC')->paginate(25);
+        return WriteRequest::where('writer_id', '<', 0)
+            ->orderByRaw('rate DESC, hit DESC, ref DESC, id DESC')
+            ->paginate(25);
     }
 
     public function indexDone()
     {
-        return WriteRequest::where('writer_id', '>', 0)->orderBy('id', 'desc')->paginate(25);
+        return WriteRequest::where('writer_id', '>', 0)
+            ->orderBy('id', 'desc')
+            ->paginate(25);
     }
 
-    public function store()
+    public function store(Request $request)
     {
-        $err = $this->shouldCreatable();
-        if (! empty($err)) {
-            return $ok;
-        }
-        $title = trim(request('title'));
-        if ($title === '') {
-            return $this->newHTTPError(422, '제목을 입력해주세요.');
-        }
+        Gate::authorize('unblocked');
+
+        $request->validate([
+            'title' => 'required|string|min:1|max:255',
+        ]);
+
+        $title = trim((string) $request->input('title'));
+
         $wr = new WriteRequest;
-        $wr->user_id = $this->getUserID();
+        $wr->user_id = auth()->id();
         $wr->title = $title;
         $wr->save();
+
+        return ['ok' => true, 'id' => $wr->id];
     }
 
-    public function destroy($id)
+    public function update(WriteRequest $writeRequest, Request $request)
     {
-        $row = WriteRequest::find($id);
-        $err = $this->shouldDeletable($row->user_id);
-        if ($err !== false) {
-            return $err;
-        }
-        $row->delete();
+        Gate::authorize('owner', (int) $writeRequest->user_id);
 
-        return ['status' => 'ok'];
+        $request->validate([
+            'title' => 'required|string|min:1|max:255',
+        ]);
+
+        $writeRequest->title = trim((string) $request->input('title'));
+        $writeRequest->save();
+
+        return ['ok' => true];
+    }
+
+    public function destroy(WriteRequest $writeRequest)
+    {
+        Gate::authorize('ownerOrSysop', (int) $writeRequest->user_id);
+
+        $writeRequest->delete();
+
+        return ['ok' => true];
     }
 }

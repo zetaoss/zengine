@@ -6,15 +6,26 @@ use App\Models\Comment;
 use App\Services\AvatarService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
-class CommentController extends MyController
+class CommentController extends Controller
 {
     public function recent()
     {
         return DB::connection('mwdb')->table('z_comment')
-            ->select('page.page_id', 'page.page_title', 'page.page_namespace', 'z_comment.id', 'z_comment.user_id', 'z_comment.created', 'z_comment.message')
+            ->select(
+                'page.page_id',
+                'page.page_title',
+                'page.page_namespace',
+                'z_comment.id',
+                'z_comment.user_id',
+                'z_comment.created',
+                'z_comment.message'
+            )
             ->join('page', 'z_comment.curid', 'page.page_id')
-            ->orderBy('z_comment.created', 'desc')->limit(10)->get()
+            ->orderBy('z_comment.created', 'desc')
+            ->limit(10)
+            ->get()
             ->map(function ($row) {
                 $row->avatar = AvatarService::getAvatarById($row->user_id);
 
@@ -25,7 +36,10 @@ class CommentController extends MyController
     public function list($pageID)
     {
         return DB::connection('mwdb')->table('z_comment')
-            ->select('id', 'user_id', 'created', 'message')->where('curid', $pageID)->orderBy('created', 'desc')->get()
+            ->select('id', 'user_id', 'created', 'message')
+            ->where('curid', $pageID)
+            ->orderBy('created', 'desc')
+            ->get()
             ->map(function ($row) {
                 $row->avatar = AvatarService::getAvatarById($row->user_id);
 
@@ -35,48 +49,47 @@ class CommentController extends MyController
 
     public function store(Request $request)
     {
+        Gate::authorize('unblocked');
+
         $request->validate([
-            'pageid' => 'required|int|min:1',
-            'message' => 'required|string|min:1,max:5000',
-        ]);
-        $err = $this->shouldCreatable();
-        if ($err !== false) {
-            return $err;
-        }
-        DB::connection('mwdb')->table('z_comment')->insert([
-            'curid' => request('pageid'),
-            'message' => request('message'),
-            'user_id' => $this->getUserID(),
-            'name' => $this->getUserName(),
-            'created' => date('Y-m-d H:i:s'),
+            'pageid' => 'required|integer|min:1',
+            'message' => 'required|string|min:1|max:5000',
         ]);
 
-        return ['status' => 'ok'];
+        $userId = (int) auth()->id();
+        $user = auth()->user();
+
+        DB::connection('mwdb')->table('z_comment')->insert([
+            'curid' => (int) $request->input('pageid'),
+            'message' => (string) $request->input('message'),
+            'user_id' => $userId,
+            'name' => (string) ($user?->name ?? ''),
+            'created' => now()->toDateTimeString(),
+        ]);
+
+        return ['ok' => true];
     }
 
     public function update(Comment $comment, Request $request)
     {
+        Gate::authorize('owner', (int) $comment->user_id);
+
         $request->validate([
-            'message' => 'required|string|min:1,max:5000',
+            'message' => 'required|string|min:1|max:5000',
         ]);
-        $err = $this->shouldEditable($comment->user_id);
-        if ($err !== false) {
-            return $err;
-        }
-        $comment->message = $request->message;
+
+        $comment->message = (string) $request->input('message');
         $comment->save();
 
-        return ['status' => 'ok'];
+        return ['ok' => true];
     }
 
     public function destroy(Comment $comment)
     {
-        $err = $this->shouldDeletable($comment->user_id);
-        if ($err !== false) {
-            return $err;
-        }
+        Gate::authorize('ownerOrSysop', (int) $comment->user_id);
+
         $comment->delete();
 
-        return ['status' => 'ok'];
+        return ['ok' => true];
     }
 }
