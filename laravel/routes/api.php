@@ -14,8 +14,13 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\WriteRequestController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/me', [AuthController::class, 'me']);
-Route::get('/logout', [AuthController::class, 'logout']);
+Route::middleware(['mwauth'])->group(function () {
+    Route::get('/me', [AuthController::class, 'me']);
+    Route::post('/me/avatar', [AuthController::class, 'updateAvatar']);
+    Route::get('/me/gravatar/verify', [AuthController::class, 'verifyGravatar']);
+    Route::get('/logout', [AuthController::class, 'logout']);
+});
+
 Route::get('/user/{userName}', [UserController::class, 'show']);
 Route::get('/user/{userId}/stats', [UserController::class, 'stats']);
 

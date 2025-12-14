@@ -12,6 +12,7 @@ import ContributionMap from './ContributionMap.vue'
 import { useDateFormat } from '@vueuse/core'
 
 import httpy from '@common/utils/httpy'
+import useAuthStore from '@/stores/auth'
 
 const route = useRoute()
 const username = computed(() => route.params.username as string)
@@ -20,9 +21,12 @@ const encodedUsername = computed(() => username.value.replace(/ /g, '_'))
 const userPageHref = computed(() => `/wiki/User:${encodedUsername.value}`)
 const contribPageHref = computed(() => `/wiki/특수:기여/${encodedUsername.value}`)
 
-const avatar = ref<Avatar | null>(null)
+const me = useAuthStore()
 const userId = ref(0)
+const avatar = ref<Avatar | null>(null)
 const editCount = ref(0)
+
+const isMe = computed(() => me.isLoggedIn && me.userData.avatar.id === userId.value)
 
 const minDate = ref(new Date())
 
@@ -89,9 +93,13 @@ async function fetchOrSetError<T>(
 }
 
 async function load() {
+  loadError.value = null
+
+  if (!me.isLoggedIn) await me.update()
+
   const userInfo = await fetchOrSetError<UserInfo>(
     'UserInfo',
-    httpy.get(`/api/user/${encodeURIComponent(username.value)}`)
+    httpy.get(`/api/user/${encodeURIComponent(username.value)}`),
   )
   if (!userInfo) return
 
@@ -116,7 +124,7 @@ async function load() {
 
   const rawStats = await fetchOrSetError<StatsMap>(
     'StatsMap',
-    httpy.get(`/api/user/${userId.value}/stats`)
+    httpy.get(`/api/user/${userId.value}/stats`),
   )
   if (!rawStats) return
 
@@ -151,8 +159,14 @@ onMounted(() => {
           </div>
 
           <div class="flex-1 p-6 border-l">
-            <h1 class="text-xl font-semibold">{{ username }}</h1>
-            <div class="space-y-1 text-sm z-muted2">
+            <div class="flex items-baseline gap-2">
+              <h1 class="text-xl font-semibold">{{ username }}</h1>
+              <a v-if="isMe" :href="`/user/${encodedUsername}/edit`" class="text-xs ml-1">
+                Edit Profile
+              </a>
+            </div>
+
+            <div class="space-y-1 text-sm z-muted2 mt-2">
               <p>
                 편집수:
                 <span class="font-semibold z-text">

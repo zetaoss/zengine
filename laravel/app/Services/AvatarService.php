@@ -21,4 +21,9 @@ class AvatarService
             return $user->avatar;
         });
     }
+
+    public static function forgetAvatar(int $userId): void
+    {
+        Cache::forget("avatar:$userId");
+    }
 }
