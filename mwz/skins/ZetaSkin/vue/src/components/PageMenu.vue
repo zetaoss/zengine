@@ -30,7 +30,7 @@ useDismissable(root, {
     </button>
 
     <div v-if="show"
-      class="absolute z-30 right-0 p-0 border list-none rounded-lg bg-white shadow-md dark:bg-neutral-800 text-sm text-black dark:text-white"
+      class="absolute z-30 right-0 p-0 border list-none rounded bg-white shadow-md dark:bg-neutral-800 text-sm text-black dark:text-white"
       @click.stop>
       <slot />
     </div>

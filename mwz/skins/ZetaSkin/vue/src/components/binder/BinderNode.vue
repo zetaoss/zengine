@@ -61,9 +61,8 @@ onMounted(centerScrollIfCurrent)
 <template>
   <li class="flex flex-col">
     <div class="row flex items-stretch hover:bg-gray-500/15" ref="rowRef">
-      <component :is="isLink ? 'a' : 'div'" :href="node.href || undefined"
-        class="flex flex-1 px-2 hover:no-underline z-muted" :class="{ 'font-bold': isCurrent, 'new': node.new }"
-        :title="node.text">
+      <component :is="isLink ? 'a' : 'div'" :href="node.href || undefined" class="flex flex-1 px-2 hover:no-underline"
+        :class="{ 'font-bold': isCurrent, 'new': node.new }" :title="node.text">
         <span :style="{ paddingLeft: `${depth}rem` }">{{ node.text }}</span>
       </component>
 

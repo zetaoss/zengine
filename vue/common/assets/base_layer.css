@@ -5,8 +5,7 @@
 @layer base {
   :root {
     color-scheme: light;
-
-    --z-site-font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", "Apple SD Gothic Neo", Roboto, "Noto Sans KR", "Noto Sans", sans-serif;
+    --z-font-family: "Pretendard JP", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Noto Sans CJK KR", "NanumBarunGothic", Roboto, "Segoe UI", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif, emoji;
 
     --z-bg: #fff;
     --z-bg-muted: #f6f6f6;
@@ -17,7 +16,8 @@
 
     --z-link: #09c;
     --z-link-ext: #093;
-    --z-link-new: #d38;
+    --z-link-ext-alpha: #0933;
+    --z-link-new: #b00;
 
     --z-link-bg: #09c1;
     --z-link-bg-hover: #09c3;
@@ -71,9 +71,10 @@
 
   --z-border: #8884;
 
-  --z-link: #6af;
+  --z-link: #3ad;
   --z-link-ext: #3a6;
-  --z-link-new: #e77;
+  --z-link-ext-alpha: #3a66;
+  --z-link-new: #c66;
 
   --z-link-bg: #6af3;
   --z-link-bg-hover: #6af4;

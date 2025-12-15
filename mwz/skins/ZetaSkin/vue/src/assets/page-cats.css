@@ -1,15 +1,16 @@
 .page-cats {
   padding: 0;
+  font-size: .8rem;
 
   li {
     display: inline-block;
   }
 
   a {
-    padding: .3rem .6rem;
-    margin-right: .5rem;
-    border-radius: 9em;
     text-decoration: none;
+    border-radius: .4rem;
+    padding: .2rem .4rem;
+    margin-right: .5rem;
     background-color: var(--z-link-bg);
 
     &:hover {
