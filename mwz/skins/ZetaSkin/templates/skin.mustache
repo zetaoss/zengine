@@ -28,11 +28,13 @@
 
       <div class="flex-auto">
         <div class="p-4 py-8 md:p-8">
-          <div class="py-4">
-            <div class="text-3xl font-semibold">{{{ html-title }}}</div>
+          <div class="pt-4">
+            <h1>{{{ html-title }}}</h1>
+            {{#htmlSubtitle}}
             <div>{{{ html-subtitle }}}</div>
+            {{/htmlSubtitle}}
           </div>
-          <div class="py-4 text-[.9rem]"> 
+          <div class="pb-4"> 
             <div class="flow-root py-2">
               <div class="float-left">
                 {{#is-article}}
@@ -58,7 +60,7 @@
             </div>
 
             {{#data-portlets.data-category-normal.html-items}}
-            <ul class="page-cats pt-2">{{{ . }}}</ul>
+            <ul class="page-cats">{{{ . }}}</ul>
             {{/data-portlets.data-category-normal.html-items}}
           </div>
           <hr />
