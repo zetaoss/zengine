@@ -32,6 +32,10 @@
     color: var(--z-muted2);
 }
 
+.z-muted3 {
+    color: var(--z-muted3);
+}
+
 .z-text {
     color: var(--z-text);
 }

@@ -1,7 +1,5 @@
 @use '@common/assets/app.scss';
 
-@use 'base-tag';
-
 @use 'ui-color/ui-color';
 
 @use 'has-binders';
@@ -9,6 +7,7 @@
 @use 'mw-base';
 @use 'mw-charinsert';
 @use 'mw-editsection';
+@use 'mw-headings';
 @use 'mw-highlight';
 @use 'mw-parser-output';
 

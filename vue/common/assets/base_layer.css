@@ -9,10 +9,11 @@
 
     --z-bg: #fff;
     --z-bg-muted: #f6f6f6;
+    --z-border: #8884;
     --z-text: #131313;
     --z-muted: #444;
     --z-muted2: #888;
-    --z-border: #8884;
+    --z-muted3: #aaa;
 
     --z-link: #09c;
     --z-link-ext: #093;
@@ -65,11 +66,11 @@
 
   --z-bg: #131313;
   --z-bg-muted: #222;
+  --z-border: #8884;
   --z-text: #eee;
   --z-muted: #ccc;
   --z-muted2: #aaa;
-
-  --z-border: #8884;
+  --z-muted3: #999;
 
   --z-link: #3ad;
   --z-link-ext: #3a6;
