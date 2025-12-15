@@ -1,0 +1,62 @@
+.mw-parser-output {
+
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        margin: 2rem 0 1rem 0;
+        font-weight: 500;
+        letter-spacing: -0.025em;
+    }
+
+    .mw-headline::before {
+        color: var(--z-muted3);
+    }
+
+    counter-reset: sec-h2 sec-h3 sec-h4 sec-h5 sec-h6;
+
+    h2 {
+        counter-increment: sec-h2;
+        counter-reset: sec-h3 sec-h4 sec-h5 sec-h6;
+
+        >.mw-headline::before {
+            content: counter(sec-h2) ". ";
+        }
+    }
+
+    h3 {
+        counter-increment: sec-h3;
+        counter-reset: sec-h4 sec-h5 sec-h6;
+
+        >.mw-headline::before {
+            content: counter(sec-h2) "." counter(sec-h3) " ";
+        }
+    }
+
+    h4 {
+        counter-increment: sec-h4;
+        counter-reset: sec-h5 sec-h6;
+
+        >.mw-headline::before {
+            content: counter(sec-h2) "." counter(sec-h3) "." counter(sec-h4) " ";
+        }
+    }
+
+    h5 {
+        counter-increment: sec-h5;
+        counter-reset: sec-h6;
+
+        >.mw-headline::before {
+            content: counter(sec-h2) "." counter(sec-h3) "." counter(sec-h4) "." counter(sec-h5) " ";
+        }
+    }
+
+    h6 {
+        counter-increment: sec-h6;
+
+        >.mw-headline::before {
+            content: counter(sec-h2) "." counter(sec-h3) "." counter(sec-h4) "." counter(sec-h5) "." counter(sec-h6) " ";
+        }
+    }
+}

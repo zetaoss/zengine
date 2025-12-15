@@ -35,7 +35,10 @@ const onClick = (e: MouseEvent) => {
 <template>
   <a :href="`#${anchor}`" :class="{ 'border-[#888]': isInView }"
     class="block w-full border-l-2 pl-2 z-muted hover:no-underline hover:text-[var(--link)]" @click="onClick">
-    <span class="opacity-50" :style="{ paddingLeft: `calc(${props.depth} * 0.75rem)` }">{{ number }}</span>
+    <span class="z-muted3" :style="{ paddingLeft: `calc(${props.depth} * 0.75rem)` }">
+      <span>{{ number }}</span>
+      <span v-if='depth == 0'>.</span>
+    </span>
     {{ label }}
   </a>
 
