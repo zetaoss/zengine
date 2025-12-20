@@ -174,7 +174,7 @@ fetchData()
       </div>
     </div>
 
-    <div v-if="me.isLoggedIn" class="p-3">
+    <div v-if="me.isLoggedIn && me.userData" class="p-3">
       <div class="p-4 border z-bg-muted rounded">
         <AvatarUser :avatar="me.userData.avatar" :showLink="false" />
         <ZTextarea v-model="replyBody" class="mt-2" id="new-reply" placeholder="댓글을 남겨보세요" />

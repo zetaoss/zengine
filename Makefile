@@ -1,29 +1,50 @@
-SHELL=/bin/bash
+SHELL := /bin/bash
 
+VUE_DIRS := mwz/skins/ZetaSkin/vue vue
+
+define run_pnpm
+	@set -e; \
+	for d in $(VUE_DIRS); do \
+		echo "➡️  $$d: pnpm -C $$d $(1)"; \
+		pnpm -C $$d $(1); \
+	done
+endef
+
+.PHONY: vue-overrides
+vue-overrides:
+	@echo "➡️  root: pnpm overrides"
+	pnpm overrides
+
+.PHONY: vue-overrides-fix
+vue-overrides-fix:
+	@echo "➡️  root: pnpm overrides:fix"
+	pnpm overrides:fix
+
+.PHONY: vue-install
 vue-install:
-	@echo "Running vue-install"
-	cd mwz/skins/ZetaSkin/vue && pnpm install
-	cd vue && pnpm install
+	$(call run_pnpm,install --frozen-lockfile)
 
+.PHONY: vue-lint
+vue-lint:
+	$(call run_pnpm,lint)
+
+.PHONY: vue-build
 vue-build:
-	@echo "Running vue-build"
-	cd mwz/skins/ZetaSkin/vue && pnpm build
-	cd vue && pnpm build
+	$(call run_pnpm,build)
 
-vue-diff:
-	@echo "Running vue-diff"
-	node hack/vue-diff.js
-
+.PHONY: vue-audit
 vue-audit:
-	@echo "Running vue-audit"
-	cd mwz/skins/ZetaSkin/vue && pnpm audit
-	cd vue && pnpm audit
+	$(call run_pnpm,audit)
 
-checks: vue-install vue-build vue-diff vue-audit
+.PHONY: checks
+checks: vue-overrides vue-install vue-lint vue-build vue-audit
 	@echo "✅ All checks passed"
 
-audit-fix:
-	@echo "Running audit-fix"
-	cd mwz/skins/ZetaSkin/vue && pnpm audit --fix && pnpm install
-	cd vue && pnpm audit --fix && pnpm install
+.PHONY: vue-lint-fix
+vue-lint-fix:
+	$(call run_pnpm,lint:fix)
 
+.PHONY: vue-audit-fix
+vue-audit-fix:
+	$(call run_pnpm,audit --fix)
+	$(call run_pnpm,install --no-frozen-lockfile)
