@@ -22,7 +22,6 @@ const effectiveType = computed<AvatarType | null>(() => {
   if (!props.avatar) return null
   return isAvatarType(props.tempType) ? props.tempType : (isAvatarType(props.avatar.t) ? props.avatar.t : null)
 })
-
 </script>
 
 <template>
