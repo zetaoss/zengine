@@ -8,92 +8,264 @@ use OutputPage;
 
 final class PageContext
 {
-    private static ?PageContext $instance = null;
+    private const KEY = 'PageContext';
 
-    public bool $isView = false;
-
-    public int $pageId = 0;
-
-    public array $binders = [];
-
-    public bool $hasBinders = false;
-
-    public array $contributors = [];
-
-    public string $lastmod = '';
+    private const TTL = 3600;
 
     public ?array $avatar = null;
 
-    public static function getInstance(OutputPage $out): PageContext
+    public array $binders = [];
+
+    public array $contributors = [];
+
+    public bool $isView;
+
+    public bool $hasBinders = false;
+
+    public string $lastmod = '';
+
+    public int $pageId = 0;
+
+    public static function getInstance(OutputPage $out): self
     {
-        return self::$instance ??= new self($out);
+        $cached = $out->getProperty(self::KEY);
+        if ($cached instanceof self) {
+            return $cached;
+        }
+
+        $ctx = new self($out);
+        $out->setProperty(self::KEY, $ctx);
+
+        return $ctx;
     }
 
     private function __construct(OutputPage $out)
     {
+        $this->isView = ((string) $out->getActionName() === 'view');
+        $this->lastmod = (string) $out->getRevisionTimestamp();
+
         $title = $out->getTitle();
-        $this->isView = ($out->getActionName() === 'view');
         $this->pageId = ($title && $title->canExist()) ? (int) $title->getId() : 0;
 
         if ($this->isView && $this->pageId > 0) {
             $this->binders = $this->fetchBinders($this->pageId);
             $this->hasBinders = ! empty($this->binders);
-            $this->contributors = $this->fetchContributors($title->getPrefixedText());
-            $this->lastmod = $out->getRevisionTimestamp();
+
+            $userIds = $this->fetchContributorUserIds($this->pageId, 10);
+            if ($userIds) {
+                $avatarsById = $this->fetchUserAvatarsByIds($userIds);
+
+                $list = [];
+                foreach ($userIds as $uid) {
+                    if (isset($avatarsById[$uid])) {
+                        $list[] = $avatarsById[$uid];
+                    }
+                }
+                $this->contributors = $list;
+            }
         }
 
-        $this->avatar = $this->fetchUserAvatar((int) ($out->getUser()?->getId() ?? 0));
+        $meId = (int) ($out->getUser()?->getId() ?? 0);
+        $this->avatar = $this->fetchUserAvatar($meId);
+    }
+
+    private static function dbr()
+    {
+        $svc = MediaWikiServices::getInstance();
+
+        if (method_exists($svc, 'getConnectionProvider')) {
+            return $svc->getConnectionProvider()->getReplicaDatabase();
+        }
+
+        return $svc->getDBLoadBalancer()->getConnection(DB_REPLICA);
     }
 
     private function fetchBinders(int $pageId): array
     {
-        $http = MediaWikiServices::getInstance()->getHttpRequestFactory();
-        $req = $http->create("http://localhost/w/rest.php/binder/$pageId", [], __METHOD__);
-        if (! $req->execute()->isOK()) {
+        if ($pageId < 1) {
             return [];
         }
-        $json = json_decode($req->getContent(), true);
 
-        return is_array($json) ? $json : [];
-    }
+        $dbr = self::dbr();
 
-    private function fetchContributors(string $titleText): array
-    {
-        $http = MediaWikiServices::getInstance()->getHttpRequestFactory();
-        $url = 'http://localhost/w/api.php?format=json&action=query&prop=contributors&titles='.rawurlencode($titleText);
-        $req = $http->create($url, [], __METHOD__);
-        if (! $req->execute()->isOK()) {
+        $binderIds = $dbr->newSelectQueryBuilder()
+            ->select('binder_id')
+            ->from('ldb.binder_pages')
+            ->where(['page_id' => $pageId])
+            ->caller(__METHOD__)
+            ->fetchFieldValues();
+
+        if (! $binderIds) {
             return [];
         }
-        $data = json_decode($req->getContent(), true);
-        $pages = $data['query']['pages'] ?? [];
-        $list = is_array($pages) ? (array) (array_pop($pages)['contributors'] ?? []) : [];
 
-        return array_map(fn ($u) => $this->fetchUserAvatar((int) ($u['userid'] ?? 0)), $list);
+        $res = $dbr->newSelectQueryBuilder()
+            ->select(['id', 'data'])
+            ->from('ldb.binders')
+            ->where(['id' => $binderIds, 'deleted' => 0, 'enabled' => 1])
+            ->caller(__METHOD__)
+            ->fetchResultSet();
+
+        $out = [];
+        foreach ($res as $row) {
+            $data = $row->data ? json_decode($row->data, true) : null;
+            if (is_array($data) && $data) {
+                $out[] = $data;
+            }
+        }
+
+        return $out;
     }
 
-    private function fetchUserAvatar(int $userID): ?array
+    private function fetchContributorUserIds(int $pageId, int $limit = 10): array
     {
-        if ($userID === 0) {
+        if ($pageId < 1 || $limit < 1) {
+            return [];
+        }
+
+        $dbr = self::dbr();
+
+        $rows = $dbr->newSelectQueryBuilder()
+            ->select(['U.user_id'])
+            ->from('revision', 'R')
+            ->join('actor', 'AC', 'R.rev_actor = AC.actor_id')
+            ->join('user', 'U', 'AC.actor_user = U.user_id')
+            ->where(['R.rev_page' => $pageId])
+            ->orderBy('R.rev_timestamp', 'DESC')
+            ->limit($limit * 5)
+            ->caller(__METHOD__)
+            ->fetchResultSet();
+
+        $ids = [];
+        foreach ($rows as $row) {
+            $id = (int) ($row->user_id ?? 0);
+            if ($id > 0) {
+                $ids[] = $id;
+            }
+        }
+
+        if (! $ids) {
+            return [];
+        }
+
+        $ids = array_values(array_unique($ids));
+
+        return array_slice($ids, 0, $limit);
+    }
+
+    private function avatarCacheKey(int $userId): string
+    {
+        return "zetaskin:avatar:$userId";
+    }
+
+    private function fetchUserAvatarsByIds(array $userIds): array
+    {
+        $userIds = array_values(array_unique(array_filter(array_map('intval', $userIds))));
+        if (! $userIds) {
+            return [];
+        }
+
+        $cache = ObjectCache::getLocalClusterInstance();
+
+        $keysById = [];
+        foreach ($userIds as $id) {
+            if ($id > 0) {
+                $keysById[$id] = $this->avatarCacheKey($id);
+            }
+        }
+        if (! $keysById) {
+            return [];
+        }
+
+        $cachedByKey = [];
+        if (method_exists($cache, 'getMulti')) {
+            $cachedByKey = $cache->getMulti(array_values($keysById));
+        }
+
+        $resultById = [];
+        $missIds = [];
+
+        foreach ($keysById as $id => $key) {
+            $val = $cachedByKey[$key] ?? false;
+            if ($val !== false && is_array($val)) {
+                $resultById[$id] = $val;
+            } else {
+                $missIds[] = $id;
+            }
+        }
+
+        if ($missIds) {
+            $dbr = self::dbr();
+
+            $rows = $dbr->newSelectQueryBuilder()
+                ->select(['A.user_id', 'A.user_name', 'B.t', 'B.ghash'])
+                ->from('user', 'A')
+                ->leftJoin('ldb.profiles', 'B', 'A.user_id = B.user_id')
+                ->where(['A.user_id' => $missIds])
+                ->caller(__METHOD__)
+                ->fetchResultSet();
+
+            $toSet = [];
+
+            foreach ($rows as $row) {
+                $id = (int) ($row->user_id ?? 0);
+                if ($id < 1) {
+                    continue;
+                }
+
+                $avatar = [
+                    'id' => $id,
+                    'name' => (string) ($row->user_name ?? ''),
+                    't' => (int) ($row->t ?? 0),
+                    'ghash' => (string) ($row->ghash ?? ''),
+                ];
+
+                $resultById[$id] = $avatar;
+                $toSet[$this->avatarCacheKey($id)] = $avatar;
+            }
+
+            if ($toSet) {
+                if (method_exists($cache, 'setMulti')) {
+                    $cache->setMulti($toSet, self::TTL);
+                } else {
+                    foreach ($toSet as $k => $v) {
+                        $cache->set($k, $v, self::TTL);
+                    }
+                }
+            }
+        }
+
+        $out = [];
+        foreach ($userIds as $id) {
+            if (isset($resultById[$id])) {
+                $out[$id] = $resultById[$id];
+            }
+        }
+
+        return $out;
+    }
+
+    private function fetchUserAvatar(int $userId): ?array
+    {
+        if ($userId < 1) {
             return null;
         }
 
         $cache = ObjectCache::getLocalClusterInstance();
-        $key = "userAvatar:$userID";
+        $key = $this->avatarCacheKey($userId);
+
         $cached = $cache->get($key);
-        if ($cached !== false) {
+        if ($cached !== false && is_array($cached)) {
             return $cached;
         }
 
-        $dbr = MediaWikiServices::getInstance()
-            ->getDBLoadBalancer()
-            ->getConnection(DB_REPLICA);
+        $dbr = self::dbr();
 
         $row = $dbr->newSelectQueryBuilder()
-            ->select(['user_name', 't', 'ghash'])
+            ->select(['A.user_id', 'A.user_name', 'B.t', 'B.ghash'])
             ->from('user', 'A')
             ->leftJoin('ldb.profiles', 'B', 'A.user_id = B.user_id')
-            ->where(['A.user_id' => $userID])
+            ->where(['A.user_id' => $userId])
             ->caller(__METHOD__)
             ->fetchRow();
 
@@ -102,13 +274,13 @@ final class PageContext
         }
 
         $avatar = [
-            'id' => $userID,
-            'name' => $row->user_name,
-            't' => $row->t,
-            'ghash' => $row->ghash,
+            'id' => (int) $row->user_id,
+            'name' => (string) $row->user_name,
+            't' => (int) ($row->t ?? 0),
+            'ghash' => (string) ($row->ghash ?? ''),
         ];
 
-        $cache->set($key, $avatar);
+        $cache->set($key, $avatar, self::TTL);
 
         return $avatar;
     }

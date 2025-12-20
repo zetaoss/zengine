@@ -15,7 +15,7 @@ const LogoutView = () => import('@/views/auth/LogoutView.vue')
 const SocialBridge = () => import('@/views/auth/SocialBridge.vue')
 const SocialJoin = () => import('@/views/auth/SocialJoin.vue')
 const EditProfile = () => import('@/views/user/EditProfile.vue')
-const UserPage = () => import('@/views/user/UserPage.vue')
+const UserProfile = () => import('@/views/user/UserProfile.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -50,7 +50,7 @@ const router = createRouter({
     { path: '/social-join/:code', component: SocialJoin },
 
     { path: '/user/:username/edit', component: EditProfile, meta: { requiresAuth: true } },
-    { path: '/user/:username', component: UserPage },
+    { path: '/user/:username', component: UserProfile },
 
     // catch-all (dummy route for wiki)
     { path: '/wiki/:any(.*)', component: () => null },

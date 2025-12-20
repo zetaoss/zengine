@@ -1,4 +1,4 @@
-<!-- UserPage.vue -->
+<!-- UserProfile.vue -->
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
@@ -26,7 +26,7 @@ const userId = ref(0)
 const avatar = ref<Avatar | null>(null)
 const editCount = ref(0)
 
-const isMe = computed(() => me.isLoggedIn && me.userData.avatar.id === userId.value)
+const isMe = computed(() => me.isLoggedIn && me.userData?.avatar?.id === userId.value)
 
 const minDate = ref(new Date())
 

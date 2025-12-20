@@ -37,11 +37,9 @@
           <div class="pb-4"> 
             <div class="flow-root py-2">
               <div class="float-left">
-                {{#is-article}}
-                {{#isView}}
-                <page-meta historyhref="{{ zPageMenu.history.href }}"></page-meta>
-                {{/isView}}
-                {{/is-article}}
+                {{#hasMeta}}
+                <page-meta historyhref="{{ historyHref }}"></page-meta>
+                {{/hasMeta}}
               </div>
 
               <div class="flex float-right">

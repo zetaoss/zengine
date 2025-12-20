@@ -4,6 +4,9 @@ import type { PropType } from 'vue'
 import { computed } from 'vue'
 import type { Section } from './types'
 import TocNode from './TocNode.vue'
+
+import { scrollToTop, scrollToBottom } from '@common/utils/scroll'
+
 import { useScrollSpy } from '@/composables/useScrollSpy'
 import CapSticky from '@/components/CapSticky.vue'
 
@@ -23,7 +26,7 @@ const flattenAnchors = (root?: Section | null): string[] => {
     if (n.anchor) out.push(n.anchor)
       ; (n['array-sections'] ?? []).forEach(walk)
   }
-  if (root) walk(root)
+  walk(root)
   return out
 }
 
@@ -42,9 +45,20 @@ const scrollToAnchor = (id: string) => {
   <CapSticky :marginY="16">
     <nav>
       <ul v-if="tocObj" class="text-sm tracking-tight list-none m-0 p-0 z-muted">
-        <li class="m-0 mb-1">페이지 목차</li>
+        <li class="m-0 mb-2 flex items-center gap-1">
+          <button type="button" @click="scrollToTop">
+            페이지 목차
+          </button>
+        </li>
+
         <li v-for="s in tocObj['array-sections'] ?? []" :key="s.index ?? s.anchor" class="m-0">
           <TocNode :section="s" :target-ids="activeIds" :depth="0" @navigate="scrollToAnchor" />
+        </li>
+
+        <li class="mt-2 opacity-50">
+          <button @click="scrollToBottom">
+            ∨
+          </button>
         </li>
       </ul>
     </nav>
