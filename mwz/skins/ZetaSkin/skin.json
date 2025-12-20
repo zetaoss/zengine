@@ -4,11 +4,13 @@
   "author": [
     "jmnote"
   ],
-  "url": "https://www.mediawiki.org/wiki/Skin:ZetaSkin",
-  "description": "Zetawiki skin",
+  "description": "ZetaWiki skin",
   "type": "skin",
   "requires": {
-    "MediaWiki": ">= 1.37.0"
+    "MediaWiki": ">= 1.39.0",
+    "platform": {
+      "php": ">= 7.4.3"
+    }
   },
   "license-name": "Apache-2.0",
   "AutoloadNamespaces": {

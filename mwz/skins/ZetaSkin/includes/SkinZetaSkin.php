@@ -35,7 +35,7 @@ class SkinZetaSkin extends SkinMustache
     {
         if (isset($links['user-menu']['userpage'])) {
             $links['user-menu']['profile'] = [
-                'text' => '사용자 페이지',
+                'text' => '프로필',
                 'href' => '/user/'.rawurlencode($skinTemplate->getUser()->getName()),
             ];
             $links['user-menu']['userpage']['text'] = '사용자 문서';
@@ -71,18 +71,19 @@ class SkinZetaSkin extends SkinMustache
         $data = parent::getTemplateData();
 
         $ctx = PageContext::getInstance($this->getOutput());
+        $data['hasMeta'] = ($data['is-article'] ?? false) && $ctx->isView;
+        $data['hasBinders'] = $ctx->hasBinders;
 
         $views = self::$links['views'] ?? [];
+        $data['historyHref'] = $views['history']['href'] ?? null;
+
         $actions = self::$links['actions'] ?? [];
         $namespaces = self::$links['namespaces'] ?? [];
         $toolbox = self::$sidebar['TOOLBOX'] ?? [];
         $userMenu = self::$links['user-menu'] ?? [];
 
-        $data['isView'] = $ctx->isView;
-        $data['hasBinders'] = $ctx->hasBinders;
-
         $data['arrayButtons'] = array_values(array_filter([
-            'view' => $views['view'] ?? null,
+            'view' => $ctx->isView ? null : ($views['view'] ?? null),
             'edit' => $views['edit'] ?? null,
             'whatlinkshere' => $toolbox['whatlinkshere'] ?? null,
             'watch' => $views['watch'] ?? null,

@@ -14,7 +14,11 @@ import type { Avatar } from '@common/components/avatar/avatar'
 
 type AvatarType = 1 | 2 | 3
 
-interface MeInfo {
+interface Data {
+  me: Me
+}
+
+interface Me {
   avatar: Avatar
   groups: string[]
 }
@@ -33,7 +37,7 @@ const saving = ref(false)
 const saveError = ref<string | null>(null)
 const saveOk = ref(false)
 
-const me = ref<MeInfo | null>(null)
+const me = ref<Me | null>(null)
 
 const currentAvatar = computed(() => me.value?.avatar ?? null)
 const isMe = computed(() => meStore.isLoggedIn)
@@ -125,18 +129,18 @@ async function load() {
     await meStore.update()
   }
 
-  const [data, err] = await httpy.get<MeInfo>('/api/me')
+  const [data, err] = await httpy.get<Data>('/api/me')
   if (err) {
     loadError.value = 'failed to load profile'
     return
   }
 
-  me.value = data
+  me.value = data.me
 
-  const t = (data.avatar as unknown as { t?: unknown }).t
+  const t = (data.me.avatar as unknown as { t?: unknown }).t
   selectedType.value = isAvatarType(t) ? t : 1
 
-  const email = (data.avatar as unknown as { gravatar?: unknown }).gravatar
+  const email = (data.me.avatar as unknown as { gravatar?: unknown }).gravatar
   gravatarEmail.value = typeof email === 'string' ? email : ''
   initialGravatarEmail.value = gravatarEmail.value
 
@@ -226,7 +230,7 @@ onMounted(() => {
               <input type="radio" name="avatarType" :value="2" v-model="selectedType" class="accent-current" />
               <div class="flex items-center gap-3">
                 <AvatarIcon v-if="currentAvatar" :avatar="currentAvatar" :temp-type="2" :size="60" />
-                <div class="text-sm font-semibold">문자아바타</div>
+                <div class="text-sm font-semibold">문자 아바타</div>
               </div>
             </li>
 

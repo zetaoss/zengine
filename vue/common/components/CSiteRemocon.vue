@@ -3,25 +3,10 @@ import { mdiChevronDown, mdiChevronUp, mdiWeatherNight } from '@mdi/js'
 import { useDark, useToggle } from '@vueuse/core'
 
 import ZIcon from '@common/ui/ZIcon.vue'
+import { scrollToTop, scrollToBottom } from '@common/utils/scroll'
 
 const isDark = useDark()
 const toggleDark = useToggle(isDark)
-
-function scrollToTop() {
-  window.scrollTo({
-    top: 0,
-    left: 0,
-    behavior: 'smooth',
-  })
-}
-
-function scrollToBottom() {
-  window.scrollTo({
-    top: document.body.scrollHeight,
-    left: 0,
-    behavior: 'smooth',
-  })
-}
 </script>
 
 <template>
