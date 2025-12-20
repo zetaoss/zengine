@@ -1,28 +1,27 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue'
-import { useDateFormat } from '@vueuse/core'
-import Prism from 'prismjs'
-import { useRouter } from 'vue-router'
-
-import ZModal from '@common/ui/ZModal.vue'
-import ZButton from '@common/ui/ZButton.vue'
-import ZSpinner from '@common/ui/ZSpinner.vue'
-import AvatarUser from '@common/components/avatar/AvatarUser.vue'
-import useAuthStore from '@/stores/auth'
-import httpy from '@common/utils/httpy'
-
-import type { Post } from '../types'
-
-import BoxHTML from './BoxHTML.vue'
-import BoxReplies from './BoxReplies.vue'
-
 import 'prismjs/components/prism-c'
 import 'prismjs/components/prism-cpp'
 import 'prismjs/components/prism-go'
 import 'prismjs/components/prism-markup-templating'
 import 'prismjs/components/prism-php'
 import 'prismjs/themes/prism-okaidia.css'
+
+import AvatarUser from '@common/components/avatar/AvatarUser.vue'
+import ZButton from '@common/ui/ZButton.vue'
+import ZModal from '@common/ui/ZModal.vue'
+import ZSpinner from '@common/ui/ZSpinner.vue'
+import httpy from '@common/utils/httpy'
+import { useDateFormat } from '@vueuse/core'
+import Prism from 'prismjs'
+import { nextTick, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+
+import useAuthStore from '@/stores/auth'
 import RouterLinkButton from '@/ui/RouterLinkButton.vue'
+
+import type { Post } from '../types'
+import BoxHTML from './BoxHTML.vue'
+import BoxReplies from './BoxReplies.vue'
 
 const props = defineProps({ postId: Number })
 const router = useRouter()

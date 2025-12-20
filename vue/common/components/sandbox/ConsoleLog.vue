@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+
 import ConsoleArg from './ConsoleArg.vue'
 import type { LogLevel } from './types'
 

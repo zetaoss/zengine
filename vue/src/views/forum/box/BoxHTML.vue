@@ -1,8 +1,10 @@
 <!-- BoxHTML.vue -->
 <script setup lang="ts">
-import { nextTick, onMounted, ref, watch } from 'vue'
-import httpy from '@common/utils/httpy'
 import '../tiptap/ProseMirror.scss'
+
+import httpy from '@common/utils/httpy'
+import { nextTick, onMounted, ref, watch } from 'vue'
+
 import linkify from '@/utils/linkify'
 
 interface PreviewData {

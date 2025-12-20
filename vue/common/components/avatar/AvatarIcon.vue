@@ -1,9 +1,10 @@
 <!-- AvatarIcon.vue -->
 <script setup lang="ts">
 import { computed, type PropType } from 'vue'
+
 import type { Avatar } from './avatar'
-import IconLetter from './IconLetter.vue'
 import IconIdenticon from './IconIdenticon.vue'
+import IconLetter from './IconLetter.vue'
 
 type AvatarType = 1 | 2 | 3
 

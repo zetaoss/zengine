@@ -1,8 +1,8 @@
 <!-- ResizableBox.vue -->
 <script setup lang="ts">
-import { ref, useAttrs, computed } from 'vue'
-import type { CSSProperties } from 'vue'
 import { useEventListener } from '@vueuse/core'
+import type { CSSProperties } from 'vue'
+import { computed,ref, useAttrs } from 'vue'
 
 const minPx = 200
 

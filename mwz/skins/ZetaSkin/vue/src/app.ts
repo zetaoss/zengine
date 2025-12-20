@@ -1,21 +1,19 @@
 // app.ts
-import { createApp } from 'vue'
+import '@/assets/app.scss'
 
 import CSiteFooter from '@common/components/CSiteFooter.vue'
 import CSiteRemocon from '@common/components/CSiteRemocon.vue'
 import CNavbarSearch from '@common/components/navbar/CNavbarSearch.vue'
+import { runVisibleHeightsUpdater } from '@common/utils/runVisibleHeightsUpdater'
+import { createApp } from 'vue'
 
+import BinderApex from '@/components/binder/BinderApex.vue'
 import NavbarUserMenu from '@/components/NavbarUserMenu.vue'
+import PageFooter from '@/components/PageFooter.vue'
 import PageMenu from '@/components/PageMenu.vue'
 import PageMeta from '@/components/PageMeta.vue'
-import BinderApex from '@/components/binder/BinderApex.vue'
-import PageFooter from '@/components/PageFooter.vue'
-import TocApex from '@/components/toc/TocApex.vue'
-
-import { runVisibleHeightsUpdater } from '@common/utils/runVisibleHeightsUpdater'
 import { runbox } from '@/components/runbox/runbox'
-
-import '@/assets/app.scss'
+import TocApex from '@/components/toc/TocApex.vue'
 
 runVisibleHeightsUpdater()
 

@@ -1,19 +1,18 @@
 <!-- BoxRelies.vue -->
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-
-import { mdiDotsVertical } from '@mdi/js'
-import { useDateFormat } from '@vueuse/core'
-
-import ZIcon from '@common/ui/ZIcon.vue'
-import ZModal from '@common/ui/ZModal.vue'
-import ZTextarea from '@common/ui/ZTextarea.vue'
+import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import ZButton from '@common/ui/ZButton.vue'
+import ZIcon from '@common/ui/ZIcon.vue'
 import ZMenu from '@common/ui/ZMenu.vue'
 import ZMenuItem from '@common/ui/ZMenuItem.vue'
-import AvatarUser from '@common/components/avatar/AvatarUser.vue'
-import useAuthStore from '@/stores/auth'
+import ZModal from '@common/ui/ZModal.vue'
+import ZTextarea from '@common/ui/ZTextarea.vue'
 import httpy from '@common/utils/httpy'
+import { mdiDotsVertical } from '@mdi/js'
+import { useDateFormat } from '@vueuse/core'
+import { ref, watch } from 'vue'
+
+import useAuthStore from '@/stores/auth'
 import linkify from '@/utils/linkify'
 
 import type { Reply } from '../types'

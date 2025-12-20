@@ -1,5 +1,5 @@
 // useScrollSpy.ts
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 export function useScrollSpy(
   anchorsRef: { value: string[] },

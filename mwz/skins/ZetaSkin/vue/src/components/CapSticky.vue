@@ -1,10 +1,10 @@
 <!-- CapSticky.vue -->
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { mdiMenu } from '@mdi/js'
-import ZIcon from '@common/ui/ZIcon.vue'
-import { useIsMobile } from '@common/composables/useIsMobile'
 import { useDismissable } from '@common/composables/useDismissable'
+import { useIsMobile } from '@common/composables/useIsMobile'
+import ZIcon from '@common/ui/ZIcon.vue'
+import { mdiMenu } from '@mdi/js'
+import { computed, onMounted,ref } from 'vue'
 
 const props = defineProps({
   marginY: { type: Number, default: 0 },

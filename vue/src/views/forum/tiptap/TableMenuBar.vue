@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-
 import {
   mdiCheckboxBlank,
   mdiDockLeft,
@@ -14,6 +12,7 @@ import {
   mdiTableRowPlusBefore,
   mdiTableRowRemove,
 } from '@mdi/js'
+import { ref, watch } from 'vue'
 
 import MenuItem from './MenuItem.vue'
 import type { ItemData } from './types'

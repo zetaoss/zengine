@@ -1,12 +1,14 @@
 <script setup lang="ts">
+import './tiptap/ProseMirror.scss'
+
+import ZButton from '@common/ui/ZButton.vue'
+import ZModal from '@common/ui/ZModal.vue'
+import httpy from '@common/utils/httpy'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import httpy from '@common/utils/httpy'
-import ZModal from '@common/ui/ZModal.vue'
-import TiptapMain from './tiptap/TiptapMain.vue'
+
 import { useErrors } from './errors'
-import './tiptap/ProseMirror.scss'
-import ZButton from '@common/ui/ZButton.vue'
+import TiptapMain from './tiptap/TiptapMain.vue'
 
 const router = useRouter()
 const errors = useErrors()

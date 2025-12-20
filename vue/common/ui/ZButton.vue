@@ -1,6 +1,6 @@
 <!-- @common/ui/ZButton.vue -->
 <script setup lang="ts">
-import { computed, useAttrs, ref, type Component } from 'vue'
+import { type Component,computed, ref, useAttrs } from 'vue'
 
 export type Color = 'default' | 'danger' | 'ghost' | 'primary'
 

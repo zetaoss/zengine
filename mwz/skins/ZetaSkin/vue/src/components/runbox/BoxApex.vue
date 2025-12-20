@@ -1,5 +1,8 @@
 <!-- BoxApex.vue -->
 <script setup lang="ts">
+import ZIcon from '@common/ui/ZIcon.vue'
+import { mdiCheck,mdiContentCopy } from '@mdi/js'
+import { useClipboard } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
 
 import BoxFront from './BoxFront.vue'
@@ -7,10 +10,6 @@ import BoxLang from './BoxLang.vue'
 import BoxNotebook from './BoxNotebook.vue'
 import BoxZero from './BoxZero.vue'
 import type { Job } from './types'
-
-import { useClipboard } from '@vueuse/core'
-import { mdiContentCopy, mdiCheck } from '@mdi/js'
-import ZIcon from '@common/ui/ZIcon.vue'
 
 const props = defineProps<{
   job: Job

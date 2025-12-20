@@ -2,8 +2,9 @@
 <script setup lang="ts">
 import AvatarIcon from '@common/components/avatar/AvatarIcon.vue'
 import ZIcon from '@common/ui/ZIcon.vue'
-import getRLCONF from '@/utils/rlconf'
 import { mdiClockOutline } from '@mdi/js';
+
+import getRLCONF from '@/utils/rlconf'
 
 defineProps({
   historyhref: { type: String, required: true },

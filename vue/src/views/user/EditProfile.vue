@@ -1,16 +1,15 @@
 <!-- EditProfile.vue -->
 <script setup lang="ts">
-import { computed, onMounted, ref, watch, nextTick } from 'vue'
+import type { Avatar } from '@common/components/avatar/avatar'
+import AvatarIcon from '@common/components/avatar/AvatarIcon.vue'
+import ZButton from '@common/ui/ZButton.vue'
+import ZCard from '@common/ui/ZCard.vue'
+import ZSpinner from '@common/ui/ZSpinner.vue'
+import httpy from '@common/utils/httpy'
+import { computed, nextTick,onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
-import httpy from '@common/utils/httpy'
 import useAuthStore from '@/stores/auth'
-
-import ZCard from '@common/ui/ZCard.vue'
-import ZButton from '@common/ui/ZButton.vue'
-import ZSpinner from '@common/ui/ZSpinner.vue'
-import AvatarIcon from '@common/components/avatar/AvatarIcon.vue'
-import type { Avatar } from '@common/components/avatar/avatar'
 
 type AvatarType = 1 | 2 | 3
 

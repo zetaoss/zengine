@@ -1,15 +1,14 @@
 <!-- NavbarUserMenu.vue -->
 <script setup lang="ts">
+import AvatarIcon from '@common/components/avatar/AvatarIcon.vue'
+import type Item from '@common/components/navbar/types'
+import { useDismissable } from '@common/composables/useDismissable'
+import ZIcon from '@common/ui/ZIcon.vue'
+import { mdiAccount } from '@mdi/js'
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { mdiAccount } from '@mdi/js'
 
-import ZIcon from '@common/ui/ZIcon.vue'
-import AvatarIcon from '@common/components/avatar/AvatarIcon.vue'
 import useAuthStore from '@/stores/auth'
-import { useDismissable } from '@common/composables/useDismissable'
-
-import type Item from '@common/components/navbar/types'
 
 const route = useRoute()
 const me = useAuthStore()

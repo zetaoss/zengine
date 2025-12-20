@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import ZSpinner from '@common/ui/ZSpinner.vue'
 import { onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import ZSpinner from '@common/ui/ZSpinner.vue'
+
 import doLogin from './login'
 
 const route = useRoute()

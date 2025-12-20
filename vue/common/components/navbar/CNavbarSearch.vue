@@ -1,11 +1,10 @@
 <!-- CNavbarSearch.vue -->
 <script setup lang="ts">
-import { ref, computed, onBeforeUnmount } from 'vue'
-import { useDebounceFn } from '@vueuse/core'
 import { useDismissable } from '@common/composables/useDismissable'
-
-import { mdiHistory, mdiMagnify, mdiShuffle } from '@mdi/js'
 import ZIcon from '@common/ui/ZIcon.vue'
+import { mdiHistory, mdiMagnify, mdiShuffle } from '@mdi/js'
+import { useDebounceFn } from '@vueuse/core'
+import { computed, onBeforeUnmount,ref } from 'vue'
 
 interface Page {
   description: string

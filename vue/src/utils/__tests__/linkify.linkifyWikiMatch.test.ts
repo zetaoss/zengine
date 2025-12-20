@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import titleExist from '@/utils/mediawiki';
+import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { linkifyWikiMatch } from '@/utils/linkify';
+import titleExist from '@/utils/mediawiki';
 
 vi.mock('@/utils/mediawiki', () => ({
   default: vi.fn(),

@@ -1,23 +1,24 @@
 <script setup lang="ts">
-import { ref, watch, onUnmounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import useAuthStore from '@/stores/auth'
-import httpy from '@common/utils/httpy'
-
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
+import CProgressBar from '@common/components/CProgressBar.vue'
+import ZButton from '@common/ui/ZButton.vue'
 import ZFold from '@common/ui/ZFold.vue'
 import ZSpin from '@common/ui/ZSpin.vue'
 import ZSpinner from '@common/ui/ZSpinner.vue'
-import ZButton from '@common/ui/ZButton.vue'
-import Star from './Star.vue'
+import httpy from '@common/utils/httpy'
+import { onUnmounted,ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
 import Pagination from '@/components/pagination/Pagination.vue'
 import type { PaginateData } from '@/components/pagination/types'
-import CommonReportNew from './CommonReportNew.vue'
-import type { Row } from './types'
+import useAuthStore from '@/stores/auth'
 import RouterLinkButton from '@/ui/RouterLinkButton.vue'
-import { getRatio, getScore } from './utils'
+
+import CommonReportNew from './CommonReportNew.vue'
 import { useRetrier } from './retrier'
-import CProgressBar from '@common/components/CProgressBar.vue'
+import Star from './Star.vue'
+import type { Row } from './types'
+import { getRatio, getScore } from './utils'
 
 interface RespData {
   current_page: number

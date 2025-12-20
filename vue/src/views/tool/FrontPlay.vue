@@ -1,9 +1,8 @@
 <!-- FrontPlay.vue -->
 <script setup lang="ts">
-import { ref } from 'vue'
-
+import { SandboxConsole, SandboxFrame, type SandboxLog } from '@common/components/sandbox'
 import ZButton from '@common/ui/ZButton.vue'
-import { SandboxFrame, SandboxConsole, type SandboxLog } from '@common/components/sandbox'
+import { ref } from 'vue'
 
 const htmlCode = ref(`<h1>Hello, World!</h1>
 

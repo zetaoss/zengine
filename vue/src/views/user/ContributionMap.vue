@@ -1,16 +1,16 @@
 <!-- ContributionMap.vue -->
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
 import ZButton from '@common/ui/ZButton.vue'
 import ZCard from '@common/ui/ZCard.vue'
 import ZIcon from '@common/ui/ZIcon.vue'
 import {
   mdiChevronDoubleLeft,
+  mdiChevronDoubleRight,
   mdiChevronLeft,
   mdiChevronRight,
-  mdiChevronDoubleRight,
 } from '@mdi/js'
 import { useDateFormat } from '@vueuse/core'
+import { computed, ref, watch } from 'vue'
 
 const isAnimating = ref(false)
 

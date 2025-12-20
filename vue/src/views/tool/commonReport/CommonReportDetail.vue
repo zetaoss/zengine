@@ -1,24 +1,23 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { mdiCheckBold, mdiContentCopy } from '@mdi/js'
-import { useDateFormat, useDebounceFn } from '@vueuse/core'
-import { useRoute, useRouter } from 'vue-router'
-
+import AvatarUser from '@common/components/avatar/AvatarUser.vue'
+import { useConfirm } from '@common/composables/confirm/useConfirm'
+import { useToast } from '@common/composables/toast/useToast'
+import ZButton from '@common/ui/ZButton.vue'
 import ZFold from '@common/ui/ZFold.vue'
 import ZIcon from '@common/ui/ZIcon.vue'
 import ZSpin from '@common/ui/ZSpin.vue'
-import ZButton from '@common/ui/ZButton.vue'
 import ZTooltip from '@common/ui/ZTooltip.vue'
-import AvatarUser from '@common/components/avatar/AvatarUser.vue'
-import { useToast } from '@common/composables/toast/useToast'
-import { useConfirm } from '@common/composables/confirm/useConfirm'
-import Star from './Star.vue'
-
-import RouterLinkButton from '@/ui/RouterLinkButton.vue'
-import useAuthStore from '@/stores/auth'
-import copyToClipboard from '@/utils/clipboard'
 import httpy from '@common/utils/httpy'
+import { mdiCheckBold, mdiContentCopy } from '@mdi/js'
+import { useDateFormat, useDebounceFn } from '@vueuse/core'
+import { ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
+import useAuthStore from '@/stores/auth'
+import RouterLinkButton from '@/ui/RouterLinkButton.vue'
+import copyToClipboard from '@/utils/clipboard'
+
+import Star from './Star.vue'
 import type { Row } from './types'
 import { getRatio, getScore, getWikitextTable } from './utils'
 

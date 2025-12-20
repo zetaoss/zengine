@@ -1,19 +1,21 @@
 <!-- PageFooter.vue -->
 <script setup lang="ts">
-import { ref } from 'vue'
-import ZModal from '@common/ui/ZModal.vue'
-import ZTextarea from '@common/ui/ZTextarea.vue'
+import type { Avatar } from '@common/components/avatar/avatar'
+import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import ZButton from '@common/ui/ZButton.vue'
 import ZIcon from '@common/ui/ZIcon.vue'
 import ZMenu from '@common/ui/ZMenu.vue'
 import ZMenuItem from '@common/ui/ZMenuItem.vue'
-import AvatarUser from '@common/components/avatar/AvatarUser.vue'
-import type { Avatar } from '@common/components/avatar/avatar'
-import { canDelete, canEdit } from '@/utils/auth'
+import ZModal from '@common/ui/ZModal.vue'
+import ZTextarea from '@common/ui/ZTextarea.vue'
 import httpy from '@common/utils/httpy'
-import getRLCONF from '@/utils/rlconf'
-import LinkifyBox from './LinkifyBox.vue'
 import { mdiDotsHorizontal } from '@mdi/js'
+import { ref } from 'vue'
+
+import { canDelete, canEdit } from '@/utils/auth'
+import getRLCONF from '@/utils/rlconf'
+
+import LinkifyBox from './LinkifyBox.vue'
 
 interface Row {
   avatar: Avatar

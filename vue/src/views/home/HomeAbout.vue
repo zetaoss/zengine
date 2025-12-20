@@ -1,7 +1,7 @@
 <!-- HomeAbout.vue -->
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
 import httpy from '@common/utils/httpy'
+import { onMounted,ref } from 'vue'
 
 interface Data {
   query?: {

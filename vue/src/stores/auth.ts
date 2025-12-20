@@ -1,9 +1,8 @@
 // auth.ts
-import { computed, ref } from 'vue'
-import { defineStore } from 'pinia'
-
 import type UserData from '@common/types/userData'
 import httpy from '@common/utils/httpy'
+import { defineStore } from 'pinia'
+import { computed, ref } from 'vue'
 
 type MeResponse = {
   me: UserData | null

@@ -1,18 +1,19 @@
 <!-- UserProfile.vue -->
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
 import type { Avatar } from '@common/components/avatar/avatar'
 import AvatarIcon from '@common/components/avatar/AvatarIcon.vue'
-import ZIcon from '@common/ui/ZIcon.vue'
 import ZCard from '@common/ui/ZCard.vue'
+import ZIcon from '@common/ui/ZIcon.vue'
 import ZSpinner from '@common/ui/ZSpinner.vue'
-import { mdiVectorDifference } from '@mdi/js'
-import ContributionMap from './ContributionMap.vue'
-import { useDateFormat } from '@vueuse/core'
-
 import httpy from '@common/utils/httpy'
+import { mdiVectorDifference } from '@mdi/js'
+import { useDateFormat } from '@vueuse/core'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
+
 import useAuthStore from '@/stores/auth'
+
+import ContributionMap from './ContributionMap.vue'
 
 const route = useRoute()
 const username = computed(() => route.params.username as string)

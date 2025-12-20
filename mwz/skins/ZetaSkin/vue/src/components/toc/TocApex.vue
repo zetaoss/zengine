@@ -1,14 +1,14 @@
 <!-- TocApex.vue -->
 <script setup lang="ts">
+import { scrollToBottom,scrollToTop } from '@common/utils/scroll'
 import type { PropType } from 'vue'
 import { computed } from 'vue'
-import type { Section } from './types'
-import TocNode from './TocNode.vue'
 
-import { scrollToTop, scrollToBottom } from '@common/utils/scroll'
-
-import { useScrollSpy } from '@/composables/useScrollSpy'
 import CapSticky from '@/components/CapSticky.vue'
+import { useScrollSpy } from '@/composables/useScrollSpy'
+
+import TocNode from './TocNode.vue'
+import type { Section } from './types'
 
 const props = defineProps({
   toc: { type: [Object, String] as PropType<Section | string>, required: true },

@@ -1,9 +1,10 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
+import ZIcon from '@common/ui/ZIcon.vue'
+import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 import { computed, type PropType } from 'vue'
 import { RouterLink } from 'vue-router'
-import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
-import ZIcon from '@common/ui/ZIcon.vue'
+
 import type { PaginateData } from './types'
 
 const props = defineProps({
