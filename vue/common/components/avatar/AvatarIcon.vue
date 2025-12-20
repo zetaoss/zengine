@@ -26,10 +26,11 @@ const effectiveType = computed<AvatarType | null>(() => {
 </script>
 
 <template>
-  <span class="inline-flex items-center justify-center overflow-hidden rounded-full box-border align-middle" :class="{
-    'ring-2 ring-white dark:ring-gray-900 outline outline-1 -outline-offset-1 outline-black/5 dark:outline-white/10':
-      showBorder
-  }" :style="{ height: `${size}px`, width: `${size}px`, background: '#f0f0f0' }" :title="avatar?.name ?? ''">
+  <span
+    class="inline-flex items-center justify-center overflow-hidden rounded-full box-border align-middle relative hover:z-40 hover:scale-125"
+    :class="{
+      'ring-2 ring-white dark:ring-gray-900 outline outline-1 -outline-offset-1 outline-black/5 dark:outline-white/10': showBorder
+    }" :style="{ height: `${size}px`, width: `${size}px`, background: '#f0f0f0' }" :title="avatar?.name ?? ''">
     <template v-if="!avatar">
       <IconLetter name="?" :size="size" />
     </template>
