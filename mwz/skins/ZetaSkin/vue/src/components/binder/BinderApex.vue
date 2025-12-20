@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import ZIcon from '@common/ui/ZIcon.vue'
 import { mdiCog } from '@mdi/js'
+import { ref } from 'vue'
+
 import CapSticky from '@/components/CapSticky.vue'
 import getRLCONF from '@/utils/rlconf'
+
 import BinderNode from './BinderNode.vue'
-import ZIcon from '@common/ui/ZIcon.vue'
 
 const { wgArticleId, binders } = getRLCONF()
 

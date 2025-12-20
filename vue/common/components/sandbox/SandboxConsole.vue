@@ -1,7 +1,6 @@
 <!-- SandboxConsole.vue -->
 <script setup lang="ts">
 import ConsoleLog from './ConsoleLog.vue'
-
 import type { SandboxLog } from './types'
 
 defineProps<{

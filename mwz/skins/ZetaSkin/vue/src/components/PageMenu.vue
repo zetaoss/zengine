@@ -1,10 +1,9 @@
 <!-- PageMenu.vue -->
 <script setup lang="ts">
-import { ref } from 'vue'
-
+import { useDismissable } from '@common/composables/useDismissable'
 import ZIcon from '@common/ui/ZIcon.vue'
 import { mdiDotsVertical } from '@mdi/js'
-import { useDismissable } from '@common/composables/useDismissable'
+import { ref } from 'vue'
 
 const root = ref<HTMLElement | null>(null)
 const show = ref(false)

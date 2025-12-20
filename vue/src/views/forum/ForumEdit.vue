@@ -1,13 +1,14 @@
 <!-- ForumEdit.vue -->
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import httpy from '@common/utils/httpy'
+import './tiptap/ProseMirror.scss'
 
 import ZModal from '@common/ui/ZModal.vue'
-import TiptapMain from './tiptap/TiptapMain.vue'
+import httpy from '@common/utils/httpy'
+import { onMounted,ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
 import { useErrors } from './errors'
-import './tiptap/ProseMirror.scss'
+import TiptapMain from './tiptap/TiptapMain.vue'
 
 const route = useRoute()
 const router = useRouter()

@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { useDateFormat } from '@vueuse/core'
-import { useRoute } from 'vue-router'
 import AvatarIcon from '@common/components/avatar/AvatarIcon.vue'
+import ZSpinner from '@common/ui/ZSpinner.vue'
+import httpy from '@common/utils/httpy'
+import { useDateFormat } from '@vueuse/core'
+import { ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
+
 import ThePagination from '@/components/pagination/Pagination.vue'
 import type { PaginateData } from '@/components/pagination/types'
 import useAuthStore from '@/stores/auth'
-import httpy from '@common/utils/httpy'
+import RouterLinkButton from '@/ui/RouterLinkButton.vue'
+
 import BoxPost from './box/BoxPost.vue'
 import type { Post } from './types'
-import ZSpinner from '@common/ui/ZSpinner.vue'
-import RouterLinkButton from '@/ui/RouterLinkButton.vue'
 
 const auth = useAuthStore()
 const route = useRoute()

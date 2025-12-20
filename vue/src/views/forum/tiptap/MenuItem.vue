@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import type { PropType } from 'vue'
-
 import ZIcon from '@common/ui/ZIcon.vue'
+import type { PropType } from 'vue'
 
 import type { ItemData } from './types'
 

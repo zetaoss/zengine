@@ -1,6 +1,7 @@
 <!-- AvatarUser.vue -->
 <script setup lang="ts">
 import type { PropType } from 'vue'
+
 import type { Avatar } from './avatar'
 import AvatarIcon from './AvatarIcon.vue'
 

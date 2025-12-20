@@ -1,6 +1,6 @@
 // @common/composables/useVariableUpdater.ts
+import { useEventListener,useWindowSize } from '@vueuse/core'
 import { onMounted } from 'vue'
-import { useWindowSize, useEventListener } from '@vueuse/core'
 
 export function useVariableUpdater() {
   console.log('useVariableUpdater')

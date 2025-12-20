@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue'
-
-import ZModal from '@common/ui/ZModal.vue'
 import CProgressBar from '@common/components/CProgressBar.vue'
-import httpy from '@common/utils/httpy'
-import titleExist from '@/utils/mediawiki'
 import { useToast } from '@common/composables/toast/useToast'
+import ZModal from '@common/ui/ZModal.vue'
+import httpy from '@common/utils/httpy'
+import { computed, nextTick,ref, watch } from 'vue'
+
+import titleExist from '@/utils/mediawiki'
 
 const toast = useToast();
 

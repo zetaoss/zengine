@@ -1,9 +1,11 @@
 <!-- NBOutput.vue -->
 <script setup lang="ts">
-import { computed } from 'vue';
-import { type Output } from '../types';
 import './ansi.css';
 import './dataframe.css';
+
+import { computed } from 'vue';
+
+import { type Output } from '../types';
 
 const props = defineProps<{
   out: Output

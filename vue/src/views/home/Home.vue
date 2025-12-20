@@ -1,6 +1,7 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
 import ZCard from '@common/ui/ZCard.vue'
+
 import HomeAbout from './HomeAbout.vue'
 import HomeComments from './HomeComments.vue'
 import HomeForum from './HomeForum.vue'

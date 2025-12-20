@@ -28,6 +28,7 @@
     "autolinker": "^4.1.0",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.14.0",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
     "eslint-plugin-vue": "^9.30.0",
     "isomorphic-dompurify": "^2.19.0",
     "jsdom": "^25.0.1",

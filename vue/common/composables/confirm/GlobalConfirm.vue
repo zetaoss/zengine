@@ -1,6 +1,7 @@
 <!-- GlobalConfirm.vue -->
 <script setup lang="ts">
 import ZModal from '@common/ui/ZModal.vue'
+
 import { useConfirmController } from './useConfirm'
 
 const { state, handleOk, handleCancel } = useConfirmController()

@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-
 import {
   mdiArrowULeftTop,
   mdiArrowURightTop,
@@ -25,6 +23,7 @@ import {
   mdiTable,
   mdiWrap,
 } from '@mdi/js'
+import { ref } from 'vue'
 
 import MenuItem from './MenuItem.vue'
 import type { ItemData } from './types'

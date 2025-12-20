@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import httpy from '@common/utils/httpy'
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import httpy from '@common/utils/httpy'
 
 enum Status {
   Unknown = '',

@@ -1,9 +1,8 @@
 <script setup lang="ts">
+import ZIcon from '@common/ui/ZIcon.vue'
+import { scrollToBottom,scrollToTop } from '@common/utils/scroll'
 import { mdiChevronDown, mdiChevronUp, mdiWeatherNight } from '@mdi/js'
 import { useDark, useToggle } from '@vueuse/core'
-
-import ZIcon from '@common/ui/ZIcon.vue'
-import { scrollToTop, scrollToBottom } from '@common/utils/scroll'
 
 const isDark = useDark()
 const toggleDark = useToggle(isDark)

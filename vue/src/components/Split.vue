@@ -1,7 +1,7 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useResizeObserver, useEventListener } from '@vueuse/core';
+import { useEventListener,useResizeObserver } from '@vueuse/core';
+import { computed, onMounted,ref } from 'vue';
 
 const props = defineProps<{
   direction: 'horizontal' | 'vertical';

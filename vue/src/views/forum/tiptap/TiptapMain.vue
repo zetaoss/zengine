@@ -1,19 +1,18 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, shallowRef, watch } from 'vue'
-
 import CharacterCount from '@tiptap/extension-character-count'
 import Highlight from '@tiptap/extension-highlight'
 import Image from '@tiptap/extension-image'
 import Placeholder from '@tiptap/extension-placeholder'
-import { Table, TableRow, TableCell, TableHeader } from '@tiptap/extension-table'
+import { Table, TableCell, TableHeader,TableRow } from '@tiptap/extension-table'
 import TaskItem from '@tiptap/extension-task-item'
 import TaskList from '@tiptap/extension-task-list'
 import StarterKit from '@tiptap/starter-kit'
 import { Editor, EditorContent } from '@tiptap/vue-3'
+import { onBeforeUnmount, onMounted, shallowRef, watch } from 'vue'
 
+import Iframe from './iframe'
 import MenuBar from './MenuBar.vue'
 import TableMenuBar from './TableMenuBar.vue'
-import Iframe from './iframe'
 
 const props = defineProps({
   modelValue: { type: String, default: '' },

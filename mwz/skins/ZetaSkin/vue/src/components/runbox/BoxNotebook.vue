@@ -1,6 +1,7 @@
 <!-- BoxNotebook.vue -->
 <script setup lang="ts">
 import { computed } from 'vue'
+
 import NBOutput from './notebook/NBOutput.vue'
 import type { Job } from './types'
 

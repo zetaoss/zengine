@@ -1,9 +1,9 @@
 <!-- LoginView.vue -->
 <script setup lang="ts">
-import { ref } from 'vue'
-import { mdiAccount, mdiLock } from '@mdi/js'
-import { useRoute } from 'vue-router'
 import ZIcon from '@common/ui/ZIcon.vue'
+import { mdiAccount, mdiLock } from '@mdi/js'
+import { ref } from 'vue'
+import { useRoute } from 'vue-router'
 
 import GithubIcon from './icons/GithubIcon.vue'
 import GoogleIcon from './icons/GoogleIcon.vue'

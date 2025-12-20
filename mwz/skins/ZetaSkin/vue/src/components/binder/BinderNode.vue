@@ -1,10 +1,11 @@
 <!-- BinderNode.vue -->
 <script setup lang="ts">
-import { type PropType, computed, ref, onMounted, nextTick, watchEffect } from 'vue'
-import type { BinderNodeType } from './types'
 import ZIcon from '@common/ui/ZIcon.vue'
 import { mdiChevronRight } from '@mdi/js'
 import { useStorage } from '@vueuse/core'
+import { computed, nextTick, onMounted, type PropType, ref, watchEffect } from 'vue'
+
+import type { BinderNodeType } from './types'
 
 const props = defineProps({
   node: { type: Object as PropType<BinderNodeType>, required: true },

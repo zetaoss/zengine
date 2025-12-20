@@ -1,11 +1,12 @@
 <!-- NavbarUserMenu.vue -->
 <script setup lang="ts">
-import { type PropType, ref } from 'vue'
-import ZIcon from '@common/ui/ZIcon.vue'
 import AvatarIcon from '@common/components/avatar/AvatarIcon.vue'
 import type Item from '@common/components/navbar/types'
-import { mdiAccount } from '@mdi/js'
 import { useDismissable } from '@common/composables/useDismissable'
+import ZIcon from '@common/ui/ZIcon.vue'
+import { mdiAccount } from '@mdi/js'
+import { type PropType, ref } from 'vue'
+
 import getRLCONF from '@/utils/rlconf'
 
 defineProps({

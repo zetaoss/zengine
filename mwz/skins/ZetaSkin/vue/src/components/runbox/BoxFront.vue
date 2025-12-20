@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, ref, watch, nextTick } from 'vue'
+import { SandboxConsole, SandboxFrame, type SandboxLog } from '@common/components/sandbox'
+import { computed, nextTick,ref, watch } from 'vue'
+
 import type { Job } from './types'
-import { SandboxFrame, SandboxConsole, type SandboxLog } from '@common/components/sandbox'
 
 const props = defineProps<{
   job: Job

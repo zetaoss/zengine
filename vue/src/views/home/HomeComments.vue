@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import type { Avatar } from '@common/components/avatar/avatar'
+import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import httpy from '@common/utils/httpy'
+import { onMounted,ref } from 'vue'
+
 import linkify from '@/utils/linkify'
 
 interface Row {
