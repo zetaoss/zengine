@@ -1,3 +1,4 @@
+<!-- WriteRequest.vue -->
 <script setup lang="ts">
 import type { Avatar } from '@common/components/avatar/avatar'
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
@@ -12,7 +13,7 @@ import { mdiDelete } from '@mdi/js'
 import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import Pagination from '@/components/pagination/Pagination.vue'
+import ThePagination from '@/components/pagination/ThePagination.vue'
 import type { PaginateData } from '@/components/pagination/types'
 import useAuthStore from '@/stores/auth'
 
@@ -33,12 +34,7 @@ interface Row {
 interface RespData {
   current_page: number
   data: Row[]
-  next_page_url: string | null
-  path: string
-  per_page: number
-  prev_page_url: string | null
-  to: number
-  total: number
+  last_page: number
 }
 
 interface Count {
@@ -54,7 +50,7 @@ const confirm = useConfirm()
 
 const mode = ref<'todo' | 'todo-top' | 'done'>('todo')
 const respData = ref({} as RespData)
-const paginateData = ref({} as PaginateData)
+const paginateData = ref<PaginateData | null>(null)
 const page = ref(1)
 const showModal = ref(false)
 const count = ref({} as Count)
@@ -62,21 +58,30 @@ const loading = ref(true)
 
 const retries = 0
 
+function resolvePageFromRoute(): number {
+  const queryPage = Number(String(route.query.page ?? ''))
+  if (Number.isFinite(queryPage) && queryPage > 0) return queryPage
+
+  const paramPage = Number(String(route.params.page ?? ''))
+  if (Number.isFinite(paramPage) && paramPage > 0) return paramPage
+
+  return 1
+}
+
 async function fetchCount() {
   const [data, err] = await httpy.get<Count>('/api/write-request/count')
   if (err) {
     console.error(err)
     return
   }
-
   count.value = data
 }
 
 async function fetchPage() {
-  const [data, err] = await httpy.get<RespData>(
-    `/api/write-request/${mode.value}`,
-    { page: String(page.value) },
-  )
+  const [data, err] = await httpy.get<RespData>(`/api/write-request/${mode.value}`, {
+    page: String(page.value),
+  })
+
   if (err) {
     console.error(err)
     loading.value = false
@@ -85,8 +90,9 @@ async function fetchPage() {
 
   respData.value = data
   paginateData.value = {
-    ...(data as PaginateData),
-    path: '/tool/write-request/page',
+    current_page: data.current_page,
+    last_page: data.last_page,
+    path: '/tool/write-request',
   }
 
   loading.value = false
@@ -97,10 +103,8 @@ function fetchData() {
 
   fetchCount()
 
-  if (route.params.page) {
-    page.value = Number(String(route.params.page))
-    if (retries < 1) window.scrollTo(0, 0)
-  }
+  page.value = resolvePageFromRoute()
+  if (retries < 1) window.scrollTo(0, 0)
 
   fetchPage()
 }
@@ -137,10 +141,8 @@ async function del(row: Row) {
   toast.show('삭제 완료')
 }
 
-watch(() => route.params, fetchData)
-fetchData()
+watch(() => [route.params.page, route.query.page], fetchData, { immediate: true })
 </script>
-
 
 <template>
   <div class="p-5">
@@ -148,6 +150,7 @@ fetchData()
       작성 요청
     </h2>
     <WriteRequestNew :show="showModal" @close="closeModal" />
+
     <div v-if="count" class="pb-3">
       <button type="button" class="inline-block p-3 border rounded-l"
         :class="[mode == 'todo' ? 'bg-slate-100 dark:bg-slate-700' : 'bg-white dark:bg-slate-900']"
@@ -165,6 +168,7 @@ fetchData()
         완료 <span class="text-xs rounded-full px-2 bg-gray-400 text-white">{{ count.done }}</span>
       </button>
     </div>
+
     <table class="mytable w-full z-card">
       <thead class="z-table-header">
         <tr>
@@ -177,6 +181,7 @@ fetchData()
           <th>요청자</th>
         </tr>
       </thead>
+
       <thead v-if="loading">
         <tr>
           <th colspan="9" class="!p-0">
@@ -187,6 +192,7 @@ fetchData()
           </th>
         </tr>
       </thead>
+
       <tbody>
         <tr v-for="(row, rowKey) in respData.data" :key="rowKey" class="align-top border-b border-[#88888866]">
           <td class="text-center px-2">
@@ -221,10 +227,12 @@ fetchData()
         </tr>
       </tbody>
     </table>
+
     <div class="py-4 text-right">
       <ZButton :disabled="!auth.canWrite()" @click="openModal">등록</ZButton>
     </div>
-    <Pagination class="pb-4" :paginate-data="paginateData" />
+
+    <ThePagination v-if="paginateData" class="pb-4" :paginate-data="paginateData" />
   </div>
 </template>
 

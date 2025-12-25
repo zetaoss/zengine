@@ -38,10 +38,8 @@ const router = createRouter({
       meta: { tab: 'tool' },
       children: [
         { path: 'common-report', component: CommonReport },
-        { path: 'common-report/page/:page', component: CommonReport },
         { path: 'common-report/:id', component: CommonReportDetail },
         { path: 'write-request', component: WriteRequest },
-        { path: 'write-request/page/:page', component: WriteRequest },
         { path: 'frontplay', component: FrontPlay },
       ],
     },

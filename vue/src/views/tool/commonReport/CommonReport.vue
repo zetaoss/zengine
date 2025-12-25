@@ -1,3 +1,4 @@
+<!-- CommonReport.vue -->
 <script setup lang="ts">
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import CProgressBar from '@common/components/CProgressBar.vue'
@@ -6,10 +7,10 @@ import ZFold from '@common/ui/ZFold.vue'
 import ZSpin from '@common/ui/ZSpin.vue'
 import ZSpinner from '@common/ui/ZSpinner.vue'
 import httpy from '@common/utils/httpy'
-import { onUnmounted,ref, watch } from 'vue'
+import { onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import Pagination from '@/components/pagination/Pagination.vue'
+import ThePagination from '@/components/pagination/ThePagination.vue'
 import type { PaginateData } from '@/components/pagination/types'
 import useAuthStore from '@/stores/auth'
 import RouterLinkButton from '@/ui/RouterLinkButton.vue'
@@ -23,12 +24,7 @@ import { getRatio, getScore } from './utils'
 interface RespData {
   current_page: number
   data: Row[]
-  next_page_url: string | null
-  path: string
-  per_page: number
-  prev_page_url: string | null
-  to: number
-  total: number
+  last_page: number
 }
 
 const auth = useAuthStore()
@@ -42,12 +38,20 @@ const page = ref<number>(1)
 const showModal = ref(false)
 const loading = ref(false)
 
+function resolvePageFromRoute(): number {
+  const queryPage = Number(String(route.query.page ?? ''))
+  if (Number.isFinite(queryPage) && queryPage > 0) return queryPage
+
+  const paramPage = Number(String(route.params.page ?? ''))
+  if (Number.isFinite(paramPage) && paramPage > 0) return paramPage
+
+  return 1
+}
+
 async function fetchData() {
   loading.value = true
 
-  if (route.params.page) {
-    page.value = Number(route.params.page)
-  }
+  page.value = resolvePageFromRoute()
 
   const [data, err] = await httpy.get<RespData>('/api/common-report', {
     page: String(page.value),
@@ -60,7 +64,11 @@ async function fetchData() {
   }
 
   reportData.value = data
-  paginateData.value = { ...data, path: '/tool/common-report/page' } as PaginateData
+  paginateData.value = {
+    current_page: data.current_page,
+    last_page: data.last_page,
+    path: '/tool/common-report',
+  }
 
   if (data.data.some(row => ['pending', 'running'].includes(row.phase))) {
     retrier.schedule()
@@ -85,14 +93,13 @@ function closeModal() {
 }
 
 watch(
-  () => route.params,
+  () => [route.params.page, route.query.page],
   () => { retrier.start() },
   { immediate: true },
 )
 
 onUnmounted(() => retrier.clear())
 </script>
-
 
 <template>
   <div class="p-5">
@@ -170,7 +177,7 @@ onUnmounted(() => retrier.clear())
       <ZButton :class="{ disabled: !auth.canWrite() }" @click="openModal">등록</ZButton>
     </div>
 
-    <Pagination v-if="paginateData" :paginate-data="paginateData" />
+    <ThePagination v-if="paginateData" :paginate-data="paginateData" />
   </div>
 </template>
 
