@@ -53,15 +53,7 @@ final class PageContext
 
             $userIds = $this->fetchContributorUserIds($this->pageId, 10);
             if ($userIds) {
-                $avatarsById = $this->fetchUserAvatarsByIds($userIds);
-
-                $list = [];
-                foreach ($userIds as $uid) {
-                    if (isset($avatarsById[$uid])) {
-                        $list[] = $avatarsById[$uid];
-                    }
-                }
-                $this->contributors = $list;
+                $this->contributors = array_values($this->fetchUserAvatarsByIds($userIds));
             }
         }
 
@@ -73,11 +65,22 @@ final class PageContext
     {
         $svc = MediaWikiServices::getInstance();
 
-        if (method_exists($svc, 'getConnectionProvider')) {
-            return $svc->getConnectionProvider()->getReplicaDatabase();
+        return $svc->getDBLoadBalancer()->getConnection(DB_REPLICA);
+    }
+
+    private static function avatarCacheKey(int $userId): string
+    {
+        return "avatar:$userId";
+    }
+
+    public static function forgetAvatar(int $userId): void
+    {
+        if ($userId < 1) {
+            return;
         }
 
-        return $svc->getDBLoadBalancer()->getConnection(DB_REPLICA);
+        $cache = ObjectCache::getLocalClusterInstance();
+        $cache->delete(self::avatarCacheKey($userId));
     }
 
     private function fetchBinders(int $pageId): array
@@ -153,14 +156,10 @@ final class PageContext
         return array_slice($ids, 0, $limit);
     }
 
-    private function avatarCacheKey(int $userId): string
-    {
-        return "zetaskin:avatar:$userId";
-    }
-
     private function fetchUserAvatarsByIds(array $userIds): array
     {
         $userIds = array_values(array_unique(array_filter(array_map('intval', $userIds))));
+        $userIds = array_values(array_filter($userIds, fn ($v) => $v > 0));
         if (! $userIds) {
             return [];
         }
@@ -169,18 +168,10 @@ final class PageContext
 
         $keysById = [];
         foreach ($userIds as $id) {
-            if ($id > 0) {
-                $keysById[$id] = $this->avatarCacheKey($id);
-            }
-        }
-        if (! $keysById) {
-            return [];
+            $keysById[$id] = self::avatarCacheKey($id);
         }
 
-        $cachedByKey = [];
-        if (method_exists($cache, 'getMulti')) {
-            $cachedByKey = $cache->getMulti(array_values($keysById));
-        }
+        $cachedByKey = $cache->getMulti(array_values($keysById)) ?? [];
 
         $resultById = [];
         $missIds = [];
@@ -216,22 +207,16 @@ final class PageContext
                 $avatar = [
                     'id' => $id,
                     'name' => (string) ($row->user_name ?? ''),
-                    't' => (int) ($row->t ?? 0),
+                    't' => (int) ($row->t ?? 1),
                     'ghash' => (string) ($row->ghash ?? ''),
                 ];
 
                 $resultById[$id] = $avatar;
-                $toSet[$this->avatarCacheKey($id)] = $avatar;
+                $toSet[self::avatarCacheKey($id)] = $avatar;
             }
 
             if ($toSet) {
-                if (method_exists($cache, 'setMulti')) {
-                    $cache->setMulti($toSet, self::TTL);
-                } else {
-                    foreach ($toSet as $k => $v) {
-                        $cache->set($k, $v, self::TTL);
-                    }
-                }
+                $cache->setMulti($toSet, self::TTL);
             }
         }
 
@@ -252,7 +237,7 @@ final class PageContext
         }
 
         $cache = ObjectCache::getLocalClusterInstance();
-        $key = $this->avatarCacheKey($userId);
+        $key = self::avatarCacheKey($userId);
 
         $cached = $cache->get($key);
         if ($cached !== false && is_array($cached)) {
@@ -276,7 +261,7 @@ final class PageContext
         $avatar = [
             'id' => (int) $row->user_id,
             'name' => (string) $row->user_name,
-            't' => (int) ($row->t ?? 0),
+            't' => (int) ($row->t ?? 1),
             'ghash' => (string) ($row->ghash ?? ''),
         ];
 

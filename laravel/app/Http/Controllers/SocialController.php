@@ -25,27 +25,36 @@ class SocialController extends Controller
     {
         $user = Socialite::driver($provider)->user();
         $social_id = $user->getId();
+
         $mwdb = DB::connection('mwdb');
-        $row = $mwdb->table('user_social')->select('id', 'user_id')->where([
-            ['provider', '=', $provider],
-            ['social_id', '=', $social_id],
-        ])->first();
+        $row = $mwdb->table('user_social')
+            ->select('id', 'user_id')
+            ->where([
+                ['provider', '=', $provider],
+                ['social_id', '=', $social_id],
+            ])
+            ->first();
+
         if (! $row) {
-            // first social
-            $id = $mwdb->table('user_social')->insertGetId(['provider' => $provider, 'social_id' => $social_id]);
+            $id = $mwdb->table('user_social')->insertGetId([
+                'provider' => $provider,
+                'social_id' => $social_id,
+            ]);
             $row = $mwdb->table('user_social')->where('id', $id)->first();
         }
+
         $user_id = $row->user_id;
+
         if (! is_numeric($user_id) || $user_id < 1) {
-            // need join
             $code = sha1(rand());
             Cache::store('redis')->put("code:$code", $row->id, 9);
 
             return redirect("/social-join/$code");
         }
-        // login
-        $path = $this->getBridgePath($user_id);
+
+        $path = $this->getBridgePath((int) $user_id);
         $returnto = session('returnto', false);
+
         if (! $returnto) {
             return redirect($path);
         }
@@ -63,13 +72,20 @@ class SocialController extends Controller
         if (! $this->validateCode($code)) {
             return $this->newHTTPError(403, 'invalid code');
         }
+
         $id = Cache::store('redis')->get("code:$code");
         Cache::store('redis')->forget("code:$code");
-        $row = DB::connection('mwdb')->table('user_social')->select('user_id')->where('id', $id)->first();
+
+        $row = DB::connection('mwdb')->table('user_social')
+            ->select('user_id')
+            ->where('id', $id)
+            ->first();
+
         if (! $row || ! is_numeric($row->user_id) || $row->user_id < 1) {
             return $this->newHTTPError(403, 'invalid user id');
         }
-        $path = $this->getBridgePath($row->user_id);
+
+        $path = $this->getBridgePath((int) $row->user_id);
 
         return ['status' => 'success', 'data' => $path];
     }
@@ -77,6 +93,7 @@ class SocialController extends Controller
     private function validateCode($code)
     {
         $id = Cache::store('redis')->get("code:$code");
+
         if (! $id || ! is_numeric($id) || $id < 1) {
             return false;
         }
@@ -84,11 +101,13 @@ class SocialController extends Controller
         return true;
     }
 
-    private function getBridgePath($user_id)
+    private function getBridgePath(int $userId)
     {
         $otp = sha1(rand());
-        Cache::store('redis')->put("otp:$otp", $user_id, 30);
-        $username = AvatarService::getAvatarById($user_id)['name'] ?? '';
+        Cache::store('redis')->put("otp:$otp", $userId, 30);
+
+        $avatar = AvatarService::getAvatarById($userId);
+        $username = $avatar['name'] ?? '';
 
         return "/social-bridge?otp=$otp&username=$username";
     }

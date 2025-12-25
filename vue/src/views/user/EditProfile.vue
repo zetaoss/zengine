@@ -1,4 +1,3 @@
-<!-- EditProfile.vue -->
 <script setup lang="ts">
 import type { Avatar } from '@common/components/avatar/avatar'
 import AvatarIcon from '@common/components/avatar/AvatarIcon.vue'
@@ -6,7 +5,7 @@ import ZButton from '@common/ui/ZButton.vue'
 import ZCard from '@common/ui/ZCard.vue'
 import ZSpinner from '@common/ui/ZSpinner.vue'
 import httpy from '@common/utils/httpy'
-import { computed, nextTick,onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import useAuthStore from '@/stores/auth'
@@ -61,6 +60,15 @@ function validateEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
 }
 
+function maskEmail(email: string): string {
+  return email.split(/([@.])/).map(p => p.length === 1 ? p : [...p].map((c, i) => (i % 3 === 0 ? c : '*')).join('')).join('')
+}
+
+const gravatarDisplay = computed(() => {
+  if (isEditingGravatar.value) return gravatarEmail.value
+  return maskEmail(gravatarEmail.value)
+})
+
 const gravatarChanged = computed(
   () => gravatarEmail.value.trim() !== initialGravatarEmail.value.trim()
 )
@@ -95,13 +103,16 @@ async function confirmGravatar() {
 
   gravatarBusy.value = true
   try {
-    const [, verr] = await httpy.get('/api/me/gravatar/verify', { email })
-    if (verr) {
+    const [vdata, verr] = await httpy.get<{ ok: boolean; ghash?: string }>(
+      '/api/me/gravatar/verify',
+      { email }
+    )
+    if (verr || !vdata?.ok || typeof vdata.ghash !== 'string') {
       saveError.value = 'Gravatar 확인 실패'
       return
     }
 
-    const payload: { t: AvatarType; gravatar?: string } = { t: 3, gravatar: email }
+    const payload: { t: AvatarType; ghash: string } = { t: 3, ghash: vdata.ghash }
     const [, serr] = await httpy.post('/api/me/avatar', payload)
     if (serr) {
       saveError.value = '저장 실패'
@@ -117,6 +128,19 @@ async function confirmGravatar() {
   } finally {
     gravatarBusy.value = false
   }
+}
+
+async function loadGravatarEmail() {
+  const [gdata, gerr] = await httpy.get<{ gravatar: string }>('/api/me/gravatar')
+  if (gerr) {
+    gravatarEmail.value = ''
+    initialGravatarEmail.value = ''
+    return
+  }
+
+  const v = typeof gdata?.gravatar === 'string' ? gdata.gravatar : ''
+  gravatarEmail.value = v
+  initialGravatarEmail.value = v
 }
 
 async function load() {
@@ -139,9 +163,7 @@ async function load() {
   const t = (data.me.avatar as unknown as { t?: unknown }).t
   selectedType.value = isAvatarType(t) ? t : 1
 
-  const email = (data.me.avatar as unknown as { gravatar?: unknown }).gravatar
-  gravatarEmail.value = typeof email === 'string' ? email : ''
-  initialGravatarEmail.value = gravatarEmail.value
+  await loadGravatarEmail()
 
   isEditingGravatar.value = false
 }
@@ -242,9 +264,14 @@ onMounted(() => {
                 <div class="flex items-center gap-2 flex-wrap min-w-0">
                   <div class="text-sm font-semibold whitespace-nowrap">그라바타</div>
 
-                  <input ref="gravatarInput" type="email" v-model="gravatarEmail" placeholder="Gravatar Email"
+                  <input v-if="isEditingGravatar" ref="gravatarInput" type="email" v-model="gravatarEmail"
+                    placeholder="Gravatar Email"
                     class="px-3 py-2 rounded ring-1 ring-[var(--z-border)] bg-transparent text-sm w-64 max-w-full"
-                    :disabled="!canEditGravatar || !isEditingGravatar || gravatarBusy" />
+                    :disabled="!canEditGravatar || gravatarBusy" />
+
+                  <input v-else type="text" :value="gravatarDisplay" readonly
+                    class="px-3 py-2 rounded ring-1 ring-[var(--z-border)] bg-transparent text-sm w-64 max-w-full"
+                    :disabled="!canEditGravatar" />
 
                   <template v-if="canEditGravatar">
                     <ZButton v-if="!isEditingGravatar" @click="startEditGravatar">
