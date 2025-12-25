@@ -15,12 +15,15 @@
   },
   "dependencies": {
     "@mdi/js": "^7.4.47",
+    "@tiptap/extension-code-block-lowlight": "3.6.6",
     "@vueuse/components": "^12.2.0",
     "@vueuse/core": "^12.2.0",
     "autolinker": "^4.1.0",
+    "highlight.js": "^11.11.1",
     "isomorphic-dompurify": "^2.19.0",
+    "lowlight": "^3.3.0",
     "pinia": "^3.0.3",
-    "prismjs": "^1.29.0",
+    "prismjs": "^1.30.0",
     "quasar": "^2.17.7",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"

@@ -1,3 +1,4 @@
+// types.ts
 import type { Avatar } from '@common/components/avatar/avatar'
 
 export interface Post {

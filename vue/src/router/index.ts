@@ -2,9 +2,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 const Home = () => import('@/views/home/Home.vue')
-const ForumList = () => import('@/views/forum/ForumList.vue')
-const ForumNew = () => import('@/views/forum/ForumNew.vue')
-const ForumEdit = () => import('@/views/forum/ForumEdit.vue')
+const ForumListPage = () => import('@/views/forum/ForumListPage.vue')
+const ForumEditPage = () => import('@/views/forum/ForumEditPage.vue')
+const ForumViewPage = () => import('@/views/forum/ForumViewPage.vue')
+
 const Tool = () => import('@/views/tool/Tool.vue')
 const CommonReport = () => import('@/views/tool/commonReport/CommonReport.vue')
 const CommonReportDetail = () => import('@/views/tool/commonReport/CommonReportDetail.vue')
@@ -25,10 +26,10 @@ const router = createRouter({
       path: '/forum',
       meta: { tab: 'forum' },
       children: [
-        { path: '', component: ForumList },
-        { path: 'new', component: ForumNew, meta: { requiresAuth: true } },
-        { path: ':id/edit', component: ForumEdit, meta: { requiresAuth: true } },
-        { path: ':id', component: ForumList },
+        { path: '', component: ForumListPage },
+        { path: 'new', component: ForumEditPage, meta: { requiresAuth: true } },
+        { path: ':id/edit', component: ForumEditPage, meta: { requiresAuth: true } },
+        { path: ':id', component: ForumViewPage },
       ],
     },
     {

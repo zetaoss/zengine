@@ -12,25 +12,7 @@ class User extends Model
 
     public $timestamps = false;
 
-    protected $appends = ['avatar'];
-
-    protected $hidden = ['avatarRelation'];
-
-    public function avatarRelation()
-    {
-        return $this->hasOne(Avatar::class, 'user_id');
-    }
-
-    public function getAvatarAttribute(): array
-    {
-        $avatar = $this->avatarRelation;
-
-        return [
-            'id' => $this->user_id,
-            'name' => $this->user_name,
-            't' => (int) ($avatar?->t ?? 1),
-            'gravatar' => (string) ($avatar?->gravatar ?? ''),
-            'ghash' => (string) ($avatar?->ghash ?? ''),
-        ];
-    }
+    protected $casts = [
+        'user_id' => 'int',
+    ];
 }

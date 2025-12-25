@@ -1,27 +1,20 @@
+<!-- BoxPost.vue -->
 <script setup lang="ts">
-import 'prismjs/components/prism-c'
-import 'prismjs/components/prism-cpp'
-import 'prismjs/components/prism-go'
-import 'prismjs/components/prism-markup-templating'
-import 'prismjs/components/prism-php'
-import 'prismjs/themes/prism-okaidia.css'
-
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import ZButton from '@common/ui/ZButton.vue'
 import ZModal from '@common/ui/ZModal.vue'
 import ZSpinner from '@common/ui/ZSpinner.vue'
 import httpy from '@common/utils/httpy'
 import { useDateFormat } from '@vueuse/core'
-import Prism from 'prismjs'
-import { nextTick, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import useAuthStore from '@/stores/auth'
 import RouterLinkButton from '@/ui/RouterLinkButton.vue'
 
 import type { Post } from '../types'
-import BoxHTML from './BoxHTML.vue'
-import BoxReplies from './BoxReplies.vue'
+import ViewerHTML from './ViewerHTML.vue'
+import ViewerReplies from './ViewerReplies.vue'
 
 const props = defineProps({ postId: Number })
 const router = useRouter()
@@ -41,10 +34,7 @@ async function fetchData() {
       post.value = null
       return
     }
-
     post.value = data
-    await nextTick()
-    Prism.highlightAll()
   } finally {
     isLoading.value = false
   }
@@ -106,9 +96,9 @@ watch(() => props.postId, fetchData, { immediate: true })
       </div>
 
       <div v-else-if="post">
-        <BoxHTML class="py-4 min-h-[9rem]" :body="post.body" />
+        <ViewerHTML class="py-4 min-h-[9rem]" :body="post.body" />
         <hr>
-        <BoxReplies :postId="postId" />
+        <ViewerReplies :postId="postId" />
       </div>
 
       <div v-else class="py-10 text-center text-gray-500 min-h-[9rem]">
