@@ -49,7 +49,7 @@ class AuthController extends Controller
         Gate::authorize('unblocked');
 
         $data = $request->validate([
-            'email' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email:rfc', 'max:255'],
         ]);
 
         $email = trim((string) $data['email']);
@@ -57,7 +57,7 @@ class AuthController extends Controller
             return response()->json(['ok' => false], 422);
         }
 
-        $hash = md5(strtolower($email));
+        $hash = md5(strtolower(trim($email)));
 
         if (! $this->gravatarExists($hash)) {
             return response()->json(['ok' => false], 404);
