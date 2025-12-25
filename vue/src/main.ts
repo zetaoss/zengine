@@ -1,3 +1,4 @@
+// main.ts
 import './assets/main.scss'
 
 import { useDark, useToggle } from '@vueuse/core'

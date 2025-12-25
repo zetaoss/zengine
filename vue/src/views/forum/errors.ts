@@ -1,3 +1,4 @@
+// errors.ts
 export class DataErrors {
   private errors: Map<string, Set<string>>
 

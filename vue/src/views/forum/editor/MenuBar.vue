@@ -1,3 +1,4 @@
+<!-- MenuBar.vue -->
 <script setup lang="ts">
 import {
   mdiArrowULeftTop,
@@ -23,14 +24,53 @@ import {
   mdiTable,
   mdiWrap,
 } from '@mdi/js'
-import { ref } from 'vue'
+import type { Editor } from '@tiptap/vue-3'
+import { computed, ref } from 'vue'
 
 import MenuItem from './MenuItem.vue'
 import type { ItemData } from './types'
 
-const props = defineProps({
-  editor: { type: Object, required: true },
+type CodeLang = 'plaintext' | 'go' | 'php' | 'html' | 'xml' | 'c' | 'cpp'
+
+const props = defineProps<{
+  editor: Editor
+}>()
+
+const CODE_LANGS: { value: CodeLang; label: string }[] = [
+  { value: 'plaintext', label: 'Plain' },
+  { value: 'go', label: 'Go' },
+  { value: 'php', label: 'PHP' },
+  { value: 'html', label: 'HTML' },
+  { value: 'xml', label: 'XML' },
+  { value: 'c', label: 'C' },
+  { value: 'cpp', label: 'C++' },
+]
+
+const currentCodeLang = computed<CodeLang>(() => {
+  const e = props.editor
+  const lang = (e.getAttributes('codeBlock')?.language ?? 'plaintext') as string
+  const ok = CODE_LANGS.some((x) => x.value === lang)
+  return (ok ? lang : 'plaintext') as CodeLang
 })
+
+function setCodeBlockLanguage(lang: CodeLang) {
+  const e = props.editor
+  if (!e) return
+
+  e.chain().focus().updateAttributes('codeBlock', { language: lang }).run()
+}
+
+function toggleCodeBlockWithLang(lang: CodeLang) {
+  const e = props.editor
+  if (!e) return
+
+  if (e.isActive('codeBlock')) {
+    e.chain().focus().toggleCodeBlock().run()
+    return
+  }
+
+  e.chain().focus().toggleCodeBlock({ language: lang }).run()
+}
 
 const itemDatas = ref([
   {
@@ -43,9 +83,8 @@ const itemDatas = ref([
     title: 'Redo',
     action: () => props.editor.chain().focus().redo().run(),
   },
-  {
-    type: 'divider',
-  },
+  { type: 'divider' },
+
   {
     icon: mdiFormatHeader1,
     title: 'Heading 1',
@@ -70,9 +109,8 @@ const itemDatas = ref([
     action: () => props.editor.chain().focus().setParagraph().run(),
     isActive: () => props.editor.isActive('paragraph'),
   },
-  {
-    type: 'divider',
-  },
+  { type: 'divider' },
+
   {
     icon: mdiFormatBold,
     title: 'Bold',
@@ -106,15 +144,16 @@ const itemDatas = ref([
   {
     icon: mdiFormatClear,
     title: 'Clear Format',
-    action: () => props.editor.chain()
-      .focus()
-      .clearNodes()
-      .unsetAllMarks()
-      .run(),
+    action: () =>
+      props.editor
+        .chain()
+        .focus()
+        .clearNodes()
+        .unsetAllMarks()
+        .run(),
   },
-  {
-    type: 'divider',
-  },
+  { type: 'divider' },
+
   {
     icon: mdiFormatListBulleted,
     title: 'Bullet List',
@@ -133,10 +172,11 @@ const itemDatas = ref([
     action: () => props.editor.chain().focus().toggleTaskList().run(),
     isActive: () => props.editor.isActive('taskList'),
   },
+
   {
     icon: mdiCodeBracesBox,
     title: 'Code Block',
-    action: () => props.editor.chain().focus().toggleCodeBlock().run(),
+    action: () => toggleCodeBlockWithLang(currentCodeLang.value),
     isActive: () => props.editor.isActive('codeBlock'),
   },
   {
@@ -145,9 +185,8 @@ const itemDatas = ref([
     action: () => props.editor.chain().focus().toggleBlockquote().run(),
     isActive: () => props.editor.isActive('blockquote'),
   },
-  {
-    type: 'divider',
-  },
+  { type: 'divider' },
+
   {
     icon: mdiImageOutline,
     title: 'Image',
@@ -170,9 +209,8 @@ const itemDatas = ref([
     action: () => props.editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(),
     isActive: () => props.editor.isActive('table'),
   },
-  {
-    type: 'divider',
-  },
+  { type: 'divider' },
+
   {
     icon: mdiWrap,
     title: 'Hard Break',
@@ -188,19 +226,38 @@ const itemDatas = ref([
 
 <template>
   <div class="menu-bar">
-    <template v-for="(itemData, index) in itemDatas">
+    <template v-for="(itemData, index) in itemDatas" :key="index">
       <template v-if="itemData.type === 'divider'">
-        <div :key="`divider${index}`" class="divider" />
+        <div class="divider" />
       </template>
       <template v-else>
-        <menu-item :key="index" :item-data="itemData" />
+        <MenuItem :item-data="itemData" />
       </template>
     </template>
+
+    <div class="divider" />
+
+    <div class="code-lang">
+      <select class="code-lang__select" :value="currentCodeLang" :disabled="!editor.isActive('codeBlock')"
+        @change="setCodeBlockLanguage(($event.target as HTMLSelectElement).value as any)">
+        <option v-for="l in CODE_LANGS" :key="l.value" :value="l.value">
+          {{ l.label }}
+        </option>
+      </select>
+    </div>
   </div>
 </template>
 
 <style scoped lang="scss">
 .menu-bar {
   @apply border-b text-right items-center flex flex-wrap p-1 bg-slate-100 dark:bg-slate-900;
+}
+
+.code-lang {
+  @apply ml-auto flex items-center;
+}
+
+.code-lang__select {
+  @apply text-xs rounded border px-2 py-1 bg-white dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700;
 }
 </style>

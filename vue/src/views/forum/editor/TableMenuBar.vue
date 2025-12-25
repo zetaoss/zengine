@@ -1,3 +1,4 @@
+<!-- TableMenuBar.vue -->
 <script setup lang="ts">
 import {
   mdiCheckboxBlank,
@@ -12,7 +13,7 @@ import {
   mdiTableRowPlusBefore,
   mdiTableRowRemove,
 } from '@mdi/js'
-import { ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 
 import MenuItem from './MenuItem.vue'
 import type { ItemData } from './types'
@@ -21,15 +22,13 @@ const props = defineProps({
   editor: { type: Object, required: true },
 })
 
-const itemDatas = ref([
+const itemDatas = ref<ItemData[]>([
   {
     icon: mdiTableRemove,
     title: 'Delete Table',
     action: () => props.editor.chain().focus().deleteTable().run(),
   },
-  {
-    type: 'divider',
-  },
+  { type: 'divider' },
   {
     icon: mdiTableRowPlusBefore,
     title: 'Add Row Above',
@@ -45,9 +44,7 @@ const itemDatas = ref([
     title: 'Delete Row',
     action: () => props.editor.chain().focus().deleteRow().run(),
   },
-  {
-    type: 'divider',
-  },
+  { type: 'divider' },
   {
     icon: mdiTableColumnPlusBefore,
     title: 'Add Column Left',
@@ -63,17 +60,13 @@ const itemDatas = ref([
     title: 'Delete Column',
     action: () => props.editor.chain().focus().deleteColumn().run(),
   },
-  {
-    type: 'divider',
-  },
+  { type: 'divider' },
   {
     icon: mdiTableMergeCells,
-    title: 'Toggle Header Cell',
+    title: 'Merge/Split Cells',
     action: () => props.editor.chain().focus().mergeOrSplit().run(),
   },
-  {
-    type: 'divider',
-  },
+  { type: 'divider' },
   {
     icon: mdiDockTop,
     title: 'Toggle Header Row',
@@ -89,28 +82,35 @@ const itemDatas = ref([
     title: 'Toggle Header Cell',
     action: () => props.editor.chain().focus().toggleHeaderCell().run(),
   },
-] as ItemData[])
+])
 
 const show = ref(false)
 
-let firstTime = true
+const updateShow = () => {
+  const e = props.editor
+  show.value = e.isActive('table') || e.isActive('tableCell') || e.isActive('tableHeader')
+}
 
-// TODO: check selectionUpdate table
-watch(() => props.editor, (value, newValue) => {
-  if (firstTime || value !== newValue) {
-    firstTime = false
-    props.editor.on('selectionUpdate', () => {
-      show.value = props.editor.isActive('table')
-    })
-  }
+onMounted(() => {
+  const e = props.editor
+  e.on('selectionUpdate', updateShow)
+  e.on('transaction', updateShow)
+
+  updateShow()
+})
+
+onBeforeUnmount(() => {
+  const e = props.editor
+  e.off('selectionUpdate', updateShow)
+  e.off('transaction', updateShow)
 })
 </script>
 
 <template>
   <div v-if="show" class="table-menu-bar">
-    <template v-for="(itemData, index) in itemDatas">
-      <div v-if="itemData.type === 'divider'" :key="`divider${index}`" class="divider" />
-      <menu-item v-else :key="index" :item-data="itemData" />
+    <template v-for="(itemData, index) in itemDatas" :key="index">
+      <div v-if="itemData.type === 'divider'" class="divider" />
+      <MenuItem v-else :item-data="itemData" />
     </template>
   </div>
 </template>

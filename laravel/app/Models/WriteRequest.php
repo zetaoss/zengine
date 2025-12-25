@@ -12,18 +12,15 @@ class WriteRequest extends Model
 
     protected $appends = ['hit', 'avatar'];
 
-    public function getAvatarAttribute()
+    public function getAvatarAttribute(): ?array
     {
-        return AvatarService::getAvatarById($this->user_id);
+        return AvatarService::getAvatarById((int) $this->user_id);
     }
 
-    public function getHitAttribute()
+    public function getHitAttribute(): int
     {
         $row = DB::table('not_matches')->where('title', '=', $this->title)->first();
-        if ($row) {
-            return $row->hit;
-        }
 
-        return 0;
+        return $row ? (int) $row->hit : 0;
     }
 }

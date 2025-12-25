@@ -10,15 +10,22 @@ class Avatar extends Model
 
     protected $primaryKey = 'user_id';
 
-    public $timestamps = false;
-
     public $incrementing = false;
 
     protected $keyType = 'int';
 
+    public $timestamps = false;
+
     protected $fillable = [
         't',
-        'gravatar',
         'ghash',
+        'gravatar',
+    ];
+
+    protected $casts = [
+        'user_id' => 'int',
+        't' => 'int',
+        'ghash' => 'string',
+        'gravatar' => 'string',
     ];
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\AvatarService;
 use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
@@ -11,8 +12,7 @@ class UserController extends Controller
     {
         $normalizedName = str_replace('_', ' ', $userName);
 
-        $user = User::with('avatarRelation')
-            ->where('user_name', $normalizedName)
+        $user = User::where('user_name', $normalizedName)
             ->firstOrFail([
                 'user_id',
                 'user_name',
@@ -20,7 +20,10 @@ class UserController extends Controller
                 'user_editcount',
             ]);
 
-        return response()->json($user);
+        $payload = $user->toArray();
+        $payload['avatar'] = AvatarService::getAvatarById((int) $user->user_id);
+
+        return response()->json($payload);
     }
 
     public function stats(int $userId)
@@ -33,6 +36,7 @@ class UserController extends Controller
             ->groupBy('dt')
             ->orderBy('dt')
             ->get();
+
         $data = [];
         foreach ($rows as $row) {
             $data[$row->dt] = (int) $row->rev;

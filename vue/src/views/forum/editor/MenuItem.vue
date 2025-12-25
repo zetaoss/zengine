@@ -1,3 +1,4 @@
+<!-- MenuItem.vue -->
 <script setup lang="ts">
 import ZIcon from '@common/ui/ZIcon.vue'
 import type { PropType } from 'vue'
@@ -11,7 +12,7 @@ defineProps({
 
 <template>
   <button type="button" class="menu-item" :class="{ 'is-active': itemData.isActive ? itemData.isActive() : null }"
-    :title="itemData.title" @click="itemData.action">
-    <ZIcon :path="itemData.icon" />
+    :title="itemData.title ?? ''" @click="itemData.action">
+    <ZIcon :path="itemData.icon ?? ''" />
   </button>
 </template>

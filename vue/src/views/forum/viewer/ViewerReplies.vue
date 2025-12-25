@@ -1,4 +1,4 @@
-<!-- BoxRelies.vue -->
+<!-- ViewerReplies.vue -->
 <script setup lang="ts">
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import ZButton from '@common/ui/ZButton.vue'
@@ -10,12 +10,12 @@ import ZTextarea from '@common/ui/ZTextarea.vue'
 import httpy from '@common/utils/httpy'
 import { mdiDotsVertical } from '@mdi/js'
 import { useDateFormat } from '@vueuse/core'
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import useAuthStore from '@/stores/auth'
-import linkify from '@/utils/linkify'
 
 import type { Reply } from '../types'
+import BoxHTML from './ViewerHTML.vue'
 
 const props = defineProps({
   postId: { type: Number, default: 0 },
@@ -25,29 +25,32 @@ const me = useAuthStore()
 
 const replies = ref<Reply[]>([])
 const replyBody = ref('')
-const editingReply = ref({} as Reply)
+const editingReply = ref<{ id: number; body: string } | null>(null)
 const showModal = ref(false)
+const deletingReply = ref<Reply | null>(null)
 
-let deletingReply = {} as Reply
+const isEditing = (id: number) => editingReply.value?.id === id
+
+const editBody = computed({
+  get: () => editingReply.value?.body ?? '',
+  set: (v: string) => {
+    if (!editingReply.value) return
+    editingReply.value.body = v
+  },
+})
 
 async function fetchData() {
+  if (!props.postId) return
   const [data, err] = await httpy.get<Reply[]>(`/api/posts/${props.postId}/replies`)
   if (err) {
     console.error(err)
     return
   }
-
-  const linked = await Promise.all(
-    data.map(async (r) => ({
-      ...r,
-      body: await linkify(r.body),
-    })),
-  )
-
-  replies.value = linked
+  replies.value = data
 }
 
 async function postReply() {
+  if (!props.postId) return
   const [, err] = await httpy.post(`/api/posts/${props.postId}/replies`, {
     body: replyBody.value,
   })
@@ -61,10 +64,12 @@ async function postReply() {
 }
 
 function edit(reply: Reply) {
-  editingReply.value = { id: reply.id, body: reply.body } as Reply
+  editingReply.value = { id: reply.id, body: reply.body }
 }
 
 async function editOK() {
+  if (!props.postId || !editingReply.value) return
+
   const [, err] = await httpy.put(
     `/api/posts/${props.postId}/replies/${editingReply.value.id}`,
     { body: editingReply.value.body },
@@ -74,36 +79,38 @@ async function editOK() {
     return
   }
 
-  editingReply.value = {} as Reply
+  editingReply.value = null
   fetchData()
 }
 
 function editCancel() {
-  editingReply.value = {} as Reply
+  editingReply.value = null
 }
 
 function del(reply: Reply) {
-  deletingReply = reply
+  deletingReply.value = reply
   showModal.value = true
 }
 
 async function modalOK() {
   showModal.value = false
-  const [, err] = await httpy.delete(`/api/posts/${props.postId}/replies/${deletingReply.id}`)
+  if (!props.postId || !deletingReply.value) return
+
+  const [, err] = await httpy.delete(`/api/posts/${props.postId}/replies/${deletingReply.value.id}`)
   if (err) {
     console.error(err)
     return
   }
 
+  deletingReply.value = null
   fetchData()
 }
 
-watch(() => props.postId, fetchData)
-fetchData()
+watch(() => props.postId, fetchData, { immediate: true })
 </script>
 
 <template>
-  <ZModal :show="showModal" @ok="modalOK()" @cancel="showModal = false">
+  <ZModal :show="showModal" @ok="modalOK" @cancel="showModal = false">
     댓글을 삭제하시겠습니까?
   </ZModal>
 
@@ -119,7 +126,7 @@ fetchData()
           {{ useDateFormat(reply.created_at, 'YYYY-MM-DD HH:mm').value }}
         </div>
 
-        <div v-if="me && me.canEdit(reply.avatar.id)" class="text-right">
+        <div v-if="reply.avatar && me.canEdit(reply.avatar.id)" class="text-right">
           <ZMenu>
             <template #trigger="{ toggle }">
               <button type="button" @click="toggle">
@@ -142,34 +149,32 @@ fetchData()
       </div>
 
       <div class="pt-2">
-        <div class="whitespace-pre-line" v-html="reply.body" />
-
-        <div v-if="editingReply && reply.id === editingReply.id" class="py-3">
+        <div v-if="isEditing(reply.id)">
           <div class="p-3 border-2 rounded bg-white dark:bg-black">
-            <div class="overflow-auto">
-              <div class="float-left">
-                <AvatarUser :avatar="reply.avatar" :showLink="false" />
-              </div>
-              <div v-if="editingReply.body.length > 0" class="float-right">
-                <div class="text-xs text-gray-400">
-                  {{ editingReply.body.length }} characters
-                </div>
-              </div>
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-gray-400">수정 중</span>
+              <span class="text-xs text-gray-400">
+                {{ editBody.length }} characters
+              </span>
             </div>
 
-            <div class="py-2 rounded-t bg-white dark:bg-black">
-              <ZTextarea v-model="editingReply.body" id="edit-reply" />
+            <div class="mt-2">
+              <ZTextarea v-model="editBody" id="edit-reply" />
             </div>
 
-            <div class="flex justify-end gap-3">
-              <ZButton @click="editCancel">
-                취소
+            <div class="mt-3 flex justify-center gap-3">
+              <ZButton :disabled="editBody.length === 0" @click="editOK" class="w-24" color="primary">
+                저장
               </ZButton>
-              <ZButton :disabled="editingReply.body.length === 0" @click="editOK" color="primary">
-                등록
+              <ZButton @click="editCancel" class="w-24">
+                취소
               </ZButton>
             </div>
           </div>
+        </div>
+
+        <div v-else>
+          <BoxHTML :body="reply.body" mode="text" :previews="false" :fencedCode="true" />
         </div>
       </div>
     </div>

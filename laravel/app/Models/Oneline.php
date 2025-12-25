@@ -9,8 +9,8 @@ class Oneline extends Model
 {
     protected $appends = ['avatar'];
 
-    public function getAvatarAttribute()
+    public function getAvatarAttribute(): ?array
     {
-        return AvatarService::getAvatarById($this->user_id);
+        return AvatarService::getAvatarById((int) $this->user_id);
     }
 }

@@ -32,6 +32,7 @@ Route::delete('/common-report/{id}', [CommonReportController::class, 'destroy'])
 
 Route::get('/me', [AuthController::class, 'me'])->middleware('mwauth:maybe');
 Route::post('/me/avatar', [AuthController::class, 'updateAvatar'])->middleware('mwauth');
+Route::get('/me/gravatar', [AuthController::class, 'getGravatar'])->middleware('mwauth');
 Route::get('/me/gravatar/verify', [AuthController::class, 'verifyGravatar'])->middleware('mwauth');
 
 Route::get('/onelines/recent', [OnelineController::class, 'recent']);

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\AvatarService;
 use Illuminate\Database\Eloquent\Model;
 
 class Reply extends Model
@@ -21,6 +22,6 @@ class Reply extends Model
 
     public function getAvatarAttribute(): ?array
     {
-        return \App\Services\AvatarService::getAvatarById((int) $this->user_id);
+        return AvatarService::getAvatarById((int) $this->user_id);
     }
 }

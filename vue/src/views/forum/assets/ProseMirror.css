@@ -1,99 +1,99 @@
-@use "sass:math";
+/* ProseMirror.css */
+/* Tailwind @apply + CSS Nesting 버전 */
 
 .ProseMirror {
-    @apply outline-0 min-h-[40vh];
+    @apply outline-0;
 
-    >*+* {
+    &>*+* {
         margin-top: 0.75em;
     }
 
-    ul,
-    ol {
+    & ul,
+    & ol {
         padding: 0 1rem;
     }
 
-    h1,
-    h2,
-    h3,
-    h4,
-    h5,
-    h6 {
+    & h1,
+    & h2,
+    & h3,
+    & h4,
+    & h5,
+    & h6 {
         line-height: 1.1;
     }
 
-    code {
+    & code {
         @apply px-2 py-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400;
         font-size: 85%;
         border-radius: 6px;
     }
 
-    pre {
+    & pre {
         @apply bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400;
         border-radius: 0.5rem;
         font-family: 'JetBrainsMono', monospace;
         padding: 0.75rem 1rem;
 
-        code {
+        & code {
             background: none;
             font-size: 0.8rem;
             padding: 0;
         }
     }
 
-    mark {
+    & mark {
         @apply bg-yellow-700;
     }
 
-    img {
+    & img {
         @apply m-2 h-auto border-2 block;
     }
 
-    hr {
+    & hr {
         @apply border-t my-8;
     }
 
-    blockquote {
+    & blockquote {
         @apply border-l-4 pl-4 border-gray-200;
     }
 
-    ul[data-type="taskList"] {
+    & ul[data-type="taskList"] {
         list-style: none;
         padding: 0;
 
-        li {
+        & li {
             align-items: center;
             display: flex;
 
-            >label {
+            &>label {
                 flex: 0 0 auto;
                 margin-right: 0.5rem;
                 user-select: none;
             }
 
-            >div {
+            &>div {
                 flex: 1 1 auto;
             }
         }
     }
 
-
-    table {
+    & table {
         @apply border-collapse w-full overflow-hidden table-fixed;
 
-        td,
-        th {
+        & td,
+        & th {
             @apply border-2 h-5 p-2 px-3 align-top box-border relative;
 
-            >* {
+            &>* {
                 margin-bottom: 0;
             }
         }
 
-        th {
+        & th {
             @apply font-bold text-left bg-zinc-100 dark:bg-zinc-800;
         }
 
-        .selectedCell:after {
+        & .selectedCell:after {
             z-index: 2;
             position: absolute;
             content: "";
@@ -105,7 +105,7 @@
             pointer-events: none;
         }
 
-        .column-resize-handle {
+        & .column-resize-handle {
             position: absolute;
             right: -2px;
             top: 0;
@@ -115,15 +115,15 @@
             pointer-events: none;
         }
 
-        p {
+        & p {
             margin: 0;
         }
     }
 
-    p {
+    & p {
         line-height: 1.2rem;
 
-        >.is-editor-empty:first-child::before {
+        &>.is-editor-empty:first-child::before {
             color: #adb5bd;
             content: attr(data-placeholder);
             float: left;
@@ -140,7 +140,7 @@
         outline: 3px solid #68CEF8;
     }
 
-    iframe {
+    & iframe {
         @apply w-full h-full;
     }
 }

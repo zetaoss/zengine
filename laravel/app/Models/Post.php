@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\AvatarService;
 use Illuminate\Database\Eloquent\Model;
 
 class Post extends Model
@@ -30,7 +31,7 @@ class Post extends Model
 
     public function getAvatarAttribute(): ?array
     {
-        return \App\Services\AvatarService::getAvatarById((int) $this->user_id);
+        return AvatarService::getAvatarById((int) $this->user_id);
     }
 
     public function getTagNamesAttribute(): array

@@ -7,35 +7,23 @@ use Illuminate\Database\Eloquent\Model;
 
 class CommonReport extends Model
 {
-    protected $appends = ['avatar', 'total'];
+    protected $appends = ['total', 'avatar'];
 
     protected $fillable = ['user_id', 'phase'];
-
-    public function getAvatarAttribute()
-    {
-        return AvatarService::getAvatarById($this->user_id);
-    }
 
     public function getTotalAttribute()
     {
         return $this->items->pluck('total')->sum();
     }
 
-    protected static function boot()
+    public function getAvatarAttribute()
     {
-        parent::boot();
-        static::deleting(function ($report) {
-            $report->items->each->delete();
-        });
+        return AvatarService::getAvatarById((int) $this->user_id);
     }
 
     public function items()
     {
-        return $this->hasMany(CommonReportItem::class, 'report_id')->orderBy('total', 'desc');
-    }
-
-    public function addItem($item)
-    {
-        return $this->items()->create($item);
+        return $this->hasMany(CommonReportItem::class, 'report_id')
+            ->orderBy('total', 'desc');
     }
 }
