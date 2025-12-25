@@ -7,7 +7,7 @@ import { useDateFormat } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
-import ThePagination from '@/components/pagination/Pagination.vue'
+import ThePagination from '@/components/pagination/ThePagination.vue'
 import type { PaginateData } from '@/components/pagination/types'
 
 import type { Post } from '../types'
@@ -25,7 +25,7 @@ const page = computed(() => {
 })
 
 const posts = ref<Post[]>([])
-const paginateData = ref<PaginateData>({} as PaginateData)
+const paginateData = ref<PaginateData | null>(null)
 const isLoading = ref(false)
 const loadError = ref<string | null>(null)
 
@@ -36,20 +36,26 @@ const fetchList = async () => {
   isLoading.value = true
   loadError.value = null
 
-  const [data, err] = await httpy.get<PaginateData & { data: Post[] }>(
-    '/api/posts',
-    { page: page.value },
-  )
+  const [data, err] = await httpy.get<{
+    data: Post[]
+    current_page: number
+    last_page: number
+  }>('/api/posts', { page: page.value })
 
   if (err) {
     loadError.value = '목록을 불러오지 못했습니다.'
     posts.value = []
+    paginateData.value = null
     isLoading.value = false
     return
   }
 
-  paginateData.value = { ...data, path: '/forum' }
   posts.value = data.data
+  paginateData.value = {
+    current_page: data.current_page,
+    last_page: data.last_page,
+    path: '/forum',
+  }
   isLoading.value = false
 }
 
@@ -119,7 +125,7 @@ watch(() => page.value, fetchList, { immediate: true })
     </div>
 
     <div v-if="!isLoading && !loadError" class="text-center py-4">
-      <ThePagination :paginate-data="paginateData" />
+      <ThePagination v-if="paginateData" :paginate-data="paginateData" />
     </div>
   </div>
 </template>

@@ -1,7 +1,7 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
-import { useEventListener,useResizeObserver } from '@vueuse/core';
-import { computed, onMounted,ref } from 'vue';
+import { useEventListener, useResizeObserver } from '@vueuse/core';
+import { computed, onMounted, ref } from 'vue';
 
 const props = defineProps<{
   direction: 'horizontal' | 'vertical';
@@ -16,7 +16,11 @@ const MIN_SIZE = 100;
 
 const isVertical = computed(() => props.direction === 'vertical');
 
+const getRelevantSize = ({ width, height }: { width: number; height: number }) =>
+  isVertical.value ? width : height;
+
 const adjustSizes = (containerSize: number) => {
+  if (containerSize <= 0) return;
   const minPercentage = (MIN_SIZE / containerSize) * 100;
   const maxPercentage = 100 - minPercentage;
   firstPanePercentage.value = Math.max(minPercentage, Math.min(maxPercentage, firstPanePercentage.value));
@@ -24,7 +28,7 @@ const adjustSizes = (containerSize: number) => {
 
 useResizeObserver(container, (entries) => {
   const { width, height } = entries[0].contentRect;
-  adjustSizes(isVertical.value ? height : width);
+  adjustSizes(getRelevantSize({ width, height }));
 });
 
 const disableIframes = () => {
@@ -69,6 +73,8 @@ useEventListener(window, 'mouseup', stopResize);
 onMounted(() => {
   if (container.value) {
     firstPanePercentage.value = props.initialPercentage ?? 50;
+    const { width, height } = container.value.getBoundingClientRect();
+    adjustSizes(getRelevantSize({ width, height }));
   }
 });
 </script>
