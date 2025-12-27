@@ -1,6 +1,7 @@
 // app.ts
-import '@/assets/app.scss'
+import '@/assets/app.css'
 
+import CAds from '@common/components/CAds.vue'
 import CSiteFooter from '@common/components/CSiteFooter.vue'
 import CSiteRemocon from '@common/components/CSiteRemocon.vue'
 import CNavbarSearch from '@common/components/navbar/CNavbarSearch.vue'
@@ -19,6 +20,7 @@ runVisibleHeightsUpdater()
 
 const app = createApp({})
 
+app.component('CAds', CAds)
 app.component('CSiteFooter', CSiteFooter)
 app.component('CSiteRemocon', CSiteRemocon)
 app.component('CNavbarSearch', CNavbarSearch)
@@ -33,3 +35,4 @@ app.component('TocApex', TocApex)
 app.mount('#app')
 
 runbox()
+

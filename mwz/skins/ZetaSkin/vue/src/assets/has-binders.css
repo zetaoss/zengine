@@ -1,9 +1,10 @@
+/* has-binders.css */
 .hb-lg-md-block {
   @apply md:block;
 }
 
 .has-binders {
-  .hb-lg-md-block {
+  & .hb-lg-md-block {
     @apply hidden lg:block;
   }
 }
