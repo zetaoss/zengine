@@ -110,6 +110,11 @@ async function checkUsername() {
 async function submitJoin() {
   if (busy.value) return
 
+  if (status.value !== Status.Can) {
+    errorMessage.value = '중복 확인을 먼저 해주세요.'
+    return
+  }
+
   const name = username.value.trim()
   if (!name) return
 
@@ -153,18 +158,12 @@ async function submitJoin() {
 
 <template>
   <div class="mx-auto my-10 w-[50vw] min-w-[400px] rounded border z-card p-7">
-    <div class="py-3 text-lg font-bold">
-      사용자명 생성
-    </div>
+    <div class="py-3 text-lg font-bold">사용자명 생성</div>
     <hr />
 
-    <p class="py-5">
-      사용할 사용자명을 입력하세요.
-    </p>
+    <p class="py-5">사용할 사용자명을 입력하세요.</p>
 
-    <p class="text-sm">
-      사용자명:
-    </p>
+    <p class="text-sm">사용자명:</p>
 
     <div class="flex py-2 gap-2">
       <input v-model.trim="username" aria-label="username" type="text" class="w-full p-2 border rounded" :class="status"
@@ -176,17 +175,13 @@ async function submitJoin() {
       </ZButton>
     </div>
 
-    <div v-if="status === Status.Checking" class="text-sm text-gray-500">
-      확인 중...
-    </div>
+    <div v-if="status === Status.Checking" class="text-sm text-gray-500">확인 중...</div>
 
     <div v-else-if="status === Status.Cannot" class="text-sm text-[#f008]">
       {{ errorMessage || '사용불가한 사용자명입니다.' }}
     </div>
 
-    <div v-else-if="status === Status.Can" class="text-sm text-green-600">
-      사용가능한 사용자명입니다.
-    </div>
+    <div v-else-if="status === Status.Can" class="text-sm text-green-600">사용가능한 사용자명입니다.</div>
 
     <div v-if="warningMessage" class="bg-yellow-100 text-yellow-800 p-2 px-4 text-sm rounded my-2">
       {{ warningMessage }}
@@ -197,7 +192,8 @@ async function submitJoin() {
     </div>
 
     <div class="flex justify-center mt-4">
-      <ZButton type="button" :disabled="busy || username.trim().length < 1" @click="submitJoin">
+      <ZButton type="button" :disabled="busy || username.trim().length < 1 || status !== Status.Can"
+        @click="submitJoin">
         가입
       </ZButton>
     </div>

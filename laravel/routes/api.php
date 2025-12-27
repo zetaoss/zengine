@@ -9,13 +9,9 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\ReplyController;
 use App\Http\Controllers\RunboxController;
-use App\Http\Controllers\SocialController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WriteRequestController;
 use Illuminate\Support\Facades\Route;
-
-Route::post('/auth/social/join', [SocialController::class, 'join'])->middleware(['throttle:10,1']);
-Route::post('/auth/social/token-check', [SocialController::class, 'tokenCheck']);
 
 Route::get('/comments/recent', [CommentController::class, 'recent']);
 Route::get('/comments/{pageID}', [CommentController::class, 'list']);
