@@ -13,7 +13,6 @@ const FrontPlay = () => import('@/views/tool/FrontPlay.vue')
 const WriteRequest = () => import('@/views/tool/writeRequest/WriteRequest.vue')
 const LoginView = () => import('@/views/auth/LoginView.vue')
 const LogoutView = () => import('@/views/auth/LogoutView.vue')
-const SocialBridge = () => import('@/views/auth/SocialBridge.vue')
 const SocialJoin = () => import('@/views/auth/SocialJoin.vue')
 const EditProfile = () => import('@/views/user/EditProfile.vue')
 const UserProfile = () => import('@/views/user/UserProfile.vue')
@@ -45,8 +44,7 @@ const router = createRouter({
     },
     { path: '/login', component: LoginView },
     { path: '/logout', component: LogoutView },
-    { path: '/social-bridge', component: SocialBridge },
-    { path: '/social-join/:code', component: SocialJoin },
+    { path: '/social-join/:token', component: SocialJoin },
 
     { path: '/user/:username/edit', component: EditProfile, meta: { requiresAuth: true } },
     { path: '/user/:username', component: UserProfile },

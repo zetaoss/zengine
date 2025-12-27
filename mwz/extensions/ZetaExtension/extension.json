@@ -40,11 +40,6 @@
   },
   "RestRoutes": [
     {
-      "path": "/auth/{code}",
-      "method": "GET",
-      "class": "ZetaExtension\\Auth\\Rest"
-    },
-    {
       "path": "/binder",
       "method": "GET",
       "class": "ZetaExtension\\Binder\\RestBinder"
@@ -53,6 +48,16 @@
       "path": "/binder/{pageid}",
       "method": "GET",
       "class": "ZetaExtension\\Binder\\RestBinder"
+    },
+    {
+      "path": "/social/bridge",
+      "method": "GET",
+      "class": "ZetaExtension\\Auth\\RestSocialBridge"
+    },
+    {
+      "path": "/social/create",
+      "method": "POST",
+      "class": "ZetaExtension\\Auth\\RestSocialCreate"
     }
   ],
   "ResourceModules": {
