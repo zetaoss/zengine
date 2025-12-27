@@ -2,20 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\AvatarService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Laravel\Socialite\Facades\Socialite;
 
 class SocialController extends Controller
 {
+    private const SOCIALJOIN_TTL = 600;
+
+    private const MWBRIDGE_TTL = 60;
+
+    private const MAX_USERNAME_LEN = 80;
+
     public function redirect(Request $request, string $provider)
     {
-        $returnto = $request->input('returnto', '');
-        if (! $returnto || strlen($returnto) < 1 || strlen($returnto) > 255) {
-            $returnto = '';
-        }
+        $returnto = (string) $request->input('returnto', '');
+        $returnto = $this->sanitizeReturnto($returnto);
+
         $request->session()->put('returnto', $returnto);
 
         return Socialite::driver($provider)->redirect();
@@ -23,92 +27,287 @@ class SocialController extends Controller
 
     public function callback(Request $request, string $provider)
     {
-        $user = Socialite::driver($provider)->user();
-        $social_id = $user->getId();
+        try {
+            $socialUser = Socialite::driver($provider)->user();
+        } catch (\Throwable $e) {
+            return redirect('/login?error=social_auth_failed');
+        }
+
+        $socialId = (string) $socialUser->getId();
+        if ($socialId === '') {
+            return redirect('/login?error=invalid_social_id');
+        }
+
+        $returnto = (string) $request->session()->get('returnto', '');
+        $request->session()->forget('returnto');
 
         $mwdb = DB::connection('mwdb');
+
         $row = $mwdb->table('user_social')
-            ->select('id', 'user_id')
-            ->where([
-                ['provider', '=', $provider],
-                ['social_id', '=', $social_id],
-            ])
+            ->where('provider', $provider)
+            ->where('social_id', $socialId)
             ->first();
 
         if (! $row) {
-            $id = $mwdb->table('user_social')->insertGetId([
-                'provider' => $provider,
-                'social_id' => $social_id,
-            ]);
-            $row = $mwdb->table('user_social')->where('id', $id)->first();
+            try {
+                $mwdb->table('user_social')->insert([
+                    'provider' => $provider,
+                    'social_id' => $socialId,
+                    'user_id' => null,
+                ]);
+            } catch (\Throwable $e) {
+            }
+
+            $row = $mwdb->table('user_social')
+                ->where('provider', $provider)
+                ->where('social_id', $socialId)
+                ->first();
         }
 
-        $user_id = $row->user_id;
-
-        if (! is_numeric($user_id) || $user_id < 1) {
-            $code = sha1(rand());
-            Cache::store('redis')->put("code:$code", $row->id, 9);
-
-            return redirect("/social-join/$code");
+        if (! $row) {
+            return redirect('/login?error=social_link_failed');
         }
 
-        $path = $this->getBridgePath((int) $user_id);
-        $returnto = session('returnto', false);
+        $userId = (int) ($row->user_id ?? 0);
 
-        if (! $returnto) {
-            return redirect($path);
+        if ($userId > 0) {
+            $bridgeToken = $this->putToken('mwbridge', [
+                'user_id' => $userId,
+                'returnto' => $returnto,
+            ], self::MWBRIDGE_TTL);
+
+            return redirect($this->mwBridgeUrl($bridgeToken));
         }
 
-        return redirect("$path&returnto=$returnto");
+        $joinToken = $this->putToken('socialjoin', [
+            'user_social_id' => (int) $row->id,
+            'provider' => $provider,
+            'social_id' => $socialId,
+            'returnto' => $returnto,
+            'email' => (string) ($socialUser->getEmail() ?? ''),
+            'realname' => trim((string) ($socialUser->getName() ?? '')),
+        ], self::SOCIALJOIN_TTL);
+
+        return redirect("/social-join/{$joinToken}");
     }
 
-    public function checkCode($code)
+    public function join(Request $request)
     {
-        return ['status' => 'success', 'data' => $this->validateCode($code)];
-    }
+        $token = (string) $request->input('token', '');
+        $username = trim((string) $request->input('username', ''));
 
-    public function loginCode($code)
-    {
-        if (! $this->validateCode($code)) {
-            return $this->newHTTPError(403, 'invalid code');
+        $payload = $this->popToken('socialjoin', $token);
+        if (! $payload) {
+            return response()->json(['status' => 'error', 'message' => 'invalid token'], 403);
         }
 
-        $id = Cache::store('redis')->get("code:$code");
-        Cache::store('redis')->forget("code:$code");
-
-        $row = DB::connection('mwdb')->table('user_social')
-            ->select('user_id')
-            ->where('id', $id)
-            ->first();
-
-        if (! $row || ! is_numeric($row->user_id) || $row->user_id < 1) {
-            return $this->newHTTPError(403, 'invalid user id');
+        if ($username === '' || mb_strlen($username) > self::MAX_USERNAME_LEN) {
+            return $this->errorWithNewToken($payload, 422, 'invalid username');
         }
 
-        $path = $this->getBridgePath((int) $row->user_id);
-
-        return ['status' => 'success', 'data' => $path];
-    }
-
-    private function validateCode($code)
-    {
-        $id = Cache::store('redis')->get("code:$code");
-
-        if (! $id || ! is_numeric($id) || $id < 1) {
-            return false;
+        $dry = $this->mwDryRunUsername($username);
+        if (! (($dry['status'] ?? '') === 'success' && ($dry['can_create'] ?? false) === true)) {
+            return $this->errorWithNewToken($payload, 422, 'username not allowed', ['mw_dryrun' => $dry]);
         }
 
-        return true;
+        $finalName = (string) ($dry['name'] ?? $username);
+
+        $mw = $this->createMwAccount($finalName, $payload);
+
+        if (($mw['user_id'] ?? 0) < 1) {
+            return $this->errorWithNewToken($payload, 500, 'failed to create account', $mw);
+        }
+
+        $userId = (int) $mw['user_id'];
+
+        DB::connection('mwdb')->table('user_social')
+            ->where('id', (int) ($payload['user_social_id'] ?? 0))
+            ->update(['user_id' => $userId]);
+
+        $bridgeToken = $this->putToken('mwbridge', [
+            'user_id' => $userId,
+            'returnto' => (string) ($payload['returnto'] ?? ''),
+        ], self::MWBRIDGE_TTL);
+
+        return response()->json([
+            'status' => 'success',
+            'redirect' => $this->mwBridgeUrl($bridgeToken),
+        ]);
     }
 
-    private function getBridgePath(int $userId)
+    private function errorWithNewToken(array $payload, int $httpCode, string $message, array $extra = [])
     {
-        $otp = sha1(rand());
-        Cache::store('redis')->put("otp:$otp", $userId, 30);
+        $newToken = $this->putToken('socialjoin', [
+            'user_social_id' => (int) ($payload['user_social_id'] ?? 0),
+            'provider' => (string) ($payload['provider'] ?? ''),
+            'social_id' => (string) ($payload['social_id'] ?? ''),
+            'returnto' => (string) ($payload['returnto'] ?? ''),
+            'email' => (string) ($payload['email'] ?? ''),
+            'realname' => (string) ($payload['realname'] ?? ''),
+        ], self::SOCIALJOIN_TTL);
 
-        $avatar = AvatarService::getAvatarById($userId);
-        $username = $avatar['name'] ?? '';
+        $res = [
+            'status' => 'error',
+            'message' => $message,
+            'token' => $newToken,
+        ];
 
-        return "/social-bridge?otp=$otp&username=$username";
+        if (! empty($extra)) {
+            $res['debug'] = $extra;
+        }
+
+        return response()->json($res, $httpCode);
+    }
+
+    private function sanitizeReturnto(string $returnto): string
+    {
+        $returnto = trim($returnto);
+
+        if ($returnto === '' || strlen($returnto) > 200) {
+            return '';
+        }
+
+        if (preg_match('~://|\\\\|\.\.~', $returnto)) {
+            return '';
+        }
+
+        if (! preg_match('~^[\pL\pN _:\-/().%]+$~u', $returnto)) {
+            return '';
+        }
+
+        return $returnto;
+    }
+
+    private function mwBridgeUrl(string $token): string
+    {
+        return '/w/rest.php/social/bridge?token='.rawurlencode($token);
+    }
+
+    private function mwBaseUrl(): string
+    {
+        $base = (string) config('app.url');
+
+        return rtrim($base, '/');
+    }
+
+    private function putToken(string $prefix, array $payload, int $ttlSeconds): string
+    {
+        $token = bin2hex(random_bytes(32));
+        $key = "{$prefix}:{$token}";
+
+        $this->redis()->setex($key, $ttlSeconds, json_encode($payload, JSON_UNESCAPED_UNICODE));
+
+        return $token;
+    }
+
+    private function popToken(string $prefix, string $token): ?array
+    {
+        if ($token === '') {
+            return null;
+        }
+
+        $key = "{$prefix}:{$token}";
+        $raw = $this->redis()->getDel($key);
+
+        if (! is_string($raw) || $raw === '') {
+            return null;
+        }
+
+        $data = json_decode($raw, true);
+
+        return is_array($data) ? $data : null;
+    }
+
+    private function mwDryRunUsername(string $username): array
+    {
+        $url = $this->mwBaseUrl().'/w/rest.php/social-create';
+
+        try {
+            $resp = Http::timeout(10)
+                ->acceptJson()
+                ->asJson()
+                ->post($url, [
+                    'username' => $username,
+                    'dryrun' => true,
+                ]);
+        } catch (\Throwable $e) {
+            return [
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ];
+        }
+
+        if (! $resp->ok()) {
+            return [
+                'status' => 'error',
+                'mw_status' => $resp->status(),
+                'mw_body' => $resp->body(),
+            ];
+        }
+
+        $json = null;
+        try {
+            $json = $resp->json();
+        } catch (\Throwable $e) {
+            $json = null;
+        }
+
+        return is_array($json) ? $json : [
+            'status' => 'error',
+            'message' => 'invalid mw response',
+        ];
+    }
+
+    private function createMwAccount(string $username, array $payload): array
+    {
+        $url = $this->mwBaseUrl().'/w/rest.php/social-create';
+
+        try {
+            $resp = Http::timeout(10)
+                ->acceptJson()
+                ->asJson()
+                ->post($url, [
+                    'username' => $username,
+                    'email' => (string) ($payload['email'] ?? ''),
+                    'realname' => (string) ($payload['realname'] ?? ''),
+                    'provider' => (string) ($payload['provider'] ?? ''),
+                    'social_id' => (string) ($payload['social_id'] ?? ''),
+                ]);
+        } catch (\Throwable $e) {
+            return [
+                'user_id' => 0,
+                'mw_status' => 0,
+                'mw_body' => null,
+                'exception' => $e->getMessage(),
+            ];
+        }
+
+        $raw = $resp->body();
+        $json = null;
+
+        try {
+            $json = $resp->json();
+        } catch (\Throwable $e) {
+            $json = null;
+        }
+
+        $userId = 0;
+        if (is_array($json) && ($json['status'] ?? '') === 'success') {
+            $userId = (int) ($json['user_id'] ?? 0);
+        }
+
+        return [
+            'user_id' => $userId,
+            'mw_status' => $resp->status(),
+            'mw_body' => $json ?? $raw,
+        ];
+    }
+
+    private function redis(): \Redis
+    {
+        $r = new \Redis;
+        $r->connect((string) getenv('REDIS_HOST'));
+
+        return $r;
     }
 }

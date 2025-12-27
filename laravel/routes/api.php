@@ -1,5 +1,7 @@
 <?php
 
+// api.php
+
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommonReportController;
@@ -14,8 +16,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\WriteRequestController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/auth/social/check/{code}', [SocialController::class, 'checkCode']);
-Route::get('/auth/social/login/{code}', [SocialController::class, 'loginCode']);
+Route::post('/auth/social/join', [SocialController::class, 'join'])->middleware(['throttle:10,1']);
+Route::post('/auth/social/token-check', [SocialController::class, 'tokenCheck']);
 
 Route::get('/comments/recent', [CommentController::class, 'recent']);
 Route::get('/comments/{pageID}', [CommentController::class, 'list']);
