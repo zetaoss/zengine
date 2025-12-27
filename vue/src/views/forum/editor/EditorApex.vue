@@ -122,7 +122,7 @@ onBeforeUnmount(() => {
   </div>
 </template>
 
-<style lang="scss">
+<style>
 .editor {
   @apply border rounded bg-white dark:bg-black flex flex-col h-[60vh];
 

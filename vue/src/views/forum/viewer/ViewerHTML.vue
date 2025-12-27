@@ -117,7 +117,7 @@ watch(html, afterRender)
   <div ref="rootEl" class="ProseMirror" v-html="html" />
 </template>
 
-<style lang="scss">
+<style>
 .preview {
   @apply flex border rounded p-3;
 
