@@ -4,7 +4,7 @@
 }
 
 .has-binders {
-  & .hb-lg-md-block {
+  .hb-lg-md-block {
     @apply hidden lg:block;
   }
 }
