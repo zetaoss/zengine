@@ -1,5 +1,6 @@
+/* mw-parser-output.css */
 .mw-parser-output {
-    >dl>dt {
+    &>dl>dt {
         @apply font-bold;
     }
 }
