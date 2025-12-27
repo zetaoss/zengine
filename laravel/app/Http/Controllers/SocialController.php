@@ -12,8 +12,6 @@ class SocialController extends Controller
 
     private const MWBRIDGE_TTL = 60;
 
-    private const MAX_USERNAME_LEN = 80;
-
     public function redirect(Request $request, string $provider)
     {
         $returnto = (string) $request->input('returnto', '');
