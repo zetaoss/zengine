@@ -19,6 +19,7 @@ class SkinZetaSkin extends SkinMustache
             $out->addHeadItem('css', '<link href="/w/skins/ZetaSkin/resources/dist/app.css" rel="stylesheet" />');
             $out->addScript('<script src="/w/skins/ZetaSkin/resources/dist/app.js"></script>');
         }
+        $out->addScript('<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='.getenv('ADSENSE_CLIENT').'" crossorigin="anonymous"></script>');
     }
 
     public static function onMakeGlobalVariablesScript(array &$vars, $out)
@@ -69,9 +70,12 @@ class SkinZetaSkin extends SkinMustache
     public function getTemplateData()
     {
         $data = parent::getTemplateData();
+        $is_article = $data['is-article'];
+        $is_specialpage = $data['is-specialpage'];
 
         $ctx = PageContext::getInstance($this->getOutput());
-        $data['hasMeta'] = ($data['is-article'] ?? false) && $ctx->isView;
+
+        $data['hasMeta'] = $is_article && $ctx->isView;
         $data['hasBinders'] = $ctx->hasBinders;
 
         $views = self::$links['views'] ?? [];
@@ -116,6 +120,14 @@ class SkinZetaSkin extends SkinMustache
             'specialpages' => $toolbox['specialpages'] ?? null,
             'logout' => $userMenu['logout'] ?? null,
         ]));
+
+        if ($data['is-anon'] && $is_article && $ctx->isView) {
+            $data['ads'] = [
+                'client' => getenv('ADSENSE_CLIENT'),
+                'slotTop' => getenv('ADSENSE_SLOT_TOP'),
+                'slotBottom' => getenv('ADSENSE_SLOT_BOTTOM'),
+            ];
+        }
 
         return $data;
     }

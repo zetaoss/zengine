@@ -115,7 +115,7 @@ onBeforeUnmount(() => {
   </div>
 </template>
 
-<style scoped lang="scss">
+<style scoped>
 .table-menu-bar {
   @apply border-b text-right items-center flex flex-wrap p-1 bg-slate-200 dark:bg-slate-800;
 }

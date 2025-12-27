@@ -57,6 +57,12 @@
               </div>
             </div>
 
+            {{#ads}}
+            <div class="flex justify-center pb-4">
+              <c-ads class="z-ads-wide" client="{{ads.client}}" slot="{{ads.slotTop}}"></c-ads>
+            </div>
+            {{/ads}}
+
             {{#data-portlets.data-category-normal.html-items}}
             <ul class="page-cats">{{{ . }}}</ul>
             {{/data-portlets.data-category-normal.html-items}}
@@ -66,6 +72,12 @@
           <article id="content" data-mw-ve-target-container class="py-6" v-pre>
             {{{ html-body-content }}}
           </article>
+
+          {{#ads}}
+          <div class="flex justify-center pb-4">
+            <c-ads class="z-ads-wide" client="{{ads.client}}" slot="{{ads.slotBottom}}"></c-ads>
+          </div>
+          {{/ads}}
 
           {{^is-specialpage}}
           <page-footer></page-footer>

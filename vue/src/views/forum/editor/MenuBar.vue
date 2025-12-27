@@ -248,7 +248,7 @@ const itemDatas = ref([
   </div>
 </template>
 
-<style scoped lang="scss">
+<style scoped>
 .menu-bar {
   @apply border-b text-right items-center flex flex-wrap p-1 bg-slate-100 dark:bg-slate-900;
 }

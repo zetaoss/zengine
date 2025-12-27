@@ -1,0 +1,37 @@
+/* mw-highlight.css */
+.dark .mw-highlight {
+  /* .m {
+    color: #ccc;
+  } */
+
+  /* .o {
+    color: #ccc;
+  } */
+
+  & .gp {
+    color: #36f;
+  }
+
+  /* .go {
+    color: #ddd;
+  } */
+
+  /* .nv {
+    color: #ffc;
+  } */
+
+  /* .c1 {
+    color: #cff;
+    font-style: normal;
+  } */
+
+  /* .s1,
+  .s2 {
+    color: #fcc;
+  } */
+
+  /* .nb,
+  .k {
+    color: #cfc;
+  } */
+}

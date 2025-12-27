@@ -274,7 +274,7 @@ fetchDataWithRetry()
   </div>
 </template>
 
-<style lang="scss" scoped>
+<style scoped>
 th,
 td {
   @apply border text-right p-3;

@@ -1,33 +1,34 @@
+/* mw-base.css */
 #mw-content-text {
   @apply text-base leading-7;
 }
 
 article {
 
-  input,
-  select,
-  textarea {
+  & input,
+  & select,
+  & textarea {
     @apply border;
   }
 
-  input[type=submit] {
+  & input[type="submit"] {
     @apply z-btn;
   }
 
-  input[type=file] {
+  & input[type="file"] {
     @apply border-0;
   }
 
-  input[type=radio],
-  input[type=checkbox] {
+  & input[type="radio"],
+  & input[type="checkbox"] {
     @apply w-4 h-4 mx-2;
   }
 
-  fieldset {
+  & fieldset {
     @apply border my-4 p-4 pt-0;
   }
 
-  legend {
+  & legend {
     @apply p-2;
   }
 }
