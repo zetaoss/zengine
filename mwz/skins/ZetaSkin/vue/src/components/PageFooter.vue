@@ -112,7 +112,7 @@ fetchData()
 
   <hr />
 
-  <div class="p-6 py-4">
+  <div class="py-4">
     <div>문서 댓글 ({{ docComments.length }})</div>
 
     <div class="pt-3 flex" v-if="avatar && avatar.id > 0">

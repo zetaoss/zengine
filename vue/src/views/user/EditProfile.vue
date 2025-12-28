@@ -5,10 +5,13 @@ import ZButton from '@common/ui/ZButton.vue'
 import ZCard from '@common/ui/ZCard.vue'
 import ZSpinner from '@common/ui/ZSpinner.vue'
 import httpy from '@common/utils/httpy'
+import { md5 } from 'js-md5'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import useAuthStore from '@/stores/auth'
+
+import { maskEmail } from './util/mask'
 
 type AvatarType = 1 | 2 | 3
 
@@ -43,7 +46,11 @@ const isMe = computed(() => meStore.isLoggedIn)
 const selectedType = ref<AvatarType>(1)
 
 const gravatarEmail = ref('')
-const initialGravatarEmail = ref('')
+const gravatarHint = ref('')
+const initialGravatarHint = ref('')
+const verifiedGravatarHash = ref('')
+const verifiedGravatarHint = ref('')
+const gravatarError = ref<string | null>(null)
 
 const isEditingGravatar = ref(false)
 const gravatarInput = ref<HTMLInputElement | null>(null)
@@ -51,6 +58,12 @@ const gravatarBusy = ref(false)
 
 const canEditGravatar = computed(() => selectedType.value === 3)
 const canSave = computed(() => isMe.value && !saving.value)
+const gravatarPreviewAvatar = computed(() => {
+  const avatar = currentAvatar.value
+  if (!avatar) return null
+  if (verifiedGravatarHash.value === '') return avatar
+  return { ...avatar, ghash: verifiedGravatarHash.value }
+})
 
 function isAvatarType(v: unknown): v is AvatarType {
   return v === 1 || v === 2 || v === 3
@@ -60,33 +73,32 @@ function validateEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
 }
 
-function maskEmail(email: string): string {
-  return email.split(/([@.])/).map(p => p.length === 1 ? p : [...p].map((c, i) => (i % 3 === 0 ? c : '*')).join('')).join('')
-}
-
 const gravatarDisplay = computed(() => {
   if (isEditingGravatar.value) return gravatarEmail.value
-  return maskEmail(gravatarEmail.value)
+  return gravatarHint.value
 })
 
 const gravatarChanged = computed(
-  () => gravatarEmail.value.trim() !== initialGravatarEmail.value.trim()
+  () => gravatarEmail.value.trim() !== ''
 )
 
 async function startEditGravatar() {
   if (!canEditGravatar.value) return
   saveOk.value = false
   saveError.value = null
+  gravatarError.value = null
   isEditingGravatar.value = true
+  gravatarEmail.value = ''
   await nextTick()
   gravatarInput.value?.focus()
 }
 
 function cancelEditGravatar() {
-  gravatarEmail.value = initialGravatarEmail.value
+  gravatarEmail.value = ''
   isEditingGravatar.value = false
   saveOk.value = false
   saveError.value = null
+  gravatarError.value = null
 }
 
 async function confirmGravatar() {
@@ -94,64 +106,61 @@ async function confirmGravatar() {
 
   saveOk.value = false
   saveError.value = null
+  gravatarError.value = null
 
   const email = gravatarEmail.value.trim()
   if (!validateEmail(email)) {
-    saveError.value = 'Gravatar 이메일 형식이 올바르지 않습니다.'
+    gravatarError.value = 'Gravatar 이메일 형식이 올바르지 않습니다.'
     return
   }
+
+  const ghash = md5(email.toLowerCase())
+  const ghint = maskEmail(email)
 
   gravatarBusy.value = true
   try {
     const [vdata, verr] = await httpy.get<{ ok: boolean; ghash?: string }>(
       '/api/me/gravatar/verify',
-      { email }
+      { ghash }
     )
-    if (verr || !vdata?.ok || typeof vdata.ghash !== 'string') {
-      saveError.value = 'Gravatar 확인 실패'
+    if (verr || !vdata?.ok) {
+      gravatarError.value = 'Gravatar 확인 실패'
       return
     }
 
-    const payload: { t: AvatarType; ghash: string; email: string } = {
-      t: 3,
-      ghash: vdata.ghash,
-      email,
-    }
-
-    const [, serr] = await httpy.post('/api/me/avatar', payload)
-    if (serr) {
-      saveError.value = '저장 실패'
-      return
-    }
-
-    initialGravatarEmail.value = email
+    verifiedGravatarHash.value = ghash
+    verifiedGravatarHint.value = ghint
+    gravatarHint.value = ghint
+    initialGravatarHint.value = ghint
+    gravatarEmail.value = ''
     isEditingGravatar.value = false
-    saveOk.value = true
-
-    await meStore.update()
-    await load()
   } finally {
     gravatarBusy.value = false
   }
 }
 
-async function loadGravatarEmail() {
-  const [gdata, gerr] = await httpy.get<{ gravatar: string }>('/api/me/gravatar')
+async function loadGravatarHint() {
+  const [gdata, gerr] = await httpy.get<{ ghint: string }>('/api/me/gravatar')
   if (gerr) {
-    gravatarEmail.value = ''
-    initialGravatarEmail.value = ''
+    gravatarHint.value = ''
+    initialGravatarHint.value = ''
+    verifiedGravatarHash.value = ''
+    verifiedGravatarHint.value = ''
     return
   }
 
-  const v = typeof gdata?.gravatar === 'string' ? gdata.gravatar : ''
-  gravatarEmail.value = v
-  initialGravatarEmail.value = v
+  const v = typeof gdata?.ghint === 'string' ? gdata.ghint : ''
+  gravatarHint.value = v
+  initialGravatarHint.value = v
+  verifiedGravatarHash.value = ''
+  verifiedGravatarHint.value = ''
 }
 
 async function load() {
   loadError.value = null
   saveError.value = null
   saveOk.value = false
+  gravatarError.value = null
 
   if (!meStore.isLoggedIn) {
     await meStore.update()
@@ -168,7 +177,7 @@ async function load() {
   const t = (data.me.avatar as unknown as { t?: unknown }).t
   selectedType.value = isAvatarType(t) ? t : 1
 
-  await loadGravatarEmail()
+  await loadGravatarHint()
 
   isEditingGravatar.value = false
 }
@@ -181,13 +190,19 @@ async function save() {
 
   saving.value = true
   try {
-    const payload: { t: AvatarType } = { t: selectedType.value }
+    const payload: { t: AvatarType; ghash?: string; ghint?: string } = { t: selectedType.value }
+    if (selectedType.value === 3 && verifiedGravatarHash.value !== '') {
+      payload.ghash = verifiedGravatarHash.value
+      payload.ghint = verifiedGravatarHint.value
+    }
     const [, err] = await httpy.post('/api/me/avatar', payload)
     if (err) {
       saveError.value = '저장 실패'
       return
     }
 
+    verifiedGravatarHash.value = ''
+    verifiedGravatarHint.value = ''
     saveOk.value = true
     await meStore.update()
     await load()
@@ -200,6 +215,7 @@ watch(selectedType, () => {
   saveOk.value = false
   saveError.value = null
   isEditingGravatar.value = false
+  gravatarError.value = null
 })
 
 onMounted(() => {
@@ -264,7 +280,7 @@ onMounted(() => {
               <input type="radio" name="avatarType" :value="3" v-model="selectedType" class="accent-current" />
 
               <div class="flex items-center gap-3 flex-1 min-w-0">
-                <AvatarIcon v-if="currentAvatar" :avatar="currentAvatar" :temp-type="3" :size="60" />
+                <AvatarIcon v-if="currentAvatar" :avatar="gravatarPreviewAvatar" :temp-type="3" :size="60" />
 
                 <div class="flex items-center gap-2 flex-wrap min-w-0">
                   <div class="text-sm font-semibold whitespace-nowrap">그라바타</div>
@@ -293,6 +309,10 @@ onMounted(() => {
                       </ZButton>
                     </template>
                   </template>
+
+                  <div v-if="gravatarError" class="text-sm text-red-500">
+                    {{ gravatarError }}
+                  </div>
                 </div>
               </div>
             </li>

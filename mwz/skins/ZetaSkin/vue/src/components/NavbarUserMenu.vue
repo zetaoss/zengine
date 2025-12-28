@@ -39,7 +39,7 @@ useDismissable(root, {
         <AvatarIcon :avatar="avatar" />
       </span>
       <span v-else>
-        <ZIcon :path="mdiAccount" />
+        <ZIcon :size="20" :path="mdiAccount" />
       </span>
     </button>
 

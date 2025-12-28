@@ -55,7 +55,7 @@ watch(() => route.path, close)
       class="order-2 ml-auto flex h-12 w-12 items-center justify-center hover:bg-gray-800 md:w-auto md:px-3"
       :class="{ 'bg-gray-800': open }" :aria-expanded="open" @click="toggle">
       <AvatarIcon v-if="me.isLoggedIn" :avatar="me.userData?.avatar" />
-      <ZIcon v-else :path="mdiAccount" />
+      <ZIcon v-else :size="20" :path="mdiAccount" />
     </button>
 
     <div class="order-3 z-40 bg-gray-800 md:absolute md:right-0 md:m-1 md:rounded md:border w-full md:w-auto"
