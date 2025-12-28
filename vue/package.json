@@ -21,6 +21,7 @@
     "autolinker": "^4.1.0",
     "highlight.js": "^11.11.1",
     "isomorphic-dompurify": "^2.19.0",
+    "js-md5": "^0.8.3",
     "lowlight": "^3.3.0",
     "pinia": "^3.0.3",
     "prismjs": "^1.30.0",
