@@ -57,7 +57,7 @@ class AuthController extends Controller
             return response()->json(['ok' => false], 422);
         }
 
-        $hash = md5(strtolower(trim($email)));
+        $hash = md5(strtolower($email));
 
         if (! $this->gravatarExists($hash)) {
             return response()->json(['ok' => false], 404);
@@ -81,6 +81,7 @@ class AuthController extends Controller
         $data = $request->validate([
             't' => ['required', 'integer', 'min:1', 'max:3'],
             'ghash' => ['sometimes', 'nullable', 'string', 'size:32', 'regex:/^[0-9a-f]{32}$/'],
+            'email' => ['sometimes', 'nullable', 'string', 'email:rfc', 'max:255'],
         ]);
 
         $t = (int) $data['t'];
@@ -88,26 +89,31 @@ class AuthController extends Controller
         $avatar = Avatar::firstOrNew(['user_id' => $userId]);
         $avatar->t = $t;
 
-        if ($t === 3 && ! array_key_exists('ghash', $data)) {
-            return response()->json(['message' => 'ghash required for gravatar'], 422);
-        }
+        if ($t === 3) {
+            $email = trim((string) ($data['email'] ?? ''));
+            if ($email !== '') {
+                $hash = md5(strtolower($email));
 
-        if (array_key_exists('ghash', $data)) {
-            $hash = $data['ghash'];
-
-            if ($hash === null || trim($hash) === '') {
-                if ($t === 3) {
+                $reqHash = strtolower((string) ($data['ghash'] ?? ''));
+                if ($reqHash === '') {
                     return response()->json(['message' => 'ghash required for gravatar'], 422);
                 }
-                $avatar->ghash = null;
-            } else {
-                $hash = strtolower($hash);
+
+                if ($reqHash !== $hash) {
+                    return response()->json(['message' => 'ghash mismatch'], 422);
+                }
 
                 if (! $this->gravatarExists($hash)) {
                     return response()->json(['message' => 'Gravatar not found'], 400);
                 }
 
                 $avatar->ghash = $hash;
+                $avatar->gravatar = $email;
+            } else {
+                $existingHash = trim((string) ($avatar->ghash ?? ''));
+                if ($existingHash === '') {
+                    return response()->json(['message' => 'gravatar not configured'], 422);
+                }
             }
         }
 

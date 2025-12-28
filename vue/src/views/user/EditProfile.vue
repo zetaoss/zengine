@@ -112,7 +112,12 @@ async function confirmGravatar() {
       return
     }
 
-    const payload: { t: AvatarType; ghash: string } = { t: 3, ghash: vdata.ghash }
+    const payload: { t: AvatarType; ghash: string; email: string } = {
+      t: 3,
+      ghash: vdata.ghash,
+      email,
+    }
+
     const [, serr] = await httpy.post('/api/me/avatar', payload)
     if (serr) {
       saveError.value = '저장 실패'

@@ -9,13 +9,9 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\ReplyController;
 use App\Http\Controllers\RunboxController;
-use App\Http\Controllers\SocialController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WriteRequestController;
 use Illuminate\Support\Facades\Route;
-
-Route::get('/auth/social/check/{code}', [SocialController::class, 'checkCode']);
-Route::get('/auth/social/login/{code}', [SocialController::class, 'loginCode']);
 
 Route::get('/comments/recent', [CommentController::class, 'recent']);
 Route::get('/comments/{pageID}', [CommentController::class, 'list']);
