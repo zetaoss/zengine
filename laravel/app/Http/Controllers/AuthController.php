@@ -37,10 +37,10 @@ class AuthController extends Controller
 
         $row = Avatar::query()
             ->where('user_id', $userId)
-            ->first(['gravatar']);
+            ->first(['ghint']);
 
         return response()->json([
-            'gravatar' => $row?->gravatar ?? '',
+            'ghint' => $row?->ghint ?? '',
         ]);
     }
 
@@ -49,23 +49,21 @@ class AuthController extends Controller
         Gate::authorize('unblocked');
 
         $data = $request->validate([
-            'email' => ['required', 'email:rfc', 'max:255'],
+            'ghash' => ['required', 'string', 'size:32', 'regex:/^[0-9a-f]{32}$/'],
         ]);
 
-        $email = trim((string) $data['email']);
-        if ($email === '') {
+        $ghash = strtolower((string) $data['ghash']);
+        if ($ghash === '') {
             return response()->json(['ok' => false], 422);
         }
 
-        $hash = md5(strtolower($email));
-
-        if (! $this->gravatarExists($hash)) {
+        if (! $this->gravatarExists($ghash)) {
             return response()->json(['ok' => false], 404);
         }
 
         return response()->json([
             'ok' => true,
-            'ghash' => $hash,
+            'ghash' => $ghash,
         ]);
     }
 
@@ -81,7 +79,7 @@ class AuthController extends Controller
         $data = $request->validate([
             't' => ['required', 'integer', 'min:1', 'max:3'],
             'ghash' => ['sometimes', 'nullable', 'string', 'size:32', 'regex:/^[0-9a-f]{32}$/'],
-            'email' => ['sometimes', 'nullable', 'string', 'email:rfc', 'max:255'],
+            'ghint' => ['sometimes', 'nullable', 'string', 'max:255'],
         ]);
 
         $t = (int) $data['t'];
@@ -90,25 +88,20 @@ class AuthController extends Controller
         $avatar->t = $t;
 
         if ($t === 3) {
-            $email = trim((string) ($data['email'] ?? ''));
-            if ($email !== '') {
-                $hash = md5(strtolower($email));
+            $reqHash = strtolower((string) ($data['ghash'] ?? ''));
+            $reqHint = trim((string) ($data['ghint'] ?? ''));
 
-                $reqHash = strtolower((string) ($data['ghash'] ?? ''));
-                if ($reqHash === '') {
-                    return response()->json(['message' => 'ghash required for gravatar'], 422);
+            if ($reqHash !== '') {
+                if ($reqHint === '') {
+                    return response()->json(['message' => 'ghint required for gravatar'], 422);
                 }
 
-                if ($reqHash !== $hash) {
-                    return response()->json(['message' => 'ghash mismatch'], 422);
-                }
-
-                if (! $this->gravatarExists($hash)) {
+                if (! $this->gravatarExists($reqHash)) {
                     return response()->json(['message' => 'Gravatar not found'], 400);
                 }
 
-                $avatar->ghash = $hash;
-                $avatar->gravatar = $email;
+                $avatar->ghash = $reqHash;
+                $avatar->ghint = $reqHint;
             } else {
                 $existingHash = trim((string) ($avatar->ghash ?? ''));
                 if ($existingHash === '') {
@@ -126,9 +119,9 @@ class AuthController extends Controller
         ]);
     }
 
-    private function gravatarExists(string $hash): bool
+    private function gravatarExists(string $ghash): bool
     {
-        $url = "https://www.gravatar.com/avatar/{$hash}?d=404";
+        $url = "https://www.gravatar.com/avatar/{$ghash}?d=404";
 
         try {
             $resp = Http::timeout(3)->head($url);

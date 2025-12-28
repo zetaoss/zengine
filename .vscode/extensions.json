@@ -7,6 +7,7 @@
         "laravel.vscode-laravel",
         "ms-vscode.makefile-tools",
         "shufo.vscode-blade-formatter",
+        "vitest.explorer",
         "vue.volar"
     ]
 }

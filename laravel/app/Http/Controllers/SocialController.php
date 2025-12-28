@@ -81,8 +81,6 @@ class SocialController extends Controller
             'provider' => $provider,
             'social_id' => $socialId,
             'returnto' => $returnto,
-            'email' => (string) ($socialUser->getEmail() ?? ''),
-            'realname' => trim((string) ($socialUser->getName() ?? '')),
         ], self::SOCIALJOIN_TTL);
 
         return redirect("/social-join/{$joinToken}");

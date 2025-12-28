@@ -19,13 +19,13 @@ class Avatar extends Model
     protected $fillable = [
         't',
         'ghash',
-        'gravatar',
+        'ghint',
     ];
 
     protected $casts = [
         'user_id' => 'int',
         't' => 'int',
         'ghash' => 'string',
-        'gravatar' => 'string',
+        'ghint' => 'string',
     ];
 }
