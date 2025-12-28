@@ -1,4 +1,4 @@
-FROM ghcr.io/zetaoss/zbase:latest
+FROM ghcr.io/zetaoss/zbase:v0.43.601
 
 COPY --from=composer:2.2.25 /usr/bin/composer /usr/bin/composer
 

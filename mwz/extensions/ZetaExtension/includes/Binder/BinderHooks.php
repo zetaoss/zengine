@@ -6,24 +6,24 @@ final class BinderHooks
 {
     private const NS_BINDER = 3000;
 
-    public static function onPageSaveComplete($page, $user, $summary, $flags, $revisionRecord, $editResult): void
+    public static function onPageSaveComplete($wikiPage, $user, $summary, $flags, $revisionRecord, $editResult): void
     {
-        if ($page->getNamespace() === self::NS_BINDER) {
-            BinderService::syncRelations($page->getId());
+        if ($wikiPage->getNamespace() === self::NS_BINDER) {
+            BinderService::syncRelations($wikiPage->getId());
         }
     }
 
-    public static function onPageDeleteComplete($page, $reason, $pageID, $revID, $archivedRevisionCount, $user, $timestamp, $logEntry, $archivedFileCount): void
+    public static function onPageDeleteComplete($wikiPage, $user, $reason, $pageId, $deletedRev, $logEntry, $archivedRevisionCount): void
     {
-        if ($page->getNamespace() === self::NS_BINDER) {
-            BinderService::markDeleted($pageID);
+        if ($wikiPage->getNamespace() === self::NS_BINDER) {
+            BinderService::markDeleted($pageId);
         }
     }
 
-    public static function onPageUndeleteComplete($title, $user, $reason, $oldPageID, $newPageID, $restoredRevisionCount, $logEntry): void
+    public static function onPageUndeleteComplete($title, $user, $reason, $restoredPageId, $restoredRev, $logEntry, $restoredRevisionCount, $created, $restoredPageIds): void
     {
         if ($title->getNamespace() === self::NS_BINDER) {
-            BinderService::unmarkDeletedAndResync($newPageID);
+            BinderService::unmarkDeletedAndResync($restoredPageId);
         }
     }
 }
