@@ -1,146 +1,215 @@
+<!-- SocialJoin.vue -->
 <script setup lang="ts">
-import httpy from '@common/utils/httpy'
-import { onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import ZButton from '@common/ui/ZButton.vue'
+import httpy, { HttpyError } from '@common/utils/httpy'
+import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 enum Status {
   Unknown = '',
   Can = 'can',
   Cannot = 'cannot',
+  Checking = 'checking',
 }
 
+const router = useRouter()
 const route = useRoute()
 
+const errorMessage = ref('')
+const warningMessage = ref('')
+const busy = ref(false)
+
+const token = computed(() => String(route.params.token ?? ''))
+
 const username = ref('')
-const status = ref(Status.Unknown)
+const status = ref<Status>(Status.Unknown)
 
-let code = ''
+watch(
+  token,
+  (t) => {
+    if (!t) {
+      errorMessage.value = 'invalid token'
+      return
+    }
+    errorMessage.value = ''
+  },
+  { immediate: true },
+)
 
-async function validateCode() {
-  const [, err] = await httpy.get<unknown>(`/api/auth/social/check/${code}`)
-  if (err) {
-    console.error(err)
-    alert('invalid code')
-    window.location.href = '/'
-  }
+function resetStatus() {
+  status.value = Status.Unknown
+  warningMessage.value = ''
+  errorMessage.value = ''
 }
 
-function changed() {
-  status.value = Status.Unknown
+function handleInvalidToken() {
+  alert('세션이 만료되었습니다. 다시 로그인해 주세요.')
+  router.replace('/login')
+}
+
+function getHttpStatus(err: HttpyError | null): number | undefined {
+  return err?.code
 }
 
 async function checkUsername() {
-  const [data, err] = await httpy.get<{
-    query: {
-      users: Array<{
-        cancreate?: boolean
-      }>
-    }
-  }>('/w/api.php', {
-    action: 'query',
-    list: 'users',
-    ususers: username.value,
-    usprop: 'cancreate',
-    formatversion: '2',
-    format: 'json',
+  const name = username.value.trim()
+  if (!name) {
+    status.value = Status.Unknown
+    return
+  }
+
+  status.value = Status.Checking
+  warningMessage.value = ''
+  errorMessage.value = ''
+
+  const [data, err] = await httpy.post<{
+    status: string
+    code?: string
+    message?: string
+    can_create?: boolean
+    name?: string
+    normalized?: boolean
+    messages?: string[]
+  }>('/w/rest.php/social/create', {
+    token: token.value,
+    username: name,
+    dryrun: true,
   })
 
-  if (err) {
-    console.error(err)
-    alert('사용자명 중복 확인에 실패했습니다. 잠시 후 다시 시도하세요.')
+  const httpStatus = getHttpStatus(err)
+  if (httpStatus === 401 || httpStatus === 403 || data?.code === 'invalid_token') {
+    handleInvalidToken()
     return
   }
 
-  const canCreate = data.query?.users?.[0]?.cancreate
-  status.value = canCreate ? Status.Can : Status.Cannot
-}
-
-interface SocialLoginResponse {
-  status: string
-  data: string
-}
-
-async function login() {
-  const [data, err] = await httpy.get<SocialLoginResponse>(
-    `/api/auth/social/login/${code}`,
-    { username: username.value },
-  )
-
-  if (err || !data || data.status !== 'success') {
+  if (err || !data) {
     console.error(err)
-    alert('error on login')
-    window.location.href = '/'
+    status.value = Status.Unknown
+    errorMessage.value = '사용자명 확인에 실패했습니다. 잠시 후 다시 시도하세요.'
     return
   }
 
-  window.location.href = data.data
+  if (data.status === 'success' && data.can_create === true) {
+    status.value = Status.Can
+
+    if (data.normalized && data.name && data.name !== name) {
+      username.value = data.name
+    }
+
+    if (data.messages && data.messages.length > 0) {
+      warningMessage.value = data.messages[0]
+    }
+
+    return
+  }
+
+  status.value = Status.Cannot
+  errorMessage.value = (data.messages && data.messages[0]) || data.message || '사용불가한 사용자명입니다.'
 }
 
-async function create() {
-  const [data, err] = await httpy.get<{
+async function submitJoin() {
+  if (busy.value) return
+
+  if (status.value !== Status.Can) {
+    errorMessage.value = '중복 확인을 먼저 해주세요.'
+    return
+  }
+
+  const name = username.value.trim()
+  if (!name) return
+
+  busy.value = true
+  warningMessage.value = ''
+  errorMessage.value = ''
+
+  const [data, err] = await httpy.post<{
     status: string
-    data?: unknown
-  }>(
-    `/w/rest.php/auth/${code}`,
-    { username: username.value },
-  )
+    code?: string
+    message?: string
+    token?: string
+    redirect?: string
+  }>('/w/rest.php/social/create', {
+    token: token.value,
+    username: name,
+  })
 
-  if (err || !data || data.status !== 'success') {
-    console.error(err)
-    alert('error on create')
-    window.location.href = '/'
+  const httpStatus = getHttpStatus(err)
+  if (httpStatus === 401 || httpStatus === 403 || data?.code === 'invalid_token') {
+    busy.value = false
+    handleInvalidToken()
     return
   }
 
-  await login()
+  if (err || !data) {
+    busy.value = false
+    errorMessage.value = err?.message ?? '가입 처리에 실패했습니다.'
+    return
+  }
+
+  if (data.status === 'success' && data.redirect) {
+    window.location.href = data.redirect
+    return
+  }
+
+  errorMessage.value = data.message ?? '가입 처리에 실패했습니다.'
+  busy.value = false
 }
-
-onMounted(() => {
-  code = route.params.code as string
-  if (!code) {
-    alert('invalid code')
-    window.location.href = '/'
-    return
-  }
-  void validateCode()
-})
 </script>
 
 <template>
-  <div class="bg-gray-100 mx-auto my-10 p-7 w-[50vw] min-w-[400px] rounded border">
-    <div class="text-lg py-3 font-bold">
-      사용자명 생성
-    </div>
-    <p class="py-5">
-      사용할 사용자명을 입력하세요.
-    </p>
-    <p class="text-sm">
-      사용자명:
-    </p>
-    <div class="flex py-2">
+  <div class="mx-auto my-10 w-[50vw] min-w-[400px] rounded border z-card p-7">
+    <div class="py-3 text-lg font-bold">사용자명 생성</div>
+    <hr />
+
+    <p class="py-5">사용할 사용자명을 입력하세요.</p>
+
+    <p class="text-sm">사용자명:</p>
+
+    <div class="flex py-2 gap-2">
       <input v-model.trim="username" aria-label="username" type="text" class="w-full p-2 border rounded" :class="status"
-        placeholder="username" @input="changed">
-      <button type="button" class="btn btn-secondary w-48" @click="checkUsername">
+        placeholder="username" :disabled="busy" @input="resetStatus" @keydown.enter.prevent="checkUsername" />
+
+      <ZButton class="whitespace-nowrap" type="button" :disabled="busy || username.trim().length < 1"
+        @click="checkUsername">
         중복 확인
-      </button>
+      </ZButton>
     </div>
-    <div v-if="status == Status.Cannot" class="text-sm text-[#f008]">
-      허용되지 않는 사용자명입니다.
+
+    <div v-if="status === Status.Checking" class="text-sm text-gray-500">확인 중...</div>
+
+    <div v-else-if="status === Status.Cannot" class="text-sm text-[#f008]">
+      {{ errorMessage || '사용불가한 사용자명입니다.' }}
     </div>
-    <div class="py-8">
-      <button type="button" :disabled="status != Status.Can" class="btn w-full" @click="create">
-        사용자명 생성
-      </button>
+
+    <div v-else-if="status === Status.Can" class="text-sm text-green-600">사용가능한 사용자명입니다.</div>
+
+    <div v-if="warningMessage" class="bg-yellow-100 text-yellow-800 p-2 px-4 text-sm rounded my-2">
+      {{ warningMessage }}
+    </div>
+
+    <div v-if="errorMessage && status !== Status.Cannot" class="bg-red-400 p-2 px-4 text-sm rounded my-2">
+      {{ errorMessage }}
+    </div>
+
+    <div class="flex justify-center mt-4">
+      <ZButton type="button" :disabled="busy || username.trim().length < 1 || status !== Status.Can"
+        @click="submitJoin">
+        가입
+      </ZButton>
     </div>
   </div>
 </template>
 
-<style>
+<style scoped>
 .can {
   @apply border-green-500;
 }
 
 .cannot {
   @apply border-[#f008];
+}
+
+.checking {
+  @apply border-gray-400;
 }
 </style>
