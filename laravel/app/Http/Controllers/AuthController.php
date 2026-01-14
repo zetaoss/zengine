@@ -7,7 +7,6 @@ use App\Services\UserProfileService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -126,53 +125,12 @@ class AuthController extends Controller
         $avatar->save();
 
         UserProfileService::forget($userId);
-        $this->purgeAvatarQuietly($userId);
 
         return response()->json([
             'avatar' => UserProfileService::toAvatarArray(
                 UserProfileService::getUserProfile($userId)
             ),
         ]);
-    }
-
-    private function purgeAvatarQuietly(int $userId): void
-    {
-        if ($userId < 1) {
-            return;
-        }
-
-        $internalApi = config('services.zavatar.internal_api');
-        $internalKey = config('services.zavatar.internal_key');
-
-        if (! $internalApi || ! $internalKey) {
-            Log::error('Zavatar config missing');
-
-            return;
-        }
-
-        try {
-            $url = "${internalApi}/internal/purge/u/${userId}";
-            $response = Http::timeout(2)
-                ->withHeaders(['X-Internal-Key' => $internalKey])
-                ->post($url);
-
-            if ($response->failed()) {
-                Log::error('Zavatar purge failed', [
-                    'url' => $url,
-                    'user_id' => $userId,
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                ]);
-            } else {
-                Log::info('Zavatar purge success', ['user_id' => $userId]);
-            }
-
-        } catch (\Throwable $e) {
-            Log::error('Zavatar purge exception', [
-                'user_id' => $userId,
-                'message' => $e->getMessage(),
-            ]);
-        }
     }
 
     private function gravatarExists(string $ghash): bool

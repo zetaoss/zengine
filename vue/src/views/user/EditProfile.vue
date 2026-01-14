@@ -243,8 +243,7 @@ onMounted(() => {
               <input type="radio" name="avatarType" :value="3" v-model="selectedType" class="accent-current" />
 
               <div class="flex items-center gap-3 flex-1 min-w-0">
-                <AvatarIcon v-if="me.userInfo" :user="me.userInfo" :temp-type="3"
-                  :temp-ghash="verifiedGravatarHash || null" :size="60" />
+                <AvatarIcon v-if="me.userInfo" :user="me.userInfo" :size="60" :typ="3" />
                 <div class="flex items-center gap-2 flex-wrap min-w-0">
                   <div class="text-sm font-semibold whitespace-nowrap">그라바타</div>
 
