@@ -71,10 +71,6 @@ class SkinZetaSkin extends SkinMustache
     public function getTemplateData()
     {
         $data = parent::getTemplateData();
-        file_put_contents(
-            '/tmp/skin-data.json',
-            json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
-        );
 
         $is_article = $data['is-article'];
         $is_specialpage = $data['is-specialpage'];

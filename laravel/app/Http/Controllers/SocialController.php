@@ -53,7 +53,7 @@ class SocialController extends Controller
             } catch (\Throwable $e) {
             }
 
-            $row = DB::table('user_social')
+            $row = DB::table('zetawiki.user_social')
                 ->where('provider', $provider)
                 ->where('social_id', $socialId)
                 ->first();
