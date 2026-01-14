@@ -131,8 +131,6 @@ class SkinZetaSkin extends SkinMustache
             ];
         }
 
-        trace($data);
-
         return $data;
     }
 }
