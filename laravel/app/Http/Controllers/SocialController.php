@@ -38,16 +38,14 @@ class SocialController extends Controller
         $returnto = (string) $request->session()->get('returnto', '');
         $request->session()->forget('returnto');
 
-        $mwdb = DB::connection('mwdb');
-
-        $row = $mwdb->table('user_social')
+        $row = DB::table('zetawiki.user_social')
             ->where('provider', $provider)
             ->where('social_id', $socialId)
             ->first();
 
         if (! $row) {
             try {
-                $mwdb->table('user_social')->insert([
+                DB::table('zetawiki.user_social')->insert([
                     'provider' => $provider,
                     'social_id' => $socialId,
                     'user_id' => null,
@@ -55,7 +53,7 @@ class SocialController extends Controller
             } catch (\Throwable $e) {
             }
 
-            $row = $mwdb->table('user_social')
+            $row = DB::table('user_social')
                 ->where('provider', $provider)
                 ->where('social_id', $socialId)
                 ->first();

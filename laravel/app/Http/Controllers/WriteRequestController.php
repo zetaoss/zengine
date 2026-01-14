@@ -19,22 +19,25 @@ class WriteRequestController extends Controller
 
     public function indexTodo()
     {
-        return WriteRequest::where('writer_id', '<', 0)
-            ->orderBy('id', 'desc')
+        return $this->baseQuery()
+            ->where('w.writer_id', '<', 0)
+            ->orderByDesc('w.id')
             ->paginate(25);
     }
 
     public function indexTodoTop()
     {
-        return WriteRequest::where('writer_id', '<', 0)
-            ->orderByRaw('rate DESC, hit DESC, ref DESC, id DESC')
+        return $this->baseQuery()
+            ->where('w.writer_id', '<', 0)
+            ->orderByRaw('w.rate DESC, hit DESC, w.ref DESC, w.id DESC')
             ->paginate(25);
     }
 
     public function indexDone()
     {
-        return WriteRequest::where('writer_id', '>', 0)
-            ->orderBy('id', 'desc')
+        return $this->baseQuery()
+            ->where('w.writer_id', '>', 0)
+            ->orderByDesc('w.id')
             ->paginate(25);
     }
 
@@ -50,6 +53,7 @@ class WriteRequestController extends Controller
 
         $wr = new WriteRequest;
         $wr->user_id = auth()->id();
+        $wr->user_name = auth()->user()->name;
         $wr->title = $title;
         $wr->save();
 
@@ -77,5 +81,15 @@ class WriteRequestController extends Controller
         $writeRequest->delete();
 
         return ['ok' => true];
+    }
+
+    private function baseQuery()
+    {
+        return DB::table('write_requests as w')
+            ->select([
+                'w.*',
+                DB::raw('w.user_name as user_name'),
+                DB::raw('(SELECT COALESCE(n.hit, 0) FROM not_matches n WHERE n.title = w.title LIMIT 1) as hit'),
+            ]);
     }
 }

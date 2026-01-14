@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Avatar;
-use App\Services\AvatarService;
+use App\Models\UserProfile;
+use App\Services\UserProfileService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -17,30 +18,42 @@ class AuthController extends Controller
             return response()->json(['me' => null]);
         }
 
-        $id = (int) auth()->id();
+        $u = (array) $user->toArray();
+
+        $id = (int) ($u['id'] ?? 0);
         if ($id < 1) {
             return response()->json(['me' => null]);
         }
 
-        $me = (array) $user->toArray();
-        $me['avatar'] = AvatarService::getAvatarById($id);
+        $name = (string) ($u['name'] ?? '');
+        $groups = $u['groups'] ?? [];
+        if (! is_array($groups)) {
+            $groups = [];
+        }
 
-        return response()->json(['me' => $me]);
+        return response()->json([
+            'me' => [
+                'id' => $id,
+                'name' => $name,
+                'groups' => $groups,
+            ],
+        ]);
     }
 
-    public function getGravatar()
+    public function getAvatar()
     {
         $userId = (int) auth()->id();
         if ($userId < 1) {
             return response()->json(['message' => 'Unauthenticated'], 401);
         }
 
-        $row = Avatar::query()
+        $row = UserProfile::query()
             ->where('user_id', $userId)
-            ->first(['ghint']);
+            ->first(['t', 'ghint']);
 
         return response()->json([
-            'ghint' => $row?->ghint ?? '',
+            't' => (int) ($row?->t ?? 1),
+            'ghint' => (string) ($row?->ghint ?? ''),
         ]);
     }
 
@@ -84,7 +97,7 @@ class AuthController extends Controller
 
         $t = (int) $data['t'];
 
-        $avatar = Avatar::firstOrNew(['user_id' => $userId]);
+        $avatar = UserProfile::firstOrNew(['user_id' => $userId]);
         $avatar->t = $t;
 
         if ($t === 3) {
@@ -112,11 +125,54 @@ class AuthController extends Controller
 
         $avatar->save();
 
-        AvatarService::forget($userId);
+        UserProfileService::forget($userId);
+        $this->purgeAvatarQuietly($userId);
 
         return response()->json([
-            'avatar' => AvatarService::getAvatarById($userId),
+            'avatar' => UserProfileService::toAvatarArray(
+                UserProfileService::getUserProfile($userId)
+            ),
         ]);
+    }
+
+    private function purgeAvatarQuietly(int $userId): void
+    {
+        if ($userId < 1) {
+            return;
+        }
+
+        $internalApi = config('services.zavatar.internal_api');
+        $internalKey = config('services.zavatar.internal_key');
+
+        if (! $internalApi || ! $internalKey) {
+            Log::error('Zavatar config missing');
+
+            return;
+        }
+
+        try {
+            $url = "${internalApi}/internal/purge/u/${userId}";
+            $response = Http::timeout(2)
+                ->withHeaders(['X-Internal-Key' => $internalKey])
+                ->post($url);
+
+            if ($response->failed()) {
+                Log::error('Zavatar purge failed', [
+                    'url' => $url,
+                    'user_id' => $userId,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+            } else {
+                Log::info('Zavatar purge success', ['user_id' => $userId]);
+            }
+
+        } catch (\Throwable $e) {
+            Log::error('Zavatar purge exception', [
+                'user_id' => $userId,
+                'message' => $e->getMessage(),
+            ]);
+        }
     }
 
     private function gravatarExists(string $ghash): bool

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Services\AvatarService;
 use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
@@ -20,17 +19,13 @@ class UserController extends Controller
                 'user_editcount',
             ]);
 
-        $payload = $user->toArray();
-        $payload['avatar'] = AvatarService::getAvatarById((int) $user->user_id);
-
-        return response()->json($payload);
+        return response()->json($user);
     }
 
     public function stats(int $userId)
     {
-        $rows = DB::connection('mwdb')
-            ->table('revision as r')
-            ->join('actor as a', 'r.rev_actor', '=', 'a.actor_id')
+        $rows = DB::table('zetawiki.revision as r')
+            ->join('zetawiki.actor as a', 'r.rev_actor', '=', 'a.actor_id')
             ->selectRaw('COUNT(*) as rev, DATE(r.rev_timestamp) as dt')
             ->where('a.actor_user', $userId)
             ->groupBy('dt')

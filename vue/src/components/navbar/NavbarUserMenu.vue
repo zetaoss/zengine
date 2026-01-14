@@ -1,4 +1,4 @@
-<!-- NavbarUserMenu.vue -->
+<!-- @/components/navbar/NavbarUserMenu.vue -->
 <script setup lang="ts">
 import AvatarIcon from '@common/components/avatar/AvatarIcon.vue'
 import type Item from '@common/components/navbar/types'
@@ -17,7 +17,7 @@ me.update()
 const items = computed<Item[]>(() =>
   me.isLoggedIn
     ? [
-      { text: '프로필', href: `/user/${me.userData?.avatar.name}` },
+      { text: '프로필', href: `/user/${me.userInfo?.name}` },
       { text: '사용자 문서', href: '/wiki/특수:내사용자문서' },
       { text: '사용자 토론', href: '/wiki/특수:내사용자토론' },
       { text: '환경 설정', href: '/wiki/특수:환경설정' },
@@ -54,7 +54,7 @@ watch(() => route.path, close)
     <button type="button"
       class="order-2 ml-auto flex h-12 w-12 items-center justify-center hover:bg-gray-800 md:w-auto md:px-3"
       :class="{ 'bg-gray-800': open }" :aria-expanded="open" @click="toggle">
-      <AvatarIcon v-if="me.isLoggedIn" :avatar="me.userData?.avatar" />
+      <AvatarIcon v-if="me.isLoggedIn && me.userInfo" :user="me.userInfo" :size="32" />
       <ZIcon v-else :size="20" :path="mdiAccount" />
     </button>
 

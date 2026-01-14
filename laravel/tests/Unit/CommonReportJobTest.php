@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use App\Jobs\CommonReportJob;
 use App\Models\CommonReport;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class CommonReportJobTest extends TestCase
@@ -12,10 +13,20 @@ class CommonReportJobTest extends TestCase
     {
         $items = ['Alice', 'Bob'];
 
-        $report = new CommonReport;
-        $report->state = 0;
-        $report->user_id = 1;
-        $report->save();
+        putenv('SEARCH_URL=http://example.test');
+        Http::fake([
+            '*' => Http::response([
+                'result' => [
+                    'engines' => ['daum_blog'],
+                    'values' => [[1], [2]],
+                ],
+            ], 200),
+        ]);
+
+        $report = CommonReport::create([
+            'user_id' => 1,
+            'phase' => 'pending',
+        ]);
 
         foreach ($items as $word) {
             $report->items()->create(['name' => $word]);
@@ -26,7 +37,7 @@ class CommonReportJobTest extends TestCase
         $this->waitForComplete($report->id);
 
         $report = CommonReport::where('id', $report->id)->first();
-        $this->assertEquals(2, $report->state);
+        $this->assertEquals('succeeded', $report->phase);
     }
 
     private function waitForComplete($id, $timeout = 10)
@@ -34,7 +45,7 @@ class CommonReportJobTest extends TestCase
         $startTime = time();
         while (true) {
             $row = CommonReport::where('id', $id)->first();
-            if ($row && $row->state == 2) {
+            if ($row && $row->phase === 'succeeded') {
                 return;
             }
 

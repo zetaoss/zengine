@@ -13,12 +13,14 @@ class CommonReportController extends Controller
 
     public function index()
     {
-        return CommonReport::orderByDesc('id')->paginate(15);
+        return $this->baseQuery()
+            ->orderByDesc('id')
+            ->paginate(15);
     }
 
     public function show(string $id)
     {
-        return CommonReport::findOrFail($id);
+        return CommonReport::with('items')->findOrFail($id);
     }
 
     public function store(Request $request)
@@ -30,14 +32,19 @@ class CommonReportController extends Controller
             return response()->json(['message' => '비교 대상을 2개 이상 입력해 주세요.'], 422);
         }
 
-        $names = array_values(array_filter($names, fn ($v) => is_string($v) && trim($v) !== ''));
+        $names = array_values(array_filter(
+            $names,
+            fn ($v) => is_string($v) && trim($v) !== ''
+        ));
+
         if (count($names) < 2) {
             return response()->json(['message' => '비교 대상을 2개 이상 입력해 주세요.'], 422);
         }
 
         $userId = (int) auth()->id();
+        $userName = (string) auth()->user()->name;
 
-        return $this->service->create($names, $userId);
+        return $this->service->create($names, $userId, $userName);
     }
 
     public function rerun(int $id)
@@ -53,11 +60,12 @@ class CommonReportController extends Controller
     public function clone(int $id)
     {
         Gate::authorize('unblocked');
+
         $original = CommonReport::findOrFail($id);
-
         $userId = (int) auth()->id();
+        $userName = (string) auth()->user()->name;
 
-        return $this->service->clone($original, $userId);
+        return $this->service->clone($original, $userId, $userName);
     }
 
     public function destroy(int $id)
@@ -71,5 +79,10 @@ class CommonReportController extends Controller
         $this->service->delete($report);
 
         return ['ok' => true];
+    }
+
+    private function baseQuery()
+    {
+        return CommonReport::query();
     }
 }

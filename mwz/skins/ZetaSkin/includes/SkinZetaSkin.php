@@ -13,6 +13,7 @@ class SkinZetaSkin extends SkinMustache
     public static function onBeforePageDisplay($out, $skin)
     {
         $out->addHTMLClasses($_COOKIE['theme'] ?? '');
+        $out->addScript('<script src="/config.js"></script>');
         if (getenv('APP_ENV') === 'dev') {
             $out->addScript('<script type="module" src="/dev5174/src/app.ts"></script>');
         } else {
@@ -70,6 +71,11 @@ class SkinZetaSkin extends SkinMustache
     public function getTemplateData()
     {
         $data = parent::getTemplateData();
+        file_put_contents(
+            '/tmp/skin-data.json',
+            json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+        );
+
         $is_article = $data['is-article'];
         $is_specialpage = $data['is-specialpage'];
 
@@ -128,6 +134,8 @@ class SkinZetaSkin extends SkinMustache
                 'slotBottom' => getenv('ADSENSE_SLOT_BOTTOM'),
             ];
         }
+
+        trace($data);
 
         return $data;
     }

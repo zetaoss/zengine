@@ -1,5 +1,4 @@
-import type { Avatar } from '@common/components/avatar/avatar'
-
+// @/tool/commonReport/types.ts
 export interface Item {
   id: number
   name: string
@@ -15,7 +14,8 @@ export interface Item {
 export interface Row {
   id: number
   total: number
-  avatar: Avatar
+  user_id: number
+  user_name: string
   created_at: string
   updated_at: string
   phase: string

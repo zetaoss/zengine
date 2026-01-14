@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
-use App\Services\AvatarService;
 use Illuminate\Database\Eloquent\Model;
 
 class Post extends Model
 {
     protected $fillable = [
         'user_id',
+        'user_name',
         'cat',
         'title',
         'body',
@@ -22,16 +22,11 @@ class Post extends Model
         'is_notice' => 'boolean',
     ];
 
-    protected $appends = ['avatar', 'tag_names'];
+    protected $appends = ['tag_names'];
 
     public function replies()
     {
         return $this->hasMany(Reply::class, 'post_id');
-    }
-
-    public function getAvatarAttribute(): ?array
-    {
-        return AvatarService::getAvatarById((int) $this->user_id);
     }
 
     public function getTagNamesAttribute(): array

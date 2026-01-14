@@ -1,5 +1,5 @@
+<!-- @/views/user/EditProfile.vue -->
 <script setup lang="ts">
-import type { Avatar } from '@common/components/avatar/avatar'
 import AvatarIcon from '@common/components/avatar/AvatarIcon.vue'
 import ZButton from '@common/ui/ZButton.vue'
 import ZCard from '@common/ui/ZCard.vue'
@@ -15,20 +15,11 @@ import { maskEmail } from './util/mask'
 
 type AvatarType = 1 | 2 | 3
 
-interface Data {
-  me: Me
-}
-
-interface Me {
-  avatar: Avatar
-  groups: string[]
-}
-
 const route = useRoute()
-const meStore = useAuthStore()
+const me = useAuthStore()
 
-const username = computed(() => route.params.username as string)
-const encodedUsername = computed(() => username.value.replace(/ /g, '_'))
+const user_name = computed(() => route.params.user_name as string)
+const encodedUsername = computed(() => user_name.value.replace(/ /g, '_'))
 const userPageHref = computed(() => `/user/${encodedUsername.value}`)
 
 const isLoading = ref(false)
@@ -38,10 +29,7 @@ const saving = ref(false)
 const saveError = ref<string | null>(null)
 const saveOk = ref(false)
 
-const me = ref<Me | null>(null)
-
-const currentAvatar = computed(() => me.value?.avatar ?? null)
-const isMe = computed(() => meStore.isLoggedIn)
+const isMe = computed(() => me.isLoggedIn && me.userInfo?.name === user_name.value)
 
 const selectedType = ref<AvatarType>(1)
 
@@ -58,29 +46,13 @@ const gravatarBusy = ref(false)
 
 const canEditGravatar = computed(() => selectedType.value === 3)
 const canSave = computed(() => isMe.value && !saving.value)
-const gravatarPreviewAvatar = computed(() => {
-  const avatar = currentAvatar.value
-  if (!avatar) return null
-  if (verifiedGravatarHash.value === '') return avatar
-  return { ...avatar, ghash: verifiedGravatarHash.value }
-})
-
-function isAvatarType(v: unknown): v is AvatarType {
-  return v === 1 || v === 2 || v === 3
-}
 
 function validateEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
 }
 
-const gravatarDisplay = computed(() => {
-  if (isEditingGravatar.value) return gravatarEmail.value
-  return gravatarHint.value
-})
-
-const gravatarChanged = computed(
-  () => gravatarEmail.value.trim() !== ''
-)
+const gravatarDisplay = computed(() => (isEditingGravatar.value ? gravatarEmail.value : gravatarHint.value))
+const gravatarChanged = computed(() => gravatarEmail.value.trim() !== '')
 
 async function startEditGravatar() {
   if (!canEditGravatar.value) return
@@ -139,9 +111,10 @@ async function confirmGravatar() {
   }
 }
 
-async function loadGravatarHint() {
-  const [gdata, gerr] = await httpy.get<{ ghint: string }>('/api/me/gravatar')
-  if (gerr) {
+async function loadAvatarConfig() {
+  const [cfg, cfgErr] = await httpy.get<{ t: AvatarType; ghint: string }>('/api/me/avatar')
+  if (cfgErr) {
+    selectedType.value = 1
     gravatarHint.value = ''
     initialGravatarHint.value = ''
     verifiedGravatarHash.value = ''
@@ -149,9 +122,9 @@ async function loadGravatarHint() {
     return
   }
 
-  const v = typeof gdata?.ghint === 'string' ? gdata.ghint : ''
-  gravatarHint.value = v
-  initialGravatarHint.value = v
+  selectedType.value = cfg?.t ?? 1
+  gravatarHint.value = cfg?.ghint ?? ''
+  initialGravatarHint.value = gravatarHint.value
   verifiedGravatarHash.value = ''
   verifiedGravatarHint.value = ''
 }
@@ -162,23 +135,13 @@ async function load() {
   saveOk.value = false
   gravatarError.value = null
 
-  if (!meStore.isLoggedIn) {
-    await meStore.update()
-  }
-
-  const [data, err] = await httpy.get<Data>('/api/me')
-  if (err) {
+  await me.update()
+  if (!me.isLoggedIn) {
     loadError.value = 'failed to load profile'
     return
   }
 
-  me.value = data.me
-
-  const t = (data.me.avatar as unknown as { t?: unknown }).t
-  selectedType.value = isAvatarType(t) ? t : 1
-
-  await loadGravatarHint()
-
+  await loadAvatarConfig()
   isEditingGravatar.value = false
 }
 
@@ -204,7 +167,7 @@ async function save() {
     verifiedGravatarHash.value = ''
     verifiedGravatarHint.value = ''
     saveOk.value = true
-    await meStore.update()
+    await me.update()
     await load()
   } finally {
     saving.value = false
@@ -251,9 +214,9 @@ onMounted(() => {
 
         <div v-else class="space-y-4">
           <div class="flex items-center gap-3">
-            <AvatarIcon v-if="currentAvatar" :avatar="currentAvatar" :size="72" />
+            <AvatarIcon v-if="me.userInfo" :user="me.userInfo" :size="72" />
             <div class="text-sm">
-              <div class="font-semibold">{{ username }}</div>
+              <div class="font-semibold">{{ user_name }}</div>
             </div>
           </div>
 
@@ -263,7 +226,7 @@ onMounted(() => {
             <li class="flex items-center gap-3 p-3 rounded ring-1 ring-[var(--z-border)]">
               <input type="radio" name="avatarType" :value="1" v-model="selectedType" class="accent-current" />
               <div class="flex items-center gap-3">
-                <AvatarIcon v-if="currentAvatar" :avatar="currentAvatar" :temp-type="1" :size="60" />
+                <AvatarIcon v-if="me.userInfo" :user="me.userInfo" :size="60" :typ="1" />
                 <div class="text-sm font-semibold">아이덴티콘</div>
               </div>
             </li>
@@ -271,7 +234,7 @@ onMounted(() => {
             <li class="flex items-center gap-3 p-3 rounded ring-1 ring-[var(--z-border)]">
               <input type="radio" name="avatarType" :value="2" v-model="selectedType" class="accent-current" />
               <div class="flex items-center gap-3">
-                <AvatarIcon v-if="currentAvatar" :avatar="currentAvatar" :temp-type="2" :size="60" />
+                <AvatarIcon v-if="me.userInfo" :user="me.userInfo" :size="60" :typ="2" />
                 <div class="text-sm font-semibold">문자 아바타</div>
               </div>
             </li>
@@ -280,8 +243,8 @@ onMounted(() => {
               <input type="radio" name="avatarType" :value="3" v-model="selectedType" class="accent-current" />
 
               <div class="flex items-center gap-3 flex-1 min-w-0">
-                <AvatarIcon v-if="currentAvatar" :avatar="gravatarPreviewAvatar" :temp-type="3" :size="60" />
-
+                <AvatarIcon v-if="me.userInfo" :user="me.userInfo" :temp-type="3"
+                  :temp-ghash="verifiedGravatarHash || null" :size="60" />
                 <div class="flex items-center gap-2 flex-wrap min-w-0">
                   <div class="text-sm font-semibold whitespace-nowrap">그라바타</div>
 

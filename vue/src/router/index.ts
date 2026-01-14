@@ -46,8 +46,8 @@ const router = createRouter({
     { path: '/logout', component: LogoutView },
     { path: '/social-join/:token', component: SocialJoin },
 
-    { path: '/user/:username/edit', component: EditProfile, meta: { requiresAuth: true } },
-    { path: '/user/:username', component: UserProfile },
+    { path: '/user/:user_name/edit', component: EditProfile, meta: { requiresAuth: true } },
+    { path: '/user/:user_name', component: UserProfile },
 
     // catch-all (dummy route for wiki)
     { path: '/wiki/:any(.*)', component: () => null },
