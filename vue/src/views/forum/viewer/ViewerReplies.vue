@@ -1,4 +1,4 @@
-<!-- ViewerReplies.vue -->
+<!-- @/views/forum/viewer/ViewerReplies.vue -->
 <script setup lang="ts">
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import ZButton from '@common/ui/ZButton.vue'
@@ -122,11 +122,13 @@ watch(() => props.postId, fetchData, { immediate: true })
     <div v-for="reply in replies" :key="reply.id" class="border-b py-3 px-4 text-sm">
       <div class="grid grid-cols-2">
         <div>
-          <AvatarUser :avatar="reply.avatar" />
-          {{ useDateFormat(reply.created_at, 'YYYY-MM-DD HH:mm').value }}
+          <AvatarUser :user="{ id: reply.user_id, name: reply.user_name }" />
+          <div class="text-xs text-gray-500">
+            {{ useDateFormat(reply.created_at, 'YYYY-MM-DD HH:mm').value }}
+          </div>
         </div>
 
-        <div v-if="reply.avatar && me.canEdit(reply.avatar.id)" class="text-right">
+        <div v-if="me.canEdit(reply.user_id)" class="text-right">
           <ZMenu>
             <template #trigger="{ toggle }">
               <button type="button" @click="toggle">
@@ -179,9 +181,9 @@ watch(() => props.postId, fetchData, { immediate: true })
       </div>
     </div>
 
-    <div v-if="me.isLoggedIn && me.userData" class="p-3">
+    <div v-if="me.isLoggedIn && me.userInfo" class="p-3">
       <div class="p-4 border z-bg-muted rounded">
-        <AvatarUser :avatar="me.userData.avatar" :showLink="false" />
+        <AvatarUser :user="me.userInfo" :showLink="false" />
         <ZTextarea v-model="replyBody" class="mt-2" id="new-reply" placeholder="댓글을 남겨보세요" />
         <div class="flex justify-end gap-3">
           <div class="text-xs text-gray-400">

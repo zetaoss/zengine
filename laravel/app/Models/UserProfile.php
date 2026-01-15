@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Avatar extends Model
+class UserProfile extends Model
 {
-    protected $table = 'profiles';
+    protected $table = 'zetawiki.user_profiles';
 
     protected $primaryKey = 'user_id';
 

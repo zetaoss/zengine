@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
+            'internal' => \App\Http\Middleware\InternalApiAuth::class,
             'mwauth' => \App\Http\Middleware\MwAuth::class,
         ]);
     })

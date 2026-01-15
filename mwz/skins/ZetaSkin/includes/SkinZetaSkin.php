@@ -13,12 +13,8 @@ class SkinZetaSkin extends SkinMustache
     public static function onBeforePageDisplay($out, $skin)
     {
         $out->addHTMLClasses($_COOKIE['theme'] ?? '');
-        if (getenv('APP_ENV') === 'dev') {
-            $out->addScript('<script type="module" src="/dev5174/src/app.ts"></script>');
-        } else {
-            $out->addHeadItem('css', '<link href="/w/skins/ZetaSkin/resources/dist/app.css" rel="stylesheet" />');
-            $out->addScript('<script src="/w/skins/ZetaSkin/resources/dist/app.js"></script>');
-        }
+        $out->addHeadItem('css', '<link href="/w/skins/ZetaSkin/resources/dist/app.css" rel="stylesheet" />');
+        $out->addScript('<script type="module" src="/w/skins/ZetaSkin/resources/dist/app.js"></script>');
         $out->addScript('<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='.getenv('ADSENSE_CLIENT').'" crossorigin="anonymous"></script>');
     }
 
@@ -70,6 +66,7 @@ class SkinZetaSkin extends SkinMustache
     public function getTemplateData()
     {
         $data = parent::getTemplateData();
+
         $is_article = $data['is-article'];
         $is_specialpage = $data['is-specialpage'];
 

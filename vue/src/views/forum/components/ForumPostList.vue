@@ -1,4 +1,4 @@
-<!-- ForumPostList.vue -->
+<!-- @/views/forum/components/ForumPostList.vue -->
 <script setup lang="ts">
 import AvatarIcon from '@common/components/avatar/AvatarIcon.vue'
 import ZSpinner from '@common/ui/ZSpinner.vue'
@@ -110,8 +110,8 @@ watch(() => page.value, fetchList, { immediate: true })
 
         <div class="py-1 flex md:w-[35%]">
           <span class="flex-1 md:w-[45%] truncate">
-            <AvatarIcon :avatar="p.avatar" :size="15" />
-            {{ p.avatar?.name }}
+            <AvatarIcon :user="{ id: p.user_id, name: p.user_name }" :size="15" />
+            {{ p.user_name }}
           </span>
           <span class="md:w-[40%] md:text-center">
             {{ formatDate(p.created_at) }}

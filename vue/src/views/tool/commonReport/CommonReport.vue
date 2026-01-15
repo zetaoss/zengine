@@ -1,4 +1,4 @@
-<!-- CommonReport.vue -->
+<!-- @/views/tool/commonReport/CommonReport.vue -->
 <script setup lang="ts">
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import CProgressBar from '@common/components/CProgressBar.vue'
@@ -138,7 +138,7 @@ onUnmounted(() => retrier.clear())
               </RouterLinkButton>
               <div>{{ row.created_at.substring(0, 10) }}</div>
               <div>
-                <AvatarUser :avatar="row.avatar" />
+                <AvatarUser :user="{ id: row.user_id, name: row.user_name }" />
               </div>
             </td>
 
