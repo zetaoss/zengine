@@ -1,3 +1,4 @@
+<!-- @/views/tool/commonReport/CommonReportDetail.vue -->
 <script setup lang="ts">
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import { useConfirm } from '@common/composables/confirm/useConfirm'
@@ -21,7 +22,7 @@ import Star from './Star.vue'
 import type { Row } from './types'
 import { getRatio, getScore, getWikitextTable } from './utils'
 
-const auth = useAuthStore()
+const me = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
@@ -136,7 +137,7 @@ fetchDataWithRetry()
 
 
 <template>
-  <div v-if="row.avatar" class="p-5">
+  <div v-if="row.id" class="p-5">
     <div class="flex justify-end">
       <RouterLinkButton to="/tool/common-report">목록</RouterLinkButton>
     </div>
@@ -157,7 +158,7 @@ fetchDataWithRetry()
       </div>
       <div class="flex items-center">
         <div class="flex-1">
-          <AvatarUser :avatar="row.avatar" />
+          <AvatarUser :user="{ id: row.user_id, name: row.user_name }" />
           <div>{{ useDateFormat(row.created_at, 'YYYY-MM-DD HH:mm').value }}</div>
         </div>
         <div class="flex">
@@ -261,10 +262,10 @@ fetchDataWithRetry()
       </table>
     </div>
     <div class="py-4 flex gap-2">
-      <ZButton @click="del(row)" v-if="auth.canDelete(row.avatar.id)">
+      <ZButton @click="del(row)" v-if="me.canDelete(row.user_id)">
         삭제
       </ZButton>
-      <ZButton @click="rerun(row)" v-if="auth.canDelete(row.avatar.id) && row.phase === 'failed'">
+      <ZButton @click="rerun(row)" v-if="me.canDelete(row.user_id) && row.phase === 'failed'">
         재실행
       </ZButton>
       <div class="flex-1 text-right">

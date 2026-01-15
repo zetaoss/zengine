@@ -1,6 +1,5 @@
-<!-- WriteRequest.vue -->
+<!-- @/views/tool/writeRequest/WriteRequest.vue -->
 <script setup lang="ts">
-import type { Avatar } from '@common/components/avatar/avatar'
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import CProgressBar from '@common/components/CProgressBar.vue'
 import { useConfirm } from '@common/composables/confirm/useConfirm'
@@ -23,10 +22,10 @@ interface Row {
   hit: number
   id: number
   user_id: number
+  user_name: string
   rate: number
   ref: number
   title: string
-  avatar: Avatar
   writed_at: string
   updated_at: string
 }
@@ -42,7 +41,7 @@ interface Count {
   todo: number
 }
 
-const auth = useAuthStore()
+const me = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
@@ -110,7 +109,7 @@ function fetchData() {
 }
 
 function openModal() {
-  if (!auth.canWrite()) {
+  if (!me.canWrite()) {
     router.push({ path: '/login', query: { redirect: '/tool/write-request' } })
     return
   }
@@ -202,7 +201,7 @@ watch(() => [route.params.page, route.query.page], fetchData, { immediate: true 
             <a v-if="mode == 'todo'" :href="`/w/index.php?search=${row.title}`" class="new">{{ row.title }}</a>
             <a v-else-if="mode == 'todo-top'" :href="`/w/index.php?search=${row.title}`" class="new">{{ row.title }}</a>
             <a v-else :href="`/wiki/${row.title}`">{{ row.title }}</a>
-            <ZButton v-if="auth.canDelete(row.user_id)" color="ghost" class="text-[#888] py-1 align-middle leading-none"
+            <ZButton v-if="me.canDelete(row.user_id)" color="ghost" class="text-[#888] py-1 align-middle leading-none"
               @click="del(row)">
               <ZIcon :path="mdiDelete" />
             </ZButton>
@@ -222,14 +221,14 @@ watch(() => [route.params.page, route.query.page], fetchData, { immediate: true 
             {{ row.updated_at.substring(0, 10) }}
           </td>
           <td class="user">
-            <AvatarUser :avatar="row.avatar" />
+            <AvatarUser :user="{ id: row.user_id, name: row.user_name }" />
           </td>
         </tr>
       </tbody>
     </table>
 
     <div class="py-4 text-right">
-      <ZButton :disabled="!auth.canWrite()" @click="openModal">등록</ZButton>
+      <ZButton :disabled="!me.canWrite()" @click="openModal">등록</ZButton>
     </div>
 
     <ThePagination v-if="paginateData" class="pb-4" :paginate-data="paginateData" />

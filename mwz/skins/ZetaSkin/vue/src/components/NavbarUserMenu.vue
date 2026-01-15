@@ -13,7 +13,7 @@ defineProps({
   userMenu: { type: {} as PropType<Item[]>, required: true },
 })
 
-const { avatar } = getRLCONF()
+const { wgUserId, wgUserName } = getRLCONF()
 
 const root = ref<HTMLElement | null>(null)
 const open = ref(false)
@@ -35,8 +35,8 @@ useDismissable(root, {
   <div ref="root" class="md:group order-2 ml-auto contents md:relative md:inline-block">
     <button type="button" class="order-2 ml-auto flex h-12 cursor-pointer items-center px-3 hover:bg-gray-800"
       :class="{ 'bg-gray-800': open }" :aria-expanded="open" @click="toggle">
-      <span v-if="avatar && avatar.id > 0">
-        <AvatarIcon :avatar="avatar" />
+      <span v-if="wgUserId">
+        <AvatarIcon :user="{ id: wgUserId, name: wgUserName }" />
       </span>
       <span v-else>
         <ZIcon :size="20" :path="mdiAccount" />

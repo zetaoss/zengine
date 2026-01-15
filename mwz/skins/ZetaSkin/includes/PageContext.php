@@ -51,10 +51,7 @@ final class PageContext
             $this->binders = $this->fetchBinders($this->pageId);
             $this->hasBinders = ! empty($this->binders);
 
-            $userIds = $this->fetchContributorUserIds($this->pageId, 10);
-            if ($userIds) {
-                $this->contributors = array_values($this->fetchUserAvatarsByIds($userIds));
-            }
+            $this->contributors = $this->fetchContributors($this->pageId, 10);
         }
 
         $meId = (int) ($out->getUser()?->getId() ?? 0);
@@ -120,7 +117,7 @@ final class PageContext
         return $out;
     }
 
-    private function fetchContributorUserIds(int $pageId, int $limit = 10): array
+    private function fetchContributors(int $pageId, int $limit = 10): array
     {
         if ($pageId < 1 || $limit < 1) {
             return [];
@@ -129,7 +126,7 @@ final class PageContext
         $dbr = self::dbr();
 
         $rows = $dbr->newSelectQueryBuilder()
-            ->select(['U.user_id'])
+            ->select(['U.user_id', 'U.user_name'])
             ->from('revision', 'R')
             ->join('actor', 'AC', 'R.rev_actor = AC.actor_id')
             ->join('user', 'U', 'AC.actor_user = U.user_id')
@@ -139,21 +136,21 @@ final class PageContext
             ->caller(__METHOD__)
             ->fetchResultSet();
 
-        $ids = [];
+        $seen = [];
+        $out = [];
         foreach ($rows as $row) {
             $id = (int) ($row->user_id ?? 0);
-            if ($id > 0) {
-                $ids[] = $id;
+            if ($id < 1 || isset($seen[$id])) {
+                continue;
+            }
+            $seen[$id] = true;
+            $out[] = ['id' => $id, 'name' => (string) ($row->user_name ?? '')];
+            if (count($out) >= $limit) {
+                break;
             }
         }
 
-        if (! $ids) {
-            return [];
-        }
-
-        $ids = array_values(array_unique($ids));
-
-        return array_slice($ids, 0, $limit);
+        return $out;
     }
 
     private function fetchUserAvatarsByIds(array $userIds): array

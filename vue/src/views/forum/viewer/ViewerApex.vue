@@ -1,4 +1,4 @@
-<!-- BoxPost.vue -->
+<!-- @/views/forum/viewer/ViewerApex.vue -->
 <script setup lang="ts">
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import ZButton from '@common/ui/ZButton.vue'
@@ -79,8 +79,8 @@ watch(() => props.postId, fetchData, { immediate: true })
         </h3>
       </div>
 
-      <div v-if="post?.avatar" class="py-3">
-        <AvatarUser :avatar="post.avatar" />
+      <div v-if="post" class="py-3">
+        <AvatarUser :user="{ id: post.user_id, name: post.user_name }" />
         <div class="text-sm">
           <span class="mr-4">
             {{ useDateFormat(post.created_at, 'YYYY-MM-DD HH:mm').value }}

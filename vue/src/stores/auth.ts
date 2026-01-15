@@ -1,30 +1,24 @@
-// auth.ts
-import type UserData from '@common/types/userData'
+// @/stores/auth.ts
+import { type UserInfo } from '@common/types/user'
 import httpy from '@common/utils/httpy'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
-type MeResponse = {
-  me: UserData | null
-}
+type MeResponse = { me: UserInfo | null }
 
 const useAuthStore = defineStore('auth', () => {
-  const userData = ref<UserData | null>(null)
+  const userInfo = ref<UserInfo | null>(null)
 
-  const isLoggedIn = computed(() => {
-    const a = userData.value?.avatar
-    return !!a && a.id > 0
-  })
+  const isLoggedIn = computed(() => (userInfo.value?.id ?? 0) > 0)
 
   async function update() {
     const [res, err] = await httpy.get<MeResponse>('/api/me')
     if (err) {
       console.error(err)
-      userData.value = null
+      userInfo.value = null
       return
     }
-
-    userData.value = res.me
+    userInfo.value = res.me
   }
 
   function canWrite() {
@@ -32,24 +26,16 @@ const useAuthStore = defineStore('auth', () => {
   }
 
   function canEdit(id: number) {
-    return userData.value?.avatar?.id === id
+    return (userInfo.value?.id ?? 0) === id
   }
 
   function canDelete(id: number) {
-    const me = userData.value
-    const uid = me?.avatar?.id ?? 0
-    const groups = me?.groups ?? []
+    const uid = userInfo.value?.id ?? 0
+    const groups = userInfo.value?.groups ?? []
     return uid === id || groups.includes('sysop')
   }
 
-  return {
-    userData,
-    update,
-    isLoggedIn,
-    canWrite,
-    canEdit,
-    canDelete,
-  }
+  return { userInfo, update, isLoggedIn, canWrite, canEdit, canDelete }
 })
 
 export default useAuthStore

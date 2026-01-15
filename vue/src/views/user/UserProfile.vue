@@ -1,6 +1,5 @@
-<!-- UserProfile.vue -->
+<!-- @/views/user/UserProfile.vue -->
 <script setup lang="ts">
-import type { Avatar } from '@common/components/avatar/avatar'
 import AvatarIcon from '@common/components/avatar/AvatarIcon.vue'
 import ZCard from '@common/ui/ZCard.vue'
 import ZIcon from '@common/ui/ZIcon.vue'
@@ -16,18 +15,17 @@ import useAuthStore from '@/stores/auth'
 import ContributionMap from './ContributionMap.vue'
 
 const route = useRoute()
-const username = computed(() => route.params.username as string)
+const user_name = computed(() => route.params.user_name as string)
 
-const encodedUsername = computed(() => username.value.replace(/ /g, '_'))
+const encodedUsername = computed(() => user_name.value.replace(/ /g, '_'))
 const userPageHref = computed(() => `/wiki/User:${encodedUsername.value}`)
 const contribPageHref = computed(() => `/wiki/특수:기여/${encodedUsername.value}`)
 
 const me = useAuthStore()
-const userId = ref(0)
-const avatar = ref<Avatar | null>(null)
+const user_id = ref(0)
 const editCount = ref(0)
 
-const isMe = computed(() => me.isLoggedIn && me.userData?.avatar?.id === userId.value)
+const isMe = computed(() => me.isLoggedIn && (me.userInfo?.id ?? 0) === user_id.value)
 
 const minDate = ref(new Date())
 
@@ -49,12 +47,11 @@ interface ActionQueryResponse<T> {
   error?: { info?: string }
 }
 
-interface UserInfo {
+interface UserData {
   user_id: number
   user_name: string
   user_registration: string
   user_editcount: number
-  avatar: Avatar
 }
 
 const contribs = ref<Contribution[]>([])
@@ -98,16 +95,14 @@ async function load() {
 
   if (!me.isLoggedIn) await me.update()
 
-  const userInfo = await fetchOrSetError<UserInfo>(
-    'UserInfo',
-    httpy.get(`/api/user/${encodeURIComponent(username.value)}`),
+  const userData = await fetchOrSetError<UserData>(
+    'UserData',
+    httpy.get(`/api/user/${encodeURIComponent(user_name.value)}`),
   )
-  if (!userInfo) return
-
-  avatar.value = userInfo.avatar
-  userId.value = userInfo.user_id
-  editCount.value = userInfo.user_editcount
-  minDate.value = parseRegistrationDate(userInfo.user_registration)
+  if (!userData) return
+  user_id.value = userData.user_id
+  editCount.value = userData.user_editcount
+  minDate.value = parseRegistrationDate(userData.user_registration)
 
   const contribRes = await fetchOrSetError<ActionQueryResponse<UserContribsResponse>>(
     'UserContribs',
@@ -115,7 +110,7 @@ async function load() {
       action: 'query',
       format: 'json',
       list: 'usercontribs',
-      ucuser: username.value,
+      ucuser: user_name.value,
       uclimit: '10',
       ucprop: 'ids|title|timestamp',
     }),
@@ -125,7 +120,7 @@ async function load() {
 
   const rawStats = await fetchOrSetError<StatsMap>(
     'StatsMap',
-    httpy.get(`/api/user/${userId.value}/stats`),
+    httpy.get(`/api/user/${user_id.value}/stats`),
   )
   if (!rawStats) return
 
@@ -156,12 +151,12 @@ onMounted(() => {
       <ZCard class="p-6 mt-4">
         <div class="flex flex-row">
           <div class="flex items-center justify-center p-6 w-1/3">
-            <AvatarIcon v-if="avatar" :avatar="avatar" :size="96" />
+            <AvatarIcon :user="{ id: user_id, name: user_name }" :size="96" />
           </div>
 
           <div class="flex-1 p-6 border-l">
             <div class="flex items-baseline gap-2">
-              <h1 class="text-xl font-semibold">{{ username }}</h1>
+              <h1 class="text-xl font-semibold">{{ user_name }}</h1>
               <a v-if="isMe" :href="`/user/${encodedUsername}/edit`" class="text-xs ml-1">
                 Edit Profile
               </a>

@@ -1,6 +1,8 @@
-FROM ghcr.io/zetaoss/zbase:v0.43.601
+# https://github.com/zetaoss/zbase/pkgs/container/zbase
+FROM ghcr.io/zetaoss/zbase:v0.43.602
 
-COPY --from=composer:2.2.25 /usr/bin/composer /usr/bin/composer
+# https://hub.docker.com/_/composer
+COPY --from=composer:2.9.2 /usr/bin/composer /usr/bin/composer
 
 COPY . /app/
 

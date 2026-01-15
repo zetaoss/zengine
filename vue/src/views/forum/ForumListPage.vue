@@ -7,7 +7,7 @@ import RouterLinkButton from '@/ui/RouterLinkButton.vue'
 
 import ForumPostList from './components/ForumPostList.vue'
 
-const auth = useAuthStore()
+const me = useAuthStore()
 </script>
 
 <template>
@@ -15,7 +15,7 @@ const auth = useAuthStore()
     <h2 class="my-5 text-2xl font-bold">포럼</h2>
 
     <div class="flex justify-end mb-4">
-      <RouterLinkButton to="/forum/new" :disabled="!auth.canWrite()">
+      <RouterLinkButton to="/forum/new" :disabled="!me.canWrite()">
         글쓰기
       </RouterLinkButton>
     </div>

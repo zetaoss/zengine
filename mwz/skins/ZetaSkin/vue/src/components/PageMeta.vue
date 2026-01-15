@@ -20,8 +20,8 @@ const { lastmod, contributors } = getRLCONF()
       {{ `${lastmod.substring(0, 4)}-${lastmod.substring(4, 6)}-${lastmod.substring(6, 8)}` }}
     </a>
     <span class="pl-3 -space-x-0.5">
-      <a v-for="user in contributors" :key="user.id" :href="`/profile/${user.name}`">
-        <AvatarIcon :avatar="user" :showBorder="true" />
+      <a v-for="u in contributors" :key="u.id" :href="`/profile/${u.name}`">
+        <AvatarIcon :user="u" :showBorder="true" />
       </a>
     </span>
   </template>

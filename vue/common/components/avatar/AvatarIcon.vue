@@ -1,42 +1,41 @@
-<!-- AvatarIcon.vue -->
+<!-- @common/components/avatar/AvatarIcon.vue -->
 <script setup lang="ts">
+import { getAvatarBaseUrl } from '@common/config'
+import type { User } from '@common/types/user'
 import { computed, type PropType } from 'vue'
 
-import type { Avatar } from './avatar'
-import IconIdenticon from './IconIdenticon.vue'
-import IconLetter from './IconLetter.vue'
-
-type AvatarType = 1 | 2 | 3
+type AvatarType = 0 | 1 | 2 | 3
 
 const props = defineProps({
-  avatar: { type: Object as PropType<Avatar | null>, default: null },
+  user: { type: Object as PropType<User>, default: null },
   size: { type: Number, default: 24 },
+  typ: { type: Number as PropType<AvatarType>, default: 0 },
   showBorder: { type: Boolean, default: false },
-  tempType: { type: Number as PropType<AvatarType | null>, default: null },
 })
 
-function isAvatarType(v: unknown): v is AvatarType {
-  return v === 1 || v === 2 || v === 3
-}
+const baseUrl = getAvatarBaseUrl()
 
-const effectiveType = computed<AvatarType | null>(() => {
-  if (!props.avatar) return null
-  return isAvatarType(props.tempType) ? props.tempType : (isAvatarType(props.avatar.t) ? props.avatar.t : null)
+const src = computed(() => {
+  if (!props.user) return ''
+
+  const u = new URL(`${baseUrl}/u/${props.user.id}`)
+  u.searchParams.set('s', String(props.size))
+  if (props.typ) u.searchParams.set('t', String(props.typ))
+
+  const v = localStorage.getItem('v')
+  if (v) u.searchParams.set('v', v)
+
+  return u.toString()
 })
 </script>
 
 <template>
   <span
     class="inline-flex items-center justify-center overflow-hidden rounded-full box-border align-middle relative hover:z-40 hover:scale-125"
-    :class="{
-      'ring-2 ring-white dark:ring-gray-900 outline outline-1 -outline-offset-1 outline-black/5 dark:outline-white/10': showBorder
-    }" :style="{ height: `${size}px`, width: `${size}px`, background: '#f0f0f0' }" :title="avatar?.name ?? ''">
-    <template v-if="!avatar">
-      <IconLetter name="?" :size="size" />
-    </template>
-    <img v-else-if="effectiveType === 3" class="w-full h-full"
-      :src="`//www.gravatar.com/avatar/${avatar.ghash}?s=${size}`" />
-    <IconLetter v-else-if="effectiveType === 2" :name="avatar.name" :size="size" />
-    <IconIdenticon v-else :name="avatar.name" :size="size" />
+    :class="{ 'ring-2 ring-white dark:ring-gray-900 outline outline-1 -outline-offset-1 outline-black/5 dark:outline-white/10': showBorder }"
+    :style="{ height: `${size}px`, width: `${size}px`, background: '#f0f0f0' }" :title="user.name">
+    <span v-if="user.id == 0" class="w-full h-full flex items-center justify-center text-xs text-gray-500">?</span>
+    <img v-else class="w-full h-full" :src="src" :width="size" :height="size" loading="lazy" decoding="async"
+      referrerpolicy="no-referrer" />
   </span>
 </template>

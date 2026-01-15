@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Runbox;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 
@@ -14,7 +15,7 @@ class RunboxTest extends TestCase
         $response->assertStatus(200);
 
         $data = $response->json();
-        $this->assertEquals(['step' => 0], $data);
+        $this->assertEquals(['phase' => 'none'], $data);
     }
 
     public function test_runbox_post()
@@ -44,6 +45,35 @@ class RunboxTest extends TestCase
             ],
         ];
 
+        config(['queue.default' => 'sync']);
+        putenv('RUNBOX_URL=http://example.test');
+        Http::fake(function ($request) {
+            $url = $request->url();
+            if (str_contains($url, '/lang')) {
+                return Http::response([
+                    'outputsList' => ['1lang_post_1'],
+                    'cpu' => 1,
+                    'mem' => 1,
+                    'time' => 1,
+                ], 200);
+            }
+
+            if (str_contains($url, '/notebook')) {
+                return Http::response([
+                    'outputsList' => [[], [[
+                        'output_type' => 'stream',
+                        'name' => 'stdout',
+                        'text' => ["notebook_post_1\n"],
+                    ]]],
+                    'cpu' => 1,
+                    'mem' => 1,
+                    'time' => 1,
+                ], 200);
+            }
+
+            return Http::response([], 404);
+        });
+
         foreach ($tests as $t) {
             $data = $t['data'];
             $wantCode = $t['wantCode'];
@@ -59,7 +89,7 @@ class RunboxTest extends TestCase
             $this->waitForComplete($hash);
 
             $runbox = Runbox::where('hash', $hash)->first();
-            $this->assertEquals(3, $runbox->step);
+            $this->assertEquals('succeeded', $runbox->phase);
             $this->assertEquals($wantOuts, json_encode($runbox->outs));
             $this->assertNotEquals(0, $runbox->cpu);
             $this->assertNotEquals(0, $runbox->mem);
@@ -72,10 +102,16 @@ class RunboxTest extends TestCase
         $startTime = time();
         while (true) {
             $row = Runbox::where('hash', $hash)->first();
-            if ($row && $row->step > 2) {
+            if ($row && $row->phase === 'succeeded') {
                 return;
             }
-            Log::debug('Waiting', ['type' => $row->type, 'step' => $row->step]);
+            if ($row && $row->phase === 'failed') {
+                $this->fail('Runbox failed');
+            }
+            Log::debug('Waiting', [
+                'type' => $row?->type,
+                'phase' => $row?->phase,
+            ]);
             if ((time() - $startTime) > $timeout) {
                 $this->fail('Timeout');
             }

@@ -1,6 +1,5 @@
 <!-- PageFooter.vue -->
 <script setup lang="ts">
-import type { Avatar } from '@common/components/avatar/avatar'
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import ZButton from '@common/ui/ZButton.vue'
 import ZIcon from '@common/ui/ZIcon.vue'
@@ -18,14 +17,15 @@ import getRLCONF from '@/utils/rlconf'
 import LinkifyBox from './LinkifyBox.vue'
 
 interface Row {
-  avatar: Avatar
   id: number
   message: string
+  user_id: number
+  user_name: string
   created: string
   page_title: string
 }
 
-const { avatar, wgArticleId } = getRLCONF()
+const { wgUserId, wgUserName, wgArticleId } = getRLCONF()
 
 const message = ref('')
 const showModal = ref(false)
@@ -115,13 +115,13 @@ fetchData()
   <div class="py-4">
     <div>문서 댓글 ({{ docComments.length }})</div>
 
-    <div class="pt-3 flex" v-if="avatar && avatar.id > 0">
+    <div class="pt-3 flex" v-if="wgUserId && wgUserId > 0">
       <div class="pt-1 pr-3">
-        <AvatarUser :avatar="avatar" :showName="false" :showLink="false" :size="32" />
+        <AvatarUser :user="{ id: wgUserId, name: wgUserName }" :showName="false" :showLink="false" :size="32" />
       </div>
 
       <div class="w-full text-sm">
-        <div>{{ avatar.name }}</div>
+        <div>{{ wgUserName }}</div>
 
         <div class="grid grid-cols-[5fr_1fr] gap-2">
           <ZTextarea v-model="message" id="page-comment-new" placeholder="댓글을 쓸 수 있습니다..." />
@@ -134,12 +134,12 @@ fetchData()
 
     <div class="mt-3 pt-2 flex border-t" v-for="row in docComments" :key="row.id">
       <div class="pt-1 pr-3">
-        <AvatarUser :avatar="row.avatar" :showName="false" :showLink="false" :size="32" />
+        <AvatarUser :user="{ id: row.user_id, name: row.user_name }" :showName="false" :showLink="false" :size="32" />
       </div>
 
       <div class="w-full">
         <div class="float-right">
-          <ZMenu v-if="canEdit(row.avatar.id) || canDelete(row.avatar.id)">
+          <ZMenu v-if="canEdit(row.user_id) || canDelete(row.user_id)">
             <template #trigger="{ toggle }">
               <ZButton size="small" color="ghost" aria-label="댓글 메뉴" @click="toggle()">
                 <ZIcon :path="mdiDotsHorizontal" class="z-muted2" />
@@ -148,10 +148,10 @@ fetchData()
 
             <template #menu="{ close }">
               <div class="text-xs">
-                <ZMenuItem v-if="canEdit(row.avatar.id)" @click="edit(row); close()">
+                <ZMenuItem v-if="canEdit(row.user_id)" @click="edit(row); close()">
                   수정
                 </ZMenuItem>
-                <ZMenuItem v-if="canDelete(row.avatar.id)" @click="del(row); close()">
+                <ZMenuItem v-if="canDelete(row.user_id)" @click="del(row); close()">
                   삭제
                 </ZMenuItem>
               </div>
@@ -160,7 +160,7 @@ fetchData()
         </div>
 
         <div class="text-sm">
-          <a :href="`/profile/${row.avatar.name}`">{{ row.avatar.name }}</a>
+          <a :href="`/profile/${row.user_name}`">{{ row.user_name }}</a>
         </div>
 
         <LinkifyBox :content="row.message" />
@@ -170,7 +170,7 @@ fetchData()
           <div class="p-3 border-2 rounded">
             <div class="overflow-auto">
               <div class="float-left">
-                <AvatarUser :avatar="row.avatar" />
+                <AvatarUser :user="{ id: row.user_id, name: row.user_name }" />
               </div>
               <div class="float-right text-xs text-gray-400">
                 {{ editingRow.message.length }} characters

@@ -30,9 +30,9 @@
         <div class="p-4 py-8 md:p-8">
           <div class="pt-4">
             <h1>{{{ html-title }}}</h1>
-            {{#htmlSubtitle}}
+            {{#html-subtitle}}
             <div>{{{ html-subtitle }}}</div>
-            {{/htmlSubtitle}}
+            {{/html-subtitle}}
           </div>
           <div class="pb-4"> 
             <div class="flow-root py-2">
@@ -69,7 +69,7 @@
           </div>
           <hr />
 
-          <article id="content" data-mw-ve-target-container class="py-6" v-pre>
+          <article id="content" data-mw-ve-target-container class="py-6 pb-10" v-pre>
             {{{ html-body-content }}}
           </article>
 
@@ -78,6 +78,11 @@
             <c-ads class="z-ads-wide" client="{{ads.client}}" slot="{{ads.slotBottom}}"></c-ads>
           </div>
           {{/ads}}
+
+          {{#data-portlets.data-category-normal.html-items}}
+          <ul class="page-cats">{{{ . }}}</ul>
+          {{/data-portlets.data-category-normal.html-items}}
+          <br>
 
           {{^is-specialpage}}
           <page-footer></page-footer>

@@ -1,26 +1,31 @@
-// types.ts
-import type { Avatar } from '@common/components/avatar/avatar'
+// @/views/forum/types.ts
 
 export interface Post {
-  body: string
-  cat: string
-  created_at: string
-  hit: number
   id: number
+  user_id: number
+  user_name: string
+
+  cat: string
+  title: string
+  body: string
+
+  hit: number
   is_notice: number
   replies_count: number
-  tag_names: string[]
+
   tags_str: string
-  title: string
+  tag_names: string[]
+
+  created_at: string
   updated_at: string
-  avatar: Avatar
-  user_id: number
 }
 
 export interface Reply {
-  body: string
-  created_at: string
   id: number
   post_id: number
-  avatar: Avatar
+  user_id: number
+  user_name: string
+
+  body: string
+  created_at: string
 }

@@ -1,23 +1,26 @@
 <?php
 
+// laravel/routes/api.php
+
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommonReportController;
 use App\Http\Controllers\OnelineController;
+use App\Http\Controllers\PageCommentController;
 use App\Http\Controllers\PageReactionController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\ReplyController;
 use App\Http\Controllers\RunboxController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\WriteRequestController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/comments/recent', [CommentController::class, 'recent']);
-Route::get('/comments/{pageID}', [CommentController::class, 'list']);
-Route::post('/comments', [CommentController::class, 'store'])->middleware('mwauth');
-Route::put('/comments/{comment}', [CommentController::class, 'update'])->middleware('mwauth');
-Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->middleware('mwauth');
+Route::get('/comments/recent', [PageCommentController::class, 'recent']);
+Route::get('/comments/{pageID}', [PageCommentController::class, 'list']);
+Route::post('/comments', [PageCommentController::class, 'store'])->middleware('mwauth');
+Route::put('/comments/{comment}', [PageCommentController::class, 'update'])->middleware('mwauth');
+Route::delete('/comments/{comment}', [PageCommentController::class, 'destroy'])->middleware('mwauth');
 
 Route::get('/common-report', [CommonReportController::class, 'index']);
 Route::get('/common-report/{id}', [CommonReportController::class, 'show']);
@@ -27,8 +30,8 @@ Route::post('/common-report/{id}/rerun', [CommonReportController::class, 'rerun'
 Route::delete('/common-report/{id}', [CommonReportController::class, 'destroy'])->middleware('mwauth');
 
 Route::get('/me', [AuthController::class, 'me'])->middleware('mwauth:maybe');
+Route::get('/me/avatar', [AuthController::class, 'getAvatar'])->middleware('mwauth');
 Route::post('/me/avatar', [AuthController::class, 'updateAvatar'])->middleware('mwauth');
-Route::get('/me/gravatar', [AuthController::class, 'getGravatar'])->middleware('mwauth');
 Route::get('/me/gravatar/verify', [AuthController::class, 'verifyGravatar'])->middleware('mwauth');
 
 Route::get('/onelines/recent', [OnelineController::class, 'recent']);
@@ -63,3 +66,5 @@ Route::get('/write-request/todo', [WriteRequestController::class, 'indexTodo']);
 Route::get('/write-request/todo-top', [WriteRequestController::class, 'indexTodoTop']);
 Route::post('/write-request', [WriteRequestController::class, 'store'])->middleware('mwauth');
 Route::delete('/write-request/{id}', [WriteRequestController::class, 'destroy'])->middleware('mwauth');
+
+Route::get('/internal/profiles/{userId}', [UserProfileController::class, 'show'])->middleware('internal');

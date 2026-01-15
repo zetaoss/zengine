@@ -1,14 +1,15 @@
+<!-- @/views/home/HomeOnelines.vue -->
 <script setup lang="ts">
-import type { Avatar } from '@common/components/avatar/avatar'
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import httpy from '@common/utils/httpy'
-import { onMounted,ref } from 'vue'
+import { onMounted, ref } from 'vue'
 
 import linkify from '@/utils/linkify'
 
 interface Row {
   id: number
-  avatar: Avatar
+  user_id: number
+  user_name: string
   created: string
   message: string
 }
@@ -35,7 +36,7 @@ onMounted(load)
 
 <template>
   <div v-for="r in rows" :key="r.id" class="py-2">
-    <AvatarUser :avatar="r.avatar" />
+    <AvatarUser :user="{ id: r.user_id, name: r.user_name }" />
     <span class="ml-1" v-html="r.message" />
     <span class="z-muted2 ml-1 text-xs">{{ r.created.substring(0, 10) }}</span>
   </div>

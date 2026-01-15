@@ -8,9 +8,14 @@ use Illuminate\Support\Facades\Gate;
 
 class PostController extends Controller
 {
+    private function baseQuery()
+    {
+        return Post::query();
+    }
+
     public function recent()
     {
-        return Post::query()
+        return $this->baseQuery()
             ->latest('id')
             ->take(6)
             ->get();
@@ -18,14 +23,22 @@ class PostController extends Controller
 
     public function index()
     {
-        return Post::query()
+        return $this->baseQuery()
             ->latest('id')
             ->paginate(15);
     }
 
-    public function show(Post $post)
+    public function show(int $id)
     {
-        $post->increment('hit');
+        $post = $this->baseQuery()
+            ->where('id', $id)
+            ->firstOrFail();
+
+        Post::query()
+            ->where('id', $id)
+            ->increment('hit');
+
+        $post->hit = ((int) $post->hit) + 1;
 
         return $post;
     }
@@ -47,11 +60,14 @@ class PostController extends Controller
             'tags_str' => '',
             'channel_id' => 1,
             'user_id' => (int) auth()->id(),
+            'user_name' => (string) auth()->user()->name,
             'hit' => 0,
             'is_notice' => false,
         ]);
 
-        return $post;
+        return $this->baseQuery()
+            ->where('id', (int) $post->id)
+            ->firstOrFail();
     }
 
     public function update(Request $request, Post $post)
