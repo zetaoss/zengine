@@ -20,7 +20,7 @@ class InternalApiAuth
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
-        if (! ctype_digit($timestamp)) {
+        if (! ctype_digit($timestamp) || abs(time() - (int) $timestamp) > 300) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 

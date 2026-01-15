@@ -20,8 +20,10 @@ const src = computed(() => {
 
   const u = new URL(`${baseUrl}/u/${props.user.id}`)
   u.searchParams.set('s', String(props.size))
-
   if (props.typ) u.searchParams.set('t', String(props.typ))
+
+  const v = localStorage.getItem('avatarV')
+  if (v) u.searchParams.set('v', v)
 
   return u.toString()
 })

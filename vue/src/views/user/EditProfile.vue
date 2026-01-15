@@ -164,6 +164,10 @@ async function save() {
       return
     }
 
+    if (me.userInfo?.id) {
+      localStorage.setItem('avatarV', String(Date.now()))
+    }
+
     verifiedGravatarHash.value = ''
     verifiedGravatarHint.value = ''
     saveOk.value = true
@@ -213,13 +217,6 @@ onMounted(() => {
         </div>
 
         <div v-else class="space-y-4">
-          <div class="flex items-center gap-3">
-            <AvatarIcon v-if="me.userInfo" :user="me.userInfo" :size="72" />
-            <div class="text-sm">
-              <div class="font-semibold">{{ user_name }}</div>
-            </div>
-          </div>
-
           <div class="text-sm font-semibold">아바타 선택</div>
 
           <ul class="space-y-2">
