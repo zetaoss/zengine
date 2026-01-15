@@ -165,7 +165,7 @@ async function save() {
     }
 
     if (me.userInfo?.id) {
-      localStorage.setItem('avatarV', String(Date.now()))
+      localStorage.setItem('v', String(Date.now()))
     }
 
     verifiedGravatarHash.value = ''

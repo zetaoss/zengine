@@ -37,7 +37,7 @@ class MwAuth
             return null;
         }
 
-        $url = 'http://127.0.0.1/w/api.php?action=query&meta=userinfo&uiprop=groups|blockinfo&format=json';
+        $url = env('API_SERVER').'/w/api.php?action=query&meta=userinfo&uiprop=groups|blockinfo&format=json';
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,

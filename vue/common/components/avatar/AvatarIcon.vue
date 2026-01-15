@@ -22,7 +22,7 @@ const src = computed(() => {
   u.searchParams.set('s', String(props.size))
   if (props.typ) u.searchParams.set('t', String(props.typ))
 
-  const v = localStorage.getItem('avatarV')
+  const v = localStorage.getItem('v')
   if (v) u.searchParams.set('v', v)
 
   return u.toString()
