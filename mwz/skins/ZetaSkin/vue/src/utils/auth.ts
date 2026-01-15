@@ -13,7 +13,7 @@ export function canWrite() {
 }
 
 export function canEdit(id: number) {
-  return isLoggedIn() && getRLCONF().avatar.id === id
+  return isLoggedIn() && getRLCONF().wgUserId === id
 }
 
 export function canDelete(id: number) {
