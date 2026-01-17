@@ -32,8 +32,8 @@ function devDist(): Plugin {
 }
 
 // https://vite.dev/config/
-export default defineConfig({
-  // dev
+export default defineConfig(({ command }) => ({
+  // serve (development)
   base: '/dev5174/',
   server: {
     allowedHosts: true,
@@ -41,7 +41,7 @@ export default defineConfig({
     port: 5174,
     strictPort: true,
   },
-  // build
+  // build (production)
   build: {
     outDir: '../resources/dist',
     emptyOutDir: true,
@@ -52,6 +52,9 @@ export default defineConfig({
       fileName: () => 'app.js',
       cssFileName: 'app',
     },
+  },
+  define: {
+    'process.env.NODE_ENV': JSON.stringify(command === 'build' ? 'production' : 'development'),
   },
   plugins: [
     vue(),
@@ -64,4 +67,4 @@ export default defineConfig({
       vue: 'vue/dist/vue.esm-bundler.js',
     },
   },
-})
+}))
