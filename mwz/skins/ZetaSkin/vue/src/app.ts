@@ -35,4 +35,3 @@ app.component('TocApex', TocApex)
 app.mount('#app')
 
 runbox()
-

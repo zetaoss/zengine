@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "cp dev/app.* ../resources/dist/ && vite",
-    "dev:restart": "fuser -k 5174/tcp || true && cp dev/app.* ../resources/dist/ && vite",
+    "dev": "vite",
+    "dev:restart": "fuser -k 5174/tcp || true && sleep 1 && vite",
     "build": "run-p type-check \"build-only {@}\" --",
     "watch": "vite build --watch",
     "test:unit": "vitest",
