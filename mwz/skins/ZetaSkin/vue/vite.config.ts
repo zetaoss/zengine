@@ -1,7 +1,27 @@
+import fs from 'node:fs'
+import path from 'node:path'
 import { fileURLToPath, URL } from 'node:url'
 
 import vue from '@vitejs/plugin-vue'
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
+
+function devDist(): Plugin {
+  return {
+    name: 'dev-dist',
+    apply: 'serve',
+    configureServer() {
+      const distDir = path.resolve(__dirname, '../resources/dist')
+      const appJsContent = `;(function () {
+  var s = document.createElement('script')
+  s.type = 'module'
+  s.src = '/dev5174/src/app.ts?v=' + Date.now()
+  document.head.appendChild(s)})()`
+      fs.mkdirSync(distDir, { recursive: true });
+      fs.writeFileSync(path.join(distDir, 'app.css'), '/* dev */', 'utf-8')
+      fs.writeFileSync(path.join(distDir, 'app.js'), appJsContent, 'utf-8')
+    },
+  }
+}
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -25,12 +45,9 @@ export default defineConfig({
       cssFileName: 'app',
     },
   },
-  // common
-  define: {
-    'process.env.NODE_ENV': JSON.stringify('production'),
-  },
   plugins: [
     vue(),
+    devDist(),
   ],
   resolve: {
     alias: {

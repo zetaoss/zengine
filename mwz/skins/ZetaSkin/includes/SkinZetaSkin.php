@@ -14,7 +14,8 @@ class SkinZetaSkin extends SkinMustache
     {
         $out->addHTMLClasses($_COOKIE['theme'] ?? '');
         $out->addHeadItem('css', '<link href="/w/skins/ZetaSkin/resources/dist/app.css" rel="stylesheet" />');
-        $out->addScript('<script type="module" src="/w/skins/ZetaSkin/resources/dist/app.js"></script>');
+        $out->addScript('<script src="/config.js"></script>');
+        $out->addScript('<script src="/w/skins/ZetaSkin/resources/dist/app.js"></script>');
         $out->addScript('<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='.getenv('ADSENSE_CLIENT').'" crossorigin="anonymous"></script>');
     }
 
