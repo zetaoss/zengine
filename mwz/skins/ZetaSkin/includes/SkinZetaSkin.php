@@ -13,10 +13,10 @@ class SkinZetaSkin extends SkinMustache
     public static function onBeforePageDisplay($out, $skin)
     {
         $out->addHTMLClasses($_COOKIE['theme'] ?? '');
-        $out->addHeadItem('css', '<link href="/w/skins/ZetaSkin/resources/dist/app.css" rel="stylesheet" />');
-        $out->addScript('<script src="/config.js"></script>');
-        $out->addScript('<script src="/w/skins/ZetaSkin/resources/dist/app.js"></script>');
-        $out->addScript('<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='.getenv('ADSENSE_CLIENT').'" crossorigin="anonymous"></script>');
+        $out->addHeadItem('adsense', '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='.getenv('ADSENSE_CLIENT').'" crossorigin="anonymous"></script>');
+        $out->addStyle('/w/skins/ZetaSkin/resources/dist/app.css');
+        $out->addScriptFile('/config.js');
+        $out->addScriptFile('/w/skins/ZetaSkin/resources/dist/app.js?v=231100');
     }
 
     public static function onMakeGlobalVariablesScript(array &$vars, $out)
