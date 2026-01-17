@@ -2,6 +2,9 @@
 # https://github.com/zetaoss/zbase/pkgs/container/zbase
 FROM ghcr.io/zetaoss/zbase:v0.43.602
 
+ARG ZENGINE_VERSION=v0.0.0
+ENV ZENGINE_VERSION=${ZENGINE_VERSION}
+
 # https://hub.docker.com/_/composer
 COPY --from=composer:2.9.2 /usr/bin/composer /usr/bin/composer
 
