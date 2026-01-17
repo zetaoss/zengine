@@ -31,3 +31,7 @@ coverage
 
 test-results/
 playwright-report/
+
+# z
+public/*.js
+public/*.txt
