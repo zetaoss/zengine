@@ -38,7 +38,7 @@ vue-audit:
 
 .PHONY: checks
 checks: vue-overrides vue-install vue-lint vue-build vue-audit
-	@echo "✅ All checks passed"
+	@echo "✅  All checks passed"
 
 .PHONY: vue-lint-fix
 vue-lint-fix:
@@ -48,3 +48,9 @@ vue-lint-fix:
 vue-audit-fix:
 	$(call run_pnpm,audit --fix)
 	$(call run_pnpm,install --no-frozen-lockfile)
+
+.PHONY: pnpm-update
+pnpm-update:
+	@echo "➡️  Updating pnpm to the latest version..."
+	corepack prepare pnpm@latest --activate
+	@echo "✅  pnpm updated to: $$(pnpm --version)"
