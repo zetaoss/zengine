@@ -53,9 +53,9 @@ export default defineConfig(({ command }) => ({
       cssFileName: 'app',
     },
   },
-  define: command === 'build'
-    ? { 'process.env.NODE_ENV': JSON.stringify('production') }
-    : {},
+  define: {
+    'process.env.NODE_ENV': JSON.stringify(command === 'build' ? 'production' : 'development'),
+  },
   plugins: [
     vue(),
     devDist(),
