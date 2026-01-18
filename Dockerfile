@@ -1,6 +1,6 @@
 ### Dockerfile
 # https://github.com/zetaoss/zbase/pkgs/container/zbase
-FROM ghcr.io/zetaoss/zbase:v0.43.602
+FROM ghcr.io/zetaoss/zbase:v0.43.604
 
 ARG APP_VERSION=v0.0.0
 ENV APP_VERSION=${APP_VERSION}
