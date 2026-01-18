@@ -1,13 +1,19 @@
 <!-- @/views/misc/TheOnelines.vue -->
 <script setup lang="ts">
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
+import { showConfirm } from '@common/ui/confirm/confirm'
+import { showToast } from '@common/ui/toast/toast'
+import ZButton from '@common/ui/ZButton.vue'
+import ZIcon from '@common/ui/ZIcon.vue'
 import ZSpinner from '@common/ui/ZSpinner.vue'
 import httpy from '@common/utils/httpy'
+import { mdiDelete } from '@mdi/js'
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import ThePagination from '@/components/pagination/ThePagination.vue'
 import type { PaginateData } from '@/components/pagination/types'
+import useAuthStore from '@/stores/auth'
 import linkify from '@/utils/linkify'
 
 interface Row {
@@ -19,6 +25,7 @@ interface Row {
 }
 
 const route = useRoute()
+const auth = useAuthStore()
 
 const page = computed(() => {
   const p = Number(route.query.page)
@@ -63,6 +70,22 @@ const fetchList = async () => {
   isLoading.value = false
 }
 
+const del = async (row: Row) => {
+  if (!auth.canDelete(row.user_id)) return
+  const ok = await showConfirm('이 한줄잡담을 삭제하시겠습니까 ? ')
+  if (!ok) return
+
+  const [, err] = await httpy.delete(`/api/onelines/${row.id}`)
+  if (err) {
+    console.error(err)
+    showToast(err.message || '삭제 실패')
+    return
+  }
+
+  showToast('삭제 완료')
+  fetchList()
+}
+
 watch(() => page.value, fetchList, { immediate: true })
 </script>
 
@@ -88,6 +111,10 @@ watch(() => page.value, fetchList, { immediate: true })
           <AvatarUser :user="{ id: r.user_id, name: r.user_name }" />
           <span class="ml-1" v-html="r.message" />
           <span class="z-muted2 ml-1 text-xs">{{ r.created.substring(0, 10) }}</span>
+          <ZButton v-if="auth.canDelete(r.user_id)" color="ghost" class="text-[#888] py-1 align-middle leading-none"
+            @click="del(r)">
+            <ZIcon :path="mdiDelete" />
+          </ZButton>
         </div>
       </div>
     </div>
