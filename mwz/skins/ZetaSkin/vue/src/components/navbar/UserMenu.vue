@@ -1,4 +1,4 @@
-<!-- NavbarUserMenu.vue -->
+<!-- @/src/components/navbar/UserMenu.vue -->
 <script setup lang="ts">
 import AvatarIcon from '@common/components/avatar/AvatarIcon.vue'
 import type Item from '@common/components/navbar/types'
@@ -36,7 +36,7 @@ useDismissable(root, {
     <button type="button" class="order-2 ml-auto flex h-12 cursor-pointer items-center px-3 hover:bg-gray-800"
       :class="{ 'bg-gray-800': open }" :aria-expanded="open" @click="toggle">
       <span v-if="wgUserId">
-        <AvatarIcon :user="{ id: wgUserId, name: wgUserName }" />
+        <AvatarIcon :size="20" :user="{ id: wgUserId, name: wgUserName }" />
       </span>
       <span v-else>
         <ZIcon :size="20" :path="mdiAccount" />

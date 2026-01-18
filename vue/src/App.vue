@@ -6,14 +6,14 @@ import ConfirmHost from '@common/ui/confirm/ConfirmHost.vue'
 import ToastHost from '@common/ui/toast/ToastHost.vue'
 import { RouterView } from 'vue-router'
 
-import NavbarMain from '@/components/navbar/NavbarMain.vue'
+import TheNavbar from '@/components/navbar/TheNavbar.vue'
 </script>
 
 <template>
   <ConfirmHost />
   <ToastHost />
   <div class="h-full min-h-screen flex flex-col">
-    <NavbarMain />
+    <TheNavbar />
     <main class="flex-1 w-full max-w-8xl mx-auto">
       <RouterView />
     </main>
