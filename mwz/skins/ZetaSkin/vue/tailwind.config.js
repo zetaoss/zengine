@@ -6,10 +6,4 @@ module.exports = {
     './common/**/*.{vue,js,ts,jsx,tsx}',
   ],
   darkMode: 'class',
-  theme: {
-    screens: {
-      'md': '900px',
-      'lg': '1200px',
-    },
-  },
 }

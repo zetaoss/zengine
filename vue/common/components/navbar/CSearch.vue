@@ -4,7 +4,7 @@ import { useDismissable } from '@common/composables/useDismissable'
 import ZIcon from '@common/ui/ZIcon.vue'
 import { mdiHistory, mdiMagnify, mdiShuffle } from '@mdi/js'
 import { useDebounceFn } from '@vueuse/core'
-import { computed, onBeforeUnmount,ref } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 
 interface Page {
   description: string
