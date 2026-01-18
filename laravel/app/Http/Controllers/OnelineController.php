@@ -10,19 +10,12 @@ class OnelineController extends Controller
 {
     public function recent()
     {
-        return Oneline::orderBy('id', 'desc')->take(15)->get();
+        return Oneline::orderByDesc('id')->take(15)->get();
     }
 
     public function index()
     {
-        return Oneline::query()
-            ->orderByDesc('id')
-            ->paginate(30);
-    }
-
-    public function show(Oneline $oneline)
-    {
-        //
+        return Oneline::orderByDesc('id')->paginate(30);
     }
 
     public function store(Request $request)
@@ -41,11 +34,6 @@ class OnelineController extends Controller
         ]);
 
         return $oneline;
-    }
-
-    public function update(Request $request, Oneline $oneline)
-    {
-        //
     }
 
     public function destroy(Oneline $oneline)
