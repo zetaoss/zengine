@@ -103,8 +103,7 @@ onMounted(load)
     <AvatarUser :user="{ id: r.user_id, name: r.user_name }" />
     <span class="ml-1" v-html="r.message" />
     <span class="z-muted2 ml-1 text-xs">{{ r.created.substring(0, 10) }}</span>
-    <ZButton v-if="canDelete(r.user_id)" color="ghost" class="text-gray-500 py-1 align-middle leading-none"
-      @click="del(r)">
+    <ZButton v-if="canDelete(r.user_id)" color="ghost" class="z-muted3 py-1 align-middle leading-none" @click="del(r)">
       <ZIcon :path="mdiDelete" />
     </ZButton>
   </div>
