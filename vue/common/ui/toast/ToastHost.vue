@@ -1,9 +1,9 @@
-<!-- GlobalToast.vue -->
+<!-- ToastHost.vue -->
 <template>
   <Teleport to="body">
-    <div class="fixed bottom-11 right-2 z-50">
+    <div class="fixed top-2 right-2 z-50">
       <TransitionGroup name="fade" tag="div">
-        <div v-for="t in toasts" :key="t.id" class="w-48 mt-1 rounded bg-slate-500/80 text-white shadow-md">
+        <div v-for="t in toasts" :key="t.id" class="w-56 mt-1 rounded bg-slate-500/80 text-white shadow-md">
           <div class="px-4 py-2">{{ t.message }}</div>
           <hr class="toast-bar h-1 bg-black/50 rounded" :style="{ animationDuration: `${t.timeout}ms` }" />
         </div>
@@ -13,8 +13,7 @@
 </template>
 
 <script setup lang="ts">
-import { useToast } from './useToast'
-const { toasts } = useToast()
+import { toasts } from './toast'
 </script>
 
 <style scoped>

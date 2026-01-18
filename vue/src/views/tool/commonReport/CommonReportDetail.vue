@@ -1,8 +1,8 @@
 <!-- @/views/tool/commonReport/CommonReportDetail.vue -->
 <script setup lang="ts">
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
-import { useConfirm } from '@common/composables/confirm/useConfirm'
-import { useToast } from '@common/composables/toast/useToast'
+import { showConfirm } from '@common/ui/confirm/confirm'
+import { showToast } from '@common/ui/toast/toast'
 import ZButton from '@common/ui/ZButton.vue'
 import ZFold from '@common/ui/ZFold.vue'
 import ZIcon from '@common/ui/ZIcon.vue'
@@ -18,15 +18,13 @@ import useAuthStore from '@/stores/auth'
 import RouterLinkButton from '@/ui/RouterLinkButton.vue'
 import copyToClipboard from '@/utils/clipboard'
 
-import Star from './Star.vue'
+import TheStar from './TheStar.vue'
 import type { Row } from './types'
 import { getRatio, getScore, getWikitextTable } from './utils'
 
 const me = useAuthStore()
 const route = useRoute()
 const router = useRouter()
-const toast = useToast()
-const confirm = useConfirm()
 
 const id = Number(route.params.id as string)
 const row = ref({} as Row)
@@ -87,18 +85,18 @@ function handleCopy(action: CopyAction) {
 }
 
 async function del(r: Row) {
-  const ok = await confirm(`'${r.items[0].name}' 등에 관한 #${r.id}번 통용보고서를 삭제하시겠습니까?`)
+  const ok = await showConfirm(`'${r.items[0].name}' 등에 관한 #${r.id}번 통용보고서를 삭제하시겠습니까?`)
   if (!ok) return
 
   const [, err] = await httpy.delete(`/api/common-report/${r.id}`)
 
   if (err) {
     console.error(err)
-    toast.show('삭제 실패')
+    showToast('삭제 실패')
     return
   }
 
-  toast.show('삭제 완료')
+  showToast('삭제 완료')
   router.push({ path: '/tool/common-report' })
 }
 
@@ -125,7 +123,7 @@ async function fetchDataWithRetry(retryDelay = 1000) {
 async function rerun(r: Row) {
   const [, err] = await httpy.post(`/api/common-report/${r.id}/rerun`)
   if (err) {
-    toast.show('재실행 실패')
+    showToast('재실행 실패')
     return
   }
 
@@ -189,7 +187,7 @@ fetchDataWithRetry()
             <th colspan="2">판정</th>
             <td v-for="(_, idx) in row.items" :key="idx">
               <span v-if="idx == 0">
-                <Star :n="getScore(row)" />
+                <TheStar :n="getScore(row)" />
               </span>
               <span v-else>—</span>
             </td>

@@ -1,4 +1,4 @@
-<!-- eslint-disable vue/multi-word-component-names -->
+<!-- @/views/tool/TheTool.vue -->
 <template>
   <div class="h-full grid md:grid-cols-[120px_1fr]">
     <aside class="h-full p-4 z-bg-muted">

@@ -35,6 +35,9 @@ Route::post('/me/avatar', [AuthController::class, 'updateAvatar'])->middleware('
 Route::get('/me/gravatar/verify', [AuthController::class, 'verifyGravatar'])->middleware('mwauth');
 
 Route::get('/onelines/recent', [OnelineController::class, 'recent']);
+Route::get('/onelines', [OnelineController::class, 'index']);
+Route::post('/onelines', [OnelineController::class, 'store'])->middleware('mwauth');
+Route::delete('/onelines/{oneline}', [OnelineController::class, 'destroy'])->middleware('mwauth');
 
 Route::get('/posts', [PostController::class, 'index']);
 Route::get('/posts/recent', [PostController::class, 'recent']);

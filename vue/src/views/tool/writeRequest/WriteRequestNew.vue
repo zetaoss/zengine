@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import CProgressBar from '@common/components/CProgressBar.vue'
-import { useToast } from '@common/composables/toast/useToast'
+import { showToast } from '@common/ui/toast/toast'
 import ZModal from '@common/ui/ZModal.vue'
 import httpy from '@common/utils/httpy'
 import { computed, nextTick,ref, watch } from 'vue'
 
 import titleExist from '@/utils/mediawiki'
-
-const toast = useToast();
 
 const emit = defineEmits<{
   (e: 'close'): void
@@ -62,13 +60,13 @@ async function ok() {
   })
   if (err) {
     console.error(err)
-    toast.show('등록에 실패했습니다. 잠시 후 다시 시도해주세요.')
+    showToast('등록에 실패했습니다. 잠시 후 다시 시도해주세요.')
     reset()
     return
   }
 
   emit('close')
-  toast.show('등록 완료')
+  showToast('등록 완료')
   reset()
 }
 

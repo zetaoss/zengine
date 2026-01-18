@@ -1,4 +1,3 @@
-<!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
 import ZCard from '@common/ui/ZCard.vue'
 
@@ -26,7 +25,7 @@ import HomeOnelines from './HomeOnelines.vue'
     <div class="my-5 grid gap-4 md:grid-cols-[2fr_2fr_1fr]">
       <ZCard>
         <template #header>
-          한줄잡담
+          <a href="/onelines">한줄잡담</a>
         </template>
         <HomeOnelines />
       </ZCard>
