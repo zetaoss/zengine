@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { useToast } from '@common/composables/toast/useToast'
+import { showToast } from '@common/ui/toast/toast'
 import ZModal from '@common/ui/ZModal.vue'
 import httpy from '@common/utils/httpy'
 import { computed, nextTick, ref, watch } from 'vue'
 
-const toast = useToast()
 
 const emit = defineEmits<{
   (e: 'close'): void
@@ -41,7 +40,7 @@ async function ok() {
     return
   }
 
-  toast.show('등록 완료')
+  showToast('등록 완료')
   emit('close')
 }
 

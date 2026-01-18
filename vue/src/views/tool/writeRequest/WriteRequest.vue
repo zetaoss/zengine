@@ -2,8 +2,8 @@
 <script setup lang="ts">
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import CProgressBar from '@common/components/CProgressBar.vue'
-import { useConfirm } from '@common/composables/confirm/useConfirm'
-import { useToast } from '@common/composables/toast/useToast'
+import { showConfirm } from '@common/ui/confirm/confirm'
+import { showToast } from '@common/ui/toast/toast'
 import ZButton from '@common/ui/ZButton.vue'
 import ZIcon from '@common/ui/ZIcon.vue'
 import ZSpinner from '@common/ui/ZSpinner.vue'
@@ -44,8 +44,6 @@ interface Count {
 const me = useAuthStore()
 const route = useRoute()
 const router = useRouter()
-const toast = useToast()
-const confirm = useConfirm()
 
 const mode = ref<'todo' | 'todo-top' | 'done'>('todo')
 const respData = ref({} as RespData)
@@ -127,7 +125,7 @@ function setMode(m: 'todo' | 'todo-top' | 'done') {
 }
 
 async function del(row: Row) {
-  const ok = await confirm(`'${row.title}' 작성요청을 삭제하시겠습니까 ? `)
+  const ok = await showConfirm(`'${row.title}' 작성요청을 삭제하시겠습니까 ? `)
   if (!ok) return
 
   const [, err] = await httpy.delete(`/api/write-request/${row.id}`)
@@ -137,7 +135,7 @@ async function del(row: Row) {
   }
 
   fetchData()
-  toast.show('삭제 완료')
+  showToast('삭제 완료')
 }
 
 watch(() => [route.params.page, route.query.page], fetchData, { immediate: true })
