@@ -17,7 +17,7 @@ import RouterLinkButton from '@/ui/RouterLinkButton.vue'
 
 import CommonReportNew from './CommonReportNew.vue'
 import { useRetrier } from './retrier'
-import Star from './Star.vue'
+import TheStar from './TheStar.vue'
 import type { Row } from './types'
 import { getRatio, getScore } from './utils'
 
@@ -165,7 +165,7 @@ onUnmounted(() => retrier.clear())
                 <span v-else-if="row.phase === 'failed'">
                   ❌ Error
                 </span>
-                <Star v-else :n="getScore(row)" />
+                <TheStar v-else :n="getScore(row)" />
               </template>
             </td>
           </tr>
