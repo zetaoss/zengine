@@ -1,4 +1,4 @@
-<!-- @/components/navbar/NavbarUserMenu.vue -->
+<!-- @/components/navbar/UserMenu.vue -->
 <script setup lang="ts">
 import AvatarIcon from '@common/components/avatar/AvatarIcon.vue'
 import type Item from '@common/components/navbar/types'
@@ -54,7 +54,7 @@ watch(() => route.path, close)
     <button type="button"
       class="order-2 ml-auto flex h-12 w-12 items-center justify-center hover:bg-gray-800 md:w-auto md:px-3"
       :class="{ 'bg-gray-800': open }" :aria-expanded="open" @click="toggle">
-      <AvatarIcon v-if="me.isLoggedIn && me.userInfo" :user="me.userInfo" :size="32" />
+      <AvatarIcon v-if="me.isLoggedIn && me.userInfo" :user="me.userInfo" :size="20" />
       <ZIcon v-else :size="20" :path="mdiAccount" />
     </button>
 

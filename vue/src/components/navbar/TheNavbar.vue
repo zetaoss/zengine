@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import CNavbarSearch from '@common/components/navbar/CNavbarSearch.vue'
+import CSearch from '@common/components/navbar/CSearch.vue'
 
-import NavbarUserMenu from './NavbarUserMenu.vue'
+import UserMenu from './UserMenu.vue'
 </script>
 
 <template>
@@ -24,11 +24,11 @@ import NavbarUserMenu from './NavbarUserMenu.vue'
       </div>
       <div class="order-2 contents md:flex md:items-stretch md:ml-auto md:w-auto md:flex-1 md:max-w-2xl">
         <div class="md:group order-2 ml-auto contents md:relative md:inline-block">
-          <NavbarUserMenu />
+          <UserMenu />
         </div>
         <div class="order-3 basis-full min-w-0 md:order-1 md:basis-auto md:flex-1">
           <div v-if="$route.meta.tab == 'wiki'">
-            <CNavbarSearch />
+            <CSearch />
           </div>
         </div>
       </div>
