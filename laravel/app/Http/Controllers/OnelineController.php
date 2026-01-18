@@ -40,9 +40,7 @@ class OnelineController extends Controller
             'created' => now()->toDateTimeString(),
         ]);
 
-        return Oneline::query()
-            ->where('id', (int) $oneline->id)
-            ->firstOrFail();
+        return $oneline;
     }
 
     public function update(Request $request, Oneline $oneline)

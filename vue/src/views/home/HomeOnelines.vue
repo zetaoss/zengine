@@ -41,7 +41,7 @@ const load = async () => {
 
 const submit = async () => {
   if (!canWrite.value) {
-    showToast('로그인하면 글을 쓸 수 있어요.')
+    showToast('작성 불가')
     return
   }
   if (!canSubmit.value) return
@@ -52,6 +52,7 @@ const submit = async () => {
   })
   if (err) {
     console.error('create oneline', err)
+    showToast(err.message || '등록 실패')
     isSubmitting.value = false
     return
   }
