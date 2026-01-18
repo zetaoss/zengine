@@ -1,13 +1,17 @@
 <!-- @/views/misc/TheOnelines.vue -->
 <script setup lang="ts">
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
+import ZButton from '@common/ui/ZButton.vue'
+import ZIcon from '@common/ui/ZIcon.vue'
 import ZSpinner from '@common/ui/ZSpinner.vue'
 import httpy from '@common/utils/httpy'
+import { mdiDelete } from '@mdi/js'
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import ThePagination from '@/components/pagination/ThePagination.vue'
 import type { PaginateData } from '@/components/pagination/types'
+import { useOnelineDelete } from '@/composables/useOnelineDelete'
 import linkify from '@/utils/linkify'
 
 interface Row {
@@ -29,6 +33,11 @@ const rows = ref<Row[]>([])
 const paginateData = ref<PaginateData | null>(null)
 const isLoading = ref(false)
 const loadError = ref<string | null>(null)
+const { del, canDelete } = useOnelineDelete({
+  onSuccess: () => {
+    fetchList()
+  },
+})
 
 const fetchList = async () => {
   isLoading.value = true
@@ -88,6 +97,10 @@ watch(() => page.value, fetchList, { immediate: true })
           <AvatarUser :user="{ id: r.user_id, name: r.user_name }" />
           <span class="ml-1" v-html="r.message" />
           <span class="z-muted2 ml-1 text-xs">{{ r.created.substring(0, 10) }}</span>
+          <ZButton v-if="canDelete(r.user_id)" color="ghost" class="z-muted3 py-1 align-middle leading-none"
+            @click="del(r)">
+            <ZIcon :path="mdiDelete" />
+          </ZButton>
         </div>
       </div>
     </div>

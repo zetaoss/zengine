@@ -2,9 +2,13 @@
 <script setup lang="ts">
 import AvatarUser from '@common/components/avatar/AvatarUser.vue'
 import { showToast } from '@common/ui/toast/toast'
+import ZButton from '@common/ui/ZButton.vue'
+import ZIcon from '@common/ui/ZIcon.vue'
 import httpy from '@common/utils/httpy'
+import { mdiDelete } from '@mdi/js'
 import { computed, onMounted, ref } from 'vue'
 
+import { useOnelineDelete } from '@/composables/useOnelineDelete'
 import useAuthStore from '@/stores/auth'
 import linkify from '@/utils/linkify'
 
@@ -23,6 +27,11 @@ const auth = useAuthStore()
 const trimmedMessage = computed(() => message.value.trim())
 const canSubmit = computed(() => trimmedMessage.value.length > 0 && !isSubmitting.value)
 const canWrite = computed(() => auth.canWrite())
+const { del, canDelete } = useOnelineDelete({
+  onSuccess: (row) => {
+    rows.value = rows.value.filter((item) => item.id !== row.id)
+  },
+})
 
 const load = async () => {
   const [data, err] = await httpy.get<Row[]>('/api/onelines/recent')
@@ -94,5 +103,8 @@ onMounted(load)
     <AvatarUser :user="{ id: r.user_id, name: r.user_name }" />
     <span class="ml-1" v-html="r.message" />
     <span class="z-muted2 ml-1 text-xs">{{ r.created.substring(0, 10) }}</span>
+    <ZButton v-if="canDelete(r.user_id)" color="ghost" class="z-muted3 py-1 align-middle leading-none" @click="del(r)">
+      <ZIcon :path="mdiDelete" />
+    </ZButton>
   </div>
 </template>

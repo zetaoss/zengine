@@ -5,7 +5,9 @@
         "editorconfig.editorconfig",
         "evgenius33.laravel-pint-fixer",
         "laravel.vscode-laravel",
+        "ms-azuretools.vscode-containers",
         "ms-vscode.makefile-tools",
+        "openai.chatgpt",
         "shufo.vscode-blade-formatter",
         "vitest.explorer",
         "vue.volar"
