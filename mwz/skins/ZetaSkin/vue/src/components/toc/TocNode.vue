@@ -42,7 +42,7 @@ const onClick = (e: MouseEvent) => {
     :style="{ paddingLeft: `calc((${props.depth} + 1) * 0.75rem)` }" @click="onClick">
     <span class="shrink-0 z-muted3">
       <span>{{ number }}</span>
-      <span v-if='depth == 0'>.</span>
+      <span v-if="depth === 0">.</span>
     </span>
     <span class="flex-1">{{ label }}</span>
   </a>
