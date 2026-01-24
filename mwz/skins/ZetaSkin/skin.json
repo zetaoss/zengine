@@ -28,7 +28,8 @@
       "args": [
         {
           "name": "zetaskin",
-          "responsive": true
+          "responsive": true,
+          "toc": false
         }
       ]
     }

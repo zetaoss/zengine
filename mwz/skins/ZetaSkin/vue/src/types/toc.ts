@@ -1,3 +1,5 @@
+// @/types/toc.ts
+
 export interface Section {
   toclevel: number
   level: string
