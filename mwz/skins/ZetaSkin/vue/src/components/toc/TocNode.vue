@@ -37,7 +37,7 @@ const onClick = (e: MouseEvent) => {
 </script>
 
 <template>
-  <a :href="`#${anchor}`" :class="{ 'border-[#888]': isInView && props.showRail, 'border-l-2 pl-2': props.showRail }"
+  <a :href="`#${anchor}`" :class="{ 'border-[#888]': isInView && props.showRail, 'border-l-2': props.showRail }"
     class="flex w-full items-start gap-1 z-muted hover:no-underline hover:text-[var(--link)]"
     :style="{ paddingLeft: `calc((${props.depth} + 1) * 0.75rem)` }" @click="onClick">
     <span class="shrink-0 z-muted3">
