@@ -76,8 +76,8 @@ onMounted(centerScrollIfCurrent)
     </div>
 
     <ul v-if="hasChildren" v-show="expanded" class="p-0 m-0">
-      <BinderNode v-for="(n, i) in node.nodes" :key="n.text" :node="n" :depth="depth + 1" :wgArticleId="wgArticleId"
-        :binderId="binderId" :parentPath="key" :idx="i" @reveal="handleReveal" />
+      <BinderNode v-for="n in node.nodes" :key="n.text" :node="n" :depth="depth + 1" :wgArticleId="wgArticleId"
+        :binderId="binderId" @reveal="handleReveal" />
     </ul>
   </li>
 </template>
