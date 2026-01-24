@@ -1,22 +1,23 @@
 <!-- TocApex.vue -->
 <script setup lang="ts">
-import { scrollToBottom,scrollToTop } from '@common/utils/scroll'
-import type { PropType } from 'vue'
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 import CapSticky from '@/components/CapSticky.vue'
 import { useScrollSpy } from '@/composables/useScrollSpy'
+import type { Section } from '@/types/toc'
+import getRLCONF from '@/utils/rlconf'
 
-import TocNode from './TocNode.vue'
-import type { Section } from './types'
+import TocTree from './TocTree.vue'
 
 const props = defineProps({
-  toc: { type: [Object, String] as PropType<Section | string>, required: true },
   headerOffset: { type: Number, default: 64 },
+  side: { type: Boolean, default: false },
 })
 
+const { dataToc } = getRLCONF()
+
 const tocObj = computed<Section | null>(() =>
-  typeof props.toc === 'object' && props.toc !== null ? (props.toc as Section) : null
+  typeof dataToc === 'object' && dataToc !== null ? (dataToc as Section) : null
 )
 
 const flattenAnchors = (root?: Section | null): string[] => {
@@ -31,36 +32,52 @@ const flattenAnchors = (root?: Section | null): string[] => {
 }
 
 const anchors = computed(() => flattenAnchors(tocObj.value))
-const { activeIds } = useScrollSpy(anchors, props.headerOffset)
+const tocRef = ref<HTMLElement | null>(null)
+const isTocPast = ref(false)
+const isDrawerMode = computed(() => !props.side && isTocPast.value)
+const enableScrollSpy = computed(() => props.side || isDrawerMode.value)
 
-const scrollToAnchor = (id: string) => {
-  const el = document.getElementById(id)
-  if (!el) return
-  const top = el.getBoundingClientRect().top + window.scrollY - props.headerOffset
-  window.scrollTo({ top, behavior: 'smooth' })
-}
+const { activeIds: spyActiveIds } = useScrollSpy(anchors, props.headerOffset)
+const activeIds = computed(() =>
+  enableScrollSpy.value ? spyActiveIds.value : []
+)
+
+onMounted(() => {
+  if (props.side || !('IntersectionObserver' in window)) return
+  let observer: IntersectionObserver | null = null
+
+  const observeToc = () => {
+    if (observer) observer.disconnect()
+    if (!tocRef.value) return
+    observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry) return
+        isTocPast.value = entry.boundingClientRect.bottom <= props.headerOffset
+      },
+      { rootMargin: `-${props.headerOffset}px 0px 0px 0px`, threshold: 0 }
+    )
+    observer.observe(tocRef.value)
+  }
+
+  observeToc()
+  watch(tocRef, observeToc)
+
+  onBeforeUnmount(() => {
+    if (observer) observer.disconnect()
+  })
+})
+
 </script>
 
 <template>
-  <CapSticky :marginY="16">
-    <nav>
-      <ul v-if="tocObj" class="text-sm tracking-tight list-none m-0 p-0 z-muted">
-        <li class="m-0 mb-2 flex items-center gap-1">
-          <button type="button" @click="scrollToTop">
-            페이지 목차
-          </button>
-        </li>
-
-        <li v-for="s in tocObj['array-sections'] ?? []" :key="s.index ?? s.anchor" class="m-0">
-          <TocNode :section="s" :target-ids="activeIds" :depth="0" @navigate="scrollToAnchor" />
-        </li>
-
-        <li class="mt-2 opacity-50">
-          <button @click="scrollToBottom">
-            ∨
-          </button>
-        </li>
-      </ul>
-    </nav>
+  <CapSticky v-if="side && tocObj" :marginY="16">
+    <TocTree :toc="tocObj" :active-ids="activeIds" :header-offset="props.headerOffset" />
   </CapSticky>
+
+  <div v-else-if="tocObj" ref="tocRef">
+    <div class="inline-block rounded-md border border-slate-200 p-3 my-3">
+      <TocTree :toc="tocObj" :active-ids="activeIds" :header-offset="props.headerOffset" :show-rail="false" />
+    </div>
+  </div>
+
 </template>

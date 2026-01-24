@@ -5,15 +5,17 @@ import { mdiChevronRight } from '@mdi/js'
 import { useStorage } from '@vueuse/core'
 import { computed, nextTick, onMounted, type PropType, ref, watchEffect } from 'vue'
 
-import type { BinderNodeType } from './types'
+import type { BinderNodeData } from '@/types/binder'
+
+defineOptions({
+  name: 'BinderNode'
+})
 
 const props = defineProps({
-  node: { type: Object as PropType<BinderNodeType>, required: true },
+  node: { type: Object as PropType<BinderNodeData>, required: true },
   depth: { type: Number, default: 0 },
   wgArticleId: { type: Number, required: true },
   binderId: { type: Number, required: true },
-  parentPath: { type: String, default: '' },
-  idx: { type: Number, default: 0 },
 })
 const emit = defineEmits<{ (e: 'reveal'): void }>()
 
@@ -21,7 +23,7 @@ const isCurrent = computed(() => props.node.id === props.wgArticleId)
 const isLink = computed(() => !!props.node.href)
 const hasChildren = computed(() => !!props.node.nodes?.length)
 
-const key = `${props.parentPath}/${props.idx}`
+const key = String(props.node.id)
 const storageKey = computed(() => `binder-${props.binderId}`)
 const expandedMap = useStorage<Record<string, number>>(storageKey, {}, localStorage)
 const expanded = ref(props.depth === 0)

@@ -103,8 +103,7 @@ class SkinZetaSkin extends SkinMustache
             'info' => $toolbox['info'] ?? null,
         ]));
 
-        $data['hasTOC'] = ! empty($data['data-toc']);
-        $data['jsonTOC'] = json_encode($data['data-toc'] ?? []);
+        $data['hasToc'] = ! empty($data['data-toc']);
         $data['jsonUserMenu'] = json_encode(array_filter([
             'login' => $userMenu['login'] ?? null,
             'createaccount' => $userMenu['createaccount'] ?? null,
@@ -126,6 +125,8 @@ class SkinZetaSkin extends SkinMustache
                 'slotBottom' => getenv('ADSENSE_SLOT_BOTTOM'),
             ];
         }
+
+        $this->getOutput()->addJsConfigVars('dataToc', $data['data-toc'] ?? []);
 
         return $data;
     }
