@@ -11,6 +11,8 @@ COPY --from=composer:2.9.2 /usr/bin/composer /usr/bin/composer
 COPY . /app/
 
 RUN set -eux \
+    && APP_VERSION_STRIPPED="${APP_VERSION#v}" \
+    && sed -i "s/\"version\": \".*\"/\"version\": \"${APP_VERSION_STRIPPED}\"/" /app/mwz/skins/ZetaSkin/skin.json \
     && mv     /var/www/html                     /app/w \
     && cp -a  /app/w/composer.local.json-sample /app/w/composer.local.json \
     && ln -rs /app/mwz/extensions/ZetaExtension /app/w/extensions/ \
