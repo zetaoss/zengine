@@ -68,8 +68,14 @@
           </div>
           <hr />
 
+          {{#hasToc}}
+          <div class="{{#hasBinders}}lg:hidden{{/hasBinders}}{{^hasBinders}}md:hidden{{/hasBinders}}">
+            <toc-apex></toc-apex>
+          </div>
+          {{/hasToc}}
+
           <article id="content" data-mw-ve-target-container class="py-6 pb-10" v-pre>
-            {{{ html-body-content }}}
+          {{{ html-body-content }}}
           </article>
 
           {{#ads}}
@@ -89,12 +95,11 @@
         </div>
       </div>
 
-
-      {{#hasTOC}}
-      <div class="hidden hb-lg-md-block flex-none w-60 pr-3">
-        <toc-apex :toc='{{{ jsonTOC }}}'></toc-apex>
+      {{#hasToc}}
+      <div class="hidden {{#hasBinders}}lg:block{{/hasBinders}}{{^hasBinders}}md:block{{/hasBinders}} flex-none w-60 pr-3">
+        <toc-apex side></toc-apex>
       </div>
-      {{/hasTOC}}
+      {{/hasToc}}
 
     </div>
   </main>
