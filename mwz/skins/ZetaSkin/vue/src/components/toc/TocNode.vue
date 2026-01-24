@@ -37,13 +37,14 @@ const onClick = (e: MouseEvent) => {
 </script>
 
 <template>
-  <a :href="`#${anchor}`" :class="{ 'border-[#888]': isInView && props.showRail, 'border-l-2 pl-2': props.showRail }"
-    class="block w-full z-muted hover:no-underline hover:text-[var(--link)]" @click="onClick">
-    <span class="z-muted3" :style="{ paddingLeft: `calc(${props.depth} * 0.75rem)` }">
+  <a :href="`#${anchor}`" :class="{ 'border-[#888]': isInView && props.showRail, 'border-l-2': props.showRail }"
+    class="flex w-full items-start gap-1 z-muted hover:no-underline hover:text-[var(--link)]"
+    :style="{ paddingLeft: `calc((${props.depth} + 1) * 0.75rem)` }" @click="onClick">
+    <span class="shrink-0 z-muted3">
       <span>{{ number }}</span>
-      <span v-if='depth == 0'>.</span>
+      <span v-if="depth === 0">.</span>
     </span>
-    {{ label }}
+    <span class="flex-1">{{ label }}</span>
   </a>
 
   <ul v-if="children?.length > 0" class="p-0 list-none" role="list">

@@ -1,44 +1,18 @@
 /* toc.css */
+.toc-inline {
+  @apply md:hidden;
+}
+
+.toc-side {
+  @apply hidden md:block;
+}
+
 .has-binders {
-  & #toc {
-    @apply inline-block lg:hidden;
-  }
-}
-
-#toc {
-  @apply inline-block md:hidden text-sm;
-
-  &>ul {
-    padding: 1em 1.5em;
-    border: 1px solid;
-    border-top: 0;
-    border-radius: 0 0 4px 4px;
-    margin: 0;
-    @apply border-[#88888833] dark:border-[#383838];
+  .toc-inline {
+    @apply md:block lg:hidden;
   }
 
-  & ul {
-    @apply list-none;
+  .toc-side {
+    @apply md:hidden lg:block;
   }
-
-  & a {
-    @apply no-underline z-text;
-  }
-}
-
-.toctitle {
-  border-width: 1px;
-  background-color: #7bc3;
-  border-radius: 3px 3px 0 0;
-  padding: 1em 1em 0.6em 1.3em;
-
-  & h2 {
-    margin: 0;
-    padding: 0;
-    font-size: 1.3em;
-  }
-}
-
-.tocnumber {
-  @apply opacity-50;
 }

@@ -1,64 +1,64 @@
 /* mw-headings.css */
 .mediawiki {
 
-    h2,
-    h3,
-    h4,
-    h5,
-    h6 {
-        margin: 2rem 0 1rem 0;
-        letter-spacing: -0.025em;
-    }
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin: 2rem 0 1rem 0;
+    letter-spacing: -0.025em;
+  }
 }
 
 .mw-parser-output {
-    .mw-headline::before {
-        color: var(--z-muted3);
+  .mw-headline::before {
+    color: var(--z-muted3);
+  }
+
+  counter-reset: h2 h3 h4 h5 h6;
+
+  h2 {
+    counter-increment: h2;
+    counter-reset: h3 h4 h5 h6;
+
+    >.mw-headline::before {
+      content: counter(h2) ". ";
     }
+  }
 
-    counter-reset: sec-h2 sec-h3 sec-h4 sec-h5 sec-h6;
+  h3 {
+    counter-increment: h3;
+    counter-reset: h4 h5 h6;
 
-    h2 {
-        counter-increment: sec-h2;
-        counter-reset: sec-h3 sec-h4 sec-h5 sec-h6;
-
-        >.mw-headline::before {
-            content: counter(sec-h2) ". ";
-        }
+    >.mw-headline::before {
+      content: counter(h2) "." counter(h3) " ";
     }
+  }
 
-    h3 {
-        counter-increment: sec-h3;
-        counter-reset: sec-h4 sec-h5 sec-h6;
+  h4 {
+    counter-increment: h4;
+    counter-reset: h5 h6;
 
-        >.mw-headline::before {
-            content: counter(sec-h2) "." counter(sec-h3) " ";
-        }
+    >.mw-headline::before {
+      content: counter(h2) "." counter(h3) "." counter(h4) " ";
     }
+  }
 
-    h4 {
-        counter-increment: sec-h4;
-        counter-reset: sec-h5 sec-h6;
+  h5 {
+    counter-increment: h5;
+    counter-reset: h6;
 
-        >.mw-headline::before {
-            content: counter(sec-h2) "." counter(sec-h3) "." counter(sec-h4) " ";
-        }
+    >.mw-headline::before {
+      content: counter(h2) "." counter(h3) "." counter(h4) "." counter(h5) " ";
     }
+  }
 
-    h5 {
-        counter-increment: sec-h5;
-        counter-reset: sec-h6;
+  h6 {
+    counter-increment: h6;
 
-        >.mw-headline::before {
-            content: counter(sec-h2) "." counter(sec-h3) "." counter(sec-h4) "." counter(sec-h5) " ";
-        }
+    >.mw-headline::before {
+      content: counter(h2) "." counter(h3) "." counter(h4) "." counter(h5) "." counter(h6) " ";
     }
-
-    h6 {
-        counter-increment: sec-h6;
-
-        >.mw-headline::before {
-            content: counter(sec-h2) "." counter(sec-h3) "." counter(sec-h4) "." counter(sec-h5) "." counter(sec-h6) " ";
-        }
-    }
+  }
 }
