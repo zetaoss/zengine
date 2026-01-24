@@ -38,7 +38,7 @@ const onNavigate = (id: string) => {
     <ul class="text-sm tracking-tight list-none m-0 p-0 z-muted">
       <li class="m-0 mb-2 flex items-center gap-1">
         <button type="button" @click="scrollToTop">
-          페이지 목차
+          목차
         </button>
       </li>
       <li v-for="s in sections" :key="s.index ?? s.anchor" class="m-0">

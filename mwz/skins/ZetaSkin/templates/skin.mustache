@@ -69,7 +69,7 @@
           <hr />
 
           {{#hasToc}}
-          <div class="{{#hasBinders}}lg:hidden{{/hasBinders}}{{^hasBinders}}md:hidden{{/hasBinders}}">
+          <div class="toc-inline">
             <toc-apex></toc-apex>
           </div>
           {{/hasToc}}
@@ -96,7 +96,7 @@
       </div>
 
       {{#hasToc}}
-      <div class="hidden {{#hasBinders}}lg:block{{/hasBinders}}{{^hasBinders}}md:block{{/hasBinders}} flex-none w-60 pr-3">
+      <div class="toc-side flex-none w-60 pr-3">
         <toc-apex side></toc-apex>
       </div>
       {{/hasToc}}
