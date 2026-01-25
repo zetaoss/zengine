@@ -15,7 +15,7 @@ RUN echo run build \
     && cd /app/mwz/skins/ZetaSkin/vue && pnpm run build
 
 # https://github.com/zetaoss/zbase/pkgs/container/zbase
-FROM ghcr.io/zetaoss/zbase:v0.43.608
+FROM ghcr.io/zetaoss/zbase:v0.43.609
 
 ARG APP_VERSION=v0.0.0
 ENV APP_VERSION=${APP_VERSION}
