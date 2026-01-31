@@ -1,13 +1,13 @@
 {
   "css.lint.unknownAtRules": "ignore",
-  "scss.lint.unknownAtRules": "ignore",
   "makefile.configureOnOpen": false,
   "remote.autoForwardPorts": true,
   "laravel-pint-fixer.pintBinPath": "/app/laravel/vendor/laravel/pint/builds/pint",
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
   "[php]": {
     "editor.defaultFormatter": "evgenius33.laravel-pint-fixer"
   },
   "[vue]": {
-    "editor.defaultFormatter": "Vue.volar",
-  },
+    "editor.defaultFormatter": "Vue.volar"
+  }
 }

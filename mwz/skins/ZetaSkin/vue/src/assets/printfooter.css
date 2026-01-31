@@ -2,7 +2,7 @@
 @reference 'tailwindcss';
 
 @media screen {
-    .printfooter {
-        @apply invisible;
-    }
+  .printfooter {
+    @apply invisible;
+  }
 }

@@ -22,7 +22,12 @@ export function getScore(row: Row): number {
   return Math.floor(Math.max(0, Math.min(weightedDominance / maxWeight, 1)) * 4)
 }
 
-export function getWikitextTable(table: HTMLTableElement, id: number, url: string, createdAt: string) {
+export function getWikitextTable(
+  table: HTMLTableElement,
+  id: number,
+  url: string,
+  createdAt: string,
+) {
   // get rows
   let number = 0
   const rows = [] as string[][]

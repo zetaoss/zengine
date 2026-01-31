@@ -6,14 +6,13 @@
 }
 
 article {
-
   & input,
   & select,
   & textarea {
     @apply border;
   }
 
-  & input[type="submit"] {
+  & input[type='submit'] {
     background-color: var(--z-btn);
     color: var(--z-text);
 
@@ -44,12 +43,12 @@ article {
     }
   }
 
-  & input[type="file"] {
+  & input[type='file'] {
     @apply border-0;
   }
 
-  & input[type="radio"],
-  & input[type="checkbox"] {
+  & input[type='radio'],
+  & input[type='checkbox'] {
     @apply w-4 h-4 mx-2;
   }
 

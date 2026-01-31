@@ -5,15 +5,15 @@ import type { Binder } from '@/types/binder'
 import type { Section } from '@/types/toc'
 
 interface RLCONF {
-  wgArticleId: number,
-  wgCategories: string[],
-  wgUserId: number,
-  wgUserName: string,
-  wgUserGroups: string[],
-  binders: Binder[],
-  lastmod: string,
-  contributors: User[],
-  dataToc: Section,
+  wgArticleId: number
+  wgCategories: string[]
+  wgUserId: number
+  wgUserName: string
+  wgUserGroups: string[]
+  binders: Binder[]
+  lastmod: string
+  contributors: User[]
+  dataToc: Section
 }
 
 export default function getRLCONF(): RLCONF {

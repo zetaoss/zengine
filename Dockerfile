@@ -1,38 +1,29 @@
 ### Dockerfile
 FROM node:24-trixie-slim AS nodebuild
 
-COPY package.json                                                              /app/
-COPY vue/package.json                    vue/pnpm-lock.yaml                    /app/vue/
-COPY mwz/skins/ZetaSkin/vue/package.json mwz/skins/ZetaSkin/vue/pnpm-lock.yaml /app/mwz/skins/ZetaSkin/vue/
+ARG APP_VERSION=v0.0.0
 
-RUN corepack enable pnpm \
-    && cd /app/vue                    && pnpm install --frozen-lockfile \
-    && cd /app/mwz/skins/ZetaSkin/vue && pnpm install --frozen-lockfile
+RUN corepack enable pnpm
 
-COPY . /app
-RUN echo run build \
-    && cd /app/vue                    && pnpm run build \
-    && cd /app/mwz/skins/ZetaSkin/vue && pnpm run build
+COPY . /app/
+RUN cd /app/mwz/skins/ZetaSkin/vue/ && pnpm install --frozen-lockfile
+RUN cd /app/vue/                    && pnpm install --frozen-lockfile
+RUN cd /app/mwz/skins/ZetaSkin/vue/ && pnpm run build
+RUN cd /app/vue/                    && pnpm run build
+
+RUN APP_VERSION_STRIPPED="${APP_VERSION#v}" && sed -i "s/\"version\": \".*\"/\"version\": \"${APP_VERSION_STRIPPED}\"/" /app/mwz/skins/ZetaSkin/skin.json
 
 # https://github.com/zetaoss/zbase/pkgs/container/zbase
-FROM ghcr.io/zetaoss/zbase:v0.43.609
+FROM ghcr.io/zetaoss/zbase:v0.43.611
 
 ARG APP_VERSION=v0.0.0
 ENV APP_VERSION=${APP_VERSION}
 
-# https://hub.docker.com/_/composer
-COPY --from=composer:2.9.3 /usr/bin/composer /usr/bin/composer
-
-COPY . /app/
-
-COPY --from=nodebuild /app/vue/dist                          /app/vue/dist
-COPY --from=nodebuild /app/mwz/skins/ZetaSkin/resources/dist /app/mwz/skins/ZetaSkin/resources/dist
+COPY --from=nodebuild /app/mwz /app/vue /app/
+COPY laravel /app/laravel
 
 RUN set -eux \
-    && APP_VERSION_STRIPPED="${APP_VERSION#v}" \
-    && sed -i "s/\"version\": \".*\"/\"version\": \"${APP_VERSION_STRIPPED}\"/" /app/mwz/skins/ZetaSkin/skin.json \
-    && mv     /var/www/html                     /app/w \
-    && mv     /app/w/composer.local.json-sample /app/w/composer.local.json \
+    && mv /var/www/html                         /app/w \
     && ln -rs /app/mwz/extensions/ZetaExtension /app/w/extensions/ \
     && ln -rs /app/mwz/skins/ZetaSkin           /app/w/skins/ \
     && cd /app/laravel/ && composer install --no-dev --no-scripts --optimize-autoloader \

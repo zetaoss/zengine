@@ -1,5 +1,5 @@
 // @common/composables/useIsMobile.ts
-import { onMounted, onUnmounted,ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 
 export function useIsMobile() {
   const isMobile = ref(false)

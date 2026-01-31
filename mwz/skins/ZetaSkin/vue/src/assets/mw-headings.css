@@ -1,6 +1,5 @@
 /* mw-headings.css */
 .mediawiki {
-
   h2,
   h3,
   h4,
@@ -22,8 +21,8 @@
     counter-increment: h2;
     counter-reset: h3 h4 h5 h6;
 
-    >.mw-headline::before {
-      content: counter(h2) ". ";
+    > .mw-headline::before {
+      content: counter(h2) '. ';
     }
   }
 
@@ -31,8 +30,8 @@
     counter-increment: h3;
     counter-reset: h4 h5 h6;
 
-    >.mw-headline::before {
-      content: counter(h2) "." counter(h3) " ";
+    > .mw-headline::before {
+      content: counter(h2) '.' counter(h3) ' ';
     }
   }
 
@@ -40,8 +39,8 @@
     counter-increment: h4;
     counter-reset: h5 h6;
 
-    >.mw-headline::before {
-      content: counter(h2) "." counter(h3) "." counter(h4) " ";
+    > .mw-headline::before {
+      content: counter(h2) '.' counter(h3) '.' counter(h4) ' ';
     }
   }
 
@@ -49,16 +48,17 @@
     counter-increment: h5;
     counter-reset: h6;
 
-    >.mw-headline::before {
-      content: counter(h2) "." counter(h3) "." counter(h4) "." counter(h5) " ";
+    > .mw-headline::before {
+      content: counter(h2) '.' counter(h3) '.' counter(h4) '.' counter(h5) ' ';
     }
   }
 
   h6 {
     counter-increment: h6;
 
-    >.mw-headline::before {
-      content: counter(h2) "." counter(h3) "." counter(h4) "." counter(h5) "." counter(h6) " ";
+    > .mw-headline::before {
+      content: counter(h2) '.' counter(h3) '.' counter(h4) '.' counter(h5) '.'
+        counter(h6) ' ';
     }
   }
 }

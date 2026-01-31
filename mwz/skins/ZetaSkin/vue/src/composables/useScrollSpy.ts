@@ -3,13 +3,13 @@ import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 export function useScrollSpy(
   anchorsRef: { value: string[] },
-  offset: number = 64
+  offset: number = 64,
 ) {
   const activeIds = ref<string[]>([])
 
   const getSections = () => {
     return anchorsRef.value
-      .map((id) => {
+      .map(id => {
         const el = document.getElementById(id)
         if (!el) return null
 
@@ -34,11 +34,11 @@ export function useScrollSpy(
     const viewportBottom = window.scrollY + window.innerHeight
 
     const visible = list.filter(
-      (s) => s.bottom > viewportTop && s.top < viewportBottom
+      s => s.bottom > viewportTop && s.top < viewportBottom,
     )
 
     if (visible.length) {
-      activeIds.value = visible.map((s) => s.id)
+      activeIds.value = visible.map(s => s.id)
     } else {
       let current: string | null = null
       for (const s of list) {

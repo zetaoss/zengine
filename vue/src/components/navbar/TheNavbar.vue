@@ -11,14 +11,14 @@ import UserMenu from './UserMenu.vue'
         <RouterLink class="navlink" to="/">
           <img alt="zetawiki" src="/zeta.svg" class="h-6 w-6" />
         </RouterLink>
-        <RouterLink class="navlink" to="/" :class="{ '!text-yellow-200': $route.meta.tab == 'wiki' }">
+        <RouterLink class="navlink" to="/" :class="{ 'text-yellow-200!': $route.meta.tab == 'wiki' }">
           위키
         </RouterLink>
-        <RouterLink class="navlink" to="/forum" :class="{ '!text-yellow-200': $route.path.startsWith('/forum') }">
+        <RouterLink class="navlink" to="/forum" :class="{ 'text-yellow-200!': $route.path.startsWith('/forum') }">
           포럼
         </RouterLink>
         <RouterLink class="navlink" to="/tool/common-report"
-          :class="{ '!text-yellow-200': $route.path.startsWith('/tool') }">
+          :class="{ 'text-yellow-200!': $route.path.startsWith('/tool') }">
           도구
         </RouterLink>
       </div>

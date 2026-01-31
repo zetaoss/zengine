@@ -1,11 +1,16 @@
 // runbox.ts
 import httpy from '@common/utils/httpy'
-import { createApp, h,reactive } from 'vue'
+import { createApp, h, reactive } from 'vue'
 
 import getRLCONF from '@/utils/rlconf'
 
 import BoxApex from './BoxApex.vue'
-import { buildLangPayload, buildNotebookPayload, enqueue, sha256 } from './runbox.helpers'
+import {
+  buildLangPayload,
+  buildNotebookPayload,
+  enqueue,
+  sha256,
+} from './runbox.helpers'
 import { type Box, BoxType, type Job, JobType } from './types'
 
 const jobs: Job[] = reactive([])
@@ -101,23 +106,25 @@ export function runbox() {
       el,
     }
 
-    const job = jobs.find(j => j.id === jobId) ?? (() => {
-      const newJob: Job = {
-        id: jobId,
-        type: JobType.Zero,
-        hash: '',
-        boxes: [],
-        pageId,
-        main: -1,
-        phase: null,
-        payload: null,
-        langOuts: null,
-        notebookOuts: [],
-        outResize: box.outResize,
-      }
-      jobs.push(newJob)
-      return newJob
-    })()
+    const job =
+      jobs.find(j => j.id === jobId) ??
+      (() => {
+        const newJob: Job = {
+          id: jobId,
+          type: JobType.Zero,
+          hash: '',
+          boxes: [],
+          pageId,
+          main: -1,
+          phase: null,
+          payload: null,
+          langOuts: null,
+          notebookOuts: [],
+          outResize: box.outResize,
+        }
+        jobs.push(newJob)
+        return newJob
+      })()
 
     job.boxes.push(box)
   })

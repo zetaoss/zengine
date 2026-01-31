@@ -25,7 +25,7 @@ function devDist(): Plugin {
   s.src = '${appSrc}'
   document.head.appendChild(s)
 })()`
-      fs.mkdirSync(distDir, { recursive: true });
+      fs.mkdirSync(distDir, { recursive: true })
       fs.writeFileSync(path.join(distDir, 'app.css'), '/* dev */', 'utf-8')
       fs.writeFileSync(path.join(distDir, 'app.js'), appJsContent, 'utf-8')
     },
@@ -55,13 +55,11 @@ export default defineConfig(({ command }) => ({
     },
   },
   define: {
-    'process.env.NODE_ENV': JSON.stringify(command === 'build' ? 'production' : 'development'),
+    'process.env.NODE_ENV': JSON.stringify(
+      command === 'build' ? 'production' : 'development',
+    ),
   },
-  plugins: [
-    vue(),
-    tailwindcss(),
-    devDist(),
-  ],
+  plugins: [vue(), tailwindcss(), devDist()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

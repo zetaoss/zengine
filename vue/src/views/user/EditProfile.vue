@@ -220,7 +220,7 @@ onMounted(() => {
           <div class="text-sm font-semibold">아바타 선택</div>
 
           <ul class="space-y-2">
-            <li class="flex items-center gap-3 p-3 rounded ring-1 ring-[var(--z-border)]">
+            <li class="flex items-center gap-3 p-3 rounded ring-1 ring-(--z-border)">
               <input type="radio" name="avatarType" :value="1" v-model="selectedType" class="accent-current" />
               <div class="flex items-center gap-3">
                 <AvatarIcon v-if="me.userInfo" :user="me.userInfo" :size="60" :typ="1" />
@@ -228,7 +228,7 @@ onMounted(() => {
               </div>
             </li>
 
-            <li class="flex items-center gap-3 p-3 rounded ring-1 ring-[var(--z-border)]">
+            <li class="flex items-center gap-3 p-3 rounded ring-1 ring-(--z-border)">
               <input type="radio" name="avatarType" :value="2" v-model="selectedType" class="accent-current" />
               <div class="flex items-center gap-3">
                 <AvatarIcon v-if="me.userInfo" :user="me.userInfo" :size="60" :typ="2" />
@@ -236,7 +236,7 @@ onMounted(() => {
               </div>
             </li>
 
-            <li class="flex items-center gap-3 p-3 rounded ring-1 ring-[var(--z-border)]">
+            <li class="flex items-center gap-3 p-3 rounded ring-1 ring-(--z-border)">
               <input type="radio" name="avatarType" :value="3" v-model="selectedType" class="accent-current" />
 
               <div class="flex items-center gap-3 flex-1 min-w-0">
@@ -246,11 +246,11 @@ onMounted(() => {
 
                   <input v-if="isEditingGravatar" ref="gravatarInput" type="email" v-model="gravatarEmail"
                     placeholder="Gravatar Email"
-                    class="px-3 py-2 rounded ring-1 ring-[var(--z-border)] bg-transparent text-sm w-64 max-w-full"
+                    class="px-3 py-2 rounded ring-1 ring-(--z-border) bg-transparent text-sm w-64 max-w-full"
                     :disabled="!canEditGravatar || gravatarBusy" />
 
                   <input v-else type="text" :value="gravatarDisplay" readonly
-                    class="px-3 py-2 rounded ring-1 ring-[var(--z-border)] bg-transparent text-sm w-64 max-w-full"
+                    class="px-3 py-2 rounded ring-1 ring-(--z-border) bg-transparent text-sm w-64 max-w-full"
                     :disabled="!canEditGravatar" />
 
                   <template v-if="canEditGravatar">
