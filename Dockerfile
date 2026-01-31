@@ -35,6 +35,6 @@ RUN set -eux \
     && cp -a  /app/w/composer.local.json-sample /app/w/composer.local.json \
     && ln -rs /app/mwz/extensions/ZetaExtension /app/w/extensions/ \
     && ln -rs /app/mwz/skins/ZetaSkin           /app/w/skins/ \
-    && cd /app/laravel/ && composer install --no-scripts --optimize-autoloader \
+    && cd /app/laravel/ && composer install --no-dev --no-scripts --optimize-autoloader \
     && cd /app/w/       && composer update \
     && chown www-data:www-data -R /app/*
