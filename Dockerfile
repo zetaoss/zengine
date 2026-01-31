@@ -31,10 +31,11 @@ COPY --from=nodebuild /app/mwz/skins/ZetaSkin/resources/dist /app/mwz/skins/Zeta
 RUN set -eux \
     && APP_VERSION_STRIPPED="${APP_VERSION#v}" \
     && sed -i "s/\"version\": \".*\"/\"version\": \"${APP_VERSION_STRIPPED}\"/" /app/mwz/skins/ZetaSkin/skin.json \
-    && mv     /var/www/html                     /app/w \
+    && rm -rf /var/www/html \
+    && ln -s  /app/w                            /var/www/html \
     && cp -a  /app/w/composer.local.json-sample /app/w/composer.local.json \
     && ln -rs /app/mwz/extensions/ZetaExtension /app/w/extensions/ \
     && ln -rs /app/mwz/skins/ZetaSkin           /app/w/skins/ \
     && cd /app/laravel/ && composer install --no-dev --no-scripts --optimize-autoloader \
-    && cd /app/w/       && composer install --no-dev --no-scripts --optimize-autoloader \
+    && cd /app/w/       && composer install --no-dev --no-scripts --optimize-autoloader --no-security-blocking \
     && chown www-data:www-data -R /app/*
