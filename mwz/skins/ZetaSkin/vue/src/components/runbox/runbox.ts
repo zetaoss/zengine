@@ -101,10 +101,8 @@ export function runbox() {
       el,
     }
 
-    const job =
-      jobs.find(j => j.id === jobId) ||
-      jobs[
-      jobs.push({
+    const job = jobs.find(j => j.id === jobId) ?? (() => {
+      const newJob: Job = {
         id: jobId,
         type: JobType.Zero,
         hash: '',
@@ -116,8 +114,10 @@ export function runbox() {
         langOuts: null,
         notebookOuts: [],
         outResize: box.outResize,
-      }) - 1
-      ]
+      }
+      jobs.push(newJob)
+      return newJob
+    })()
 
     job.boxes.push(box)
   })
@@ -128,6 +128,7 @@ export function runbox() {
     const mainIdx = job.boxes.findIndex(b => b.isMain)
     job.main = mainIdx !== -1 ? mainIdx : job.boxes.length - 1
     const mainBox = job.boxes[job.main]
+    if (!mainBox) return
 
     if (mainBox.type === BoxType.Run) {
       if (['javascript', 'html'].includes(mainBox.lang)) {

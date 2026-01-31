@@ -35,7 +35,7 @@ const onNavigate = (id: string) => {
 
 <template>
   <nav>
-    <ul class="text-sm tracking-tight list-none m-0 p-0 z-muted">
+    <ul class="text-sm tracking-tight list-none m-0 p-0 z-text2">
       <li class="m-0 mb-2 flex items-center gap-1">
         <button type="button" @click="scrollToTop">
           목차

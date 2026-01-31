@@ -1,6 +1,4 @@
 // main.ts
-import './assets/main.css'
-
 import { useDark, useToggle } from '@vueuse/core'
 import { createPinia } from 'pinia'
 import { createApp } from 'vue'

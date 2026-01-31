@@ -1,4 +1,6 @@
 /* has-binders.css */
+@reference 'tailwindcss';
+
 .hb-lg-md-block {
   @apply md:block;
 }

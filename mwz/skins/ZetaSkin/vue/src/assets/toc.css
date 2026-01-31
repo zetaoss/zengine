@@ -1,4 +1,6 @@
 /* toc.css */
+@reference 'tailwindcss';
+
 .toc-inline {
   @apply md:hidden;
 }

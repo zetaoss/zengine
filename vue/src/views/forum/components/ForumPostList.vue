@@ -69,7 +69,7 @@ watch(() => page.value, fetchList, { immediate: true })
     </div>
 
     <div class="z-card">
-      <div class="hidden md:flex p-2 font-bold text-center bg-[var(--z-table-header-bg)]">
+      <div class="hidden md:flex p-2 font-bold text-center z-base3">
         <div class="flex w-[65%]">
           <span class="w-[10%]">번호</span>
           <span class="w-[90%] text-left">제목</span>

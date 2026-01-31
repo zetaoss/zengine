@@ -29,7 +29,7 @@ const aborter = ref<AbortController | null>(null)
 
 const displayQuery = computed(() =>
   kIndex.value >= 0 && kIndex.value < pages.value.length
-    ? pages.value[kIndex.value].title
+    ? (pages.value[kIndex.value]?.title ?? keyword.value)
     : keyword.value
 )
 
@@ -111,7 +111,7 @@ function goToSearch() {
     base.searchParams.set('fulltext', '1')
     base.searchParams.set('ns0', '1')
   } else {
-    base.searchParams.set('search', pages.value[kIndex.value].title)
+    base.searchParams.set('search', pages.value[kIndex.value]?.title ?? displayQuery.value)
   }
 
   close()
@@ -148,7 +148,7 @@ onBeforeUnmount(() => { aborter.value?.abort() })
     <div class="grow m-1.5">
       <div ref="root" class="relative" @keydown.up.prevent="onKeyUp" @keydown.down.prevent="onKeyDown"
         @keydown.enter="onKeyEnter" @keydown.escape.prevent="onKeyEscape">
-        <div class="flex h-9 z-bg rounded-t" :class="{ 'rounded-b': !expanded || !keyword.trim().length }">
+        <div class="flex h-9 z-base rounded-t" :class="{ 'rounded-b': !expanded || !keyword.trim().length }">
           <input aria-label="search" type="search" class="grow px-3 h-full outline-0 bg-transparent" name="search"
             placeholder="검색..." title="검색 [alt-shift-f]" accesskey="f" autocomplete="off" :value="displayQuery"
             @input="onInput" @focus="onFocus" />
@@ -157,8 +157,8 @@ onBeforeUnmount(() => { aborter.value?.abort() })
           </button>
         </div>
 
-        <div class="absolute z-40 w-full z-bg border rounded-b" :class="{ hidden: !expanded || !keyword.trim().length }"
-          @mouseleave="hIndex = -1">
+        <div class="absolute z-40 w-full z-base border rounded-b"
+          :class="{ hidden: !expanded || !keyword.trim().length }" @mouseleave="hIndex = -1">
           <div v-if="pages.length">
             <div v-for="(p, i) in pages" :key="p.id">
               <a class="block p-1.5 px-3 z-text" :class="{ focused: currentIndex === i }"
@@ -194,6 +194,8 @@ onBeforeUnmount(() => { aborter.value?.abort() })
 </template>
 
 <style lang="scss" scoped>
+@reference 'tailwindcss';
+
 .focused {
   @apply bg-indigo-600/70 text-white no-underline;
 }

@@ -1,50 +1,8 @@
-/* simple classes */
-.z-bg {
-    background-color: var(--z-bg);
-}
-
-.z-bg-muted {
-    background-color: var(--z-bg-muted);
-}
-
 .z-break-word {
     word-break: break-word;
     /* TODO: deprecated https://developer.mozilla.org/en-US/docs/Web/CSS/word-break#values */
 }
 
-.z-card {
-    background-color: var(--z-card);
-
-    &:hover {
-        background-color: var(--z-card-hover);
-    }
-}
-
-.z-link {
-    color: var(--z-link);
-}
-
-.z-muted {
-    color: var(--z-muted);
-}
-
-.z-muted2 {
-    color: var(--z-muted2);
-}
-
-.z-muted3 {
-    color: var(--z-muted3);
-}
-
-.z-text {
-    color: var(--z-text);
-}
-
-.z-table-header {
-    background-color: var(--z-table-header-bg);
-}
-
-/* component classes */
 .z-btn {
     background-color: var(--z-btn);
     color: var(--z-text);
@@ -65,7 +23,6 @@
         color: inherit;
     }
 
-    .dark &::hover,
     .dark &:hover {
         filter: brightness(1.5);
     }

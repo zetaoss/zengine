@@ -1,7 +1,7 @@
 <!-- BoxApex.vue -->
 <script setup lang="ts">
 import ZIcon from '@common/ui/ZIcon.vue'
-import { mdiCheck,mdiContentCopy } from '@mdi/js'
+import { mdiCheck, mdiContentCopy } from '@mdi/js'
 import { useClipboard } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
 
@@ -59,7 +59,7 @@ const onCopy = () => {
         <div class="pt-1 px-4">
           <div class="sticky top-0 z-10 h-0">
             <div class="flex justify-end">
-              <button class="p-1 rounded text-xs z-muted2 inline-flex items-center space-x-1 cursor-pointer"
+              <button class="p-1 rounded text-xs z-text3 inline-flex items-center space-x-1 cursor-pointer"
                 @click="onCopy">
                 <template v-if="!copied">
                   <ZIcon :size="14" :path="mdiContentCopy" />
@@ -74,7 +74,7 @@ const onCopy = () => {
             </div>
           </div>
 
-          <div class="text-xs z-muted2 select-none flex items-center gap-2">
+          <div class="text-xs z-text3 select-none flex items-center gap-2">
             <span>{{ box.lang }}</span>
             <span v-if="props.job.boxes.length > 1">
               <span v-for="(_, i) in props.job.boxes" :key="i" :class="{ 'opacity-30': i !== props.seq }">

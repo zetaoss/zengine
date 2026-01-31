@@ -29,7 +29,7 @@ async function refreshBinder() {
 </script>
 
 <template>
-  <CapSticky :showToggle="true" :widthValue="'240px'" navBlurColor="var(--bg-muted)" class="flex z-bg-muted">
+  <CapSticky :showToggle="true" :widthValue="'240px'" navBlurColor="var(--bg-muted)" class="flex z-base3">
     <div v-for="binder in bindersRef" :key="binder.id">
       <header class="book sticky top-0 z-10 flex items-center justify-between px-3 py-2 bg-gray-200/80 dark:bg-gray-800/80  border-gray-400/60 dark:border-gray-600/60
                  font-bold" @dblclick.stop="refreshBinder">

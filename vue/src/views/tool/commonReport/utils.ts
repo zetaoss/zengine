@@ -3,7 +3,9 @@ import { useDateFormat } from '@vueuse/core'
 import type { Row } from './types'
 
 export function getRatio(row: Row, idx: number) {
-  return row.items[idx].total / row.total
+  const item = row.items?.[idx]
+  if (!item || row.total === 0) return 0
+  return item.total / row.total
 }
 
 export function getScore(row: Row): number {
@@ -11,8 +13,8 @@ export function getScore(row: Row): number {
   const total = nums.reduce((acc, cur) => acc + cur, 0)
   if (nums.length < 2 || total == 0) return -1
   const p = nums.map(x => x / total)
-  const p0 = p[0]
-  const p1 = p[1]
+  const p0 = p[0] ?? 0
+  const p1 = p[1] ?? 0
   const gap = p0 - p1
   const sizeWeight = Math.log10(total)
   const weightedDominance = (gap * 0.8 + p0 * 0.2) * sizeWeight
@@ -26,7 +28,9 @@ export function getWikitextTable(table: HTMLTableElement, id: number, url: strin
   const rows = [] as string[][]
   const trs = table.getElementsByTagName('tr')
   for (let i = 0; i < trs.length; i++) {
-    const tds = trs[i].getElementsByTagName('td')
+    const tr = trs[i]
+    if (!tr) continue
+    const tds = tr.getElementsByTagName('td')
     const row = [] as string[]
     for (let j = 0; j < tds.length; j++) {
       const td = tds[j] as HTMLElement
@@ -44,9 +48,9 @@ export function getWikitextTable(table: HTMLTableElement, id: number, url: strin
 `
   for (let i = 0; i < number; i++) {
     text += '|- align="right"\n'
-    text += `| "${rows[0][i]}"`
+    text += `| "${rows[0]?.[i] ?? ''}"`
     for (let j = 2; j < 9; j++) {
-      text += ` || ${rows[j][i]}`
+      text += ` || ${rows[j]?.[i] ?? ''}`
     }
     text += '\n'
   }
