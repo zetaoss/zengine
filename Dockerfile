@@ -5,13 +5,10 @@ RUN corepack enable pnpm
 
 COPY mwz vue /app/
 
-WORKDIR /app/mwz/skins/ZetaSkin/vue
-RUN pnpm install --frozen-lockfile
-RUN pnpm run build
-
-WORKDIR /app/vue
-RUN pnpm install --frozen-lockfile
-RUN pnpm run build
+RUN cd /app/mwz/skins/ZetaSkin/vue/ && pnpm install --frozen-lockfile
+RUN cd /app/mwz/skins/ZetaSkin/vue/ && pnpm run build
+RUN cd /app/vue/ && pnpm install --frozen-lockfile
+RUN cd /app/vue/ && pnpm run build
 
 # https://github.com/zetaoss/zbase/pkgs/container/zbase
 FROM ghcr.io/zetaoss/zbase:v0.43.611
