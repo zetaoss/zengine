@@ -1,18 +1,16 @@
 ### Dockerfile
 FROM node:24-trixie-slim AS nodebuild
 
-COPY package.json                                                              /app/
-COPY vue/package.json                    vue/pnpm-lock.yaml                    /app/vue/
-COPY mwz/skins/ZetaSkin/vue/package.json mwz/skins/ZetaSkin/vue/pnpm-lock.yaml /app/mwz/skins/ZetaSkin/vue/
+RUN corepack enable pnpm
 
-RUN corepack enable pnpm \
-    && cd /app/vue                    && pnpm install --frozen-lockfile \
-    && cd /app/mwz/skins/ZetaSkin/vue && pnpm install --frozen-lockfile
+COPY mwz /app/
+RUN cd /app/mwz/skins/ZetaSkin/vue && pnpm install --frozen-lockfile
+RUN cd /app/mwz/skins/ZetaSkin/vue && pnpm run build
 
-COPY . /app
-RUN echo run build \
-    && cd /app/vue                    && pnpm run build \
-    && cd /app/mwz/skins/ZetaSkin/vue && pnpm run build
+
+COPY vue /app/
+RUN cd /app/vue && pnpm install --frozen-lockfile
+RUN cd /app/vue && pnpm run build
 
 # https://github.com/zetaoss/zbase/pkgs/container/zbase
 FROM ghcr.io/zetaoss/zbase:v0.43.611
