@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ca7b116988c203416a37fb7c045ae2c5",
+    "content-hash": "0309c0974317fb2a6d928eb1ebd629d9",
     "packages": [
         {
             "name": "composer/installers",
@@ -154,16 +154,16 @@
         },
         {
             "name": "eftec/bladeone",
-            "version": "4.17.1",
+            "version": "4.19.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/EFTEC/BladeOne.git",
-                "reference": "7f2bb41b7dfc8be16a83ea544ce0981c844f7ecc"
+                "reference": "a22f6471c01c26fea5f6a0d0aca9b5674fc999be"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/EFTEC/BladeOne/zipball/7f2bb41b7dfc8be16a83ea544ce0981c844f7ecc",
-                "reference": "7f2bb41b7dfc8be16a83ea544ce0981c844f7ecc",
+                "url": "https://api.github.com/repos/EFTEC/BladeOne/zipball/a22f6471c01c26fea5f6a0d0aca9b5674fc999be",
+                "reference": "a22f6471c01c26fea5f6a0d0aca9b5674fc999be",
                 "shasum": ""
             },
             "require": {
@@ -207,9 +207,9 @@
             ],
             "support": {
                 "issues": "https://github.com/EFTEC/BladeOne/issues",
-                "source": "https://github.com/EFTEC/BladeOne/tree/4.17.1"
+                "source": "https://github.com/EFTEC/BladeOne/tree/4.19.1"
             },
-            "time": "2024-12-30T17:31:52+00:00"
+            "time": "2025-09-03T20:50:39+00:00"
         }
     ],
     "packages-dev": [
@@ -2736,10 +2736,10 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {},
     "prefer-stable": false,
     "prefer-lowest": false,
-    "platform": [],
-    "platform-dev": [],
-    "plugin-api-version": "2.2.0"
+    "platform": {},
+    "platform-dev": {},
+    "plugin-api-version": "2.6.0"
 }
