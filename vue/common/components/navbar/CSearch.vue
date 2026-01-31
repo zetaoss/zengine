@@ -193,7 +193,7 @@ onBeforeUnmount(() => { aborter.value?.abort() })
   </div>
 </template>
 
-<style lang="scss" scoped>
+<style lang="css" scoped>
 @reference 'tailwindcss';
 
 .focused {

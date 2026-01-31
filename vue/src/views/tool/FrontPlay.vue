@@ -48,7 +48,7 @@ const updateLogs = (newLogs: SandboxLog[]) => {
         <header class="text-center font-bold bg-slate-400 dark:bg-slate-600 text-white py-1">
           Console
         </header>
-        <div class="h-[30vh] overflow-y-auto bg-[var(--console-bg)]">
+        <div class="h-[30vh] overflow-y-auto bg-(--console-bg)">
           <SandboxConsole :logs="logs" />
         </div>
       </div>
