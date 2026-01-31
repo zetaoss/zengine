@@ -13,12 +13,8 @@
   ],
   "compilerOptions": {
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@common/*": [
-        "./common/*"
-      ]
+      "@/*": ["./src/*"],
+      "@common/*": ["./common/*"]
     }
   }
 }

@@ -119,7 +119,7 @@ onUnmounted(() => retrier.clear())
 
       <thead v-if="loading">
         <tr>
-          <th colspan="9" class="!p-0">
+          <th colspan="9" class="p-0!">
             <CProgressBar />
             <div v-if="!reportData" class="h-32 flex items-center justify-center">
               <ZSpinner />

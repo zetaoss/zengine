@@ -13,18 +13,22 @@ function linkifyURL(s: string) {
 }
 
 export async function linkifyWikiMatch(s: string, match: string) {
-  const title = match.slice(2, -2);
-  const exist = await titleExist(title);
-  const classList = ['internal', exist ? '' : 'new'].filter(Boolean).join(' ');
-  return s.split(match).join(`<a href="/wiki/${title}" class="${classList}">${title}</a>`);
+  const title = match.slice(2, -2)
+  const exist = await titleExist(title)
+  const classList = ['internal', exist ? '' : 'new'].filter(Boolean).join(' ')
+  return s
+    .split(match)
+    .join(`<a href="/wiki/${title}" class="${classList}">${title}</a>`)
 }
 
 export async function linkifyWiki(s: string) {
-  const matches = Array.from(new Set(s.match(/\[\[([^[\]|]*)[^[\]]*\]\]/g) || []));
+  const matches = Array.from(
+    new Set(s.match(/\[\[([^[\]|]*)[^[\]]*\]\]/g) || []),
+  )
   for (const match of matches) {
-    s = await linkifyWikiMatch(s, match);
+    s = await linkifyWikiMatch(s, match)
   }
-  return s;
+  return s
 }
 
 export default async function linkify(input: string) {

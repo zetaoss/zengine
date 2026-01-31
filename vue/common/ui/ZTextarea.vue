@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick,ref, watch } from 'vue'
+import { nextTick, ref, watch } from 'vue'
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void

@@ -49,30 +49,30 @@ watch(() => props.show, updateShow)
   </div>
 </template>
 
-<style lang="scss" scoped>
+<style lang="css" scoped>
 @reference 'tailwindcss';
 
 .bottom {
   @apply left-1/2;
 
   .text {
-    @apply -left-1/2 top-[0.5rem];
+    @apply -left-1/2 top-2;
   }
 
   .arrow {
-    @apply top-0 translate-y-1/2 -translate-x-[0.25rem];
+    @apply top-0 translate-y-1/2 -translate-x-1;
   }
 }
 
 .top {
-  @apply left-1/2 bottom-full -translate-y-[0.5rem];
+  @apply left-1/2 bottom-full -translate-y-2;
 
   .text {
     @apply -left-1/2;
   }
 
   .arrow {
-    @apply bottom-0 translate-y-1/2 -translate-x-[0.25rem];
+    @apply bottom-0 translate-y-1/2 -translate-x-1;
   }
 }
 </style>

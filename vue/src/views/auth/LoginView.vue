@@ -70,7 +70,7 @@ async function login() {
 
       <div>
         <a class="border block my-1 p-2 rounded text-center text-sm
-                 !bg-white dark:bg-white border-gray-300 !text-black dark:text-black
+                 bg-white! dark:bg-white border-gray-300 text-black! dark:text-black
                  hover:bg-gray-100 hover:dark:bg-gray-200 hover:text-black hover:dark:text-black
                  hover:no-underline" :href="getHref('google')">
           <GoogleIcon />
@@ -78,7 +78,7 @@ async function login() {
         </a>
 
         <a class="border block my-1 p-2 rounded text-center text-sm
-                 !bg-black dark:bg-black !text-white dark:text-white
+                 bg-black! dark:bg-black text-white! dark:text-white
                  hover:bg-gray-700 hover:dark:bg-gray-800 hover:text-white hover:dark:text-white
                  hover:no-underline" :href="getHref('github')">
           <GithubIcon />
@@ -89,8 +89,8 @@ async function login() {
       <div class="text-center relative overflow-hidden my-6 text-gray-400">
         <span class="relative px-3">
           또는
-          <span class="absolute top-2.5 right-full w-[999px] border-t border-[#aaa8]"></span>
-          <span class="absolute top-2.5 left-full w-[999px] border-t border-[#aaa8]"></span>
+          <span class="absolute top-2.5 right-full w-250 border-t border-[#aaa8]"></span>
+          <span class="absolute top-2.5 left-full w-250 border-t border-[#aaa8]"></span>
         </span>
       </div>
 

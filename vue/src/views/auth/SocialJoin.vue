@@ -156,7 +156,7 @@ async function submitJoin() {
 </script>
 
 <template>
-  <div class="mx-auto my-10 w-[50vw] min-w-[400px] rounded border z-card p-7">
+  <div class="mx-auto my-10 w-[50vw] min-w-100 rounded border z-card p-7">
     <div class="py-3 text-lg font-bold">사용자명 생성</div>
     <hr />
 

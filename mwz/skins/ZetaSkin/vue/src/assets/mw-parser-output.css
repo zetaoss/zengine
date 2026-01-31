@@ -2,7 +2,7 @@
 @reference 'tailwindcss';
 
 .mw-parser-output {
-    &>dl>dt {
-        @apply font-bold;
-    }
+  & > dl > dt {
+    @apply font-bold;
+  }
 }

@@ -6,9 +6,11 @@ let queue: Promise<void> = Promise.resolve()
 type JobHandler = (job: Job) => Promise<void>
 
 export function enqueue(handler: JobHandler, job: Job) {
-  queue = queue.then(() => handler(job)).catch(e => {
-    console.error('enqueue error', e)
-  })
+  queue = queue
+    .then(() => handler(job))
+    .catch(e => {
+      console.error('enqueue error', e)
+    })
 }
 
 export function buildLangPayload(job: Job) {

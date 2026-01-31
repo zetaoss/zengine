@@ -14,7 +14,7 @@ hljs.registerLanguage('xml', xml)
 hljs.registerLanguage('html', xml)
 
 export function applyHljs(root: HTMLElement) {
-  root.querySelectorAll('pre code').forEach((el) => {
+  root.querySelectorAll('pre code').forEach(el => {
     const codeEl = el as HTMLElement
     if (codeEl.classList.contains('hljs')) return
     hljs.highlightElement(codeEl)

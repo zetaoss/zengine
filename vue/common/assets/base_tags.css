@@ -7,7 +7,9 @@
   body {
     background-color: var(--z-base);
     color: var(--z-text);
-    font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", "맑은 고딕", helvetica, "Apple SD Gothic Neo", sans-serif;
+    font-family:
+      -apple-system, BlinkMacSystemFont, 'Malgun Gothic', '맑은 고딕',
+      helvetica, 'Apple SD Gothic Neo', sans-serif;
     letter-spacing: -0.4px;
   }
 
@@ -67,7 +69,6 @@
         text-decoration: none;
         border-bottom-color: var(--z-link-ext);
       }
-
     }
 
     &.new {
@@ -91,8 +92,8 @@
 
   textarea {
     border-width: 1px;
-    border-radius: .5rem;
-    padding: .5rem;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
     width: 100%;
   }
 

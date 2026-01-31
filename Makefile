@@ -28,6 +28,10 @@ vue-install:
 vue-lint:
 	$(call run_pnpm,lint)
 
+.PHONY: vue-format
+vue-format:
+	$(call run_pnpm,format)
+
 .PHONY: vue-build
 vue-build:
 	$(call run_pnpm,build)
@@ -37,7 +41,7 @@ vue-audit:
 	$(call run_pnpm,audit)
 
 .PHONY: checks
-checks: vue-overrides vue-install vue-lint vue-build vue-audit
+checks: vue-overrides vue-install vue-lint vue-format vue-build vue-audit
 	@echo "✅  All checks passed"
 
 .PHONY: vue-lint-fix

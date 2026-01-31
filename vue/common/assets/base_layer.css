@@ -1,7 +1,3 @@
-/* @tailwind base;
-@tailwind components;
-@tailwind utilities; */
-
 @layer base {
   :root {
     color-scheme: light;
@@ -89,16 +85,15 @@
   --console-string: theme(colors.sky.400);
   --console-number: theme(colors.purple.400);
 
-  --console-warn-bg: #413C26;
-  --console-error-bg: #4E3534;
+  --console-warn-bg: #413c26;
+  --console-error-bg: #4e3534;
   --console-detail-bg: #1e293b;
 
   --code-bg: #1c2029;
-  --nbout-error: #4E3534;
+  --nbout-error: #4e3534;
 }
 
 @layer base {
-
   *,
   ::before,
   ::after {

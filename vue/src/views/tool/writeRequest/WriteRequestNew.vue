@@ -3,7 +3,7 @@ import CProgressBar from '@common/components/CProgressBar.vue'
 import { showToast } from '@common/ui/toast/toast'
 import ZModal from '@common/ui/ZModal.vue'
 import httpy from '@common/utils/httpy'
-import { computed, nextTick,ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 
 import titleExist from '@/utils/mediawiki'
 
@@ -99,7 +99,7 @@ watch(
           중복확인
         </button>
       </div>
-      <div class="mt-2 min-h-[6px]">
+      <div class="mt-2 min-h-1.5">
         <CProgressBar v-if="state === 'checking'" :indeterminate="true" class="h-1" />
         <div v-else-if="state === 'available'" class="h-1 w-full bg-green-500 rounded" />
         <div v-else-if="state === 'exists'" class="h-1 w-full bg-red-500 rounded" />

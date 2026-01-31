@@ -29,7 +29,7 @@ export function showConfirm(message: string, options = {}) {
     message,
     show: true,
   })
-  return new Promise<boolean>((resolve) => (resolver = resolve))
+  return new Promise<boolean>(resolve => (resolver = resolve))
 }
 
 export function handleConfirmOk() {

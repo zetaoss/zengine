@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import ZButton, { type Color } from "@common/ui/ZButton.vue"
 import { useAttrs } from "vue"
-import { type RouteLocationRaw,RouterLink } from "vue-router"
+import { type RouteLocationRaw, RouterLink } from "vue-router"
 
 const props = defineProps<{
   to: RouteLocationRaw

@@ -5,7 +5,10 @@ import getRLCONF from './rlconf'
 async function getMW(): Promise<MediaWiki> {
   let retries = 1
   while (typeof mw === 'undefined' || typeof mw.Api === 'undefined') {
-    await ((t: number) => new Promise((r) => { setTimeout(r, t) }))(retries++)
+    await ((t: number) =>
+      new Promise(r => {
+        setTimeout(r, t)
+      }))(retries++)
   }
   return mw
 }
@@ -17,7 +20,9 @@ async function getAPI() {
 
 export async function getCreated() {
   const pageID = getRLCONF().wgArticleId
-  const resp = await (await getAPI()).get({
+  const resp = await (
+    await getAPI()
+  ).get({
     action: 'query',
     prop: 'revisions',
     pageids: pageID,
@@ -26,7 +31,9 @@ export async function getCreated() {
 }
 
 export async function titleExist(title: string) {
-  const resp = await (await getAPI()).get({
+  const resp = await (
+    await getAPI()
+  ).get({
     action: 'query',
     titles: title,
   })

@@ -2,8 +2,8 @@
 name: release
 on:
   push:
-    tags:        
-    - 'v*'
+    tags:
+      - "v*"
 permissions:
   contents: read
   packages: write
@@ -35,6 +35,8 @@ jobs:
         with:
           push: true
           context: .
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
