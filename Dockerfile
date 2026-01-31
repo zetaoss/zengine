@@ -6,9 +6,11 @@ ARG APP_VERSION=v0.0.0
 RUN corepack enable pnpm
 
 COPY . /app/
+
 RUN cd /app/mwz/skins/ZetaSkin/vue/ && pnpm install --frozen-lockfile
-RUN cd /app/mwz/skins/ZetaSkin/vue/ && pnpm run build
 RUN cd /app/vue/ && pnpm install --frozen-lockfile
+
+RUN cd /app/mwz/skins/ZetaSkin/vue/ && pnpm run build
 RUN cd /app/vue/ && pnpm run build
 
 RUN APP_VERSION_STRIPPED="${APP_VERSION#v}" && sed -i "s/\"version\": \".*\"/\"version\": \"${APP_VERSION_STRIPPED}\"/" /app/mwz/skins/ZetaSkin/skin.json
