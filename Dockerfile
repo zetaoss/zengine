@@ -3,14 +3,16 @@ FROM node:24-trixie-slim AS nodebuild
 
 RUN corepack enable pnpm
 
-COPY mwz /app/
-RUN cd /app/mwz/skins/ZetaSkin/vue && pnpm install --frozen-lockfile
-RUN cd /app/mwz/skins/ZetaSkin/vue && pnpm run build
+COPY mwz/skins/ZetaSkin/vue /app/mwz/skins/ZetaSkin/vue
+WORKDIR                     /app/mwz/skins/ZetaSkin/vue
+RUN pnpm install --frozen-lockfile
+RUN pnpm run build
 
 
-COPY vue /app/
-RUN cd /app/vue && pnpm install --frozen-lockfile
-RUN cd /app/vue && pnpm run build
+COPY vue /app/vue
+WORKDIR  /app/vue
+RUN pnpm install --frozen-lockfile
+RUN pnpm run build
 
 # https://github.com/zetaoss/zbase/pkgs/container/zbase
 FROM ghcr.io/zetaoss/zbase:v0.43.611
