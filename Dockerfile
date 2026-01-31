@@ -21,7 +21,7 @@ ARG APP_VERSION=v0.0.0
 ENV APP_VERSION=${APP_VERSION}
 
 # https://hub.docker.com/_/composer
-COPY --from=composer:2.9.2 /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2.9.3 /usr/bin/composer /usr/bin/composer
 
 COPY . /app/
 
