@@ -6,7 +6,6 @@ ARG APP_VERSION=v0.0.0
 RUN corepack enable pnpm
 
 COPY . /app/
-
 RUN cd /app/mwz/skins/ZetaSkin/vue/ && pnpm install --frozen-lockfile
 RUN cd /app/vue/                    && pnpm install --frozen-lockfile
 RUN cd /app/mwz/skins/ZetaSkin/vue/ && pnpm run build
