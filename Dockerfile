@@ -19,7 +19,7 @@ FROM ghcr.io/zetaoss/zbase:v0.43.611
 ARG APP_VERSION=v0.0.0
 ENV APP_VERSION=${APP_VERSION}
 
-COPY --from=nodebuild /app/mwz /app/vue /app/
+COPY --from=nodebuild /app /app
 COPY laravel /app/laravel
 
 RUN set -eux \
