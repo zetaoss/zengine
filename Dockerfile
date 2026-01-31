@@ -19,8 +19,9 @@ FROM ghcr.io/zetaoss/zbase:v0.43.611
 ARG APP_VERSION=v0.0.0
 ENV APP_VERSION=${APP_VERSION}
 
-COPY laravel /app/
 COPY --from=nodebuild /app/mwz /app/vue /app/
+COPY laravel /app/laravel
+
 RUN set -eux \
     && mv /var/www/html                         /app/w \
     && ln -rs /app/mwz/extensions/ZetaExtension /app/w/extensions/ \
