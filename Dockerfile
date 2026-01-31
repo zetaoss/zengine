@@ -19,12 +19,12 @@ FROM ghcr.io/zetaoss/zbase:v0.43.611
 ARG APP_VERSION=v0.0.0
 ENV APP_VERSION=${APP_VERSION}
 
-COPY laravel /app/
-COPY mwz/extensions/ZetaExtension             /app/w/extensions/ZetaExtension
+COPY .                                        /app/
 COPY --from=nodebuild /app/mwz/skins/ZetaSkin /app/w/skins/ZetaSkin
 COPY --from=nodebuild /app/vue                /app/vue
 
 RUN set -eux \
+    && mv /app/mwz/extensions/ZetaExtension /app/w/extensions/ZetaExtension \
     && cd /app/laravel/ && composer install --no-dev --no-scripts --optimize-autoloader \
     && cd /app/w/       && composer install --no-dev --no-scripts --optimize-autoloader --no-security-blocking \
     && chown www-data:www-data -R /app/*
