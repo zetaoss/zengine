@@ -22,6 +22,7 @@ ENV APP_VERSION=${APP_VERSION}
 COPY laravel /app/
 COPY --from=nodebuild /app/mwz /app/vue /app/
 RUN set -eux \
+    && mv /var/www/html                         /app/w \
     && ln -rs /app/mwz/extensions/ZetaExtension /app/w/extensions/ \
     && ln -rs /app/mwz/skins/ZetaSkin           /app/w/skins/ \
     && cd /app/laravel/ && composer install --no-dev --no-scripts --optimize-autoloader \
