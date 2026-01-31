@@ -20,12 +20,12 @@ ARG APP_VERSION=v0.0.0
 ENV APP_VERSION=${APP_VERSION}
 
 COPY --from=nodebuild /app /app
-COPY laravel /app/laravel
 
 RUN set -eux \
     && mv /var/www/html                         /app/w \
+    && mv /app/w/composer.local.json-sample     /app/w/composer.local.json \
     && ln -rs /app/mwz/extensions/ZetaExtension /app/w/extensions/ \
     && ln -rs /app/mwz/skins/ZetaSkin           /app/w/skins/ \
     && cd /app/laravel/ && composer install --no-dev --no-scripts --optimize-autoloader \
-    && cd /app/w/       && composer install --no-dev --no-scripts --optimize-autoloader --no-security-blocking \
+    && cd /app/w/       && composer update  --no-dev --no-scripts --optimize-autoloader --no-security-blocking \
     && chown www-data:www-data -R /app/*
