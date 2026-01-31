@@ -17,7 +17,7 @@
     "@mdi/js": "^7.4.47",
     "@tiptap/extension-code-block-lowlight": "3.18.0",
     "@vueuse/components": "^14.1.0",
-    "@vueuse/core": "^14.1.0",
+    "@vueuse/core": "^14.2.0",
     "autolinker": "^4.1.5",
     "highlight.js": "^11.11.1",
     "isomorphic-dompurify": "^2.35.0",
