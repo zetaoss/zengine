@@ -3,14 +3,13 @@ FROM node:24-trixie-slim AS nodebuild
 
 RUN corepack enable pnpm
 
-COPY mwz/skins/ZetaSkin/vue /app/mwz/skins/ZetaSkin/vue
-WORKDIR                     /app/mwz/skins/ZetaSkin/vue
+COPY mwz vue /app/
+
+WORKDIR /app/mwz/skins/ZetaSkin/vue
 RUN pnpm install --frozen-lockfile
 RUN pnpm run build
 
-
-COPY vue /app/vue
-WORKDIR  /app/vue
+WORKDIR /app/vue
 RUN pnpm install --frozen-lockfile
 RUN pnpm run build
 
