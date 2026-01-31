@@ -36,5 +36,5 @@ RUN set -eux \
     && ln -rs /app/mwz/extensions/ZetaExtension /app/w/extensions/ \
     && ln -rs /app/mwz/skins/ZetaSkin           /app/w/skins/ \
     && cd /app/laravel/ && composer install --no-dev --no-scripts --optimize-autoloader \
-    && cd /app/w/       && composer update \
+    && cd /app/w/       && composer install --no-dev --no-scripts --optimize-autoloader \
     && chown www-data:www-data -R /app/*
