@@ -9,18 +9,22 @@ updates:
     directory: "/laravel"
     schedule:
       interval: "weekly"
-    
+    open-pull-requests-limit: 5
+
   - package-ecosystem: "composer"
     directory: "/mwz/skins/ZetaSkin"
     schedule:
       interval: "weekly"
+    open-pull-requests-limit: 5
 
   - package-ecosystem: "npm"
     directory: "/mwz/skins/ZetaSkin/vue"
     schedule:
       interval: "weekly"
+    open-pull-requests-limit: 5
 
   - package-ecosystem: "npm"
     directory: "/vue"
     schedule:
       interval: "weekly"
+    open-pull-requests-limit: 5
