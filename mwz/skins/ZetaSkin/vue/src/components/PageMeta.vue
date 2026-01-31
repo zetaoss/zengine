@@ -15,7 +15,7 @@ const { lastmod, contributors } = getRLCONF()
 
 <template>
   <template v-if="contributors.length">
-    <a :href="historyhref" class="z-muted">
+    <a :href="historyhref" class="z-text2">
       <ZIcon :path="mdiClockOutline" />
       {{ `${lastmod.substring(0, 4)}-${lastmod.substring(4, 6)}-${lastmod.substring(6, 8)}` }}
     </a>

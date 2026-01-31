@@ -1,6 +1,9 @@
 /* mw-charinsert.css */
+@reference 'tailwindcss';
+
 .mw-charinsert-item {
-  @apply rounded m-1 p-1 px-2 border z-text;
+  color: var(--z-text);
+  @apply rounded m-1 p-1 px-2 border;
 
   &:hover {
     @apply no-underline;

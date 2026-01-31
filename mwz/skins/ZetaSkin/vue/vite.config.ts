@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath, URL } from 'node:url'
 
+import tailwindcss from '@tailwindcss/vite'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig, type Plugin } from 'vite'
 
@@ -58,6 +59,7 @@ export default defineConfig(({ command }) => ({
   },
   plugins: [
     vue(),
+    tailwindcss(),
     devDist(),
   ],
   resolve: {

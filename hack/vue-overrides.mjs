@@ -48,6 +48,7 @@ rootPkg.pnpm.overrides = ensureObject(rootPkg.pnpm.overrides)
 const overrides = rootPkg.pnpm.overrides
 
 const missing = commonDeps.filter((name) => !(name in overrides))
+const versionMismatches = commonDeps.filter((name) => depsA[name] !== depsB[name])
 
 // ✅ 추가: 공통이 아닌데 overrides에 있는 항목
 const extraneous = Object.keys(overrides)
@@ -61,7 +62,7 @@ console.log(`B   : ${PKG_B}`)
 console.log('')
 
 if (!isFix) {
-  if (missing.length === 0 && extraneous.length === 0) {
+  if (missing.length === 0 && extraneous.length === 0 && versionMismatches.length === 0) {
     console.log(green(`OK: root pnpm.overrides matches common deps (${commonDeps.length})`))
     process.exit(0)
   }
@@ -85,6 +86,14 @@ if (!isFix) {
     console.error('')
   }
 
+  if (versionMismatches.length > 0) {
+    console.error(red(`Version mismatches between A and B: ${versionMismatches.length}`))
+    for (const name of versionMismatches) {
+      console.error(`- ${name}  (A: ${depsA[name]})  (B: ${depsB[name]})`)
+    }
+    console.error('')
+  }
+
   console.error('Fix: edit root package.json -> pnpm.overrides, or run:')
   console.error('  node hack/vue-overrides.mjs --fix')
   process.exit(1)
@@ -96,6 +105,16 @@ console.log(
     `--fix: adding ${missing.length} missing, removing ${extraneous.length} extraneous in root pnpm.overrides...`,
   ),
 )
+
+if (versionMismatches.length > 0) {
+  console.log(
+    yellow(`Note: ${versionMismatches.length} version mismatches detected between A and B (no changes made).`),
+  )
+  for (const name of versionMismatches) {
+    console.log(`- ${name}  (A: ${depsA[name]})  (B: ${depsB[name]})`)
+  }
+  console.log('')
+}
 
 // add missing (A spec)
 for (const name of missing) {

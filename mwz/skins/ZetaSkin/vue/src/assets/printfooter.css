@@ -1,4 +1,6 @@
 /* printfooter.css */
+@reference 'tailwindcss';
+
 @media screen {
     .printfooter {
         @apply invisible;

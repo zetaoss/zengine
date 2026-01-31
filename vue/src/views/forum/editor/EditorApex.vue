@@ -123,6 +123,8 @@ onBeforeUnmount(() => {
 </template>
 
 <style>
+@reference 'tailwindcss';
+
 .editor {
   @apply border rounded bg-white dark:bg-black flex flex-col h-[60vh];
 

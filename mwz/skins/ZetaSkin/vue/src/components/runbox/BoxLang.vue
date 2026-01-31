@@ -19,7 +19,10 @@ const images = computed(() => job.langOuts?.images ?? [])
 const loaded = computed(() => job.phase != null)
 const hasLogs = computed(() => logs.value.length > 0)
 const hasImages = computed(() => images.value.length > 0)
-const hideTexLogs = computed(() => hasLogs.value && hasImages.value && job.boxes[seq].lang.includes('tex'))
+const hideTexLogs = computed(() => {
+  const box = job.boxes[seq]
+  return hasLogs.value && hasImages.value && !!box?.lang && box.lang.includes('tex')
+})
 </script>
 
 <template>

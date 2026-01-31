@@ -13,7 +13,7 @@
 
 .mw-parser-output {
   .mw-headline::before {
-    color: var(--z-muted3);
+    color: var(--z-text4);
   }
 
   counter-reset: h2 h3 h4 h5 h6;

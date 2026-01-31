@@ -74,7 +74,10 @@ function agoDate(d: Date): string {
 
 function parseRegistrationDate(reg: string): Date {
   if (!reg || reg.length < 8) return new Date()
-  const [y, m, d] = [reg.slice(0, 4), reg.slice(4, 6), reg.slice(6, 8)].map(Number)
+  const y = Number(reg.slice(0, 4))
+  const m = Number(reg.slice(4, 6))
+  const d = Number(reg.slice(6, 8))
+  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return new Date()
   return new Date(y, m - 1, d, 12)
 }
 

@@ -1,4 +1,6 @@
 /* mw-base.css */
+@reference 'tailwindcss';
+
 #mw-content-text {
   @apply text-base leading-7;
 }
@@ -12,7 +14,34 @@ article {
   }
 
   & input[type="submit"] {
-    @apply z-btn;
+    background-color: var(--z-btn);
+    color: var(--z-text);
+
+    border-radius: 0.25rem;
+    margin-left: 0.125rem;
+    margin-right: 0.125rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    padding: 0.5rem 1rem;
+
+    transition: 80ms cubic-bezier(0.33, 1, 0.68, 1);
+    transition-property: color, background-color, box-shadow, border-color;
+
+    &:hover {
+      text-decoration: none;
+      filter: brightness(0.9);
+      color: inherit;
+    }
+
+    .dark &:hover {
+      filter: brightness(1.5);
+    }
+
+    &:disabled,
+    &.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
   }
 
   & input[type="file"] {

@@ -5,5 +5,4 @@ module.exports = {
     './src/**/*.{vue,js,ts,jsx,tsx}',
     './common/**/*.{vue,js,ts,jsx,tsx}',
   ],
-  darkMode: 'class',
 }

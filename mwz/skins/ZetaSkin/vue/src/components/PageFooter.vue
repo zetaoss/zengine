@@ -142,7 +142,7 @@ fetchData()
           <ZMenu v-if="canEdit(row.user_id) || canDelete(row.user_id)">
             <template #trigger="{ toggle }">
               <ZButton size="small" color="ghost" aria-label="댓글 메뉴" @click="toggle()">
-                <ZIcon :path="mdiDotsHorizontal" class="z-muted2" />
+                <ZIcon :path="mdiDotsHorizontal" class="z-text3" />
               </ZButton>
             </template>
 
@@ -164,7 +164,7 @@ fetchData()
         </div>
 
         <LinkifyBox :content="row.message" />
-        <div class="text-sm z-muted2">{{ row.created.substring(0, 10) }}</div>
+        <div class="text-sm z-text3">{{ row.created.substring(0, 10) }}</div>
 
         <div v-if="editingRow && row.id === editingRow.id" class="py-3">
           <div class="p-3 border-2 rounded">

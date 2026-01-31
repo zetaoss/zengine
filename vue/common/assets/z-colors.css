@@ -1,0 +1,39 @@
+.z-base {
+    background-color: var(--z-base);
+}
+
+.z-base2 {
+    background-color: var(--z-base2);
+}
+
+.z-base3 {
+    background-color: var(--z-base3);
+}
+
+.z-ring {
+    --tw-ring-color: var(--z-border);
+}
+
+.z-ring2 {
+    --tw-ring-color: var(--z-border2);
+}
+
+.z-text {
+    color: var(--z-text);
+}
+
+.z-text2 {
+    color: var(--z-text2);
+}
+
+.z-text3 {
+    color: var(--z-text3);
+}
+
+.z-text4 {
+    color: var(--z-text4);
+}
+
+.z-link {
+    color: var(--z-link);
+}

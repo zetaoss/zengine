@@ -1,102 +1,104 @@
-html {
-  font-size: 16px;
-  background-color: var(--z-bg);
-}
-
-body {
-  background-color: var(--z-bg);
-  color: var(--z-text);
-  font-family: var(--z-font-family);
-  letter-spacing: -0.4px;
-}
-
-img,
-svg,
-canvas {
-  display: inline;
-}
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  margin: 0;
-  font-weight: 600;
-}
-
-h1 {
-  font-size: 2.25rem;
-}
-
-h2 {
-  font-size: 1.875rem;
-}
-
-h3 {
-  font-size: 1.5rem;
-}
-
-h4 {
-  font-size: 1.25rem;
-}
-
-h5 {
-  font-size: 1.125rem;
-}
-
-h6 {
-  font-size: 1rem;
-}
-
-a {
-  color: var(--z-link);
-  word-break: break-all;
-
-  &:hover {
-    text-decoration: underline;
+@layer base {
+  html {
+    font-size: 16px;
+    background-color: var(--z-base);
   }
 
-  &.external {
-    color: var(--z-link-ext);
-    border-bottom: 1px solid var(--z-link-ext-alpha);
+  body {
+    background-color: var(--z-base);
+    color: var(--z-text);
+    font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", "맑은 고딕", helvetica, "Apple SD Gothic Neo", sans-serif;
+    letter-spacing: -0.4px;
+  }
+
+  img,
+  svg,
+  canvas {
+    display: inline;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin: 0;
+    font-weight: 600;
+  }
+
+  h1 {
+    font-size: 2.25rem;
+  }
+
+  h2 {
+    font-size: 1.875rem;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+  }
+
+  h4 {
+    font-size: 1.25rem;
+  }
+
+  h5 {
+    font-size: 1.125rem;
+  }
+
+  h6 {
+    font-size: 1rem;
+  }
+
+  a {
+    color: var(--z-link);
+    word-break: break-all;
 
     &:hover {
-      text-decoration: none;
-      border-bottom-color: var(--z-link-ext);
+      text-decoration: underline;
     }
 
+    &.external {
+      color: var(--z-link-ext);
+      border-bottom: 1px solid var(--z-link-ext-alpha);
+
+      &:hover {
+        text-decoration: none;
+        border-bottom-color: var(--z-link-ext);
+      }
+
+    }
+
+    &.new {
+      color: var(--z-link-new);
+    }
   }
 
-  &.new {
-    color: var(--z-link-new);
+  ul {
+    list-style: disc;
+    padding: 0 0 0 1.5rem;
   }
-}
 
-ul {
-  list-style: disc;
-  padding: 0 0 0 1.5rem;
-}
+  li {
+    margin: 0;
+  }
 
-li {
-  margin: 0;
-}
+  pre {
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
 
-pre {
-  white-space: pre-wrap;
-  word-break: break-all;
-}
+  textarea {
+    border-width: 1px;
+    border-radius: .5rem;
+    padding: .5rem;
+    width: 100%;
+  }
 
-textarea {
-  border-width: 1px;
-  border-radius: .5rem;
-  padding: .5rem;
-  width: 100%;
-}
-
-input:disabled {
-  cursor: not-allowed;
-  opacity: 0.8;
-  color: var(--z-muted2);
+  input:disabled {
+    cursor: not-allowed;
+    opacity: 0.8;
+    color: var(--z-text3);
+  }
 }

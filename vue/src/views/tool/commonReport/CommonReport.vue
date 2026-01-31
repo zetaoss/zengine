@@ -107,7 +107,7 @@ onUnmounted(() => retrier.clear())
     <CommonReportNew :show="showModal" @close="closeModal" />
 
     <table class="w-full">
-      <thead class="z-table-header">
+      <thead class="z-base3">
         <tr>
           <th class="not-mobile">번호</th>
           <th>이름</th>

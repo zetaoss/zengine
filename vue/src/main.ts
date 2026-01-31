@@ -1,5 +1,5 @@
 // main.ts
-import './assets/main.css'
+import './style.css'
 
 import { useDark, useToggle } from '@vueuse/core'
 import { createPinia } from 'pinia'

@@ -57,7 +57,7 @@ defineExpose({ show, close, toggle })
     <slot name="trigger" :open="open" :toggle="toggle" :close="close" />
 
     <div v-if="open"
-      class="absolute top-full right-0 z-50 mt-1 py-1 inline-flex w-max flex-col rounded bg-[var(--z-card-bg)] ring-1 ring-[var(--z-border)] shadow-lg"
+      class="absolute top-full right-0 z-50 mt-1 py-1 inline-flex w-max flex-col rounded z-base2 ring-1 z-ring shadow-lg"
       role="menu" @click.stop>
       <slot name="menu" :close="close" />
     </div>

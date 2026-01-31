@@ -1,6 +1,8 @@
 /* ui-color.css */
-@import 'variables.css';
-@import 'modules.css';
+@import './variables.css';
+@import './modules.css';
+
+@reference 'tailwindcss';
 
 .dark {
 
