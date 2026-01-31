@@ -151,7 +151,11 @@ class Httpy {
     options: HttpyOptions<TSelected> = {},
   ): Promise<HttpyResult<TSelected>> {
     try {
-      return await this.request<TRaw, TSelected>('GET', url, { params, selector, options })
+      return await this.request<TRaw, TSelected>('GET', url, {
+        params,
+        selector,
+        options,
+      })
     } catch (e) {
       return [null, HttpyError.fromUnknown(e)]
     }

@@ -31,7 +31,9 @@ export function renderPlainTextWithFences(text: string) {
     const before = text.slice(lastIndex, offset)
     parts.push(escapeHtml(before).replace(/\n/g, '<br>'))
 
-    parts.push(`<pre><code class="language-${lang}">${escapeCode(code)}</code></pre>`)
+    parts.push(
+      `<pre><code class="language-${lang}">${escapeCode(code)}</code></pre>`,
+    )
 
     lastIndex = offset + match.length
     return match

@@ -5,7 +5,6 @@
 @reference 'tailwindcss';
 
 .dark {
-
   & .oo-ui-indicator-down,
   & .oo-ui-iconElement-icon {
     @apply invert;

@@ -15,15 +15,12 @@ RUN echo run build \
     && cd /app/mwz/skins/ZetaSkin/vue && pnpm run build
 
 # https://github.com/zetaoss/zbase/pkgs/container/zbase
-FROM ghcr.io/zetaoss/zbase:v0.43.609
+FROM ghcr.io/zetaoss/zbase:v0.43.611
 
 ARG APP_VERSION=v0.0.0
 ENV APP_VERSION=${APP_VERSION}
 
-# https://hub.docker.com/_/composer
-COPY --from=composer:2.9.3 /usr/bin/composer /usr/bin/composer
-
-COPY . /app/
+COPY laravel mwz vue /app/
 
 COPY --from=nodebuild /app/vue/dist                          /app/vue/dist
 COPY --from=nodebuild /app/mwz/skins/ZetaSkin/resources/dist /app/mwz/skins/ZetaSkin/resources/dist
@@ -31,8 +28,6 @@ COPY --from=nodebuild /app/mwz/skins/ZetaSkin/resources/dist /app/mwz/skins/Zeta
 RUN set -eux \
     && APP_VERSION_STRIPPED="${APP_VERSION#v}" \
     && sed -i "s/\"version\": \".*\"/\"version\": \"${APP_VERSION_STRIPPED}\"/" /app/mwz/skins/ZetaSkin/skin.json \
-    && mv     /var/www/html                     /app/w \
-    && mv     /app/w/composer.local.json-sample /app/w/composer.local.json \
     && ln -rs /app/mwz/extensions/ZetaExtension /app/w/extensions/ \
     && ln -rs /app/mwz/skins/ZetaSkin           /app/w/skins/ \
     && cd /app/laravel/ && composer install --no-dev --no-scripts --optimize-autoloader \

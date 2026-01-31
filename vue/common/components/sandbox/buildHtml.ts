@@ -97,9 +97,15 @@ export default function buildHtml(
   let htmlWithProxy = baseHtml
 
   if (/<head>/i.test(htmlWithProxy)) {
-    htmlWithProxy = htmlWithProxy.replace(/<head>/i, `<head>${consoleProxyScript}`)
+    htmlWithProxy = htmlWithProxy.replace(
+      /<head>/i,
+      `<head>${consoleProxyScript}`,
+    )
   } else if (/<body[^>]*>/i.test(htmlWithProxy)) {
-    htmlWithProxy = htmlWithProxy.replace(/<body[^>]*>/i, `$&${consoleProxyScript}`)
+    htmlWithProxy = htmlWithProxy.replace(
+      /<body[^>]*>/i,
+      `$&${consoleProxyScript}`,
+    )
   } else {
     htmlWithProxy = consoleProxyScript + htmlWithProxy
   }

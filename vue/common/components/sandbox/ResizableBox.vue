@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import { useEventListener } from '@vueuse/core'
 import type { CSSProperties } from 'vue'
-import { computed,ref, useAttrs } from 'vue'
+import { computed, ref, useAttrs } from 'vue'
 
 const minPx = 200
 

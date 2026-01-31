@@ -7,7 +7,7 @@ const router = createRouter({
     {
       path: '/',
       component: () => import('@/views/home/TheHome.vue'),
-      meta: { tab: 'wiki' }
+      meta: { tab: 'wiki' },
     },
     {
       path: '/forum',
@@ -15,21 +15,21 @@ const router = createRouter({
       children: [
         {
           path: '',
-          component: () => import('@/views/forum/ForumListPage.vue')
+          component: () => import('@/views/forum/ForumListPage.vue'),
         },
         {
           path: 'new',
           component: () => import('@/views/forum/ForumEditPage.vue'),
-          meta: { requiresAuth: true }
+          meta: { requiresAuth: true },
         },
         {
           path: ':id/edit',
           component: () => import('@/views/forum/ForumEditPage.vue'),
-          meta: { requiresAuth: true }
+          meta: { requiresAuth: true },
         },
         {
           path: ':id',
-          component: () => import('@/views/forum/ForumViewPage.vue')
+          component: () => import('@/views/forum/ForumViewPage.vue'),
         },
       ],
     },
@@ -40,47 +40,48 @@ const router = createRouter({
       children: [
         {
           path: 'common-report',
-          component: () => import('@/views/tool/commonReport/CommonReport.vue')
+          component: () => import('@/views/tool/commonReport/CommonReport.vue'),
         },
         {
           path: 'common-report/:id',
-          component: () => import('@/views/tool/commonReport/CommonReportDetail.vue')
+          component: () =>
+            import('@/views/tool/commonReport/CommonReportDetail.vue'),
         },
         {
           path: 'write-request',
-          component: () => import('@/views/tool/writeRequest/WriteRequest.vue')
+          component: () => import('@/views/tool/writeRequest/WriteRequest.vue'),
         },
         {
           path: 'frontplay',
-          component: () => import('@/views/tool/FrontPlay.vue')
+          component: () => import('@/views/tool/FrontPlay.vue'),
         },
       ],
     },
     {
       path: '/login',
-      component: () => import('@/views/auth/LoginView.vue')
+      component: () => import('@/views/auth/LoginView.vue'),
     },
     {
       path: '/logout',
-      component: () => import('@/views/auth/LogoutView.vue')
+      component: () => import('@/views/auth/LogoutView.vue'),
     },
     {
       path: '/social-join/:token',
-      component: () => import('@/views/auth/SocialJoin.vue')
+      component: () => import('@/views/auth/SocialJoin.vue'),
     },
     {
       path: '/onelines',
       component: () => import('@/views/misc/TheOnelines.vue'),
-      meta: { tab: 'wiki' }
+      meta: { tab: 'wiki' },
     },
     {
       path: '/user/:user_name/edit',
       component: () => import('@/views/user/EditProfile.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
     {
       path: '/user/:user_name',
-      component: () => import('@/views/user/UserProfile.vue')
+      component: () => import('@/views/user/UserProfile.vue'),
     },
     // catch-all (dummy route for wiki)
     { path: '/wiki/:any(.*)', component: () => null },
