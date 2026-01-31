@@ -1,4 +1,6 @@
 /* mw-editsection.css */
+@reference 'tailwindcss';
+
 .mw-editsection>a {
   @apply ml-1 p-1 rounded-full opacity-100 hover:bg-gray-200 dark:hover:bg-gray-700 text-inherit relative;
   font-size: 1em;

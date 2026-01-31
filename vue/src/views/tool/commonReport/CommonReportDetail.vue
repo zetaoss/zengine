@@ -85,7 +85,8 @@ function handleCopy(action: CopyAction) {
 }
 
 async function del(r: Row) {
-  const ok = await showConfirm(`'${r.items[0].name}' 등에 관한 #${r.id}번 통용보고서를 삭제하시겠습니까?`)
+  const label = r.items?.[0]?.name ?? '항목'
+  const ok = await showConfirm(`'${label}' 등에 관한 #${r.id}번 통용보고서를 삭제하시겠습니까?`)
   if (!ok) return
 
   const [, err] = await httpy.delete(`/api/common-report/${r.id}`)
@@ -274,6 +275,8 @@ fetchDataWithRetry()
 </template>
 
 <style scoped>
+@reference 'tailwindcss';
+
 th,
 td {
   @apply border text-right p-3;

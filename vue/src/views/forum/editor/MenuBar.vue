@@ -249,6 +249,8 @@ const itemDatas = ref([
 </template>
 
 <style scoped>
+@reference 'tailwindcss';
+
 .menu-bar {
   @apply border-b text-right items-center flex flex-wrap p-1 bg-slate-100 dark:bg-slate-900;
 }

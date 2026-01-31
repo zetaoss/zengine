@@ -71,10 +71,12 @@ async function getPreviews(concurrency = 3) {
   async function worker() {
     while (index < matches.length) {
       const match = matches[index++]
+      if (!match) continue
       const m = match.match(/"([^"]+)"/)
       if (!m) continue
 
       const url = m[1]
+      if (!url) continue
       const [data] = await httpy.get<PreviewData>('/api/preview', { url })
       if (!data) continue
 
@@ -118,6 +120,8 @@ watch(html, afterRender)
 </template>
 
 <style>
+@reference 'tailwindcss';
+
 .preview {
   @apply flex border rounded p-3;
 

@@ -1,19 +1,24 @@
 /* app.css */
+@import 'tailwindcss';
+@custom-variant dark (&:where(.dark, .dark *));
+
 @import '@common/assets/app.css';
 
-@import 'ui-color/ui-color.css';
+@import './ui-color/ui-color.css';
 
-@import 'has-binders.css';
+@import './has-binders.css';
 
-@import 'mw-base.css';
-@import 'mw-charinsert.css';
-@import 'mw-editsection.css';
-@import 'mw-headings.css';
-@import 'mw-highlight.css';
-@import 'mw-parser-output.css';
+@import './mw-base.css';
+@import './mw-charinsert.css';
+@import './mw-editsection.css';
+@import './mw-headings.css';
+@import './mw-highlight.css';
+@import './mw-parser-output.css';
 
-@import 'page-bar.css';
-@import 'page-cats.css';
+@import './page-bar.css';
+@import './page-cats.css';
 
-@import 'printfooter.css';
-@import 'toc.css';
+@import './printfooter.css';
+@import './toc.css';
+
+@config "../../tailwind.config.js";

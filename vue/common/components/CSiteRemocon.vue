@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import ZIcon from '@common/ui/ZIcon.vue'
-import { scrollToBottom,scrollToTop } from '@common/utils/scroll'
+import { scrollToBottom, scrollToTop } from '@common/utils/scroll'
 import { mdiChevronDown, mdiChevronUp, mdiWeatherNight } from '@mdi/js'
 import { useDark, useToggle } from '@vueuse/core'
 
@@ -25,6 +25,8 @@ const toggleDark = useToggle(isDark)
 </template>
 
 <style scoped>
+@reference 'tailwindcss';
+
 button {
   @apply p-1.5 ml-0.5 rounded bg-[#8888];
 }

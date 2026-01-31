@@ -167,7 +167,7 @@ watch(() => [route.params.page, route.query.page], fetchData, { immediate: true 
     </div>
 
     <table class="mytable w-full z-card">
-      <thead class="z-table-header">
+      <thead class="z-base3">
         <tr>
           <th>번호</th>
           <th>제목</th>

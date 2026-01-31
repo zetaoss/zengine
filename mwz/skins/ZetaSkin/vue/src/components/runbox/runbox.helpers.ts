@@ -12,8 +12,16 @@ export function enqueue(handler: JobHandler, job: Job) {
 }
 
 export function buildLangPayload(job: Job) {
-  const mainBox = job.boxes[job.main]
+  const mainBox = job.boxes[job.main] ?? job.boxes[0]
   const fileMap = new Map<string, { name?: string; body: string }>()
+
+  if (!mainBox) {
+    return {
+      lang: '',
+      files: [],
+      main: job.main,
+    }
+  }
 
   job.boxes.forEach(b => {
     const key = b.file
@@ -31,7 +39,14 @@ export function buildLangPayload(job: Job) {
 }
 
 export function buildNotebookPayload(job: Job) {
-  const mainBox = job.boxes[job.main]
+  const mainBox = job.boxes[job.main] ?? job.boxes[0]
+
+  if (!mainBox) {
+    return {
+      lang: '',
+      sources: [],
+    }
+  }
 
   return {
     lang: mainBox.lang,

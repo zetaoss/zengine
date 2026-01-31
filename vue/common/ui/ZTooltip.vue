@@ -50,6 +50,8 @@ watch(() => props.show, updateShow)
 </template>
 
 <style lang="scss" scoped>
+@reference 'tailwindcss';
+
 .bottom {
   @apply left-1/2;
 

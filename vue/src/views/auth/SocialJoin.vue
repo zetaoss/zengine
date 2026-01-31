@@ -96,9 +96,8 @@ async function checkUsername() {
       username.value = data.name
     }
 
-    if (data.messages && data.messages.length > 0) {
-      warningMessage.value = data.messages[0]
-    }
+    const warning = data.messages?.[0]
+    if (warning) warningMessage.value = warning
 
     return
   }
@@ -201,6 +200,8 @@ async function submitJoin() {
 </template>
 
 <style scoped>
+@reference 'tailwindcss';
+
 .can {
   @apply border-green-500;
 }

@@ -1,5 +1,6 @@
 /* ProseMirror.css */
 /* Tailwind @apply + CSS Nesting 버전 */
+@reference 'tailwindcss';
 
 .ProseMirror {
     @apply outline-0;

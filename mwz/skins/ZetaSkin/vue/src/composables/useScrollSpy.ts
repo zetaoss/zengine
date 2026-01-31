@@ -45,7 +45,11 @@ export function useScrollSpy(
         if (s.top <= viewportTop) current = s.id
         else break
       }
-      if (!current) current = list[0].id
+      if (!current) current = list[0]?.id ?? null
+      if (!current) {
+        activeIds.value = []
+        return
+      }
       activeIds.value = [current]
     }
   }

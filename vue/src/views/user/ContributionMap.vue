@@ -178,17 +178,18 @@ const cells = computed<DayCell[]>(() => {
   return items
 })
 
-const weekCount = computed(() =>
-  cells.value.length ? cells.value[cells.value.length - 1].weekIndex + 1 : 0,
-)
+const weekCount = computed(() => {
+  const last = cells.value.length ? cells.value[cells.value.length - 1] : undefined
+  return last ? last.weekIndex + 1 : 0
+})
 
 const thresholds = [1, 10, 20, 40]
 const getLevel = (value: number) => {
   if (value <= 0) return 0
-  if (value < thresholds[0]) return 1
-  if (value < thresholds[1]) return 2
-  if (value < thresholds[2]) return 3
-  if (value < thresholds[3]) return 4
+  if (value < (thresholds[0] ?? 1)) return 1
+  if (value < (thresholds[1] ?? 10)) return 2
+  if (value < (thresholds[2] ?? 20)) return 3
+  if (value < (thresholds[3] ?? 40)) return 4
   return 4
 }
 
