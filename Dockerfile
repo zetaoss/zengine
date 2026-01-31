@@ -20,7 +20,6 @@ ARG APP_VERSION=v0.0.0
 ENV APP_VERSION=${APP_VERSION}
 
 COPY --from=nodebuild /app /app
-COPY laravel /app/laravel
 
 RUN set -eux \
     && mv /var/www/html                         /app/w \
