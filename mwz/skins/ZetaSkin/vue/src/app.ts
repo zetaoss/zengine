@@ -15,8 +15,9 @@ import UserMenu from '@/components/navbar/UserMenu.vue'
 import PageFooter from '@/components/PageFooter.vue'
 import PageMenu from '@/components/PageMenu.vue'
 import PageMeta from '@/components/PageMeta.vue'
-import { runbox } from '@/components/runbox/runbox'
+import { mountRunbox } from '@/components/runbox/runbox'
 import TocApex from '@/components/toc/TocApex.vue'
+import { mountMaps } from '@/utils/maps'
 
 runVisibleHeightsUpdater()
 
@@ -37,4 +38,5 @@ app.component('UserMenu', UserMenu)
 
 app.mount('#app')
 
-runbox()
+mountMaps()
+mountRunbox()
