@@ -54,7 +54,7 @@ const onCopy = () => {
 
 <template>
   <div v-if="props.job">
-    <div class="mb-1 bg-[var(--code-bg)] p-1 border rounded-lg">
+    <div class="mb-1 bg-(--code-bg) p-1 border rounded-lg">
       <component :is="CurrentComponent" :job="props.job" :seq="props.seq">
         <div class="pt-1 px-4">
           <div class="sticky top-0 z-10 h-0">

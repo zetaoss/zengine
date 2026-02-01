@@ -72,7 +72,7 @@ async function postJob(job: Job): Promise<void> {
   enqueue(getJob, job)
 }
 
-export function runbox() {
+export function mountRunbox() {
   const highlights = document.querySelectorAll<HTMLElement>('.mw-highlight')
   if (!highlights.length) return
 

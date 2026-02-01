@@ -14,9 +14,9 @@ class SkinZetaSkin extends SkinMustache
     {
         $out->addHTMLClasses($_COOKIE['theme'] ?? '');
         $out->addHeadItem('adsense', '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='.getenv('ADSENSE_CLIENT').'" crossorigin="anonymous"></script>');
-        $out->addStyle('/w/skins/ZetaSkin/resources/dist/app.css?v='.getenv('ASSET_HASH'));
-        $out->addScriptFile('/config.js?v='.getenv('ASSET_HASH'));
-        $out->addScriptFile('/w/skins/ZetaSkin/resources/dist/app.js?v='.getenv('ASSET_HASH'));
+        $out->addStyle('/w/skins/ZetaSkin/resources/dist/app.css?'.ASSET_HASH);
+        $out->addScriptFile('/config.js?'.ASSET_HASH);
+        $out->addScriptFile('/w/skins/ZetaSkin/resources/dist/app.js?'.ASSET_HASH);
     }
 
     public static function onMakeGlobalVariablesScript(array &$vars, $out)
