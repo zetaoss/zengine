@@ -148,23 +148,6 @@ function collectBounds(d: MapData): L.LatLngBounds | null {
   return b.isValid() ? b : null
 }
 
-const iconCache = new Map<string, L.Icon>()
-
-function getLeafletIcon(icon?: string): L.Icon | null {
-  if (!icon) return null
-
-  const url = `//unpkg.com/leaflet-color-markers/img/marker-icon-2x-${icon}.png`
-  const ico = L.icon({
-    ...L.Icon.Default.prototype.options,
-    iconUrl: url,
-    iconRetinaUrl: url,
-    shadowUrl: '//unpkg.com/leaflet/dist/images/marker-shadow.png',
-  })
-
-  iconCache.set(url, ico)
-  return ico
-}
-
 onMounted(() => {
   const d = props.mapdata
   if (!mapEl.value) return
@@ -196,8 +179,13 @@ onMounted(() => {
   // locations → marker
   for (const loc of d.locations ?? []) {
     if (typeof loc.lat !== 'number' || typeof loc.lon !== 'number') continue
-    const icon = getLeafletIcon(loc.icon)
-    const marker = icon ? L.marker([loc.lat, loc.lon], { icon }) : L.marker([loc.lat, loc.lon])
+    const color = loc.icon || 'blue'
+    const icon = L.icon({
+      ...L.Icon.Default.prototype.options,
+      iconUrl: `//unpkg.com/leaflet-color-markers/img/marker-icon-2x-${color}.png`,
+      shadowUrl: '//unpkg.com/leaflet/dist/images/marker-shadow.png',
+    })
+    const marker = L.marker([loc.lat, loc.lon], { icon })
     marker.addTo(map)
     if (loc.title) marker.bindTooltip(loc.title.trim())
   }
