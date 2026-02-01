@@ -14,7 +14,7 @@ RUN cd /app/vue/                    && pnpm run build
 RUN APP_VERSION_STRIPPED="${APP_VERSION#v}" && sed -i "s/\"version\": \".*\"/\"version\": \"${APP_VERSION_STRIPPED}\"/" /app/mwz/skins/ZetaSkin/skin.json
 
 # https://github.com/zetaoss/zbase/pkgs/container/zbase
-FROM ghcr.io/zetaoss/zbase:v0.43.612
+FROM ghcr.io/zetaoss/zbase:v0.43.613
 
 ARG APP_VERSION=v0.0.0
 ENV APP_VERSION=${APP_VERSION}
