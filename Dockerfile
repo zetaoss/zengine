@@ -14,7 +14,7 @@ RUN cd /app/vue/                    && pnpm run build
 RUN APP_VERSION_STRIPPED="${APP_VERSION#v}" && sed -i "s/\"version\": \".*\"/\"version\": \"${APP_VERSION_STRIPPED}\"/" /app/mwz/skins/ZetaSkin/skin.json
 
 # https://github.com/zetaoss/zbase/pkgs/container/zbase
-FROM ghcr.io/zetaoss/zbase:v0.43.611
+FROM ghcr.io/zetaoss/zbase:v0.43.612
 
 ARG APP_VERSION=v0.0.0
 ENV APP_VERSION=${APP_VERSION}
@@ -23,9 +23,7 @@ COPY --from=nodebuild /app /app
 
 RUN set -eux \
     && mv /var/www/html                         /app/w \
-    && mv /app/w/composer.local.json-sample     /app/w/composer.local.json \
     && ln -rs /app/mwz/extensions/ZetaExtension /app/w/extensions/ \
     && ln -rs /app/mwz/skins/ZetaSkin           /app/w/skins/ \
-    && cd /app/laravel/ && composer install --no-dev --no-scripts --optimize-autoloader \
-    && cd /app/w/       && composer update  --no-dev --no-scripts --optimize-autoloader --no-security-blocking \
+    && cd /app/laravel/ && composer install --no-dev -o \
     && chown www-data:www-data -R /app/*
