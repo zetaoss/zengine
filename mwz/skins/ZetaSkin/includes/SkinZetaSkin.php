@@ -73,7 +73,6 @@ class SkinZetaSkin extends SkinMustache
 
         $ctx = PageContext::getInstance($this->getOutput());
 
-        $data['isEdit'] = $ctx->isEdit;
         $data['hasMeta'] = $is_article && $ctx->isView;
         $data['hasBinders'] = $ctx->hasBinders;
 
