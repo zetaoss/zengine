@@ -1,8 +1,6 @@
 {
   "name": "ZetaExtension",
-  "author": [
-    "jmnote"
-  ],
+  "author": ["jmnote"],
   "description": "ZetaWiki extension",
   "type": "other",
   "license-name": "Apache-2.0",
@@ -30,10 +28,6 @@
     "PageSaveComplete": "ZetaExtension\\Binder\\BinderHooks::onPageSaveComplete",
     "PageDeleteComplete": "ZetaExtension\\Binder\\BinderHooks::onPageDeleteComplete",
     "PageUndeleteComplete": "ZetaExtension\\Binder\\BinderHooks::onPageUndeleteComplete",
-    "ParserFirstCallInit": [
-      "ZetaExtension\\Map\\Map::onParserFirstCallInit",
-      "ZetaExtension\\Tag\\Tag::onParserFirstCallInit"
-    ],
     "PostLoginRedirect": "ZetaExtension\\Auth\\Hooks::onPostLoginRedirect",
     "SpecialPageBeforeExecute": "ZetaExtension\\Auth\\Hooks::onSpecialPageBeforeExecute",
     "UserLogoutComplete": "ZetaExtension\\Auth\\Hooks::onUserLogoutComplete"
@@ -60,18 +54,6 @@
       "class": "ZetaExtension\\Auth\\RestSocialCreate"
     }
   ],
-  "ResourceModules": {
-    "map1": {
-      "scripts": [
-        "modules/map1.js"
-      ]
-    },
-    "map2": {
-      "scripts": [
-        "modules/map2.js"
-      ]
-    }
-  },
   "ResourceFileModulePaths": {
     "localBasePath": "",
     "remoteExtPath": "ZetaExtension"

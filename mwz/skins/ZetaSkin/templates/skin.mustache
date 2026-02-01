@@ -74,7 +74,7 @@
           </div>
           {{/hasToc}}
 
-          <article id="content" data-mw-ve-target-container class="py-6 pb-10" v-pre>
+          <article id="content" data-mw-ve-target-container class="py-6 pb-10" {{#isEdit}}v-pre{{/isEdit}}>
           {{{ html-body-content }}}
           </article>
 
