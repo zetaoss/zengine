@@ -18,8 +18,6 @@ final class PageContext
 
     public array $contributors = [];
 
-    public bool $isEdit;
-
     public bool $isView;
 
     public bool $hasBinders = false;
@@ -43,9 +41,7 @@ final class PageContext
 
     private function __construct(OutputPage $out)
     {
-        $action = (string) $out->getActionName();
-        $this->isEdit = $action === 'edit';
-        $this->isView = $action === 'view';
+        $this->isView = ((string) $out->getActionName() === 'view');
         $this->lastmod = (string) $out->getRevisionTimestamp();
 
         $title = $out->getTitle();
