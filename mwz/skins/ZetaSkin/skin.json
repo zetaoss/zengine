@@ -1,9 +1,7 @@
 {
   "name": "ZetaSkin",
   "version": "0.0.0",
-  "author": [
-    "jmnote"
-  ],
+  "author": ["jmnote"],
   "description": "ZetaWiki skin",
   "type": "skin",
   "requires": {

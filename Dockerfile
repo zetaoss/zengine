@@ -11,7 +11,10 @@ RUN cd /app/vue/                    && pnpm install --frozen-lockfile
 RUN cd /app/mwz/skins/ZetaSkin/vue/ && pnpm run build
 RUN cd /app/vue/                    && pnpm run build
 
-RUN APP_VERSION_STRIPPED="${APP_VERSION#v}" && sed -i "s/\"version\": \".*\"/\"version\": \"${APP_VERSION_STRIPPED}\"/" /app/mwz/skins/ZetaSkin/skin.json
+RUN APP_VERSION_NORMALIZED="${APP_VERSION#v}" \
+    && sed -i "s/\"version\": \".*\"/\"version\": \"${APP_VERSION_NORMALIZED}\"/" /app/mwz/skins/ZetaSkin/skin.json \
+    && sed -i "s/\"version\": \".*\"/\"version\": \"${APP_VERSION_NORMALIZED}\"/" /app/mwz/extensions/ZetaExtension/extension.json \
+    && echo ok
 
 # https://github.com/zetaoss/zbase/pkgs/container/zbase
 FROM ghcr.io/zetaoss/zbase:v0.43.615
