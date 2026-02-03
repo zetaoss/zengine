@@ -1,5 +1,6 @@
 {
   "name": "ZetaExtension",
+  "version": "0.0.0",
   "author": ["jmnote"],
   "description": "ZetaWiki extension",
   "type": "other",
