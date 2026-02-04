@@ -17,7 +17,7 @@ RUN APP_VERSION_NORMALIZED="${APP_VERSION#v}" \
     && echo ok
 
 # https://github.com/zetaoss/zbase/pkgs/container/zbase
-FROM ghcr.io/zetaoss/zbase:v0.43.616
+FROM ghcr.io/zetaoss/zbase:v0.43.617
 
 ARG APP_VERSION=v0.0.0
 ENV APP_VERSION=${APP_VERSION}
