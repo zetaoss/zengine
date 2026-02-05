@@ -24,7 +24,7 @@ const isCooling = ref(false)
 
 const sizeClasses: Record<string, string> = {
   medium: 'p-2 text-sm',
-  small: 'p-0.5 text-[11px]',
+  small: 'p-1 text-xs',
 }
 
 const base = 'text-[var(--z-text)] inline-flex items-center justify-center rounded transition ring-1 hover:no-underline leading-none'

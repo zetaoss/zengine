@@ -1,3 +1,4 @@
+// linkify.ts
 import Autolinker from 'autolinker'
 import DOMPurify from 'isomorphic-dompurify'
 
