@@ -11,10 +11,16 @@ const linkifed = ref('')
 
 watch(
   () => props.content,
-  (content) => {
-    linkify(content).then((v) => {
-      linkifed.value = v
+  async (content, _oldValue, onCleanup) => {
+    let cancelled = false
+    onCleanup(() => {
+      cancelled = true
     })
+
+    const v = await linkify(content)
+    if (!cancelled) {
+      linkifed.value = v
+    }
   },
   { immediate: true }
 )

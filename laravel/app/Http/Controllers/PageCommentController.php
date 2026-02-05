@@ -69,9 +69,7 @@ class PageCommentController extends Controller
             'message' => ['required', 'string', 'min:1', 'max:5000'],
         ]);
 
-        $comment->update([
-            'message' => $validated['message'],
-        ]);
+        $comment->update($validated);
 
         return ['ok' => true];
     }
