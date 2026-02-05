@@ -1,5 +1,6 @@
+<!-- LinkifyBox.vue  -->
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 
 import linkify from '@/utils/linkify'
 
@@ -8,12 +9,15 @@ const props = defineProps({
 })
 const linkifed = ref('')
 
-function fetchData() {
-  linkify(props.content).then((v) => {
-    linkifed.value = v
-  })
-}
-fetchData()
+watch(
+  () => props.content,
+  (content) => {
+    linkify(content).then((v) => {
+      linkifed.value = v
+    })
+  },
+  { immediate: true }
+)
 </script>
 <template>
   <span class="message" v-html="linkifed" />

@@ -22,6 +22,7 @@ class PageComment extends Model
         'id' => 'int',
         'page_id' => 'int',
         'user_id' => 'int',
+        'created' => 'datetime',
     ];
 
     public function page()

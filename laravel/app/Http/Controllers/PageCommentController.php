@@ -46,41 +46,41 @@ class PageCommentController extends Controller
         Gate::authorize('unblocked');
 
         $validated = $request->validate([
-            'pageid' => 'required|integer|min:1',
-            'message' => 'required|string|min:1|max:5000',
+            'pageid' => ['required', 'integer', 'min:1'],
+            'message' => ['required', 'string', 'min:1', 'max:5000'],
         ]);
 
         PageComment::create([
-            'page_id' => (int) $validated['pageid'],
-            'message' => (string) $validated['message'],
-            'user_id' => (int) auth()->id(),
-            'user_name' => (string) auth()->user()->name,
-            'created' => now()->toDateTimeString(),
+            'page_id' => $validated['pageid'],
+            'message' => $validated['message'],
+            'user_id' => auth()->id(),
+            'user_name' => auth()->user()->name,
+            'created' => now(),
         ]);
 
         return ['ok' => true];
     }
 
-    public function update(PageComment $pc, Request $request)
+    public function update(PageComment $comment, Request $request)
     {
-        Gate::authorize('owner', (int) $pc->user_id);
+        Gate::authorize('owner', $comment->user_id);
 
         $validated = $request->validate([
-            'message' => 'required|string|min:1|max:5000',
+            'message' => ['required', 'string', 'min:1', 'max:5000'],
         ]);
 
-        $pc->update([
-            'message' => (string) $validated['message'],
+        $comment->update([
+            'message' => $validated['message'],
         ]);
 
         return ['ok' => true];
     }
 
-    public function destroy(PageComment $pc)
+    public function destroy(PageComment $comment)
     {
-        Gate::authorize('ownerOrSysop', (int) $pc->user_id);
+        Gate::authorize('ownerOrSysop', $comment->user_id);
 
-        $pc->delete();
+        $comment->delete();
 
         return ['ok' => true];
     }
