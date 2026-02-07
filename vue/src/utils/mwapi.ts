@@ -1,5 +1,9 @@
 // mwapi.ts
-import httpy, { HttpyError, type HttpyParams, type HttpyResult } from '@common/utils/httpy'
+import httpy, {
+  HttpyError,
+  type HttpyParams,
+  type HttpyResult,
+} from '@common/utils/httpy'
 
 type MwApiParams = HttpyParams
 
@@ -33,7 +37,10 @@ function wrapError(error: MwApiError | undefined): HttpyError | null {
 }
 
 async function get<T>(params: MwApiParams): Promise<HttpyResult<T>> {
-  const [data, err] = await httpy.get<MwApiEnvelope & T>('/w/api.php', mergeParams(params))
+  const [data, err] = await httpy.get<MwApiEnvelope & T>(
+    '/w/api.php',
+    mergeParams(params),
+  )
   if (err) return [null, err]
   if (!data) return [null, new HttpyError(0, 'BAD_DATA', 'empty response')]
 

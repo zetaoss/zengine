@@ -85,8 +85,9 @@ async function fetchData() {
 async function syncTitleExists() {
   const rows = reportData.value?.data ?? []
   const titles = rows.flatMap(row => row.items.map(item => item.name))
+  if (titles.length === 0) return
   const existsMap = await titlesExist(titles)
-  titleExists.value = existsMap
+  Object.assign(titleExists.value, existsMap)
 }
 
 function openModal() {

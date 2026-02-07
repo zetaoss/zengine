@@ -24,10 +24,12 @@ class ReplyController extends Controller
             'body' => ['required', 'string', 'min:1', 'max:5000'],
         ]);
 
+        $user = auth()->user();
+
         return $post->replies()->create([
             'body' => $validated['body'],
-            'user_id' => auth()->id(),
-            'user_name' => auth()->user()->name,
+            'user_id' => $user->id,
+            'user_name' => $user->name,
         ]);
     }
 
