@@ -13,6 +13,11 @@ class Reply extends Model
         'body',
     ];
 
+    protected $casts = [
+        'post_id' => 'integer',
+        'user_id' => 'integer',
+    ];
+
     public function post()
     {
         return $this->belongsTo(Post::class, 'post_id');

@@ -19,6 +19,9 @@ class Post extends Model
     ];
 
     protected $casts = [
+        'user_id' => 'integer',
+        'channel_id' => 'integer',
+        'hit' => 'integer',
         'is_notice' => 'boolean',
     ];
 
