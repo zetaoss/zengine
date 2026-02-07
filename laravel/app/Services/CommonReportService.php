@@ -10,11 +10,12 @@ use Illuminate\Support\Facades\Http;
 
 class CommonReportService
 {
-    public function create(array $names, int $userId): CommonReport
+    public function create(array $names, int $userId, string $userName): CommonReport
     {
-        return DB::transaction(function () use ($names, $userId) {
+        return DB::transaction(function () use ($names, $userId, $userName) {
             $report = CommonReport::create([
                 'user_id' => $userId,
+                'user_name' => $userName,
                 'phase' => 'pending',
             ]);
 
@@ -37,11 +38,12 @@ class CommonReportService
         CommonReportJob::dispatch($report->id);
     }
 
-    public function clone(CommonReport $original, int $userId): CommonReport
+    public function clone(CommonReport $original, int $userId, string $userName): CommonReport
     {
-        return DB::transaction(function () use ($original, $userId) {
+        return DB::transaction(function () use ($original, $userId, $userName) {
             $clone = CommonReport::create([
                 'user_id' => $userId,
+                'user_name' => $userName,
                 'phase' => 'pending',
             ]);
 
@@ -70,7 +72,7 @@ class CommonReportService
         $response = Http::get($this->buildUrl($report));
 
         if (! $response->successful()) {
-            throw new RuntimeException('API request failed with status '.$response->status());
+            throw new \RuntimeException('API request failed with status '.$response->status());
         }
 
         $this->updateReportData($report, $response->json());

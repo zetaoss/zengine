@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import titleExist from '@/utils/mediawiki'
+import { titlesExist } from '@/utils/mediawiki'
 
 import linkify from '../linkify'
 
 vi.mock('@/utils/mediawiki', () => ({
-  default: vi.fn(),
+  titlesExist: vi.fn(),
 }))
 
 describe('linkify', () => {
@@ -33,14 +33,14 @@ describe('linkify', () => {
   })
 
   it('should handle multiple URLs and wiki links in the same string', async () => {
-    vi.mocked(titleExist).mockResolvedValue(true)
+    vi.mocked(titlesExist).mockResolvedValue({ TestPage: true })
     expect(await linkify('Check http://example.com and [[TestPage]]')).toBe(
       'Check <a href="http://example.com" class="external external-url" target="_blank" rel="noopener noreferrer">http://example.com</a> and <a href="/wiki/TestPage" class="internal">TestPage</a>',
     )
   })
 
   it('should convert non-existing wiki links with new class', async () => {
-    vi.mocked(titleExist).mockResolvedValue(false)
+    vi.mocked(titlesExist).mockResolvedValue({ MissingPage: false })
     expect(await linkify('Check [[MissingPage]]')).toBe(
       'Check <a href="/wiki/MissingPage" class="internal new">MissingPage</a>',
     )
