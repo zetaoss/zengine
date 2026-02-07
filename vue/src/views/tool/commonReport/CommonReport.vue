@@ -103,14 +103,13 @@ function closeModal() {
   retrier.start()
 }
 
-function titleState(name: string): 'unknown' | 'missing' | 'exists' {
+function titleState(name: string): 'unknown' | '' | 'new' {
   const exists = titleExists.value[name]
-  if (exists === undefined) return 'unknown'
-  return exists ? 'exists' : 'missing'
+  return exists === undefined ? 'unknown' : exists ? '' : 'new'
 }
 
 function wikiHref(name: string): string {
-  return titleState(name) === 'missing'
+  return titleState(name) === 'new'
     ? `/wiki/${name}/edit?redlink=1`
     : `/wiki/${name}`
 }
@@ -166,10 +165,7 @@ onUnmounted(() => retrier.clear())
             </td>
 
             <td class="text-right">
-              <a :href="wikiHref(item.name)" :class="{
-                unknown: titleState(item.name) === 'unknown',
-                new: titleState(item.name) === 'missing',
-              }">
+              <a :href="wikiHref(item.name)" :class="titleState(item.name)">
                 {{ item.name }}
               </a>
             </td>
