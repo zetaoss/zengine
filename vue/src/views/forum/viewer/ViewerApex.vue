@@ -18,7 +18,7 @@ import ViewerReplies from './ViewerReplies.vue'
 
 const props = defineProps({ postId: Number })
 const router = useRouter()
-const auth = useAuthStore()
+const me = useAuthStore()
 
 const post = ref<Post | null>(null)
 const showModal = ref(false)
@@ -91,30 +91,30 @@ watch(() => props.postId, fetchData, { immediate: true })
 
       <hr>
 
-      <div v-if="isLoading" class="py-10 text-center text-gray-500 min-h-[9rem]">
+      <div v-if="isLoading" class="py-10 text-center text-gray-500 min-h-36">
         <ZSpinner />
       </div>
 
       <div v-else-if="post">
-        <ViewerHTML class="py-4 min-h-[9rem]" :body="post.body" />
+        <ViewerHTML class="py-4 min-h-36" :body="post.body" />
         <hr>
         <ViewerReplies :postId="postId" />
       </div>
 
-      <div v-else class="py-10 text-center text-gray-500 min-h-[9rem]">
+      <div v-else class="py-10 text-center text-gray-500 min-h-36">
         게시글을 불러올 수 없습니다.
       </div>
     </div>
   </div>
 
   <div class="py-4 flex gap-3">
-    <RouterLinkButton :to="{ path: '/forum/new' }" :disabled="!auth.canWrite()">
+    <RouterLinkButton :to="{ path: '/forum/new' }" :disabled="!me.canWrite()">
       글쓰기
     </RouterLinkButton>
 
-    <template v-if="post && auth.canEdit(post.user_id)">
-      <ZButton @click="edit">수정</ZButton>
-      <ZButton @click="del">삭제</ZButton>
+    <template v-if="post">
+      <ZButton v-if="me.canEdit(post.user_id)" @click="edit">수정</ZButton>
+      <ZButton v-if="me.canDelete(post.user_id)" @click="del">삭제</ZButton>
     </template>
   </div>
 </template>

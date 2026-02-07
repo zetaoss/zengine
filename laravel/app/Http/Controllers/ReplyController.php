@@ -34,7 +34,7 @@ class ReplyController extends Controller
     {
         abort_unless((int) $reply->post_id === (int) $post->id, 404);
 
-        Gate::authorize('owner', (int) $reply->user_id);
+        Gate::authorize('owner', $reply->user_id);
 
         $validated = $request->validate([
             'body' => 'required|string|min:1|max:5000',
@@ -51,7 +51,7 @@ class ReplyController extends Controller
     {
         abort_unless((int) $reply->post_id === (int) $post->id, 404);
 
-        Gate::authorize('ownerOrSysop', (int) $reply->user_id);
+        Gate::authorize('ownerOrSysop', $reply->user_id);
 
         $reply->delete();
 
