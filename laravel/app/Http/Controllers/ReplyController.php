@@ -21,27 +21,30 @@ class ReplyController extends Controller
         Gate::authorize('unblocked');
 
         $validated = $request->validate([
-            'body' => 'required|string|min:1|max:5000',
+            'body' => ['required', 'string', 'min:1', 'max:5000'],
         ]);
 
+        $user = auth()->user();
+
         return $post->replies()->create([
-            'body' => (string) $validated['body'],
-            'user_id' => (int) auth()->id(),
+            'body' => $validated['body'],
+            'user_id' => $user->id,
+            'user_name' => $user->name,
         ]);
     }
 
     public function update(Post $post, Reply $reply, Request $request)
     {
-        abort_unless((int) $reply->post_id === (int) $post->id, 404);
+        abort_unless($reply->post_id === $post->id, 404);
 
         Gate::authorize('owner', $reply->user_id);
 
         $validated = $request->validate([
-            'body' => 'required|string|min:1|max:5000',
+            'body' => ['required', 'string', 'min:1', 'max:5000'],
         ]);
 
         $reply->update([
-            'body' => (string) $validated['body'],
+            'body' => $validated['body'],
         ]);
 
         return ['ok' => true];
@@ -49,7 +52,7 @@ class ReplyController extends Controller
 
     public function destroy(Post $post, Reply $reply)
     {
-        abort_unless((int) $reply->post_id === (int) $post->id, 404);
+        abort_unless($reply->post_id === $post->id, 404);
 
         Gate::authorize('ownerOrSysop', $reply->user_id);
 

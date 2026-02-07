@@ -1,4 +1,5 @@
 .bootstrapped
 .pnpm-store
 node_modules
+tmp
 w

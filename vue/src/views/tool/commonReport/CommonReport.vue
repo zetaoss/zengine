@@ -14,6 +14,7 @@ import ThePagination from '@/components/pagination/ThePagination.vue'
 import type { PaginateData } from '@/components/pagination/types'
 import useAuthStore from '@/stores/auth'
 import RouterLinkButton from '@/ui/RouterLinkButton.vue'
+import { titlesExist } from '@/utils/mediawiki'
 
 import CommonReportNew from './CommonReportNew.vue'
 import { useRetrier } from './retrier'
@@ -37,6 +38,7 @@ const paginateData = ref<PaginateData | null>(null)
 const page = ref<number>(1)
 const showModal = ref(false)
 const loading = ref(false)
+const titleExists = ref<Record<string, boolean>>({})
 
 function resolvePageFromRoute(): number {
   const queryPage = Number(String(route.query.page ?? ''))
@@ -64,6 +66,7 @@ async function fetchData() {
   }
 
   reportData.value = data
+  void syncTitleExists()
   paginateData.value = {
     current_page: data.current_page,
     last_page: data.last_page,
@@ -79,6 +82,14 @@ async function fetchData() {
   loading.value = false
 }
 
+async function syncTitleExists() {
+  const rows = reportData.value?.data ?? []
+  const titles = rows.flatMap(row => row.items.map(item => item.name))
+  if (titles.length === 0) return
+  const existsMap = await titlesExist(titles)
+  Object.assign(titleExists.value, existsMap)
+}
+
 function openModal() {
   if (!auth.canWrite()) {
     router.push({ path: '/login', query: { redirect: '/tool/common-report' } })
@@ -90,6 +101,17 @@ function openModal() {
 function closeModal() {
   showModal.value = false
   retrier.start()
+}
+
+function titleState(name: string): 'unknown' | '' | 'new' {
+  const exists = titleExists.value[name]
+  return exists === undefined ? 'unknown' : exists ? '' : 'new'
+}
+
+function wikiHref(name: string): string {
+  return titleState(name) === 'new'
+    ? `/wiki/${name}/edit?redlink=1`
+    : `/wiki/${name}`
 }
 
 watch(
@@ -143,7 +165,9 @@ onUnmounted(() => retrier.clear())
             </td>
 
             <td class="text-right">
-              <a :href="`/wiki/${item.name}`">{{ item.name }}</a>
+              <a :href="wikiHref(item.name)" :class="titleState(item.name)">
+                {{ item.name }}
+              </a>
             </td>
             <td class="text-right">
               {{ item.total.toLocaleString('en-US') }}
@@ -188,5 +212,9 @@ table {
   td {
     padding: 0.5rem;
   }
+}
+
+.unknown {
+  color: gray;
 }
 </style>
