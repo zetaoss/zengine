@@ -1,7 +1,7 @@
 import Autolinker from 'autolinker'
 import DOMPurify from 'isomorphic-dompurify'
 
-import titleExist from './mediawiki'
+import { titlesExist } from './mediawiki'
 
 function linkifyURL(s: string) {
   return Autolinker.link(s, {
@@ -12,9 +12,13 @@ function linkifyURL(s: string) {
   })
 }
 
-export async function linkifyWikiMatch(s: string, match: string) {
+export function linkifyWikiMatch(
+  s: string,
+  match: string,
+  existsMap: Record<string, boolean>,
+) {
   const title = match.slice(2, -2)
-  const exist = await titleExist(title)
+  const exist = existsMap[title] === true
   const classList = ['internal', exist ? '' : 'new'].filter(Boolean).join(' ')
   return s
     .split(match)
@@ -25,8 +29,11 @@ export async function linkifyWiki(s: string) {
   const matches = Array.from(
     new Set(s.match(/\[\[([^[\]|]*)[^[\]]*\]\]/g) || []),
   )
+  if (matches.length === 0) return s
+  const titles = matches.map(match => match.slice(2, -2))
+  const existsMap = await titlesExist(titles)
   for (const match of matches) {
-    s = await linkifyWikiMatch(s, match)
+    s = linkifyWikiMatch(s, match, existsMap)
   }
   return s
 }

@@ -134,7 +134,6 @@ class Httpy {
       method,
       credentials: 'include',
       headers: {
-        // 핵심: Gate authorize 실패해도 JSON으로 응답 유도
         Accept: 'application/json',
         ...(isForm ? {} : { 'Content-Type': 'application/json' }),
       },

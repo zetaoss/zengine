@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { linkifyWiki } from '@/utils/linkify'
-import titleExist from '@/utils/mediawiki'
+import { titlesExist } from '@/utils/mediawiki'
 
 vi.mock('@/utils/mediawiki', () => ({
-  default: vi.fn(),
+  titlesExist: vi.fn(),
 }))
 
 describe('linkifyWiki', () => {
@@ -20,7 +20,7 @@ describe('linkifyWiki', () => {
   })
 
   it('should convert an existing wiki link', async () => {
-    vi.mocked(titleExist).mockResolvedValue(true)
+    vi.mocked(titlesExist).mockResolvedValue({ TestPage: true })
     const result = await linkifyWiki('This is a [[TestPage]] link')
     expect(result).toBe(
       'This is a <a href="/wiki/TestPage" class="internal">TestPage</a> link',
@@ -28,7 +28,7 @@ describe('linkifyWiki', () => {
   })
 
   it('should convert a non-existing wiki link', async () => {
-    vi.mocked(titleExist).mockResolvedValue(false)
+    vi.mocked(titlesExist).mockResolvedValue({ MissingPage: false })
     const result = await linkifyWiki('This is a [[MissingPage]] link')
     expect(result).toBe(
       'This is a <a href="/wiki/MissingPage" class="internal new">MissingPage</a> link',
@@ -36,7 +36,7 @@ describe('linkifyWiki', () => {
   })
 
   it('should handle multiple same links', async () => {
-    vi.mocked(titleExist).mockResolvedValue(true)
+    vi.mocked(titlesExist).mockResolvedValue({ TestPage: true })
     const result = await linkifyWiki(
       '[[TestPage]] is linked twice: [[TestPage]].',
     )
@@ -46,17 +46,18 @@ describe('linkifyWiki', () => {
   })
 
   it('should handle multiple different links', async () => {
-    vi.mocked(titleExist).mockImplementation(async () =>
-      Boolean([true, false].shift()),
-    )
+    vi.mocked(titlesExist).mockResolvedValue({
+      TestPage1: true,
+      TestPage2: false,
+    })
     const result = await linkifyWiki('Links: [[TestPage1]], [[TestPage2]].')
     expect(result).toBe(
-      'Links: <a href="/wiki/TestPage1" class="internal">TestPage1</a>, <a href="/wiki/TestPage2" class="internal">TestPage2</a>.',
+      'Links: <a href="/wiki/TestPage1" class="internal">TestPage1</a>, <a href="/wiki/TestPage2" class="internal new">TestPage2</a>.',
     )
   })
 
   it('should fallback on API failure', async () => {
-    vi.mocked(titleExist).mockResolvedValue(false)
+    vi.mocked(titlesExist).mockResolvedValue({ ErrorPage: false })
     const result = await linkifyWiki('This is a [[ErrorPage]] link')
     expect(result).toBe(
       'This is a <a href="/wiki/ErrorPage" class="internal new">ErrorPage</a> link',
