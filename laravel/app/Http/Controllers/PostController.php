@@ -72,7 +72,7 @@ class PostController extends Controller
 
     public function update(Request $request, Post $post)
     {
-        Gate::authorize('owner', (int) $post->user_id);
+        Gate::authorize('owner', $post->user_id);
 
         $validated = $request->validate([
             'cat' => 'required|in:질문,잡담,인사,기타',
@@ -93,7 +93,7 @@ class PostController extends Controller
 
     public function destroy(Post $post)
     {
-        Gate::authorize('ownerOrSysop', (int) $post->user_id);
+        Gate::authorize('ownerOrSysop', $post->user_id);
 
         $post->delete();
 
