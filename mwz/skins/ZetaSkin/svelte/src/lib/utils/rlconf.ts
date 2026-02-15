@@ -1,8 +1,26 @@
+export type MyMenuItem = {
+  accesskey?: string
+  active?: boolean
+  class?: string | false
+  'data-mw'?: string
+  exists?: boolean
+  href: string
+  icon?: string
+  id?: string
+  'link-class'?: string[]
+  'single-id'?: string
+  text: string
+  title?: string
+}
+
+export type MyMenu = Record<string, MyMenuItem>
+
 type RLConf = {
   binders: unknown[]
   contributors: Array<{ id: number; name: string }>
   dataToc: unknown
   lastmod: string
+  myMenu: MyMenu
   wgArticleId: number
   wgUserGroups: string[]
   wgUserId: number
@@ -10,41 +28,17 @@ type RLConf = {
 }
 
 export default function getRLCONF(): RLConf {
-  const globalConf = (globalThis as { RLCONF?: Record<string, unknown> }).RLCONF
-  const mwObj = (globalThis as { mw?: unknown }).mw as
-    | {
-        config?: {
-          get?: (key: string) => unknown
-        }
-      }
-    | undefined
+  const c = (globalThis as unknown as { RLCONF: Record<string, unknown> }).RLCONF
 
-  const read = (key: string): unknown => {
-    if (globalConf && key in globalConf) {
-      return globalConf[key]
-    }
+  const binders = (c.binders ?? []) as unknown[]
+  const contributors = (c.contributors ?? []) as Array<{ id: number; name: string }>
+  const dataToc = c.dataToc ?? []
+  const lastmod = (c.lastmod ?? '') as string
+  const myMenu = (c.myMenu ?? {}) as MyMenu
+  const wgArticleId = (c.wgArticleId ?? 0) as number
+  const wgUserGroups = (c.wgUserGroups ?? []) as string[]
+  const wgUserId = (c.wgUserId ?? 0) as number
+  const wgUserName = (c.wgUserName ?? '') as string
 
-    const config = mwObj?.config
-    if (!config || typeof config.get !== 'function') return undefined
-    try {
-      // MediaWiki's get() depends on `this` being config object.
-      return config.get.call(config, key)
-    } catch {
-      return undefined
-    }
-  }
-
-  const wgArticleId = Number(read('wgArticleId') ?? 0)
-  const wgUserId = Number(read('wgUserId') ?? 0)
-  const wgUserName = String(read('wgUserName') ?? '')
-  const wgUserGroupsRaw = read('wgUserGroups')
-  const wgUserGroups = Array.isArray(wgUserGroupsRaw) ? wgUserGroupsRaw.map((v) => String(v)) : []
-  const bindersRaw = read('binders')
-  const binders = Array.isArray(bindersRaw) ? bindersRaw : []
-  const lastmod = String(read('lastmod') ?? '')
-  const contributorsRaw = read('contributors')
-  const contributors = Array.isArray(contributorsRaw) ? (contributorsRaw as Array<{ id: number; name: string }>) : []
-  const dataToc = read('dataToc') ?? []
-
-  return { wgArticleId, wgUserId, wgUserName, wgUserGroups, binders, lastmod, contributors, dataToc }
+  return { binders, contributors, dataToc, lastmod, myMenu, wgArticleId, wgUserGroups, wgUserId, wgUserName }
 }

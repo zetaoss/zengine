@@ -36,14 +36,14 @@
 </script>
 
 <div class="fixed bottom-0 right-0 z-40 print:hidden">
-  <div class="z-50 mx-0.5 text-white opacity-80">
-    <button type="button" class="ml-0.5 rounded bg-[#8888] p-1.5" class:text-yellow-500={isDark} on:click={toggleDark}>
+  <div class="z-50 flex gap-1 text-white opacity-80">
+    <button type="button" class="cursor-pointer rounded bg-[#8888] p-1.5 dark:text-yellow-500" on:click={toggleDark}>
       <ZIcon path={mdiWeatherNight} size={24} />
     </button>
-    <button type="button" class="ml-0.5 rounded bg-[#8888] p-1.5" on:click={scrollToTop}>
+    <button type="button" class="cursor-pointer rounded bg-[#8888] p-1.5" on:click={scrollToTop}>
       <ZIcon path={mdiChevronUp} size={24} />
     </button>
-    <button type="button" class="ml-0.5 rounded bg-[#8888] p-1.5" on:click={scrollToBottom}>
+    <button type="button" class="cursor-pointer rounded bg-[#8888] p-1.5" on:click={scrollToBottom}>
       <ZIcon path={mdiChevronDown} size={24} />
     </button>
   </div>
