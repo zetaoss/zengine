@@ -41,7 +41,6 @@
       document.removeEventListener('keydown', onKeyDown)
     }
   })
-
 </script>
 
 <div bind:this={root} class="md:group order-2 ml-auto contents md:relative md:inline-block">
