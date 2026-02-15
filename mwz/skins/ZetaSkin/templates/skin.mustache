@@ -11,7 +11,7 @@
       </div>
       <div class="order-2 contents md:flex md:items-stretch md:ml-auto md:w-auto md:flex-1 md:max-w-2xl">
         <div class="md:group order-2 ml-auto contents md:relative md:inline-block">
-          <user-menu :user-menu='{{{ jsonUserMenu }}}'></user-menu>
+          <user-menu></user-menu>
         </div>
         <div class="order-3 basis-full min-w-0 md:order-1 md:basis-auto md:flex-1">
           <c-search></c-search>
@@ -44,15 +44,11 @@
               <div class="flex float-right">
                 {{#arrayButtons}}
                 {{^current}}
-                <a class="page-btn" {{#id}}id="{{.}}"{{/id}} href="{{href}}">{{text}}</a>
+                <a class="page-btn" {{#id}}id="{{.}}"{{/id}} {{#title}}title="{{.}}"{{/title}} {{#accesskey}}accesskey="{{.}}"{{/accesskey}} href="{{href}}">{{text}}</a>
                 {{/current}}
                 {{/arrayButtons}}
 
-                <page-menu>
-                  {{#arrayMenu}}
-                  <li><a href="{{href}}">{{text}}</a></li>
-                  {{/arrayMenu}}
-                </page-menu>
+                <page-menu></page-menu>
               </div>
             </div>
 
@@ -74,7 +70,7 @@
           </div>
           {{/hasToc}}
 
-          <article id="content" data-mw-ve-target-container class="py-6 pb-10" v-pre>
+          <article id="content" data-mw-ve-target-container class="py-6 pb-10">
           {{{ html-body-content }}}
           </article>
 
@@ -89,9 +85,9 @@
           {{/data-portlets.data-category-normal.html-items}}
           <br>
 
-          {{^is-specialpage}}
+          {{#hasMeta}}
           <page-footer></page-footer>
-          {{/is-specialpage}}
+          {{/hasMeta}}
         </div>
       </div>
 

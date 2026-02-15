@@ -14,15 +14,14 @@ class SkinZetaSkin extends SkinMustache
     {
         $out->addHTMLClasses($_COOKIE['theme'] ?? '');
         $out->addHeadItem('adsense', '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='.getenv('ADSENSE_CLIENT').'" crossorigin="anonymous"></script>');
-        $out->addStyle('/w/skins/ZetaSkin/resources/dist/app.css?'.ASSET_HASH);
+        $out->addStyle('/w/skins/ZetaSkin/dist/app.css?'.ASSET_HASH);
         $out->addScriptFile('/config.js?'.ASSET_HASH);
-        $out->addScriptFile('/w/skins/ZetaSkin/resources/dist/app.js?'.ASSET_HASH);
+        $out->addScriptFile('/w/skins/ZetaSkin/dist/app.js?'.ASSET_HASH);
     }
 
     public static function onMakeGlobalVariablesScript(array &$vars, $out)
     {
         $ctx = PageContext::getInstance($out);
-
         $vars['binders'] = $ctx->binders;
         $vars['contributors'] = $ctx->contributors;
         $vars['lastmod'] = $ctx->lastmod;
@@ -31,17 +30,34 @@ class SkinZetaSkin extends SkinMustache
 
     public static function onSkinTemplateNavigation__Universal($skinTemplate, &$links)
     {
+        $overMap = [
+            'user-menu' => [
+                'login' => ['accesskey' => 'o'],
+                'mytalk' => ['text' => '사용자 토론'],
+                'userpage' => ['text' => '사용자 문서'],
+                'watchlist' => ['accesskey' => 'l'],
+            ],
+            'views' => [
+                'edit' => ['accesskey' => 'e'],
+                'history' => ['accesskey' => 'h'],
+            ],
+        ];
+
+        foreach ($overMap as $section => $items) {
+            foreach ($items as $key => $props) {
+                if (isset($links[$section][$key])) {
+                    foreach ($props as $prop => $val) {
+                        $links[$section][$key][$prop] = $val;
+                    }
+                }
+            }
+        }
+
         if (isset($links['user-menu']['userpage'])) {
             $links['user-menu']['profile'] = [
                 'text' => '프로필',
                 'href' => '/user/'.rawurlencode($skinTemplate->getUser()->getName()),
             ];
-            $links['user-menu']['userpage']['text'] = '사용자 문서';
-            $links['user-menu']['mytalk']['text'] = '사용자 토론';
-        }
-
-        if (isset($links['views']['edit'])) {
-            $links['views']['edit']['id'] = 'ca-edit';
         }
 
         self::$links = $links;
@@ -49,15 +65,15 @@ class SkinZetaSkin extends SkinMustache
 
     public static function onSidebarBeforeOutput($skin, &$sidebar)
     {
-        $map = [
-            'whatlinkshere' => '역링크',
-            'upload' => '업로드',
+        $textMap = [
             'specialpages' => '특수문서',
+            'upload' => '업로드',
+            'whatlinkshere' => '역링크',
         ];
 
-        foreach ($map as $key => $label) {
+        foreach ($textMap as $key => $text) {
             if (isset($sidebar['TOOLBOX'][$key])) {
-                $sidebar['TOOLBOX'][$key]['text'] = $label;
+                $sidebar['TOOLBOX'][$key]['text'] = $text;
             }
         }
 
@@ -93,7 +109,17 @@ class SkinZetaSkin extends SkinMustache
             'talk' => $namespaces['talk'] ?? null,
         ]));
 
-        $data['arrayMenu'] = array_values(array_filter([
+        $data['hasToc'] = ! empty($data['data-toc']);
+
+        if ($data['is-anon'] && $is_article && $ctx->isView) {
+            $data['ads'] = [
+                'client' => getenv('ADSENSE_CLIENT'),
+                'slotTop' => getenv('ADSENSE_SLOT_TOP'),
+                'slotBottom' => getenv('ADSENSE_SLOT_BOTTOM'),
+            ];
+        }
+
+        $pageMenu = array_values(array_filter([
             'history' => $views['history'] ?? null,
             'delete' => $actions['delete'] ?? null,
             'move' => $actions['move'] ?? null,
@@ -103,8 +129,7 @@ class SkinZetaSkin extends SkinMustache
             'info' => $toolbox['info'] ?? null,
         ]));
 
-        $data['hasToc'] = ! empty($data['data-toc']);
-        $data['jsonUserMenu'] = json_encode(array_filter([
+        $myMenu = array_filter([
             'login' => $userMenu['login'] ?? null,
             'createaccount' => $userMenu['createaccount'] ?? null,
             'profile' => $userMenu['profile'] ?? null,
@@ -116,17 +141,11 @@ class SkinZetaSkin extends SkinMustache
             'upload' => $toolbox['upload'] ?? null,
             'specialpages' => $toolbox['specialpages'] ?? null,
             'logout' => $userMenu['logout'] ?? null,
-        ]));
-
-        if ($data['is-anon'] && $is_article && $ctx->isView) {
-            $data['ads'] = [
-                'client' => getenv('ADSENSE_CLIENT'),
-                'slotTop' => getenv('ADSENSE_SLOT_TOP'),
-                'slotBottom' => getenv('ADSENSE_SLOT_BOTTOM'),
-            ];
-        }
+        ]);
 
         $this->getOutput()->addJsConfigVars('dataToc', $data['data-toc'] ?? []);
+        $this->getOutput()->addJsConfigVars('pageMenu', $pageMenu);
+        $this->getOutput()->addJsConfigVars('myMenu', $myMenu);
 
         return $data;
     }
