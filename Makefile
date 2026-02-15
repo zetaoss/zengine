@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-SVELTE_DIRS := mwz/skins/ZetaSkin/svelte svelte
+SVELTE_DIRS := svelte mwz/skins/ZetaSkin/svelte
 
 define run_pnpm
 	@set -e; \
