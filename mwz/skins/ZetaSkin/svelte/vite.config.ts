@@ -66,6 +66,15 @@ export default defineConfig(({ command }) => ({
       cssFileName: 'app',
     },
   },
+  esbuild: {
+    tsconfigRaw: {
+      compilerOptions: {
+        target: 'ES2022',
+        module: 'ESNext',
+        moduleResolution: 'Bundler',
+      },
+    },
+  },
   define: {
     'process.env.NODE_ENV': JSON.stringify(command === 'build' ? 'production' : 'development'),
   },
