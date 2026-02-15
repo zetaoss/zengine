@@ -6,6 +6,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { defineConfig, type Plugin } from 'vite'
 
 const outDir = '../dist'
+const mainSvelteDir = path.resolve(__dirname, '../../../../svelte')
 const customElementSveltePaths = [
   'src/shared/components/navbar/CSearch.svelte',
   'src/shared/components/CAds.svelte',
@@ -52,7 +53,7 @@ export default defineConfig(({ command }) => ({
     port: 5174,
     strictPort: true,
     fs: {
-      allow: ['.', '/app/svelte'],
+      allow: ['.', mainSvelteDir],
     },
   },
   build: {
