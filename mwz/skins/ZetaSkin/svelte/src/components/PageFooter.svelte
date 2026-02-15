@@ -7,6 +7,7 @@
   import getRLCONF from '$lib/utils/rlconf'
   import AvatarIcon from '$shared/components/avatar/AvatarIcon.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
+  import httpy from '$shared/utils/httpy'
 
   interface Row {
     id: number
@@ -31,45 +32,27 @@
   const canEdit = (id: number) => isLoggedIn && wgUserId === id
   const canDelete = (id: number) => canEdit(id) || isAdmin
 
-  async function request<T>(url: string, options: RequestInit = {}) {
-    const res = await fetch(url, {
-      credentials: 'same-origin',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(options.headers || {}),
-      },
-      ...options,
-    })
-    if (!res.ok) {
-      const text = await res.text().catch(() => '')
-      throw new Error(text || res.statusText)
-    }
-    return (await res.json()) as T
-  }
-
   async function fetchData() {
-    try {
-      docComments = await request<Row[]>(`/api/comments/${wgArticleId}`)
-    } catch (err) {
+    const [data, err] = await httpy.get<Row[]>(`/api/comments/${wgArticleId}`)
+    if (err) {
       console.log(err)
+      return
     }
+    docComments = data ?? []
   }
 
   async function postNew() {
     if (!message.trim()) return
-    try {
-      await request('/api/comments', {
-        method: 'POST',
-        body: JSON.stringify({
-          pageid: wgArticleId,
-          message,
-        }),
-      })
-      message = ''
-      fetchData()
-    } catch (err) {
+    const [, err] = await httpy.post('/api/comments', {
+      pageid: wgArticleId,
+      message,
+    })
+    if (err) {
       console.log(err)
+      return
     }
+    message = ''
+    fetchData()
   }
 
   function edit(row: Row) {
@@ -78,18 +61,15 @@
 
   async function editOK() {
     if (!editingRow) return
-    try {
-      await request(`/api/comments/${editingRow.id}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          message: editingRow.message,
-        }),
-      })
-      editingRow = null
-      fetchData()
-    } catch (err) {
+    const [, err] = await httpy.put(`/api/comments/${editingRow.id}`, {
+      message: editingRow.message,
+    })
+    if (err) {
       console.log(err)
+      return
     }
+    editingRow = null
+    fetchData()
   }
 
   function editCancel() {
@@ -104,42 +84,36 @@
   async function delOK() {
     showModal = false
     if (!deletingRow) return
-    try {
-      await request(`/api/comments/${deletingRow.id}`, {
-        method: 'DELETE',
-      })
-      deletingRow = null
-      fetchData()
-    } catch (err) {
+    const [, err] = await httpy.delete(`/api/comments/${deletingRow.id}`)
+    if (err) {
       console.log(err)
+      return
     }
+    deletingRow = null
+    fetchData()
   }
 
   const escapeHtml = (input: string) =>
     input.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
 
-  const linkifyUrls = (input: string) =>
-    input.replace(/https?:\/\/[^\s<]+/g, (url) => {
-      const safe = url.replace(/"/g, '%22')
-      return `<a href="${safe}" class="external" target="_blank" rel="noreferrer noopener">${url}</a>`
-    })
+  const decodeEntities = (input: string) =>
+    input.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
 
-  const linkifyWiki = (input: string) =>
-    input.replace(/\[\[([^\]|]+)(?:\|([^\]]*))?\]\]/g, (_m, target, display) => {
-      const rawTarget = String(target)
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"')
-        .replace(/&#39;/g, "'")
-        .trim()
-      const href = `/wiki/${encodeURIComponent(rawTarget.replace(/ /g, '_'))}`
-      return `<a href="${href}" class="internal">${display || target}</a>`
+  const linkifyInline = (input: string) =>
+    input.replace(/\[\[([^\]|]+)(?:\|([^\]]*))?\]\]|https?:\/\/[^\s<]+/g, (match, target, display) => {
+      if (match.startsWith('[[')) {
+        const rawTarget = decodeEntities(String(target)).trim()
+        const href = `/wiki/${encodeURIComponent(rawTarget.replace(/ /g, '_'))}`
+        return `<a href="${href}" class="internal">${display || target}</a>`
+      }
+      const rawUrl = decodeEntities(match)
+      const safeUrl = rawUrl.replace(/"/g, '%22')
+      return `<a href="${safeUrl}" class="external" target="_blank" rel="noreferrer noopener">${match}</a>`
     })
 
   const formatMessage = (input: string) => {
     const escaped = escapeHtml(input || '')
-    const linked = linkifyWiki(linkifyUrls(escaped))
+    const linked = linkifyInline(escaped)
     return linked.replace(/\n/g, '<br />')
   }
 
