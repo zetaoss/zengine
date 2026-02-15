@@ -97,7 +97,12 @@
     input.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
 
   const decodeEntities = (input: string) =>
-    input.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    input
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
 
   const linkifyInline = (input: string) =>
     input.replace(/\[\[([^\]|]+)(?:\|([^\]]*))?\]\]|https?:\/\/[^\s<]+/g, (match, target, display) => {
