@@ -28,6 +28,7 @@ type RLConf = {
 }
 
 export default function getRLCONF(): RLConf {
+  // In this app, RLCONF is always present and already normalized by the server.
   const c = (globalThis as unknown as { RLCONF: Record<string, unknown> }).RLCONF
 
   const binders = (c.binders ?? []) as unknown[]
