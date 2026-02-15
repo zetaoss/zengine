@@ -125,9 +125,16 @@
     })
 
   const linkifyWiki = (input: string) =>
-    input.replace(/\[\[([^\]|]+)(?:\|[^\]]*)?\]\]/g, (_m, title) => {
-      const href = `/wiki/${encodeURIComponent(title)}`
-      return `<a href="${href}" class="internal">${title}</a>`
+    input.replace(/\[\[([^\]|]+)(?:\|([^\]]*))?\]\]/g, (_m, target, display) => {
+      const rawTarget = String(target)
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .trim()
+      const href = `/wiki/${encodeURIComponent(rawTarget.replace(/ /g, '_'))}`
+      return `<a href="${href}" class="internal">${display || target}</a>`
     })
 
   const formatMessage = (input: string) => {

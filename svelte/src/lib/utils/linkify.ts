@@ -13,16 +13,22 @@ function linkifyURL(s: string) {
 }
 
 export function linkifyWikiMatch(s: string, match: string, existsMap: Record<string, boolean>) {
-  const title = match.slice(2, -2)
-  const exist = existsMap[title] === true
+  const [targetRaw, displayRaw] = match.slice(2, -2).split('|', 2)
+  const target = (targetRaw || '').trim()
+  const display = (displayRaw || target).trim()
+  const exist = existsMap[target] === true
   const classList = ['internal', exist ? '' : 'new'].filter(Boolean).join(' ')
-  return s.split(match).join(`<a href="/wiki/${title}" class="${classList}" data-sveltekit-reload>${title}</a>`)
+  const href = `/wiki/${encodeURIComponent(target.replace(/ /g, '_'))}`
+  return s.split(match).join(`<a href="${href}" class="${classList}" data-sveltekit-reload>${display}</a>`)
 }
 
 export async function linkifyWiki(s: string) {
   const matches = Array.from(new Set(s.match(/\[\[([^[\]|]*)[^[\]]*\]\]/g) || []))
   if (matches.length === 0) return s
-  const titles = matches.map((match) => match.slice(2, -2))
+  const titles = matches.map((match) => {
+    const [targetRaw] = match.slice(2, -2).split('|', 2)
+    return (targetRaw || '').trim()
+  })
   const existsMap = await titlesExist(titles)
   for (const match of matches) {
     s = linkifyWikiMatch(s, match, existsMap)
