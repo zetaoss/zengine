@@ -1,13 +1,44 @@
 {
   "css.lint.unknownAtRules": "ignore",
-  "makefile.configureOnOpen": false,
-  "remote.autoForwardPorts": true,
-  "laravel-pint-fixer.pintBinPath": "/app/laravel/vendor/laravel/pint/builds/pint",
   "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
   "[php]": {
     "editor.defaultFormatter": "evgenius33.laravel-pint-fixer"
   },
-  "[vue]": {
-    "editor.defaultFormatter": "Vue.volar"
+  "[svelte]": {
+    "editor.defaultFormatter": "svelte.svelte-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "editor.formatOnSave": true,
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact",
+    "svelte"
+  ],
+  "eslint.workingDirectories": [
+    {
+      "directory": "./svelte",
+      "changeProcessCWD": true
+    },
+    {
+      "directory": "./mwz/skins/ZetaSkin/svelte",
+      "changeProcessCWD": true
+    }
+  ],
+  "laravel-pint-fixer.pintBinPath": "/app/laravel/vendor/laravel/pint/builds/pint",
+  "makefile.configureOnOpen": false,
+  "prettier.requireConfig": true,
+  "remote.autoForwardPorts": true,
+  "svelte.plugin.svelte.compilerWarnings": {
+    "options_missing_custom_element": "ignore"
   }
 }

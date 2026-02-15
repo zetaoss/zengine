@@ -1,0 +1,50 @@
+// eslint.config.js
+import js from '@eslint/js'
+import { defineConfig } from 'eslint/config'
+import simpleImportSort from 'eslint-plugin-simple-import-sort'
+import svelte from 'eslint-plugin-svelte'
+import globals from 'globals'
+import ts from 'typescript-eslint'
+
+import svelteConfig from './svelte.config.js'
+
+export default defineConfig(
+  {
+    ignores: ['.svelte-kit/**', 'dist/**'],
+  },
+  js.configs.recommended,
+  ...ts.configs.recommended,
+  ...svelte.configs.recommended,
+  {
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
+    },
+  },
+  {
+    files: ['**/*.svelte', '**/*.svelte.ts', '**/*.svelte.js'],
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        extraFileExtensions: ['.svelte'],
+        parser: ts.parser,
+        svelteConfig,
+      },
+    },
+  },
+  {
+    rules: {},
+  },
+  {
+    name: 'app/import-sorting',
+    plugins: {
+      'simple-import-sort': simpleImportSort,
+    },
+    rules: {
+      'simple-import-sort/imports': 'error',
+      'simple-import-sort/exports': 'error',
+    },
+  },
+)

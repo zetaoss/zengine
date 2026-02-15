@@ -11,7 +11,7 @@
     "ms-vscode.makefile-tools",
     "openai.chatgpt",
     "shufo.vscode-blade-formatter",
-    "vitest.explorer",
-    "vue.volar",
+    "svelte.svelte-vscode",
+    "vitest.explorer"
   ]
 }

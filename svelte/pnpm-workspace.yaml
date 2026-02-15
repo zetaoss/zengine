@@ -1,0 +1,6 @@
+ignoredBuiltDependencies:
+  - esbuild
+
+overrides:
+  cookie@<0.7.0: '>=0.7.0'
+  markdown-it@>=13.0.0 <14.1.1: '>=14.1.1'

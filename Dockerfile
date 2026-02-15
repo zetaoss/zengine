@@ -3,13 +3,14 @@ FROM node:24-trixie-slim AS nodebuild
 
 ARG APP_VERSION=v0.0.0
 
-RUN corepack enable pnpm
+RUN corepack enable && corepack prepare pnpm@10 --activate
 
-COPY . /app/
-RUN cd /app/mwz/skins/ZetaSkin/vue/ && pnpm install --frozen-lockfile
-RUN cd /app/vue/                    && pnpm install --frozen-lockfile
-RUN cd /app/mwz/skins/ZetaSkin/vue/ && pnpm run build
-RUN cd /app/vue/                    && pnpm run build
+WORKDIR /app
+COPY . .
+RUN pnpm -C svelte                    install --frozen-lockfile
+RUN pnpm -C mwz/skins/ZetaSkin/svelte install --frozen-lockfile
+RUN pnpm -C svelte                    run build
+RUN pnpm -C mwz/skins/ZetaSkin/svelte run build
 
 RUN APP_VERSION_NORMALIZED="${APP_VERSION#v}" \
     && sed -i "s/\"version\": \".*\"/\"version\": \"${APP_VERSION_NORMALIZED}\"/" /app/mwz/skins/ZetaSkin/skin.json \
