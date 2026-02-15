@@ -13,8 +13,6 @@
 
   let dataToc: unknown = getRLCONF().dataToc
 
-  console.log('dataToc', dataToc)
-
   let tocRef: HTMLElement | null = null
   let isTocPast = false
   let activeIds: string[] = []
