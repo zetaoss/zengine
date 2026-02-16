@@ -23,21 +23,9 @@
 
   onMount(() => {
     const stored = localStorage.getItem('theme')
-    if (stored === 'dark') {
-      isDark = true
-      applyDarkClasses(true)
-      return
-    }
-    if (stored === 'light') {
-      isDark = false
-      applyDarkClasses(false)
-      return
-    }
-
-    if (window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
-      isDark = true
-      applyDarkClasses(true)
-    }
+    const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false
+    isDark = stored ? stored === 'dark' : prefersDark
+    applyDarkClasses(isDark)
   })
 </script>
 
