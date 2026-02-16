@@ -38,7 +38,11 @@ svelte-build:
 
 .PHONY: svelte-audit
 svelte-audit:
-	$(call run_pnpm,audit)
+	@set -e; \
+	for d in $(SVELTE_DIRS); do \
+		echo "➡️  $$d: node hack/pnpm-audit.mjs $$d"; \
+		node hack/pnpm-audit.mjs $$d; \
+	done
 
 .PHONY: checks
 checks: svelte-overrides svelte-install svelte-lint svelte-format svelte-build svelte-audit

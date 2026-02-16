@@ -4,10 +4,10 @@
   import { onDestroy } from 'svelte'
   import { get } from 'svelte/store'
 
-  import { resolve } from '$app/paths'
   import { page } from '$app/state'
   import ThePagination from '$lib/components/pagination/ThePagination.svelte'
   import type { PaginateData } from '$lib/components/pagination/types'
+  import RouteLinkButton from '$lib/components/RouteLinkButton.svelte'
   import useAuthStore from '$lib/stores/auth'
   import { titlesExist } from '$lib/utils/mediawiki'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
@@ -158,9 +158,9 @@
             <tr>
               {#if idx === 0}
                 <td rowspan={row.items.length} class="text-center text-sm">
-                  <ZButton as="a" href={resolve(`/tool/common-report/${row.id}`)}>
+                  <RouteLinkButton to={`/tool/common-report/${row.id}`}>
                     <span>#{row.id} 상세보기</span>
-                  </ZButton>
+                  </RouteLinkButton>
                   <div>{row.created_at.substring(0, 10)}</div>
                   <div>
                     <AvatarUser user={{ id: row.user_id, name: row.user_name }} />

@@ -127,7 +127,7 @@
   {/if}
 </div>
 
-<style>
+<style lang="postcss">
   @reference 'tailwindcss';
 
   .editor {

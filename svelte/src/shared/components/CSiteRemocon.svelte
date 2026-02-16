@@ -4,6 +4,7 @@
   import { mdiChevronDown, mdiChevronUp, mdiWeatherNight } from '@mdi/js'
   import { onMount } from 'svelte'
 
+  import ZButton from '$shared/ui/ZButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import { scrollToBottom, scrollToTop } from '$shared/utils/scroll'
 
@@ -41,15 +42,15 @@
 </script>
 
 <div class="fixed bottom-0 right-0 z-40 print:hidden">
-  <div class="z-50 flex gap-1 text-white opacity-80">
-    <button type="button" class="cursor-pointer rounded bg-[#8888] p-1.5 dark:text-yellow-500" on:click={toggleDark}>
+  <div class="z-50 flex gap-1 opacity-80">
+    <ZButton class="bg-[#8888]! p-1.5! text-white! dark:text-yellow-500!" onclick={toggleDark}>
       <ZIcon path={mdiWeatherNight} size={24} />
-    </button>
-    <button type="button" class="cursor-pointer rounded bg-[#8888] p-1.5" on:click={scrollToTop}>
+    </ZButton>
+    <ZButton class="bg-[#8888]! p-1.5! text-white!" onclick={scrollToTop}>
       <ZIcon path={mdiChevronUp} size={24} />
-    </button>
-    <button type="button" class="cursor-pointer rounded bg-[#8888] p-1.5" on:click={scrollToBottom}>
+    </ZButton>
+    <ZButton class="bg-[#8888]! p-1.5! text-white!" onclick={scrollToBottom}>
       <ZIcon path={mdiChevronDown} size={24} />
-    </button>
+    </ZButton>
   </div>
 </div>

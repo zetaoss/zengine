@@ -175,7 +175,7 @@
                 placeholder="댓글을 수정하세요"
                 maxHeight={200}
                 modelValue={editBody}
-                on:update:modelValue={(e) => setEditBody(e.detail)}
+                onUpdateModelValue={setEditBody}
               />
             </div>
 
@@ -201,7 +201,7 @@
             placeholder="댓글을 남겨보세요"
             maxHeight={200}
             modelValue={replyBody}
-            on:update:modelValue={(e) => (replyBody = e.detail)}
+            onUpdateModelValue={(value) => (replyBody = value)}
           />
         </div>
         <div class="flex justify-end gap-3">

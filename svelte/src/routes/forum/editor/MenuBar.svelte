@@ -232,7 +232,7 @@
   </div>
 </div>
 
-<style>
+<style lang="postcss">
   @reference 'tailwindcss';
 
   .menu-bar {
