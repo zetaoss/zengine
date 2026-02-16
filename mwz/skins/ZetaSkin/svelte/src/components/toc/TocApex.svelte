@@ -147,7 +147,6 @@
 
   onMount(() => {
     dataToc = getRLCONF().dataToc
-    console.log('dataToc(onMount)', dataToc)
     scheduleRecalc()
     window.addEventListener('scroll', scheduleRecalc, { passive: true })
     window.addEventListener('resize', scheduleRecalc)

@@ -10,7 +10,6 @@
     "ms-azuretools.vscode-containers",
     "ms-vscode.makefile-tools",
     "openai.chatgpt",
-    "shufo.vscode-blade-formatter",
     "svelte.svelte-vscode",
     "vitest.explorer"
   ]

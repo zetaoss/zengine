@@ -4,12 +4,13 @@
   import { mdiDotsVertical } from '@mdi/js'
   import { onMount } from 'svelte'
 
+  import type { PageMenu as PageMenuItems } from '$lib/types/menu'
+  import getRLCONF from '$lib/utils/rlconf'
   import ZIcon from '$shared/ui/ZIcon.svelte'
 
   let root: HTMLDetailsElement | null = null
-  type Item = { href?: string; text?: string; accesskey?: string }
-
-  let items: Item[]
+  const { pageMenu } = getRLCONF()
+  let items: PageMenuItems = pageMenu
 
   const close = () => {
     if (!root) return
@@ -27,22 +28,7 @@
     if (e.key === 'Escape') close()
   }
 
-  const getConfigMenu = () => {
-    try {
-      const mw = (
-        window as Window & {
-          mw?: { config?: { get?: (key: string) => unknown } }
-        }
-      ).mw
-      const val = mw?.config?.get?.('pageMenu')
-      return Array.isArray(val) ? val : []
-    } catch {
-      return []
-    }
-  }
-
   onMount(() => {
-    items = getConfigMenu()
     document.addEventListener('mousedown', onMouseDown)
     document.addEventListener('keydown', onKeyDown)
     return () => {
@@ -53,7 +39,7 @@
 </script>
 
 <details bind:this={root} class="page-menu relative print:hidden z-link">
-  <summary class="page-btn" aria-label="Page menu">
+  <summary class="page-btn cursor-pointer" aria-label="Page menu">
     <ZIcon path={mdiDotsVertical} />
   </summary>
 

@@ -265,7 +265,7 @@
           >
             {#each cells as cell (cell.key)}
               <div
-                class="box-border cursor-pointer rounded-[2px] border-[0.5px] hover:opacity-80"
+                class="box-border rounded-[2px] border-[0.5px] hover:opacity-80"
                 data-date={cell.key}
                 data-value={cell.value}
                 title={`${cell.key} · ${cell.value} edits`}

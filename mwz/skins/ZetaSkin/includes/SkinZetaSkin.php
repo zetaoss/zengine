@@ -55,8 +55,8 @@ class SkinZetaSkin extends SkinMustache
 
         if (isset($links['user-menu']['userpage'])) {
             $links['user-menu']['profile'] = [
-                'text' => '프로필',
                 'href' => '/user/'.rawurlencode($skinTemplate->getUser()->getName()),
+                'text' => '프로필',
             ];
         }
 
@@ -93,7 +93,7 @@ class SkinZetaSkin extends SkinMustache
         $data['hasBinders'] = $ctx->hasBinders;
 
         $views = self::$links['views'] ?? [];
-        $data['historyHref'] = $views['history']['href'] ?? null;
+        $data['historyhref'] = $views['history']['href'] ?? null;
 
         $actions = self::$links['actions'] ?? [];
         $namespaces = self::$links['namespaces'] ?? [];
