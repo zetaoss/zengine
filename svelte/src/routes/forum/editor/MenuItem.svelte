@@ -15,7 +15,7 @@
   <ZIcon path={itemData.icon ?? ''} />
 </button>
 
-<style>
+<style lang="postcss">
   @reference 'tailwindcss';
 
   .menu-item {

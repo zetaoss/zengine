@@ -1,8 +1,8 @@
 <script lang="ts">
   import './assets/forum-apex.css'
 
+  import RouteLinkButton from '$lib/components/RouteLinkButton.svelte'
   import useAuthStore from '$lib/stores/auth'
-  import ZButton from '$shared/ui/ZButton.svelte'
 
   import ForumPostList from './components/ForumPostList.svelte'
 
@@ -14,7 +14,7 @@
   <h2 class="my-5 text-2xl font-bold">포럼</h2>
 
   <div class="mb-4 flex justify-end">
-    <ZButton as="a" href="/forum/new" disabled={!$canWrite}>글쓰기</ZButton>
+    <RouteLinkButton to="/forum/new" disabled={!$canWrite}>글쓰기</RouteLinkButton>
   </div>
 
   <ForumPostList />
