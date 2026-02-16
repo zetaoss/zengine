@@ -11,9 +11,9 @@ Monorepo for the zengine stack.
 |-- laravel/                 # Laravel backend (route /api)
 |-- mwz/                     # MediaWiki custom resources
 |   |-- extensions/
-|   |   `-- ZetaExtension/   # custom wiki extension
+|   |   `-- ZetaExtension/   # zeta wiki extension
 |   `-- skins/
-|       `-- ZetaSkin/        # custom wiki skin
+|       `-- ZetaSkin/        # zeta wiki skin
 |           |-- dist/        # skin Svelte build output
 |           |-- svelte/      # skin Svelte project
 |           `-- templates/   # skin Mustache templates
