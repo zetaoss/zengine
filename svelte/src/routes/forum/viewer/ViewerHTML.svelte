@@ -110,7 +110,7 @@
 <!-- eslint-disable-next-line svelte/no-at-html-tags -->
 <div bind:this={rootEl} class="ProseMirror">{@html html}</div>
 
-<style>
+<style lang="postcss">
   @reference 'tailwindcss';
 
   :global(.preview) {

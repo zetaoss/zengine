@@ -35,9 +35,6 @@ export default defineConfig(
     },
   },
   {
-    rules: {},
-  },
-  {
     name: 'app/import-sorting',
     plugins: {
       'simple-import-sort': simpleImportSort,

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import { resolve } from '$app/paths'
+  import RouteLinkButton from '$lib/components/RouteLinkButton.svelte'
   import useAuthStore from '$lib/stores/auth'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
   import ZButton from '$shared/ui/ZButton.svelte'
@@ -113,7 +114,7 @@
 </div>
 
 <div class="flex gap-3 py-4">
-  <ZButton as="a" href={resolve('/forum/new')} disabled={!$canWrite}>글쓰기</ZButton>
+  <RouteLinkButton to="/forum/new" disabled={!$canWrite}>글쓰기</RouteLinkButton>
 
   {#if post}
     {#if $canEdit(post.user_id)}

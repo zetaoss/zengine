@@ -4,7 +4,7 @@
   import './assets/forum-apex.css'
 
   import { page } from '$app/state'
-  import ZButton from '$shared/ui/ZButton.svelte'
+  import RouteLinkButton from '$lib/components/RouteLinkButton.svelte'
 
   import ForumPostList from './components/ForumPostList.svelte'
   import ViewerApex from './viewer/ViewerApex.svelte'
@@ -20,7 +20,7 @@
   <h2 class="my-5 text-2xl font-bold">포럼</h2>
 
   <div class="flex justify-end py-2">
-    <ZButton as="a" href={`/forum${pageNumber === 1 ? '' : `?page=${pageNumber}`}`}>목록</ZButton>
+    <RouteLinkButton to={`/forum${pageNumber === 1 ? '' : `?page=${pageNumber}`}`}>목록</RouteLinkButton>
   </div>
 
   <ViewerApex {postId} />

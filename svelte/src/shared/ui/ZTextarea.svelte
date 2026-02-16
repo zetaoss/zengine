@@ -1,13 +1,11 @@
 <script lang="ts">
-  import { afterUpdate, onMount } from 'svelte'
-  import { createEventDispatcher } from 'svelte'
+  import { onMount } from 'svelte'
 
   export let modelValue = ''
   export let placeholder: string | undefined
   export let id: string
   export let maxHeight: number | undefined
-
-  const dispatch = createEventDispatcher<{ 'update:modelValue': string }>()
+  export let onUpdateModelValue: ((value: string) => void) | undefined = undefined
 
   let textareaEl: HTMLTextAreaElement | null = null
 
@@ -25,12 +23,18 @@
 
   function handleInput(event: Event) {
     const target = event.target as HTMLTextAreaElement
-    dispatch('update:modelValue', target.value)
+    onUpdateModelValue?.(target.value)
+    queueMicrotask(adjustHeight)
+  }
+
+  function scheduleAdjust(deps: { modelValue: string; maxHeight: number | undefined }) {
+    // Keep this reactive dependency explicit for auto-height recalculation.
+    if (!deps) return
     queueMicrotask(adjustHeight)
   }
 
   onMount(adjustHeight)
-  afterUpdate(adjustHeight)
+  $: scheduleAdjust({ modelValue, maxHeight })
 </script>
 
 <textarea

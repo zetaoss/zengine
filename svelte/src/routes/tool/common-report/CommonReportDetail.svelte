@@ -4,8 +4,8 @@
   import { mdiCheckBold, mdiContentCopy } from '@mdi/js'
   import { onDestroy } from 'svelte'
 
-  import { resolve } from '$app/paths'
   import { page } from '$app/state'
+  import RouteLinkButton from '$lib/components/RouteLinkButton.svelte'
   import useAuthStore from '$lib/stores/auth'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
@@ -202,7 +202,7 @@
 {#if row && row.id}
   <div class="p-5">
     <div class="flex justify-end">
-      <ZButton as="a" href={resolve('/tool/common-report')}>목록</ZButton>
+      <RouteLinkButton to="/tool/common-report">목록</RouteLinkButton>
     </div>
 
     <div class="z-card my-2 rounded border p-5">
@@ -372,7 +372,7 @@
         <ZButton onclick={() => rerun(row)}>재실행</ZButton>
       {/if}
       <div class="flex-1 text-right">
-        <ZButton as="a" href="/tool/common-report">목록</ZButton>
+        <RouteLinkButton to="/tool/common-report">목록</RouteLinkButton>
       </div>
     </div>
   </div>
