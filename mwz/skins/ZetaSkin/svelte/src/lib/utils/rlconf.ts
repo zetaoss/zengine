@@ -1,45 +1,35 @@
-export type MyMenuItem = {
-  accesskey?: string
-  active?: boolean
-  class?: string | false
-  'data-mw'?: string
-  exists?: boolean
-  href: string
-  icon?: string
-  id?: string
-  'link-class'?: string[]
-  'single-id'?: string
-  text: string
-  title?: string
-}
+import type { Binder } from '$lib/types/binder'
+import type { Contributor } from '$lib/types/contributor'
+import type { MyMenu, PageMenu } from '$lib/types/menu'
+import type { DataToc } from '$lib/types/toc'
 
-export type MyMenu = Record<string, MyMenuItem>
-
-type RLConf = {
-  binders: unknown[]
-  contributors: Array<{ id: number; name: string }>
-  dataToc: unknown
+type RLConfig = {
+  binders: Binder[]
+  contributors: Contributor[]
+  dataToc: DataToc
   lastmod: string
   myMenu: MyMenu
+  pageMenu: PageMenu
   wgArticleId: number
   wgUserGroups: string[]
   wgUserId: number
   wgUserName: string
 }
 
-export default function getRLCONF(): RLConf {
+export default function getRLCONF(): RLConfig {
   // In this app, RLCONF is always present and already normalized by the server.
-  const c = (globalThis as unknown as { RLCONF: Record<string, unknown> }).RLCONF
+  const c = (globalThis as unknown as { RLCONF: Partial<RLConfig> }).RLCONF
 
-  const binders = (c.binders ?? []) as unknown[]
-  const contributors = (c.contributors ?? []) as Array<{ id: number; name: string }>
-  const dataToc = c.dataToc ?? []
-  const lastmod = (c.lastmod ?? '') as string
-  const myMenu = (c.myMenu ?? {}) as MyMenu
-  const wgArticleId = (c.wgArticleId ?? 0) as number
-  const wgUserGroups = (c.wgUserGroups ?? []) as string[]
-  const wgUserId = (c.wgUserId ?? 0) as number
-  const wgUserName = (c.wgUserName ?? '') as string
-
-  return { binders, contributors, dataToc, lastmod, myMenu, wgArticleId, wgUserGroups, wgUserId, wgUserName }
+  return {
+    binders: c.binders ?? [],
+    contributors: c.contributors ?? [],
+    dataToc: c.dataToc ?? { 'array-sections': [] },
+    lastmod: c.lastmod ?? '',
+    myMenu: c.myMenu ?? {},
+    pageMenu: c.pageMenu ?? [],
+    wgArticleId: c.wgArticleId ?? 0,
+    wgUserGroups: c.wgUserGroups ?? [],
+    wgUserId: c.wgUserId ?? 0,
+    wgUserName: c.wgUserName ?? '',
+  }
 }

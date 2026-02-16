@@ -15,7 +15,8 @@
     small: 'p-1 text-xs',
   }
 
-  const base = 'text-[var(--z-text)] inline-flex items-center justify-center rounded transition ring-1 hover:no-underline leading-none'
+  const base =
+    'text-[var(--z-text)] inline-flex cursor-pointer items-center justify-center rounded transition ring-1 hover:no-underline leading-none'
 
   const colorClasses: Record<Color, string> = {
     default: 'bg-[var(--z-btn-bg)] ring-[var(--z-btn-hover)] hover:bg-[var(--z-btn-hover)]',
@@ -27,7 +28,15 @@
   const disabledClasses = 'opacity-50 brightness-[.9] cursor-not-allowed pointer-events-none text-[var(--z-btn-text-disabled)]'
 
   $: isDisabled = disabled || isCooling
-  $: classes = [base, sizeClasses[size], colorClasses[color], isDisabled ? disabledClasses : ''].filter(Boolean).join(' ')
+  $: classes = [
+    base,
+    sizeClasses[size],
+    colorClasses[color],
+    isDisabled ? disabledClasses : '',
+    typeof $$props.class === 'string' ? $$props.class : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   function handleClick(event: MouseEvent) {
     if (isDisabled) {
@@ -48,11 +57,11 @@
 </script>
 
 {#if as === 'button'}
-  <button class={classes} disabled={isDisabled} onclick={handleClick} {...$$restProps}>
+  <button {...$$restProps} class={classes} disabled={isDisabled} onclick={handleClick}>
     <slot />
   </button>
 {:else}
-  <svelte:element this={as} class={classes} aria-disabled={isDisabled} onclick={handleClick} {...$$restProps}>
+  <svelte:element this={as} {...$$restProps} class={classes} aria-disabled={isDisabled} onclick={handleClick}>
     <slot />
   </svelte:element>
 {/if}

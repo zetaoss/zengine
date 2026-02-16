@@ -63,7 +63,7 @@
 <div bind:this={root} class="md:group order-2 ml-auto contents md:relative md:inline-block">
   <button
     type="button"
-    class={`order-2 ml-auto flex h-12 w-12 items-center justify-center hover:bg-gray-800 md:w-auto md:px-3 ${open ? 'bg-gray-800' : ''}`}
+    class={`cursor-pointer order-2 ml-auto flex h-12 w-12 items-center justify-center hover:bg-gray-800 md:w-auto md:px-3 ${open ? 'bg-gray-800' : ''}`}
     aria-expanded={open}
     onclick={toggle}
   >

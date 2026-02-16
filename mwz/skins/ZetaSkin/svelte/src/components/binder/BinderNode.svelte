@@ -1,27 +1,15 @@
-<script context="module" lang="ts">
-  export interface BinderNodeData {
-    id: number
-    text: string
-    href?: string
-    new?: boolean
-    nodes?: BinderNodeData[]
-  }
-</script>
-
 <script lang="ts">
   import { mdiChevronRight } from '@mdi/js'
-  import { createEventDispatcher, onMount, tick } from 'svelte'
+  import { onMount, tick } from 'svelte'
 
+  import type { BinderItem } from '$lib/types/binder'
   import ZIcon from '$shared/ui/ZIcon.svelte'
 
-  import BinderNode from './BinderNode.svelte'
-
-  export let node: BinderNodeData
+  export let node: BinderItem
   export let depth = 0
   export let wgArticleId: number
   export let binderId: number
-
-  const dispatch = createEventDispatcher<{ reveal: void }>()
+  export let onReveal: (() => void) | undefined = undefined
 
   let expanded = depth === 0
   let rowEl: HTMLElement | null = null
@@ -64,7 +52,7 @@
       expanded = true
       persist()
     }
-    dispatch('reveal')
+    onReveal?.()
   }
 
   const isCurrent = () => node?.id === wgArticleId
@@ -77,7 +65,7 @@
     if (saved === 0 || saved === 1) expanded = !!saved
 
     if (isCurrent()) {
-      dispatch('reveal')
+      onReveal?.()
       await tick()
       rowEl?.scrollIntoView({ block: 'center' })
     }
@@ -105,7 +93,7 @@
   {#if hasChildren()}
     <ul class="p-0 m-0" style={`display: ${expanded ? 'block' : 'none'}`}>
       {#each node.nodes as n (n.text)}
-        <BinderNode node={n} depth={depth + 1} {wgArticleId} {binderId} on:reveal={handleReveal} />
+        <svelte:self node={n} depth={depth + 1} {wgArticleId} {binderId} onReveal={handleReveal} />
       {/each}
     </ul>
   {/if}

@@ -4,16 +4,11 @@
   import { mdiCog, mdiMenu } from '@mdi/js'
   import { onMount } from 'svelte'
 
+  import type { Binder } from '$lib/types/binder'
   import getRLCONF from '$lib/utils/rlconf'
   import ZIcon from '$shared/ui/ZIcon.svelte'
 
-  import BinderNode, { type BinderNodeData } from './BinderNode.svelte'
-
-  interface Binder {
-    id: number
-    title: string
-    trees: BinderNodeData[]
-  }
+  import BinderNode from './BinderNode.svelte'
 
   function isBinder(value: unknown): value is Binder {
     if (!value || typeof value !== 'object') return false
