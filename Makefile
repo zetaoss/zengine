@@ -38,11 +38,7 @@ svelte-build:
 
 .PHONY: svelte-audit
 svelte-audit:
-	@set -e; \
-	for d in $(SVELTE_DIRS); do \
-		echo "➡️  $$d: node hack/pnpm-audit.mjs $$d"; \
-		node hack/pnpm-audit.mjs $$d; \
-	done
+	$(call run_pnpm,audit --ignore-unfixable)
 
 .PHONY: checks
 checks: svelte-overrides svelte-install svelte-lint svelte-format svelte-build svelte-audit
@@ -54,7 +50,7 @@ svelte-lint-fix:
 
 .PHONY: svelte-audit-fix
 svelte-audit-fix:
-	$(call run_pnpm,audit --fix)
+	$(call run_pnpm,audit --fix --ignore-unfixable)
 	$(call run_pnpm,install --no-frozen-lockfile)
 
 .PHONY: pnpm-update
