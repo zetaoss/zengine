@@ -9,9 +9,14 @@
 
   let isDark = false
 
+  const applyDarkClasses = (enabled: boolean) => {
+    document.documentElement.classList.toggle('dark', enabled)
+    document.documentElement.classList.toggle('skin-theme-clientpref-night', enabled)
+  }
+
   const toggleDark = () => {
     isDark = !isDark
-    document.documentElement.classList.toggle('dark', isDark)
+    applyDarkClasses(isDark)
     localStorage.setItem('theme', isDark ? 'dark' : 'light')
   }
 
@@ -19,18 +24,18 @@
     const stored = localStorage.getItem('theme')
     if (stored === 'dark') {
       isDark = true
-      document.documentElement.classList.add('dark')
+      applyDarkClasses(true)
       return
     }
     if (stored === 'light') {
       isDark = false
-      document.documentElement.classList.remove('dark')
+      applyDarkClasses(false)
       return
     }
 
     if (window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
       isDark = true
-      document.documentElement.classList.add('dark')
+      applyDarkClasses(true)
     }
   })
 </script>
