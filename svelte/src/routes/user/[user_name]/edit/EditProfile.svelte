@@ -11,9 +11,9 @@
   import ZCard from '$shared/ui/ZCard.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
   import httpy from '$shared/utils/httpy'
+  import { sha256Hex } from '$shared/utils/sha256'
 
   import { maskEmail } from './util/mask'
-  import { md5 } from './util/md5'
 
   type AvatarType = 1 | 2 | 3
 
@@ -89,7 +89,11 @@
       return
     }
 
-    const ghash = md5(email.toLowerCase())
+    const [ghash, err] = await sha256Hex(email.toLowerCase())
+    if (err) {
+      gravatarError = 'Gravatar 해시 생성 실패'
+      return
+    }
     const ghint = maskEmail(email)
 
     gravatarBusy = true
