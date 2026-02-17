@@ -37,17 +37,12 @@
             <div class="flow-root py-2">
               <div class="float-left">
                 {{#hasMeta}}
-                <page-meta historyhref="{{ historyhref }}"></page-meta>
+                <page-meta></page-meta>
                 {{/hasMeta}}
               </div>
 
               <div class="flex items-center float-right">
-                {{#arrayButtons}}
-                {{^current}}
-                <a class="page-btn" {{#id}}id="{{.}}"{{/id}} {{#title}}title="{{.}}"{{/title}} {{#accesskey}}accesskey="{{.}}"{{/accesskey}} href="{{href}}">{{text}}</a>
-                {{/current}}
-                {{/arrayButtons}}
-
+                <page-buttons></page-buttons>
                 <page-menu></page-menu>
               </div>
             </div>

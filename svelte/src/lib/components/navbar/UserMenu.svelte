@@ -7,9 +7,10 @@
   import { page } from '$app/state'
   import useAuthStore from '$lib/stores/auth'
   import AvatarIcon from '$shared/components/avatar/AvatarIcon.svelte'
-  import type Item from '$shared/components/navbar/items'
   import { useDismissable } from '$shared/composables/useDismissable'
+  import type { Link } from '$shared/types/links'
   import ZIcon from '$shared/ui/ZIcon.svelte'
+  import getShortcut from '$shared/utils/shortcut'
 
   const auth = useAuthStore()
   const { userInfo, isLoggedIn } = auth
@@ -34,25 +35,30 @@
     }
   })
 
-  let items: Item[] = $derived(
-    $isLoggedIn
+  const links: Link[] = $derived(
+    ($isLoggedIn
       ? [
           { text: '프로필', href: `/user/${$userInfo?.name ?? ''}` },
-          { text: '사용자 문서', href: '/wiki/특수:내사용자문서', external: true },
-          { text: '사용자 토론', href: '/wiki/특수:내사용자토론', external: true },
-          { text: '환경 설정', href: '/wiki/특수:환경설정', external: true },
-          { text: '주시문서 목록', href: '/wiki/특수:주시문서목록', external: true },
-          { text: '기여', href: '/wiki/특수:내기여', external: true },
-          { text: '업로드', href: '/wiki/특수:올리기', external: true },
-          { text: '특수문서', href: '/wiki/특수:특수문서', external: true },
+          { text: '사용자 문서', href: '/wiki/특수:내사용자문서', accesskey: '.' },
+          { text: '사용자 토론', href: '/wiki/특수:내사용자토론', accesskey: 'n' },
+          { text: '환경 설정', href: '/wiki/특수:환경설정' },
+          { text: '주시문서 목록', href: '/wiki/특수:주시문서목록', accesskey: 'l' },
+          { text: '기여', href: '/wiki/특수:내기여', accesskey: 'y' },
+          { text: '업로드', href: '/wiki/특수:올리기' },
+          { text: '특수문서', href: '/wiki/특수:특수문서' },
           { text: '로그아웃', href: '/logout' },
         ]
       : [
-          { text: '토론', href: '/wiki/특수:내사용자토론', external: true },
-          { text: '기여', href: '/wiki/특수:내기여', external: true },
-          { text: '계정 생성', href: '/wiki/특수:계정만들기', external: true },
-          { text: '로그인', href: '/login' },
-        ],
+          { text: '로그인', href: '/login', accesskey: 'o' },
+          { text: '계정 만들기', href: '/wiki/특수:계정만들기' },
+        ]
+    ).map((link) => {
+      const shortcut = getShortcut(link.accesskey)
+      return {
+        ...link,
+        title: shortcut ? `${link.text} (${shortcut})` : link.text,
+      }
+    }),
   )
 
   onMount(() => {
@@ -82,15 +88,18 @@
     onkeydown={(e) => e.stopPropagation()}
   >
     <nav class="grid w-full grid-cols-3 py-1 md:block md:w-fit md:whitespace-nowrap">
-      {#each items as item (item.text)}
+      {#each links as l, i (i)}
+        <!-- svelte-ignore a11y_accesskey -->
         <a
           class="block p-2 px-8 text-xs text-white hover:bg-gray-700 hover:no-underline"
-          href={item.href}
+          href={l.href}
+          title={l.title}
+          accesskey={l.accesskey}
           rel="external"
           data-sveltekit-reload
           onclick={close}
         >
-          {item.text}
+          {l.text}
         </a>
       {/each}
     </nav>

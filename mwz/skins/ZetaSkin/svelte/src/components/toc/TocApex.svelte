@@ -3,15 +3,13 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte'
 
-  import type { Section } from '$lib/types/toc'
+  import type { DataToc, Section } from '$lib/types/toc'
   import getRLCONF from '$lib/utils/rlconf'
 
   import TocTree from './TocTree.svelte'
 
   export let headerOffset: number | string = 64
   export let side: boolean | string = false
-
-  let dataToc: unknown = getRLCONF().dataToc
 
   let tocRef: HTMLElement | null = null
   let isTocPast = false
@@ -29,20 +27,19 @@
   $: isSide = coerceBool(side)
   $: headerOffsetNum = coerceNumber(headerOffset, 64)
 
-  const tocObj = typeof dataToc === 'object' && dataToc !== null ? (dataToc as Section) : null
-
-  const flattenAnchors = (root?: Section | null): string[] => {
+  const flattenAnchors = (root?: DataToc | null): string[] => {
     if (!root) return []
     const out: string[] = []
     const walk = (n: Section) => {
       if (n.anchor) out.push(n.anchor)
       ;(n['array-sections'] ?? []).forEach(walk)
     }
-    walk(root)
+    ;(root['array-sections'] ?? []).forEach(walk)
     return out
   }
 
-  const anchors = flattenAnchors(tocObj)
+  const { datatoc } = getRLCONF()
+  const anchors = flattenAnchors(datatoc)
   $: isDrawerMode = !isSide && isTocPast
   $: enableScrollSpy = isSide || isDrawerMode
 
@@ -136,7 +133,7 @@
     observer.observe(tocRef)
   }
 
-  $: if (!isSide && 'IntersectionObserver' in window && tocRef) {
+  $: if (!isSide && typeof window !== 'undefined' && 'IntersectionObserver' in window && tocRef) {
     observeToc()
   }
 
@@ -146,7 +143,6 @@
   }
 
   onMount(() => {
-    dataToc = getRLCONF().dataToc
     scheduleRecalc()
     window.addEventListener('scroll', scheduleRecalc, { passive: true })
     window.addEventListener('resize', scheduleRecalc)
@@ -176,20 +172,20 @@
   }
 </script>
 
-{#if tocObj}
+{#if datatoc}
   {#if isSide}
     <div
       class="flex-none shrink-0 z-30 transition-[width] sticky"
       style={`position: sticky; margin-top:${styleVars().marginTop}; top:${styleVars().top}; height:${styleVars().height};`}
     >
       <div class="z-scrollbar h-full w-full overflow-y-auto">
-        <TocTree toc={tocObj} {activeIds} headerOffset={headerOffsetNum} />
+        <TocTree toc={datatoc} {activeIds} headerOffset={headerOffsetNum} />
       </div>
     </div>
   {:else}
     <div bind:this={tocRef}>
       <div class="inline-block rounded-md border border-slate-200 p-3 my-3">
-        <TocTree toc={tocObj} {activeIds} headerOffset={headerOffsetNum} showRail={false} />
+        <TocTree toc={datatoc} {activeIds} headerOffset={headerOffsetNum} showRail={false} />
       </div>
     </div>
   {/if}
