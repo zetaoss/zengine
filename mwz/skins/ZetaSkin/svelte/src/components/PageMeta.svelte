@@ -7,21 +7,21 @@
   import AvatarIcon from '$shared/components/avatar/AvatarIcon.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
 
-  export let historyhref: string
-
-  const { lastmod, contributors } = getRLCONF()
-
-  const asDate = (v: string) => (v && v.length >= 8 ? `${v.substring(0, 4)}-${v.substring(4, 6)}-${v.substring(6, 8)}` : v)
+  const { contributors, mm, revtime } = getRLCONF()
+  const historyhref = mm?.views?.history?.href ?? null
+  const revtimedate = `${revtime.substring(0, 4)}-${revtime.substring(4, 6)}-${revtime.substring(6, 8)}`
 </script>
 
 {#if contributors?.length}
-  <a href={historyhref} class="z-text2 inline-flex items-center gap-1">
-    <ZIcon path={mdiClockOutline} class="h-4 w-4" />
-    {asDate(lastmod)}
-  </a>
+  {#if historyhref}
+    <a href={historyhref} class="z-text2 inline-flex items-center gap-1">
+      <ZIcon path={mdiClockOutline} class="h-4 w-4" />
+      {revtimedate}
+    </a>
+  {/if}
   <span class="pl-3 -space-x-0.5">
     {#each contributors as u (u.id)}
-      <a href={`/profile/${u.name}`}>
+      <a href={`/user/${u.name}`}>
         <AvatarIcon user={u} showBorder={true} />
       </a>
     {/each}

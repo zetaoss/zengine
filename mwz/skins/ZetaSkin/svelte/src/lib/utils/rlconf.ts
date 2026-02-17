@@ -1,15 +1,15 @@
 import type { Binder } from '$lib/types/binder'
 import type { Contributor } from '$lib/types/contributor'
-import type { MyMenu, PageMenu } from '$lib/types/menu'
 import type { DataToc } from '$lib/types/toc'
+import type { LinkMapMap } from '$shared/types/links'
 
 type RLConfig = {
   binders: Binder[]
   contributors: Contributor[]
-  dataToc: DataToc
-  lastmod: string
-  myMenu: MyMenu
-  pageMenu: PageMenu
+  datatoc: DataToc
+  mm: LinkMapMap
+  revtime: string
+  wgAction: string
   wgArticleId: number
   wgUserGroups: string[]
   wgUserId: number
@@ -17,19 +17,5 @@ type RLConfig = {
 }
 
 export default function getRLCONF(): RLConfig {
-  // In this app, RLCONF is always present and already normalized by the server.
-  const c = (globalThis as unknown as { RLCONF: Partial<RLConfig> }).RLCONF
-
-  return {
-    binders: c.binders ?? [],
-    contributors: c.contributors ?? [],
-    dataToc: c.dataToc ?? { 'array-sections': [] },
-    lastmod: c.lastmod ?? '',
-    myMenu: c.myMenu ?? {},
-    pageMenu: c.pageMenu ?? [],
-    wgArticleId: c.wgArticleId ?? 0,
-    wgUserGroups: c.wgUserGroups ?? [],
-    wgUserId: c.wgUserId ?? 0,
-    wgUserName: c.wgUserName ?? '',
-  }
+  return (globalThis as unknown as { RLCONF: RLConfig }).RLCONF
 }
