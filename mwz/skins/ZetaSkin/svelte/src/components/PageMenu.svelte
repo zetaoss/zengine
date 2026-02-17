@@ -4,13 +4,23 @@
   import { mdiDotsVertical } from '@mdi/js'
   import { onMount } from 'svelte'
 
-  import type { PageMenu as PageMenuItems } from '$lib/types/menu'
-  import getRLCONF from '$lib/utils/rlconf'
+  import getLinks from '$lib/utils/getLinks'
   import ZIcon from '$shared/ui/ZIcon.svelte'
 
   let root: HTMLDetailsElement | null = null
-  const { pageMenu } = getRLCONF()
-  let items: PageMenuItems = pageMenu
+
+  const links = getLinks(
+    ['views.history', { accesskey: 'h' }],
+    ['actions.delete', { accesskey: 'd' }],
+    ['actions.move', { accesskey: 'm' }],
+    ['actions.protect', { accesskey: '=' }],
+    ['actions.unprotect', { accesskey: '=' }],
+    ['views.watch', { accesskey: 'w' }],
+    ['views.unwatch', { accesskey: 'w' }],
+    ['toolbox.print', { accesskey: 'p' }],
+    'toolbox.permalink',
+    'toolbox.info',
+  )
 
   const close = () => {
     if (!root) return
@@ -47,11 +57,9 @@
     class="page-menu-panel absolute z-30 right-0 border rounded bg-white shadow-md dark:bg-neutral-800 text-sm text-black dark:text-white"
   >
     <ul class="page-menu-items">
-      {#each items || [] as item, i (item.href || `${item.text || ''}-${i}`)}
-        <li>
-          <!-- svelte-ignore a11y_accesskey -->
-          <a href={item.href || '#'} accesskey={item.accesskey}>{item.text || ''}</a>
-        </li>
+      {#each links as l, i (i)}
+        <!-- svelte-ignore a11y_accesskey -->
+        <li><a href={l.href} accesskey={l.accesskey} title={l.title}>{l.text}</a></li>
       {/each}
     </ul>
   </div>

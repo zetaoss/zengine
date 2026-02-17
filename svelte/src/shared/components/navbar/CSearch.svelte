@@ -164,13 +164,15 @@
   <div class="m-1.5 grow">
     <div bind:this={root} class="relative" role="search">
       <div class={`flex h-9 z-base rounded-t ${!expanded || !keyword.trim().length ? 'rounded-b' : ''}`}>
+        <!-- svelte-ignore a11y_accesskey -->
         <input
+          accesskey="f"
           aria-label="search"
           type="search"
           class="grow h-full bg-transparent px-3 outline-0"
           name="search"
           placeholder="검색..."
-          title="검색 [alt-shift-f]"
+          title="검색 (Alt+Shift+F)"
           autocomplete="off"
           value={displayQuery}
           on:input={onInput}
@@ -219,11 +221,13 @@
   </div>
 
   <div class="flex flex-none">
-    <a href="/wiki/특수:임의문서" rel="external" class="navlink" title="랜덤" data-sveltekit-reload>
+    <!-- svelte-ignore a11y_accesskey -->
+    <a href="/wiki/특수:임의문서" rel="external" class="navlink" title="랜덤 (Alt+X)" accesskey="x" data-sveltekit-reload>
       <ZIcon path={mdiShuffle} class="h-5 w-5" />
       <span class="ml-1 hidden xl:inline">랜덤</span>
     </a>
-    <a href="/wiki/특수:최근바뀜" rel="external" class="navlink" title="바뀐글" data-sveltekit-reload>
+    <!-- svelte-ignore a11y_accesskey -->
+    <a href="/wiki/특수:최근바뀜" rel="external" class="navlink" title="바뀐글 (Alt+R)" accesskey="r" data-sveltekit-reload>
       <ZIcon path={mdiHistory} class="h-5 w-5" />
       <span class="ml-1 hidden xl:inline">바뀐글</span>
     </a>

@@ -7,7 +7,7 @@
   export let targetIds: string[] = []
   export let depth = 0
   export let showRail = true
-  export let onNavigate: (id: string) => void
+  export let onNavigate: (id: string) => void = () => {}
 
   $: anchor = section?.anchor ?? ''
   $: children = section?.['array-sections'] ?? []
@@ -23,9 +23,10 @@
 </script>
 
 <a
-  href={`#${anchor}`}
-  class={`flex w-full items-start gap-1 z-text2 hover:no-underline hover:text-(--link) ${showRail ? 'border-l-2' : ''} ${isInView && showRail ? 'border-[#888]' : ''}`}
-  style={`padding-left: calc((${depth} + 1) * 0.75rem);`}
+  href={anchor ? `#${anchor}` : '#'}
+  class={`flex w-full items-start gap-1 z-text2 hover:no-underline hover:text-(--link) ${showRail ? 'border-l-2' : ''}`}
+  style={`padding-left: calc((${depth} + 1) * 0.75rem); ${showRail ? `border-color: ${isInView ? '#999' : '#9993'};` : ''}`}
+  aria-current={isInView ? 'location' : undefined}
   on:click={onClick}
 >
   <span class="shrink-0 z-text4">

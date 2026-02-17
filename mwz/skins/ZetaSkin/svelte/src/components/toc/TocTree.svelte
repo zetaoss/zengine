@@ -1,10 +1,10 @@
 <script lang="ts">
-  import type { Section } from '$lib/types/toc'
+  import type { DataToc } from '$lib/types/toc'
   import { scrollToTop } from '$shared/utils/scroll'
 
   import TocNode from './TocNode.svelte'
 
-  export let toc: Section
+  export let toc: DataToc
   export let activeIds: string[] = []
   export let headerOffset = 64
   export let showRail = true
@@ -21,7 +21,10 @@
   const onNavigate = (id: string) => {
     if (!id) return
     scrollToAnchor(id)
-    history.pushState(null, '', `#${id}`)
+    const nextHash = `#${id}`
+    if (window.location.hash !== nextHash) {
+      history.pushState(null, '', nextHash)
+    }
   }
 </script>
 

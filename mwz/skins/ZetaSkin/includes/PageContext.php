@@ -22,7 +22,7 @@ final class PageContext
 
     public bool $hasBinders = false;
 
-    public string $lastmod = '';
+    public string $revtime = '';
 
     public int $pageId = 0;
 
@@ -42,7 +42,7 @@ final class PageContext
     private function __construct(OutputPage $out)
     {
         $this->isView = ((string) $out->getActionName() === 'view');
-        $this->lastmod = (string) $out->getRevisionTimestamp();
+        $this->revtime = (string) $out->getRevisionTimestamp();
 
         $title = $out->getTitle();
         $this->pageId = ($title && $title->canExist()) ? (int) $title->getId() : 0;
