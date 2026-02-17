@@ -24,7 +24,7 @@
 
   const { wgUserId, wgUserName } = getRLCONF()
   if (wgUserId > 0 && wgUserName) {
-    links = [{ text: '프로필', href: `/user/${wgUserName}` }, ...links]
+    links = [{ href: `/user/${wgUserName}`, text: '프로필', title: '프로필' }, ...links]
   }
 
   let root: HTMLElement | null = null

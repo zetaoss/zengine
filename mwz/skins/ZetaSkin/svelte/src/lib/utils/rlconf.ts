@@ -1,6 +1,6 @@
 import type { Binder } from '$lib/types/binder'
 import type { Contributor } from '$lib/types/contributor'
-import type { LinkMapMap } from '$lib/types/links'
+import type { LinkMapMap } from '$shared/types/links'
 import type { DataToc } from '$lib/types/toc'
 
 type RLConfig = {
