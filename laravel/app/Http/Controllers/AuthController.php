@@ -61,7 +61,7 @@ class AuthController extends Controller
         Gate::authorize('unblocked');
 
         $data = $request->validate([
-            'ghash' => ['required', 'string', 'size:32', 'regex:/^[0-9a-f]{32}$/'],
+            'ghash' => ['required', 'string', 'regex:/^[0-9a-f]{64}$/'],
         ]);
 
         $ghash = strtolower((string) $data['ghash']);
@@ -90,7 +90,7 @@ class AuthController extends Controller
 
         $data = $request->validate([
             't' => ['required', 'integer', 'min:1', 'max:3'],
-            'ghash' => ['sometimes', 'nullable', 'string', 'size:32', 'regex:/^[0-9a-f]{32}$/'],
+            'ghash' => ['sometimes', 'nullable', 'string', 'regex:/^[0-9a-f]{64}$/'],
             'ghint' => ['sometimes', 'nullable', 'string', 'max:255'],
         ]);
 
