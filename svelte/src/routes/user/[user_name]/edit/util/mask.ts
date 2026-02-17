@@ -1,6 +1,8 @@
 export function maskEmail(email: string): string {
-  return Array.from(email, (ch, i) => {
-    if (ch === '@') return '@'
-    return i % 2 === 0 ? ch : '*'
-  }).join('')
+  const [name = '', domainPart = ''] = email.split('@')
+  const [host = '', tld = ''] = domainPart.split('.')
+
+  const maskPart = (part: string): string => part.slice(0, 2) + '*'.repeat(Math.max(0, part.length - 2))
+
+  return `${maskPart(name)}@${maskPart(host)}.${maskPart(tld)}`
 }
