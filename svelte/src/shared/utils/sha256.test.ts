@@ -5,6 +5,7 @@ import { sha256Hex } from './sha256'
 describe('sha256Hex', () => {
   afterEach(() => {
     vi.restoreAllMocks()
+    vi.unstubAllGlobals()
   })
 
   it('returns SHA-256 hex and null error', async () => {
@@ -23,5 +24,14 @@ describe('sha256Hex', () => {
     expect(hash).toBe('')
     expect(err).toBeInstanceOf(Error)
     expect(err?.message).toBe('boom')
+  })
+
+  it('returns error tuple when Web Crypto API is unavailable', async () => {
+    vi.stubGlobal('crypto', {})
+
+    const [hash, err] = await sha256Hex('test@example.com')
+
+    expect(hash).toBe('')
+    expect(err).toBeInstanceOf(Error)
   })
 })

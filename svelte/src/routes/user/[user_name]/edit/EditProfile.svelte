@@ -91,7 +91,7 @@
 
     const [ghash, err] = await sha256Hex(email.toLowerCase())
     if (err) {
-      gravatarError = 'Gravatar 해시 생성 실패'
+      gravatarError = `Gravatar 해시 생성 실패: ${err.message}`
       return
     }
     const ghint = maskEmail(email)
