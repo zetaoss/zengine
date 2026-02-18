@@ -2,6 +2,10 @@
   :root {
     color-scheme: light;
 
+    /* --x-gray-100: theme(colors.gray.100); */
+    --x-gray-200: theme(colors.gray.200);
+    --x-gray-300: theme(colors.gray.300);
+
     --z-base: #fff;
     --z-base2: #fcfcfc;
     --z-base3: #f5f5f5;
@@ -57,6 +61,10 @@
 
 .dark {
   color-scheme: dark;
+
+  /* --x-gray-100: theme(colors.gray.800); */
+  --x-gray-200: theme(colors.gray.700);
+  --x-gray-300: theme(colors.gray.600);
 
   --z-base: #131313;
   --z-base2: #181818;
