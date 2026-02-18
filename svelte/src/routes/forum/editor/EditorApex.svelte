@@ -136,10 +136,10 @@
 
   .editor__content {
     flex: 1 1 auto;
-    overflow-x: hidden;
-    overflow-y: auto;
     padding: 1.25rem 1rem;
     -webkit-overflow-scrolling: touch;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   .editor__content :global(.tiptap) {
@@ -162,14 +162,14 @@
 
   .editor__footer {
     @apply border-t;
-    align-items: center;
     display: flex;
     flex: 0 0 auto;
     flex-wrap: wrap;
-    font-size: 12px;
-    font-weight: 600;
+    align-items: center;
     justify-content: space-between;
     padding: 0.25rem 0.75rem;
+    font-size: 12px;
+    font-weight: 600;
     white-space: nowrap;
   }
 

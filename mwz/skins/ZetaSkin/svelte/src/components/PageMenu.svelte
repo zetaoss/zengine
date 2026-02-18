@@ -79,25 +79,25 @@
   }
 
   .page-menu[open] > .page-btn {
-    text-decoration: none;
     background-color: #8883;
+    text-decoration: none;
   }
 
   .page-menu-items {
-    list-style: none;
-    margin: 0;
     padding: 0;
+    margin: 0;
+    list-style: none;
   }
 
   .page-menu-items a {
     display: block;
-    white-space: nowrap;
     padding: 0.25rem 1.5rem;
     color: var(--text);
+    white-space: nowrap;
   }
 
   .page-menu-items a:hover {
-    text-decoration: none;
     background-color: #8883;
+    text-decoration: none;
   }
 </style>
