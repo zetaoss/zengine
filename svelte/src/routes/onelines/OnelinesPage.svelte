@@ -7,12 +7,12 @@
   import ThePagination from '$lib/components/pagination/ThePagination.svelte'
   import type { PaginateData } from '$lib/components/pagination/types'
   import { useOnelineDelete } from '$lib/composables/useOnelineDelete'
-  import linkify from '$lib/utils/linkify'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
   import ZButton from '$shared/ui/ZButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
   import httpy from '$shared/utils/httpy'
+  import linkify from '$shared/utils/linkify'
 
   interface Row {
     id: number
