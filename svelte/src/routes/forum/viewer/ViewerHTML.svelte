@@ -1,8 +1,8 @@
 <script lang="ts">
   import { tick } from 'svelte'
 
-  import linkify from '$lib/utils/linkify'
   import httpy from '$shared/utils/httpy'
+  import linkify from '$shared/utils/linkify'
 
   import { applyHljs } from './hljs'
   import { renderPlainTextWithFences } from './renderText'

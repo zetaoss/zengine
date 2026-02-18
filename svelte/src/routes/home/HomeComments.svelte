@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte'
 
-  import linkify from '$lib/utils/linkify'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
   import httpy from '$shared/utils/httpy'
+  import linkify from '$shared/utils/linkify'
 
   interface Row {
     page_title: string

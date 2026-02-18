@@ -8,6 +8,7 @@
   import AvatarIcon from '$shared/components/avatar/AvatarIcon.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import httpy from '$shared/utils/httpy'
+  import { titlesExist } from '$shared/utils/mediawiki'
 
   interface Row {
     id: number
@@ -25,6 +26,8 @@
   let editingRow: Row | null = null
   let deletingRow: Row | null = null
   let showModal = false
+  let titleExistsMap: Record<string, boolean> = {}
+  let fetchDataToken = 0
 
   const isLoggedIn = wgUserId > 0
   const isAdmin = (wgUserGroups || []).includes('sysop')
@@ -33,12 +36,26 @@
   const canDelete = (id: number) => canEdit(id) || isAdmin
 
   async function fetchData() {
+    const token = ++fetchDataToken
     const [data, err] = await httpy.get<Row[]>(`/api/comments/${wgArticleId}`)
     if (err) {
       console.log(err)
       return
     }
-    docComments = data ?? []
+
+    const rows = data ?? []
+    if (token !== fetchDataToken) return
+    docComments = rows
+
+    const titles = [...new Set(rows.flatMap((row) => getWikiTitles(row.message)))]
+    if (titles.length === 0) {
+      titleExistsMap = {}
+      return
+    }
+
+    const existsMap = await titlesExist(titles)
+    if (token !== fetchDataToken) return
+    titleExistsMap = existsMap
   }
 
   async function postNew() {
@@ -104,12 +121,25 @@
       .replace(/&quot;/g, '"')
       .replace(/&#39;/g, "'")
 
+  const getWikiTitles = (input: string): string[] => {
+    const titles: string[] = []
+    const re = /\[\[([^\]|]+)(?:\|[^\]]*)?\]\]/g
+    let match: RegExpExecArray | null
+    while ((match = re.exec(input || '')) !== null) {
+      const title = decodeEntities(match[1] || '').trim()
+      if (title.length > 0) titles.push(title)
+    }
+    return titles
+  }
+
   const linkifyInline = (input: string) =>
     input.replace(/\[\[([^\]|]+)(?:\|([^\]]*))?\]\]|https?:\/\/[^\s<]+/g, (match, target, display) => {
       if (match.startsWith('[[')) {
         const rawTarget = decodeEntities(String(target)).trim()
+        const exists = titleExistsMap[rawTarget] === true
+        const classList = exists ? 'internal' : 'internal new'
         const href = `/wiki/${encodeURIComponent(rawTarget.replace(/ /g, '_'))}`
-        return `<a href="${href}" class="internal">${display || target}</a>`
+        return `<a href="${href}" class="${classList}" data-sveltekit-reload>${display || target}</a>`
       }
       const rawUrl = decodeEntities(match)
       const safeUrl = rawUrl.replace(/"/g, '%22')
