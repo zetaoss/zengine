@@ -35,7 +35,7 @@
     "prettier": "^3.8.1",
     "prettier-plugin-svelte": "^3.4.0",
     "stylelint": "^17.3.0",
-    "stylelint-config-recess-order": "^7.6.1",
+    "stylelint-config-idiomatic-order": "^10.0.0",
     "stylelint-order": "^7.0.1",
     "svelte": "^5.25.0",
     "svelte-check": "^4.3.3",
