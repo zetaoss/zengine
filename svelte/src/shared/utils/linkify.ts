@@ -13,24 +13,23 @@ function linkifyURL(s: string) {
 }
 
 async function linkifyWiki(s: string) {
-  const matches = [...new Set(s.match(/\[\[([^[\]|]*)[^[\]]*\]\]/g) ?? [])]
+  const wikiLinkRegex = /\[\[([^\]|]+)(?:\|([^\]]*))?\]\]/g
+  const matches = [...s.matchAll(wikiLinkRegex)]
   if (matches.length === 0) return s
-  const titles = matches.map((match) => (match.slice(2, -2).split('|', 2)[0] || '').trim())
+
+  const titles = [...new Set(matches.map((match) => (match[1] || '').trim()))]
   const existsMap = await titlesExist(titles)
 
-  for (const match of matches) {
-    const [targetRaw, displayRaw] = match.slice(2, -2).split('|', 2)
+  return s.replace(wikiLinkRegex, (_match, targetRaw: string, displayRaw: string | undefined) => {
     const target = (targetRaw || '').trim()
-    const display = (displayRaw || target).trim()
+    const display = (displayRaw || targetRaw).trim()
     const classList = existsMap[target] === true ? 'internal' : 'internal new'
     const href = `/wiki/${encodeURIComponent(target.replace(/ /g, '_'))}`
-    s = s.split(match).join(`<a href="${href}" class="${classList}" data-sveltekit-reload>${display}</a>`)
-  }
-
-  return s
+    return `<a href="${href}" class="${classList}" data-sveltekit-reload>${display}</a>`
+  })
 }
 
 export default async function linkify(input: string) {
   const linked = await linkifyWiki(linkifyURL(input))
-  return DOMPurify.sanitize(linked)
+  return DOMPurify.sanitize(linked, { ADD_ATTR: ['target', 'rel'] })
 }

@@ -27,6 +27,7 @@
   let deletingRow: Row | null = null
   let showModal = false
   let titleExistsMap: Record<string, boolean> = {}
+  let fetchDataToken = 0
 
   const isLoggedIn = wgUserId > 0
   const isAdmin = (wgUserGroups || []).includes('sysop')
@@ -35,6 +36,7 @@
   const canDelete = (id: number) => canEdit(id) || isAdmin
 
   async function fetchData() {
+    const token = ++fetchDataToken
     const [data, err] = await httpy.get<Row[]>(`/api/comments/${wgArticleId}`)
     if (err) {
       console.log(err)
@@ -42,9 +44,18 @@
     }
 
     const rows = data ?? []
-    const titles = [...new Set(rows.flatMap((row) => getWikiTitles(row.message)))]
-    titleExistsMap = titles.length > 0 ? await titlesExist(titles) : {}
+    if (token !== fetchDataToken) return
     docComments = rows
+
+    const titles = [...new Set(rows.flatMap((row) => getWikiTitles(row.message)))]
+    if (titles.length === 0) {
+      titleExistsMap = {}
+      return
+    }
+
+    const existsMap = await titlesExist(titles)
+    if (token !== fetchDataToken) return
+    titleExistsMap = existsMap
   }
 
   async function postNew() {
@@ -126,7 +137,7 @@
       if (match.startsWith('[[')) {
         const rawTarget = decodeEntities(String(target)).trim()
         const exists = titleExistsMap[rawTarget] === true
-        const classList = ['internal', exists ? '' : 'new'].filter(Boolean).join(' ')
+        const classList = exists ? 'internal' : 'internal new'
         const href = `/wiki/${encodeURIComponent(rawTarget.replace(/ /g, '_'))}`
         return `<a href="${href}" class="${classList}" data-sveltekit-reload>${display || target}</a>`
       }
