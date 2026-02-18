@@ -4,12 +4,12 @@
 
   import { useOnelineDelete } from '$lib/composables/useOnelineDelete'
   import useAuthStore from '$lib/stores/auth'
-  import linkify from '$lib/utils/linkify'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
   import { showToast } from '$shared/ui/toast/toast'
   import ZButton from '$shared/ui/ZButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import httpy from '$shared/utils/httpy'
+  import linkify from '$shared/utils/linkify'
 
   interface Row {
     id: number
