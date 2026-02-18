@@ -119,17 +119,17 @@
 
 <style>
   .progress-wrap {
-    width: 100%;
     overflow: hidden;
+    width: 100%;
     background: rgba(5, 114, 206, 0.05);
   }
 
   .progress-bar {
-    height: 100%;
     width: 100%;
+    height: 100%;
     animation: indeterminateAnimation 1s infinite linear;
-    transform-origin: 0% 50%;
     background: rgb(5, 114, 206);
+    transform-origin: 0% 50%;
   }
 
   @keyframes indeterminateAnimation {

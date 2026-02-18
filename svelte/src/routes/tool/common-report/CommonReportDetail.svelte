@@ -381,8 +381,8 @@
 <style>
   .detail-table th,
   .detail-table td {
-    border: 1px solid currentColor;
     padding: 0.75rem;
+    border: 1px solid currentColor;
     text-align: right;
   }
 
