@@ -254,7 +254,7 @@
 <style>
   .mytable td,
   .mytable th {
-    text-align: left;
     padding: 2px 0;
+    text-align: left;
   }
 </style>

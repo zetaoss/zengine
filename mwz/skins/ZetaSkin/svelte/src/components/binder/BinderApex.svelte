@@ -154,13 +154,13 @@
   }
 
   .nav-blur {
-    width: calc(100% - 6px);
-    mask-image: linear-gradient(transparent, #000 64px);
-    bottom: 0;
-    height: 64px;
-    left: 0;
-    pointer-events: none;
     position: absolute;
+    bottom: 0;
+    left: 0;
+    width: calc(100% - 6px);
+    height: 64px;
     background-color: var(--bg-muted);
+    mask-image: linear-gradient(transparent, #000 64px);
+    pointer-events: none;
   }
 </style>

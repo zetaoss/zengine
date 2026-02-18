@@ -227,15 +227,15 @@
   }
 
   .progress-wrap {
-    height: 4px;
-    width: 100%;
     overflow: hidden;
+    width: 100%;
+    height: 4px;
     background: rgba(127, 127, 127, 0.2);
   }
 
   .progress-bar {
-    height: 100%;
     width: 35%;
+    height: 100%;
     animation: common-report-progress 1.2s ease-in-out infinite;
     background: #3b82f6;
   }

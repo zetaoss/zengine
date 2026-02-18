@@ -123,10 +123,10 @@ console.log("Hello HTML");
   }
 
   .console :global(.detail) {
-    margin: 0.25rem 0;
-    border-radius: 0.25rem;
-    background-color: var(--console-detail-bg);
     padding: 0.25rem;
+    border-radius: 0.25rem;
+    margin: 0.25rem 0;
+    background-color: var(--console-detail-bg);
     font-size: 0.875rem;
     line-height: 1.25rem;
   }
