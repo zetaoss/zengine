@@ -65,10 +65,7 @@
 
   /* https://github.com/wikimedia/mediawiki/blob/1.43.6/resources/lib/ooui/oojs-ui-core-apex.css */
   /* https://github.com/wikimedia/mediawiki/blob/1.43.6/resources/lib/ooui/oojs-ui-core-wikimediaui.css */
-  .oo-ui-iconElement-icon:not(.oo-ui-image-invert) {
-    filter: invert(1) hue-rotate(180deg);
-  }
-
+  .oo-ui-iconElement-icon:not(.oo-ui-image-invert),
   .oo-ui-indicatorElement-indicator:not(.oo-ui-image-invert) {
     filter: invert(1) hue-rotate(180deg);
   }
