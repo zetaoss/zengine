@@ -38,7 +38,7 @@ svelte-build:
 
 .PHONY: svelte-audit
 svelte-audit:
-	$(call run_pnpm,audit --ignore-unfixable)
+	$(call run_pnpm,audit --ignore-unfixable --ignore-registry-errors)
 
 .PHONY: checks
 checks: svelte-overrides svelte-install svelte-lint svelte-format svelte-build svelte-audit
