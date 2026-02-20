@@ -23,6 +23,8 @@
     id: number
     user_id: number
     user_name: string
+    writer_id: number
+    writer_name?: string
     rate: number
     ref: number
     title: string
@@ -141,9 +143,45 @@
     showToast('삭제 완료')
   }
 
+  async function recommend(row: Row) {
+    if (!get(canWrite)) {
+      window.location.href = '/login?redirect=/tool/write-request'
+      return
+    }
+
+    const [data, err] = await httpy.post<{ ok: boolean; rate: number }>(`/api/write-request/${row.id}/recommend`)
+    if (err) {
+      console.error(err)
+      return
+    }
+
+    row.rate = data.rate
+  }
+
   function getTitleHref(row: Row) {
     if (mode === 'done') return `/wiki/${row.title}`
     return `/w/index.php?search=${row.title}`
+  }
+
+  function getDateText(row: Row) {
+    return row.updated_at.substring(0, 10)
+  }
+
+  function getWrittenDateText(row: Row) {
+    const writedAt = (row.writed_at || '').trim()
+    if (writedAt) return writedAt.substring(0, 10)
+    return row.updated_at.substring(0, 10)
+  }
+
+  function getRequestUser(row: Row) {
+    return { id: row.user_id, name: row.user_name }
+  }
+
+  function getDisplayUser(row: Row) {
+    return {
+      id: row.writer_id > 0 ? row.writer_id : row.user_id,
+      name: row.writer_name || row.user_name,
+    }
   }
 </script>
 
@@ -183,15 +221,20 @@
         <th>추천</th>
         <th>검색</th>
         <th>역링크</th>
-        <th>요청일</th>
-        <th>요청자</th>
+        {#if mode === 'done'}
+          <th>요청</th>
+          <th>작성</th>
+        {:else}
+          <th>요청일</th>
+          <th>요청자</th>
+        {/if}
       </tr>
     </thead>
 
     {#if loading}
       <thead>
         <tr>
-          <th colspan="9" class="p-0!">
+          <th colspan={7} class="p-0!">
             <div class="progress-wrap">
               <div class="progress-bar"></div>
             </div>
@@ -217,15 +260,36 @@
               </ZButton>
             {/if}
           </td>
-          <td class="text-center">{row.rate}</td>
+          <td class="text-center">
+            {#if mode === 'done'}
+              {row.rate}
+            {:else}
+              <ZButton class="min-w-10 px-2 py-1" onclick={() => recommend(row)}>{row.rate}</ZButton>
+            {/if}
+          </td>
           <td class="text-center">{row.hit}</td>
           <td class="text-center">
             <a href={`/wiki/특수:가리키는문서/${row.title}`} rel="external" class="btn">{row.ref}</a>
           </td>
-          <td class="text-center">{row.updated_at.substring(0, 10)}</td>
-          <td class="user">
-            <AvatarUser user={{ id: row.user_id, name: row.user_name }} />
-          </td>
+          {#if mode === 'done'}
+            <td class="text-center">
+              <div>{getDateText(row)}</div>
+              <div class="mt-1">
+                <AvatarUser user={getRequestUser(row)} />
+              </div>
+            </td>
+            <td class="text-center">
+              <div>{getWrittenDateText(row)}</div>
+              <div class="mt-1">
+                <AvatarUser user={getDisplayUser(row)} />
+              </div>
+            </td>
+          {:else}
+            <td class="text-center">{getDateText(row)}</td>
+            <td class="user">
+              <AvatarUser user={getRequestUser(row)} />
+            </td>
+          {/if}
         </tr>
       {/each}
     </tbody>
