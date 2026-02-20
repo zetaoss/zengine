@@ -8,20 +8,12 @@ final class BinderService
 {
     private static function dbw()
     {
-        $svc = MediaWikiServices::getInstance();
-
-        return method_exists($svc, 'getConnectionProvider')
-            ? $svc->getConnectionProvider()->getPrimaryDatabase()
-            : $svc->getDBLoadBalancer()->getConnection(DB_PRIMARY);
+        return MediaWikiServices::getInstance()->getConnectionProvider()->getPrimaryDatabase();
     }
 
     private static function dbr()
     {
-        $svc = MediaWikiServices::getInstance();
-
-        return method_exists($svc, 'getConnectionProvider')
-            ? $svc->getConnectionProvider()->getReplicaDatabase()
-            : $svc->getDBLoadBalancer()->getConnection(DB_REPLICA);
+        return MediaWikiServices::getInstance()->getConnectionProvider()->getReplicaDatabase();
     }
 
     public static function listBinders(): array

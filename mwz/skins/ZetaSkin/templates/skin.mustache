@@ -33,7 +33,7 @@
             <div>{{{ html-subtitle }}}</div>
             {{/html-subtitle}}
           </div>
-          <div class="pb-4"> 
+          <div class="pb-4">
             <div class="flow-root py-2">
               <div class="float-left">
                 {{#hasMeta}}
@@ -42,7 +42,9 @@
               </div>
 
               <div class="flex items-center float-right">
-                <page-buttons></page-buttons>
+                {{#pageButtons}}
+                <a class="page-btn" href="{{href}}"{{#id}} id="{{.}}"{{/id}}{{#title}} title="{{.}}"{{/title}}>{{text}}</a>
+                {{/pageButtons}}
                 <page-menu></page-menu>
               </div>
             </div>
@@ -65,9 +67,9 @@
           </div>
           {{/hasToc}}
 
-          <article id="content" data-mw-ve-target-container class="py-6 pb-10">
+          <div id="bodyContent" data-mw-ve-target-container class="py-6 pb-10">
           {{{ html-body-content }}}
-          </article>
+          </div>
 
           {{#ads}}
           <div class="flex justify-center pb-4">
