@@ -6,12 +6,23 @@ use SkinMustache;
 
 class SkinZetaSkin extends SkinMustache
 {
-    private static $links;
+    private static $menu = [];
 
-    private static $sidebar;
+    private static $action;
+
+    private static $pageId;
+
+    private static $binders;
+
+    private static $datatoc;
+
+    private static $isArticleView = false;
 
     public static function onBeforePageDisplay($out, $skin)
     {
+        self::$action = $out->getActionName();
+        self::$pageId = (int) $skin->getTitle()->getArticleID();
+
         $out->addHTMLClasses($_COOKIE['theme'] ?? '');
         $out->addHeadItem('adsense', '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='.getenv('ADSENSE_CLIENT').'" crossorigin="anonymous"></script>');
         $out->addStyle('/w/skins/ZetaSkin/dist/app.css?'.ASSET_HASH);
@@ -19,40 +30,19 @@ class SkinZetaSkin extends SkinMustache
         $out->addScriptFile('/w/skins/ZetaSkin/dist/app.js?'.ASSET_HASH);
     }
 
-    public static function onMakeGlobalVariablesScript(array &$vars, $out)
-    {
-        $ctx = PageContext::getInstance($out);
-        $vars['avatar'] = $ctx->avatar;
-        $vars['binders'] = $ctx->binders;
-        $vars['contributors'] = $ctx->contributors;
-        $vars['revtime'] = $ctx->revtime;
-    }
-
-    public static function onSkinTemplateNavigation__Universal($skinTemplate, &$links)
-    {
-        self::$links = $links;
-    }
-
-    public static function onSidebarBeforeOutput($skin, &$sidebar)
-    {
-        self::$sidebar = $sidebar;
-    }
-
     public function getTemplateData()
     {
         $data = parent::getTemplateData();
 
-        $is_article = $data['is-article'];
+        self::$isArticleView = $data['is-article'] && self::$action == 'view';
+        $data['hasMeta'] = self::$isArticleView;
+        self::$binders = self::$isArticleView ? PageDataProvider::fetchBinders(self::$pageId) : [];
+        $data['hasBinders'] = ! empty(self::$binders);
 
-        $ctx = PageContext::getInstance($this->getOutput());
+        self::$datatoc = $data['data-toc'] ?? [];
+        $data['hasToc'] = ! empty(self::$datatoc);
 
-        $data['hasMeta'] = $is_article && $ctx->isView;
-        $data['hasBinders'] = $ctx->hasBinders;
-
-        $dataToc = $data['data-toc'] ?? [];
-        $data['hasToc'] = ! empty($dataToc);
-
-        if ($data['is-anon'] && $is_article && $ctx->isView) {
+        if ($data['is-anon'] && self::$isArticleView) {
             $data['ads'] = [
                 'client' => getenv('ADSENSE_CLIENT'),
                 'slotTop' => getenv('ADSENSE_SLOT_TOP'),
@@ -60,15 +50,57 @@ class SkinZetaSkin extends SkinMustache
             ];
         }
 
-        $this->getOutput()->addJsConfigVars('datatoc', $dataToc);
-        $this->getOutput()->addJsConfigVars('mm', [
-            'actions' => self::$links['actions'],
-            'namespaces' => self::$links['namespaces'],
-            'toolbox' => self::$sidebar['TOOLBOX'],
-            'usermenu' => self::$links['user-menu'],
-            'views' => self::$links['views'],
-        ]);
+        $data['pageButtons'] = $this->getPageButtons();
 
         return $data;
+    }
+
+    public static function onSkinTemplateNavigation__Universal($skinTemplate, &$links)
+    {
+        self::$menu['actions'] = $links['actions'];
+        self::$menu['namespaces'] = $links['namespaces'];
+        self::$menu['usermenu'] = $links['user-menu'];
+        self::$menu['views'] = $links['views'];
+    }
+
+    public static function onSidebarBeforeOutput($skin, &$sidebar)
+    {
+        self::$menu['toolbox'] = $sidebar['TOOLBOX'];
+    }
+
+    public static function onMakeGlobalVariablesScript(array &$vars, $out)
+    {
+        $vars['binders'] = self::$binders;
+        $vars['datatoc'] = self::$datatoc;
+        $vars['contributors'] = self::$isArticleView ? PageDataProvider::fetchContributors(self::$pageId) : [];
+        $vars['revtime'] = $out->getRevisionTimestamp();
+        $vars['mm'] = self::$menu;
+    }
+
+    private function getPageButtons(): array
+    {
+        $buttons = array_filter([
+            'view' => self::$action === 'view' ? null : (self::$menu['views']['view'] ?? null),
+            'edit' => self::$action === 'edit' ? null : (self::$menu['views']['edit'] ?? null),
+            'viewsource' => self::$menu['actions']['viewsource'] ?? null,
+            'whatlinkshere' => self::$menu['toolbox']['whatlinkshere'] ?? null,
+            'talk' => self::$menu['namespaces']['talk'] ?? null,
+        ]);
+
+        foreach ($buttons as $key => &$button) {
+            switch ($key) {
+                case 'edit':
+                    $button['id'] = 'ca-edit';
+                    break;
+                case 'whatlinkshere':
+                    $button['text'] = '역링크';
+                    break;
+                case 'talk':
+                    $button['id'] = 'ca-talk';
+            }
+            $button['title'] = $button['text'];
+        }
+
+        return array_values($buttons);
     }
 }
