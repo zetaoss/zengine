@@ -36,7 +36,8 @@ class WriteRequestController extends Controller
     public function indexDone()
     {
         return $this->baseQuery()
-            ->where('w.writer_id', '>', 0)
+            ->where('w.writer_id', '>=', 0)
+            ->orderByDesc('w.writed_at')
             ->orderByDesc('w.id')
             ->paginate(25);
     }
@@ -81,6 +82,15 @@ class WriteRequestController extends Controller
         $writeRequest->delete();
 
         return ['ok' => true];
+    }
+
+    public function recommend(WriteRequest $writeRequest)
+    {
+        Gate::authorize('unblocked');
+
+        $writeRequest->increment('rate');
+
+        return ['ok' => true, 'rate' => (int) $writeRequest->fresh()->rate];
     }
 
     private function baseQuery()

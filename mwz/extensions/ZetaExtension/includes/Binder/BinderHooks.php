@@ -2,6 +2,8 @@
 
 namespace ZetaExtension\Binder;
 
+use ZetaExtension\WriteRequest\WriteRequestService;
+
 final class BinderHooks
 {
     private const NS_BINDER = 3000;
@@ -11,6 +13,8 @@ final class BinderHooks
         if ($wikiPage->getNamespace() === self::NS_BINDER) {
             BinderService::syncRelations($wikiPage->getId());
         }
+
+        WriteRequestService::markDoneIfMatched($wikiPage, $user);
     }
 
     public static function onPageDeleteComplete($wikiPage, $user, $reason, $pageId, $deletedRev, $logEntry, $archivedRevisionCount): void
