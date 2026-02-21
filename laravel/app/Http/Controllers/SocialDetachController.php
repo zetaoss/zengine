@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Models\UserSocial;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
@@ -15,6 +16,7 @@ class SocialDetachController extends Controller
         }
 
         $socialId = $this->extractSocialId($request);
+        $userIds = $this->findUserIdsBySocial($provider, $socialId);
 
         UserSocial::query()
             ->where('provider', $provider)
@@ -22,6 +24,7 @@ class SocialDetachController extends Controller
             ->update([
                 'deauthorized_at' => now(),
             ]);
+        $this->rotateUserTokens($userIds);
 
         return response()->json([
             'status' => 'ok',
@@ -35,6 +38,7 @@ class SocialDetachController extends Controller
         }
 
         $socialId = $this->extractSocialId($request);
+        $userIds = $this->findUserIdsBySocial($provider, $socialId);
 
         $confirmationCode = bin2hex(random_bytes(16));
 
@@ -46,6 +50,7 @@ class SocialDetachController extends Controller
                 'deletion_code' => $confirmationCode,
                 'deleted_at' => now(),
             ]);
+        $this->rotateUserTokens($userIds);
 
         return response()->json([
             'url' => url("/auth/deletion/{$provider}/status/{$confirmationCode}"),
@@ -143,5 +148,39 @@ class SocialDetachController extends Controller
         $decoded = base64_decode($value, true);
 
         return is_string($decoded) ? $decoded : null;
+    }
+
+    /**
+     * @return int[]
+     */
+    private function findUserIdsBySocial(string $provider, string $socialId): array
+    {
+        return UserSocial::query()
+            ->where('provider', $provider)
+            ->where('social_id', $socialId)
+            ->whereNotNull('user_id')
+            ->pluck('user_id')
+            ->map(static fn ($id): int => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param int[] $userIds
+     */
+    private function rotateUserTokens(array $userIds): void
+    {
+        foreach ($userIds as $userId) {
+            if ($userId < 1) {
+                continue;
+            }
+
+            User::query()
+                ->whereKey($userId)
+                ->update([
+                    'user_token' => bin2hex(random_bytes(16)),
+                ]);
+        }
     }
 }
