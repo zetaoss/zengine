@@ -11,12 +11,16 @@ class UserSocial extends Model
     public $timestamps = false;
     protected $fillable = [
         'provider',
-        'social_id',
         'user_id',
+        'social_id',
+        'deauthorized_at',
+        'deleted_at',
         'deletion_code',
     ];
     protected $casts = [
         'id' => 'int',
         'user_id' => 'int',
+        'deauthorized_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 }

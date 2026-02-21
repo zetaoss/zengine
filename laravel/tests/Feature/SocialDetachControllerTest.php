@@ -6,7 +6,7 @@ use Illuminate\Foundation\Testing\WithoutMiddleware;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
-class SocialDeletionControllerTest extends TestCase
+class SocialDetachControllerTest extends TestCase
 {
     use WithoutMiddleware;
 
@@ -24,9 +24,11 @@ class SocialDeletionControllerTest extends TestCase
             CREATE TABLE zetawiki.user_social (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 provider TEXT NOT NULL,
-                social_id TEXT NOT NULL,
+                social_id TEXT NULL,
                 user_id INTEGER NULL,
-                deletion_code TEXT NULL
+                deletion_code TEXT NULL,
+                deauthorized_at TEXT NULL,
+                deleted_at TEXT NULL
             )
         ');
 
@@ -44,6 +46,48 @@ class SocialDeletionControllerTest extends TestCase
         $response->assertJson(['error' => 'invalid_signed_request']);
     }
 
+    public function test_facebook_deauthorize_rejects_invalid_signed_request(): void
+    {
+        $response = $this->post('/auth/deauthorize/facebook', [
+            'signed_request' => 'invalid',
+        ]);
+
+        $response->assertStatus(400);
+        $response->assertJson(['error' => 'invalid_signed_request']);
+    }
+
+    public function test_facebook_deauthorize_marks_deauthorized_at(): void
+    {
+        DB::table('zetawiki.user_social')->insert([
+            'provider' => 'facebook',
+            'social_id' => 'fb-user-deauth-123',
+            'user_id' => 88,
+            'deletion_code' => 'keep-existing-code',
+            'deauthorized_at' => null,
+        ]);
+
+        $signedRequest = $this->buildSignedRequest('fb-user-deauth-123', 'test-facebook-secret');
+
+        $response = $this->post('/auth/deauthorize/facebook', [
+            'signed_request' => $signedRequest,
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'status' => 'ok',
+        ]);
+
+        $row = DB::table('zetawiki.user_social')
+            ->where('provider', 'facebook')
+            ->where('social_id', 'fb-user-deauth-123')
+            ->first();
+
+        $this->assertNotNull($row);
+        $this->assertSame(88, (int) $row->user_id);
+        $this->assertSame('keep-existing-code', $row->deletion_code);
+        $this->assertNotNull($row->deauthorized_at);
+    }
+
     public function test_facebook_deletion_updates_user_social_and_returns_confirmation(): void
     {
         DB::table('zetawiki.user_social')->insert([
@@ -51,6 +95,7 @@ class SocialDeletionControllerTest extends TestCase
             'social_id' => 'fb-user-123',
             'user_id' => 77,
             'deletion_code' => null,
+            'deleted_at' => null,
         ]);
 
         $signedRequest = $this->buildSignedRequest('fb-user-123', 'test-facebook-secret');
@@ -63,21 +108,21 @@ class SocialDeletionControllerTest extends TestCase
         $response->assertJsonStructure([
             'url',
             'confirmation_code',
-            'deleted_links',
         ]);
-        $response->assertJson(['deleted_links' => 1]);
 
         $code = (string) $response->json('confirmation_code');
         $this->assertMatchesRegularExpression('/^[a-f0-9]{32}$/', $code);
 
         $row = DB::table('zetawiki.user_social')
             ->where('provider', 'facebook')
-            ->where('social_id', 'fb-user-123')
+            ->where('deletion_code', $code)
             ->first();
 
         $this->assertNotNull($row);
-        $this->assertNull($row->user_id);
+        $this->assertSame(77, (int) $row->user_id);
+        $this->assertNull($row->social_id);
         $this->assertSame($code, $row->deletion_code);
+        $this->assertNotNull($row->deleted_at);
     }
 
     public function test_facebook_deletion_status_returns_completed_for_valid_code(): void

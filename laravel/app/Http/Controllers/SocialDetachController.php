@@ -3,47 +3,57 @@
 namespace App\Http\Controllers;
 
 use App\Models\UserSocial;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 
-class SocialDeletionController extends Controller
+class SocialDetachController extends Controller
 {
-    public function create(Request $request, string $provider)
+    public function deauthorize(Request $request, string $provider)
     {
         if ($provider !== 'facebook') {
             abort(404);
         }
 
-        $signedRequest = (string) $request->input('signed_request', '');
-        $appSecret = (string) config('services.facebook.client_secret', '');
-        $payload = $this->parseFacebookSignedRequest($signedRequest, $appSecret);
+        $socialId = $this->extractSocialId($request);
 
-        if (! is_array($payload)) {
-            return response()->json(['error' => 'invalid_signed_request'], 400);
+        UserSocial::query()
+            ->where('provider', $provider)
+            ->where('social_id', $socialId)
+            ->update([
+                'deauthorized_at' => now(),
+            ]);
+
+        return response()->json([
+            'status' => 'ok',
+        ]);
+    }
+
+    public function deletion(Request $request, string $provider)
+    {
+        if ($provider !== 'facebook') {
+            abort(404);
         }
 
-        $socialId = (string) ($payload['user_id'] ?? '');
-        if ($socialId === '') {
-            return response()->json(['error' => 'invalid_social_id'], 400);
-        }
+        $socialId = $this->extractSocialId($request);
 
         $confirmationCode = bin2hex(random_bytes(16));
 
-        $affected = UserSocial::query()
-            ->where('provider', 'facebook')
+        UserSocial::query()
+            ->where('provider', $provider)
             ->where('social_id', $socialId)
             ->update([
-                'user_id' => null,
+                'social_id' => null,
                 'deletion_code' => $confirmationCode,
+                'deleted_at' => now(),
             ]);
 
         return response()->json([
             'url' => url("/auth/deletion/{$provider}/status/{$confirmationCode}"),
             'confirmation_code' => $confirmationCode,
-            'deleted_links' => (int) $affected,
         ], 200, [], JSON_UNESCAPED_UNICODE);
     }
 
-    public function status(string $provider, string $code)
+    public function deletionStatus(string $provider, string $code)
     {
         if ($provider !== 'facebook') {
             abort(404);
@@ -98,6 +108,28 @@ class SocialDeletionController extends Controller
         }
 
         return $payload;
+    }
+
+    private function extractSocialId(Request $request): string
+    {
+        $signedRequest = (string) $request->input('signed_request', '');
+        $appSecret = (string) config('services.facebook.client_secret', '');
+        $payload = $this->parseFacebookSignedRequest($signedRequest, $appSecret);
+
+        if (! is_array($payload)) {
+            throw new HttpResponseException(
+                response()->json(['error' => 'invalid_signed_request'], 400)
+            );
+        }
+
+        $socialId = (string) ($payload['user_id'] ?? '');
+        if ($socialId === '') {
+            throw new HttpResponseException(
+                response()->json(['error' => 'invalid_social_id'], 400)
+            );
+        }
+
+        return $socialId;
     }
 
     private function base64UrlDecode(string $value): ?string
