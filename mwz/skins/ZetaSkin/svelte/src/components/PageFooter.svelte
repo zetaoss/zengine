@@ -8,11 +8,12 @@
   import AvatarIcon from '$shared/components/avatar/AvatarIcon.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import httpy from '$shared/utils/httpy'
-  import { titlesExist } from '$shared/utils/mediawiki'
+  import linkify from '$shared/utils/linkify'
 
   interface Row {
     id: number
     message: string
+    messageHtml?: string
     user_id: number
     user_name: string
     created: string
@@ -26,7 +27,6 @@
   let editingRow: Row | null = null
   let deletingRow: Row | null = null
   let showModal = false
-  let titleExistsMap: Record<string, boolean> = {}
   let fetchDataToken = 0
 
   const isLoggedIn = wgUserId > 0
@@ -45,17 +45,13 @@
 
     const rows = data ?? []
     if (token !== fetchDataToken) return
-    docComments = rows
-
-    const titles = [...new Set(rows.flatMap((row) => getWikiTitles(row.message)))]
-    if (titles.length === 0) {
-      titleExistsMap = {}
-      return
-    }
-
-    const existsMap = await titlesExist(titles)
     if (token !== fetchDataToken) return
-    titleExistsMap = existsMap
+    docComments = await Promise.all(
+      rows.map(async (row) => ({
+        ...row,
+        messageHtml: (await linkify(row.message || '')).replace(/\n/g, '<br />'),
+      })),
+    )
   }
 
   async function postNew() {
@@ -108,48 +104,6 @@
     }
     deletingRow = null
     fetchData()
-  }
-
-  const escapeHtml = (input: string) =>
-    input.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
-
-  const decodeEntities = (input: string) =>
-    input
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-
-  const getWikiTitles = (input: string): string[] => {
-    const titles: string[] = []
-    const re = /\[\[([^\]|]+)(?:\|[^\]]*)?\]\]/g
-    let match: RegExpExecArray | null
-    while ((match = re.exec(input || '')) !== null) {
-      const title = decodeEntities(match[1] || '').trim()
-      if (title.length > 0) titles.push(title)
-    }
-    return titles
-  }
-
-  const linkifyInline = (input: string) =>
-    input.replace(/\[\[([^\]|]+)(?:\|([^\]]*))?\]\]|https?:\/\/[^\s<]+/g, (match, target, display) => {
-      if (match.startsWith('[[')) {
-        const rawTarget = decodeEntities(String(target)).trim()
-        const exists = titleExistsMap[rawTarget] === true
-        const classList = exists ? 'internal' : 'internal new'
-        const href = `/wiki/${encodeURIComponent(rawTarget.replace(/ /g, '_'))}`
-        return `<a href="${href}" class="${classList}" data-sveltekit-reload>${display || target}</a>`
-      }
-      const rawUrl = decodeEntities(match)
-      const safeUrl = rawUrl.replace(/"/g, '%22')
-      return `<a href="${safeUrl}" class="external" target="_blank" rel="noreferrer noopener">${match}</a>`
-    })
-
-  const formatMessage = (input: string) => {
-    const escaped = escapeHtml(input || '')
-    const linked = linkifyInline(escaped)
-    return linked.replace(/\n/g, '<br />')
   }
 
   onMount(() => {
@@ -227,7 +181,7 @@
         </div>
 
         <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-        <div class="message text-sm">{@html formatMessage(row.message)}</div>
+        <div class="message text-sm">{@html row.messageHtml || ''}</div>
         <div class="text-sm z-text3">{row.created.substring(0, 10)}</div>
 
         {#if editingRow && row.id === editingRow.id}
