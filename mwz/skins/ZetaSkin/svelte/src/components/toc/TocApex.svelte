@@ -183,10 +183,7 @@
 
 {#if dataToc}
   {#if isSide}
-    <div
-      class="flex-none shrink-0 z-30 transition-[width] sticky"
-      style={stickyStyle}
-    >
+    <div class="flex-none shrink-0 z-30 transition-[width] sticky" style={stickyStyle}>
       <div class="z-scrollbar h-full w-full overflow-y-auto">
         <TocTree {dataToc} {activeIds} headerOffset={headerOffsetNum} />
       </div>

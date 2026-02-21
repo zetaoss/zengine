@@ -106,22 +106,12 @@
     <div class="py-3">소셜 로그인</div>
 
     <div class="flex flex-col gap-2">
-      <ZButtonLink
-        class="w-full bg-white text-black"
-        href={socialHref('google')}
-        rel="external"
-        data-sveltekit-reload
-      >
+      <ZButtonLink class="w-full bg-white text-black" href={socialHref('google')} rel="external" data-sveltekit-reload>
         <ZIcon path={mdiGoogle} size={18} />
         Login with Google
       </ZButtonLink>
 
-      <ZButtonLink
-        class="w-full bg-black text-white"
-        href={socialHref('github')}
-        rel="external"
-        data-sveltekit-reload
-      >
+      <ZButtonLink class="w-full bg-black text-white" href={socialHref('github')} rel="external" data-sveltekit-reload>
         <ZIcon path={mdiGithub} size={18} />
         Log in with GitHub
       </ZButtonLink>
