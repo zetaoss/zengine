@@ -25,6 +25,39 @@ jobs:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
+            const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+            async function retry(times, delayMs, fn) {
+              let lastErr;
+              for (let i = 0; i < times; i++) {
+                try {
+                  return await fn();
+                } catch (e) {
+                  lastErr = e;
+                  // permission/validation errors are terminal for this action
+                  if (e?.status === 403 || e?.status === 422) throw e;
+                  if (i < times - 1) await sleep(delayMs);
+                }
+              }
+              throw lastErr;
+            }
+
+            async function ensureAssignee(issueNumber, assignee) {
+              const issue = await github.rest.issues.get({
+                owner,
+                repo,
+                issue_number: issueNumber
+              });
+              const alreadyAssigned = issue.data.assignees?.some((x) => x.login === assignee) === true;
+              if (alreadyAssigned) return;
+
+              await github.rest.issues.addAssignees({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                assignees: [assignee]
+              });
+            }
             const headBranch = context.ref.replace('refs/heads/', '');
             const baseBranch = context.payload.repository.default_branch;
 
@@ -68,12 +101,11 @@ jobs:
                 title: prTitle,
                 body: prBody
               });
-              await github.rest.issues.addAssignees({
-                owner,
-                repo,
-                issue_number: pr.number,
-                assignees: [context.actor]
-              });
+              try {
+                await retry(3, 5000, () => ensureAssignee(pr.number, context.actor));
+              } catch (e) {
+                core.warning(`Assignee step skipped (status=${e?.status ?? 'unknown'})`);
+              }
               core.info(`Updated PR #${pr.number}`);
               return;
             }
@@ -86,10 +118,9 @@ jobs:
               base: baseBranch,
               body: prBody
             });
-            await github.rest.issues.addAssignees({
-              owner,
-              repo,
-              issue_number: created.data.number,
-              assignees: [context.actor]
-            });
+            try {
+              await retry(3, 5000, () => ensureAssignee(created.data.number, context.actor));
+            } catch (e) {
+              core.warning(`Assignee step skipped (status=${e?.status ?? 'unknown'})`);
+            }
             core.info(`Created PR #${created.data.number}`);
