@@ -2,6 +2,7 @@ SHELL := /bin/bash
 MAKEFLAGS += --no-print-directory
 
 CACHE_DIR := /tmp/make-checks
+MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 USE_CACHE ?= 0
 
 define print_fix
@@ -46,6 +47,7 @@ define run_cached
 		echo "node=$$(node -v 2>/dev/null || true)"; \
 		echo "pnpm=$$(pnpm -v 2>/dev/null || true)"; \
 		echo "php=$$(php -v 2>/dev/null | head -n 1 || true)"; \
+		if [ -f "$(MAKEFILE_PATH)" ]; then hash_cmd "$(MAKEFILE_PATH)"; fi; \
 		for p in $$paths; do \
 			if [ -d "$$p" ]; then \
 				find "$$p" -type f \
@@ -150,7 +152,7 @@ endif
 .PHONY: checks-skin-svelte
 checks-skin-svelte:
 ifeq ($(USE_CACHE),1)
-	$(call run_cached,checks-skin-svelte,$(MAKE) USE_CACHE=0 checks-skin-svelte,mwz/skins/ZetaSkin/svelte)
+	$(call run_cached,checks-skin-svelte,$(MAKE) USE_CACHE=0 checks-skin-svelte,mwz/skins/ZetaSkin/svelte svelte/src/shared)
 else
 	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,install --frozen-lockfile)
 	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,lint,pnpm -C mwz/skins/ZetaSkin/svelte lint:fix)
