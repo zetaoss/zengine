@@ -15,6 +15,11 @@ jobs:
         uses: actions/checkout@v6
       - run: corepack enable
       - run: corepack prepare pnpm@10 --activate
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.3
+          tools: pint
       - run: make checks
 
   docker-build:
