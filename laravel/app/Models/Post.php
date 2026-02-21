@@ -17,14 +17,12 @@ class Post extends Model
         'hit',
         'channel_id',
     ];
-
     protected $casts = [
         'user_id' => 'integer',
         'channel_id' => 'integer',
         'hit' => 'integer',
         'is_notice' => 'boolean',
     ];
-
     protected $appends = ['tag_names'];
 
     public function replies()

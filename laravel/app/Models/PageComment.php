@@ -7,9 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class PageComment extends Model
 {
     protected $table = 'zetawiki.page_comments';
-
     public $timestamps = false;
-
     protected $fillable = [
         'page_id',
         'message',
@@ -17,7 +15,6 @@ class PageComment extends Model
         'user_name',
         'created',
     ];
-
     protected $casts = [
         'id' => 'int',
         'page_id' => 'int',

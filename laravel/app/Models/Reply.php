@@ -12,7 +12,6 @@ class Reply extends Model
         'user_name',
         'body',
     ];
-
     protected $casts = [
         'post_id' => 'integer',
         'user_id' => 'integer',

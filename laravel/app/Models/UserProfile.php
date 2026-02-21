@@ -7,21 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 class UserProfile extends Model
 {
     protected $table = 'zetawiki.user_profiles';
-
     protected $primaryKey = 'user_id';
-
     public $incrementing = false;
-
     protected $keyType = 'int';
-
     public $timestamps = false;
-
     protected $fillable = [
         't',
         'ghash',
         'ghint',
     ];
-
     protected $casts = [
         'user_id' => 'int',
         't' => 'int',
