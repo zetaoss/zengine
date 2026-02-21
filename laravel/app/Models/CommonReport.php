@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 class CommonReport extends Model
 {
     protected $appends = ['total'];
-
     protected $fillable = ['user_id', 'user_name', 'phase'];
 
     public function getTotalAttribute()
