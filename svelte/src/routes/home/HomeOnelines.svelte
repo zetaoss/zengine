@@ -43,12 +43,12 @@
       return
     }
 
-    rows = await Promise.all(
-      data.map(async (r) => ({
-        ...r,
-        message: (await linkify([r.message]))[0] ?? '',
-      })),
-    )
+    const safeRows = data ?? []
+    const linkedMessages = await linkify(safeRows.map((r) => r.message || ''))
+    rows = safeRows.map((r, i) => ({
+      ...r,
+      message: linkedMessages[i] ?? '',
+    }))
   }
 
   const submit = async () => {
