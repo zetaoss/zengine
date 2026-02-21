@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\UserSocial;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SocialDetachController extends Controller
 {
@@ -16,15 +17,28 @@ class SocialDetachController extends Controller
         }
 
         $socialId = $this->extractSocialId($request);
-        $userIds = $this->findUserIdsBySocial($provider, $socialId);
+        DB::transaction(function () use ($provider, $socialId): void {
+            $row = UserSocial::query()
+                ->select(['id', 'user_id'])
+                ->where('provider', $provider)
+                ->where('social_id', $socialId)
+                ->lockForUpdate()
+                ->first();
 
-        UserSocial::query()
-            ->where('provider', $provider)
-            ->where('social_id', $socialId)
-            ->update([
-                'deauthorized_at' => now(),
-            ]);
-        $this->rotateUserTokens($userIds);
+            if (! $row) {
+                return;
+            }
+
+            $updated = UserSocial::query()
+                ->whereKey((int) $row->id)
+                ->update([
+                    'deauthorized_at' => now(),
+                ]);
+
+            if ($updated > 0) {
+                $this->rotateUserToken($this->normalizeUserId($row->user_id));
+            }
+        });
 
         return response()->json([
             'status' => 'ok',
@@ -38,19 +52,31 @@ class SocialDetachController extends Controller
         }
 
         $socialId = $this->extractSocialId($request);
-        $userIds = $this->findUserIdsBySocial($provider, $socialId);
-
         $confirmationCode = bin2hex(random_bytes(16));
+        DB::transaction(function () use ($provider, $socialId, $confirmationCode): void {
+            $row = UserSocial::query()
+                ->select(['id', 'user_id'])
+                ->where('provider', $provider)
+                ->where('social_id', $socialId)
+                ->lockForUpdate()
+                ->first();
 
-        UserSocial::query()
-            ->where('provider', $provider)
-            ->where('social_id', $socialId)
-            ->update([
-                'social_id' => null,
-                'deletion_code' => $confirmationCode,
-                'deleted_at' => now(),
-            ]);
-        $this->rotateUserTokens($userIds);
+            if (! $row) {
+                return;
+            }
+
+            $updated = UserSocial::query()
+                ->whereKey((int) $row->id)
+                ->update([
+                    'social_id' => null,
+                    'deletion_code' => $confirmationCode,
+                    'deleted_at' => now(),
+                ]);
+
+            if ($updated > 0) {
+                $this->rotateUserToken($this->normalizeUserId($row->user_id));
+            }
+        });
 
         return response()->json([
             'url' => url("/auth/deletion/{$provider}/status/{$confirmationCode}"),
@@ -150,32 +176,20 @@ class SocialDetachController extends Controller
         return is_string($decoded) ? $decoded : null;
     }
 
-    /**
-     * @return int[]
-     */
-    private function findUserIdsBySocial(string $provider, string $socialId): array
+    private function normalizeUserId(mixed $userId): int
     {
-        return UserSocial::query()
-            ->where('provider', $provider)
-            ->where('social_id', $socialId)
-            ->whereNotNull('user_id')
-            ->pluck('user_id')
-            ->map(static fn ($id): int => (int) $id)
-            ->unique()
-            ->values()
-            ->all();
+        if ($userId === null) {
+            return 0;
+        }
+
+        $normalized = (int) $userId;
+
+        return $normalized > 0 ? $normalized : 0;
     }
 
-    /**
-     * @param int[] $userIds
-     */
-    private function rotateUserTokens(array $userIds): void
+    private function rotateUserToken(int $userId): void
     {
-        foreach ($userIds as $userId) {
-            if ($userId < 1) {
-                continue;
-            }
-
+        if ($userId > 0) {
             User::query()
                 ->whereKey($userId)
                 ->update([
