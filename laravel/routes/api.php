@@ -69,6 +69,6 @@ Route::get('/write-request/todo', [WriteRequestController::class, 'indexTodo']);
 Route::get('/write-request/todo-top', [WriteRequestController::class, 'indexTodoTop']);
 Route::post('/write-request', [WriteRequestController::class, 'store'])->middleware('mwauth');
 Route::post('/write-request/{writeRequest}/recommend', [WriteRequestController::class, 'recommend'])->middleware('mwauth');
-Route::delete('/write-request/{id}', [WriteRequestController::class, 'destroy'])->middleware('mwauth');
+Route::delete('/write-request/{writeRequest}', [WriteRequestController::class, 'destroy'])->middleware('mwauth');
 
 Route::get('/internal/profiles/{userId}', [UserProfileController::class, 'show'])->middleware('internal');
