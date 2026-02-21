@@ -3,6 +3,8 @@ import DOMPurify from 'isomorphic-dompurify'
 
 import { titlesExist } from '$shared/utils/mediawiki'
 
+const wikiLinkRegex = /\[\[([^\]|]+)(?:\|([^\]]*))?\]\]/g
+
 function linkifyURL(s: string) {
   return Autolinker.link(s, {
     stripPrefix: false,
@@ -12,13 +14,15 @@ function linkifyURL(s: string) {
   })
 }
 
-async function linkifyWiki(s: string) {
-  const wikiLinkRegex = /\[\[([^\]|]+)(?:\|([^\]]*))?\]\]/g
-  const matches = [...s.matchAll(wikiLinkRegex)]
-  if (matches.length === 0) return s
+function extractWikiTitles(input: string): string[] {
+  const matches = [...(input || '').matchAll(wikiLinkRegex)]
+  if (matches.length === 0) return []
+  return [...new Set(matches.map((match) => (match[1] || '').trim()).filter((title) => title.length > 0))]
+}
 
-  const titles = [...new Set(matches.map((match) => (match[1] || '').trim()))]
-  const existsMap = await titlesExist(titles)
+async function linkifyWiki(s: string, existsMap: Record<string, boolean>) {
+  const titles = extractWikiTitles(s)
+  if (titles.length === 0) return s
 
   return s.replace(wikiLinkRegex, (_match, targetRaw: string, displayRaw: string | undefined) => {
     const target = (targetRaw || '').trim()
@@ -29,7 +33,13 @@ async function linkifyWiki(s: string) {
   })
 }
 
-export default async function linkify(input: string) {
-  const linked = await linkifyWiki(linkifyURL(input))
+async function linkifyOne(input: string, existsMap: Record<string, boolean>) {
+  const linked = await linkifyWiki(linkifyURL(input), existsMap)
   return DOMPurify.sanitize(linked, { ADD_ATTR: ['target', 'rel'] })
+}
+
+export default async function linkify(inputs: string[]): Promise<string[]> {
+  const titles = [...new Set(inputs.flatMap((x) => extractWikiTitles(x || '')))]
+  const existsMap = titles.length > 0 ? await titlesExist(titles) : {}
+  return Promise.all(inputs.map((x) => linkifyOne(x || '', existsMap)))
 }

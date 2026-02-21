@@ -88,14 +88,14 @@
     const current = ++token
     if (mode === 'text') {
       const base = fencedCode ? renderPlainTextWithFences(body) : renderPlainTextWithFences(body)
-      const linked = await linkify(base)
+      const linked = (await linkify([base]))[0] ?? ''
       if (current !== token) return
       html = linked
       await afterRender()
       return
     }
 
-    const linked = await linkify(body)
+    const linked = (await linkify([body]))[0] ?? ''
     if (current !== token) return
     html = linked
     if (previews) await getPreviews()

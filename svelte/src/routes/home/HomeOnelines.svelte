@@ -46,7 +46,7 @@
     rows = await Promise.all(
       data.map(async (r) => ({
         ...r,
-        message: await linkify(r.message),
+        message: (await linkify([r.message]))[0] ?? '',
       })),
     )
   }
@@ -72,7 +72,7 @@
     rows = [
       {
         ...data,
-        message: await linkify(data.message),
+        message: (await linkify([data.message]))[0] ?? '',
       },
       ...rows,
     ]

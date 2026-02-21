@@ -62,7 +62,7 @@
     rows = await Promise.all(
       data.data.map(async (r) => ({
         ...r,
-        message: await linkify(r.message),
+        message: (await linkify([r.message]))[0] ?? '',
       })),
     )
     paginateData = {
