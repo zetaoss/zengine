@@ -86,15 +86,15 @@ class SocialDeletionControllerTest extends TestCase
             'provider' => 'facebook',
             'social_id' => 'fb-user-xyz',
             'user_id' => null,
-            'deletion_code' => 'abc123xyz',
+            'deletion_code' => 'abcdef0123456789abcdef0123456789',
         ]);
 
-        $response = $this->get('/auth/deletion/facebook/status/abc123xyz');
+        $response = $this->get('/auth/deletion/facebook/status/abcdef0123456789abcdef0123456789');
 
         $response->assertStatus(200);
         $response->assertJson([
             'status' => 'completed',
-            'confirmation_code' => 'abc123xyz',
+            'confirmation_code' => 'abcdef0123456789abcdef0123456789',
             'deleted_links' => 1,
         ]);
     }

@@ -49,7 +49,7 @@ class SocialDeletionController extends Controller
             abort(404);
         }
 
-        if (! preg_match('/^[a-zA-Z0-9_-]{1,100}$/', $code)) {
+        if (! preg_match('/^[a-f0-9]{32}$/', $code)) {
             abort(404);
         }
 
