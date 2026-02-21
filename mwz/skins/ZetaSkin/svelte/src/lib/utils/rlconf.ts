@@ -1,14 +1,14 @@
 import type { Binder } from '$lib/types/binder'
 import type { Contributor } from '$lib/types/contributor'
 import type { DataToc } from '$lib/types/toc'
-import type { LinkMapMap } from '$shared/types/links'
+import type { Menu } from '$shared/types/menu'
 
 type RLConfig = {
   binders: Binder[]
   contributors: Contributor[]
-  datatoc: DataToc
-  mm: LinkMapMap
-  revtime: string
+  dataToc: DataToc
+  lastModified: string
+  menu: Menu
   wgAction: string
   wgArticleId: number
   wgUserGroups: string[]

@@ -45,7 +45,9 @@
                 {{#pageButtons}}
                 <a class="page-btn" href="{{href}}"{{#id}} id="{{.}}"{{/id}}{{#title}} title="{{.}}"{{/title}}>{{text}}</a>
                 {{/pageButtons}}
+                {{^is-specialpage}}
                 <page-menu></page-menu>
+                {{/is-specialpage}}
               </div>
             </div>
 

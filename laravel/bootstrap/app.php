@@ -16,6 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'internal' => \App\Http\Middleware\InternalApiAuth::class,
             'mwauth' => \App\Http\Middleware\MwAuth::class,
         ]);
+
+        $middleware->validateCsrfTokens(except: [
+            'auth/deauthorize/facebook',
+            'auth/deletion/facebook',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\UserSocial;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Laravel\Socialite\Facades\Socialite;
 
 class SocialController extends Controller
@@ -38,14 +38,14 @@ class SocialController extends Controller
         $returnto = (string) $request->session()->get('returnto', '');
         $request->session()->forget('returnto');
 
-        $row = DB::table('zetawiki.user_social')
+        $row = UserSocial::query()
             ->where('provider', $provider)
             ->where('social_id', $socialId)
             ->first();
 
         if (! $row) {
             try {
-                DB::table('zetawiki.user_social')->insert([
+                UserSocial::query()->create([
                     'provider' => $provider,
                     'social_id' => $socialId,
                     'user_id' => null,
@@ -53,7 +53,7 @@ class SocialController extends Controller
             } catch (\Throwable $e) {
             }
 
-            $row = DB::table('zetawiki.user_social')
+            $row = UserSocial::query()
                 ->where('provider', $provider)
                 ->where('social_id', $socialId)
                 ->first();

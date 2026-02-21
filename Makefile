@@ -52,6 +52,10 @@ svelte-lint-fix:
 svelte-format:
 	$(call run_pnpm,format)
 
+.PHONY: svelte-format-fix
+svelte-format-fix:
+	$(call run_pnpm,format:fix)
+
 .PHONY: svelte-build
 svelte-build:
 	$(call run_pnpm,build)

@@ -5,6 +5,7 @@
 
   import { page } from '$app/state'
   import useAuthStore from '$lib/stores/auth'
+  import ZButtonLink from '$shared/ui/ZButtonLink.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
 
   import doLogin from './login'
@@ -45,7 +46,7 @@
     window.location.href = '/'
   }
 
-  function socialHref(provider: 'google' | 'github') {
+  function socialHref(provider: 'google' | 'github' | 'facebook') {
     let href = `/auth/redirect/${provider}`
 
     let returnto = queryValue('returnto')
@@ -104,30 +105,16 @@
   <div class="rounded border bg-white p-6 dark:bg-slate-900">
     <div class="py-3">소셜 로그인</div>
 
-    <div>
-      <a
-        class="my-1 block rounded border border-gray-300 bg-white! p-2 text-center text-sm text-black! hover:bg-gray-100 hover:no-underline"
-        href={socialHref('google')}
-        rel="external"
-        data-sveltekit-reload
-      >
-        <span class="inline-flex items-center">
-          <ZIcon path={mdiGoogle} size={18} />
-          <span class="ml-1">Log in with Google</span>
-        </span>
-      </a>
+    <div class="flex flex-col gap-2">
+      <ZButtonLink class="w-full bg-white text-black" href={socialHref('google')} rel="external" data-sveltekit-reload>
+        <ZIcon path={mdiGoogle} size={18} />
+        Login with Google
+      </ZButtonLink>
 
-      <a
-        class="my-1 block rounded border bg-black! p-2 text-center text-sm text-white! hover:bg-gray-700 hover:no-underline"
-        href={socialHref('github')}
-        rel="external"
-        data-sveltekit-reload
-      >
-        <span class="inline-flex items-center">
-          <ZIcon path={mdiGithub} size={18} />
-          <span class="ml-1.5">Log in with GitHub</span>
-        </span>
-      </a>
+      <ZButtonLink class="w-full bg-black text-white" href={socialHref('github')} rel="external" data-sveltekit-reload>
+        <ZIcon path={mdiGithub} size={18} />
+        Log in with GitHub
+      </ZButtonLink>
     </div>
 
     <div class="relative my-6 overflow-hidden text-center text-gray-400">

@@ -18,4 +18,4 @@ export type Link = {
 }
 
 export type LinkMap = Record<string, Link>
-export type LinkMapMap = Record<string, LinkMap>
+export type Menu = Record<string, LinkMap>
