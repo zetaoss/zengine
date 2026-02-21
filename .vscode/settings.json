@@ -35,7 +35,6 @@
     }
   ],
   "laravel-pint-fixer.pintBinPath": "/app/laravel/vendor/laravel/pint/builds/pint",
-  "laravel-pint-fixer.pintConfigPath": "/app/laravel/pint.json",
   "makefile.configureOnOpen": false,
   "prettier.requireConfig": true,
   "remote.autoForwardPorts": true,

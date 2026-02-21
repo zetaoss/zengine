@@ -1,80 +1,160 @@
 SHELL := /bin/bash
+MAKEFLAGS += --no-print-directory
 
-SVELTE_DIRS := svelte mwz/skins/ZetaSkin/svelte
-LARAVEL_DIR := laravel
+CACHE_DIR := /tmp/make-checks
+USE_CACHE ?= 0
 
-define run_pnpm
-	@set -e; \
-	for d in $(SVELTE_DIRS); do \
-		echo "➡️  $$d: pnpm -C $$d $(1)"; \
-		pnpm -C $$d $(1); \
-	done
+define print_fix
+echo; \
+echo "💡 This might be fixed with:"; \
+echo; \
+echo "   $(1)"; \
+echo;
 endef
 
-.PHONY: laravel-format
-laravel-format:
-	@echo "➡️  $(LARAVEL_DIR): vendor/bin/pint --test"
-	cd $(LARAVEL_DIR) && vendor/bin/pint --test
+define run_pnpm
+	@echo "➡️  $(1): pnpm -C $(1) $(2)"
+	@pnpm -C $(1) $(2) || { \
+		if [ -n "$(strip $(3))" ]; then \
+			$(call print_fix,$(3)) \
+		fi; \
+		exit 1; \
+	}
+endef
 
-.PHONY: laravel-format-fix
-laravel-format-fix:
-	@echo "➡️  $(LARAVEL_DIR): vendor/bin/pint"
-	cd $(LARAVEL_DIR) && vendor/bin/pint
+define run_pint
+	@echo "➡️  laravel/vendor/bin/pint --test $(1)"
+	@laravel/vendor/bin/pint --test $(1) || { \
+		$(call print_fix,$(2)) \
+		exit 1; \
+	}
+endef
 
-.PHONY: laravel-test
-laravel-test:
-	@echo "➡️  $(LARAVEL_DIR): php artisan test"
-	cd $(LARAVEL_DIR) && php artisan test
+define run_cached
+	@bash -lc 'set -euo pipefail; \
+	key="$(1)"; \
+	cmd="$(2)"; \
+	paths="$(3)"; \
+	cache_dir="$(CACHE_DIR)"; \
+	mkdir -p "$$cache_dir"; \
+	hash_cmd() { \
+		if command -v sha256sum >/dev/null 2>&1; then sha256sum "$$@"; else shasum -a 256 "$$@"; fi; \
+	}; \
+	tmp_hash="$$(mktemp)"; \
+	{ \
+		echo "cmd=$$cmd"; \
+		echo "node=$$(node -v 2>/dev/null || true)"; \
+		echo "pnpm=$$(pnpm -v 2>/dev/null || true)"; \
+		echo "php=$$(php -v 2>/dev/null | head -n 1 || true)"; \
+		for p in $$paths; do \
+			if [ -d "$$p" ]; then \
+				find "$$p" -type f \
+					-not -path "*/node_modules/*" \
+					-not -path "*/dist/*" \
+					-not -path "*/.svelte-kit/*" \
+					-not -path "*/vendor/*" \
+					-print | sort | while IFS= read -r f; do hash_cmd "$$f"; done; \
+			elif [ -f "$$p" ]; then \
+				hash_cmd "$$p"; \
+			fi; \
+		done; \
+	} | hash_cmd | awk "{print \$$1}" > "$$tmp_hash"; \
+	hash_file="$$cache_dir/$$key.hash"; \
+	mkdir -p "$$cache_dir"; \
+	if [ -f "$$hash_file" ] && cmp -s "$$tmp_hash" "$$hash_file"; then \
+		echo "⏭️  $$key: no changes, skip"; \
+		rm -f "$$tmp_hash"; \
+	else \
+		echo "➡️  $$key: $$cmd"; \
+		eval "$$cmd"; \
+		mv "$$tmp_hash" "$$hash_file"; \
+	fi'
+endef
+
+# checks hierarchy (USE_CACHE=1)
+# GROUP           TARGET               CACHEDIR        CHECKS
+# checks-php      checks-laravel       laravel         format, test
+#                 checks-extension     ZetaExtension   format
+#                 checks-skin          ZetaSkin        format
+# checks-svelte   checks-overrides     -               overrides
+#                 checks-main-svelte   main svelte     install, lint, format, audit, build
+#                 checks-skin-svelte   skin svelte     install, lint, format, audit, build
+.PHONY: checks
+checks:
+	@$(MAKE) USE_CACHE=1 checks-php checks-svelte
+	@echo "✅  All checks passed"
+
+# checks-no-cache runs the same tree with USE_CACHE=0.
+.PHONY: checks-no-cache
+checks-no-cache:
+	@$(MAKE) USE_CACHE=0 checks-php checks-svelte
+	@echo "✅  All checks passed (no cache)"
+
+.PHONY: clear
+clear:
+	@echo "🧹 clear cache: $(CACHE_DIR)"
+	rm -rf $(CACHE_DIR)
+
+.PHONY: checks-php
+checks-php:
+	@$(MAKE) USE_CACHE=$(USE_CACHE) checks-laravel checks-extension checks-skin
+
+.PHONY: checks-laravel
+checks-laravel:
+ifeq ($(USE_CACHE),1)
+	$(call run_cached,checks-laravel,$(MAKE) USE_CACHE=0 checks-laravel,laravel)
+else
+	$(call run_pint,laravel,laravel/vendor/bin/pint laravel)
+	@echo "➡️  laravel: php artisan test"
+	cd laravel && php artisan test
+endif
+
+.PHONY: checks-extension
+checks-extension:
+ifeq ($(USE_CACHE),1)
+	$(call run_cached,checks-extension,$(MAKE) USE_CACHE=0 checks-extension,mwz/extensions/ZetaExtension)
+else
+	$(call run_pint,mwz/extensions/ZetaExtension,laravel/vendor/bin/pint mwz/extensions/ZetaExtension)
+endif
+
+.PHONY: checks-skin
+checks-skin:
+ifeq ($(USE_CACHE),1)
+	$(call run_cached,checks-skin,$(MAKE) USE_CACHE=0 checks-skin,mwz/skins/ZetaSkin)
+else
+	$(call run_pint,mwz/skins/ZetaSkin,laravel/vendor/bin/pint mwz/skins/ZetaSkin)
+endif
+
+.PHONY: checks-svelte
+checks-svelte:
+	@$(MAKE) svelte-overrides
+	@$(MAKE) USE_CACHE=$(USE_CACHE) checks-main-svelte checks-skin-svelte
 
 .PHONY: svelte-overrides
 svelte-overrides:
 	@echo "➡️  root: pnpm overrides"
 	pnpm overrides
 
-.PHONY: svelte-overrides-fix
-svelte-overrides-fix:
-	@echo "➡️  root: pnpm overrides:fix"
-	pnpm overrides:fix
+.PHONY: checks-main-svelte
+checks-main-svelte:
+ifeq ($(USE_CACHE),1)
+	$(call run_cached,checks-main-svelte,$(MAKE) USE_CACHE=0 checks-main-svelte,svelte)
+else
+	$(call run_pnpm,svelte,install --frozen-lockfile)
+	$(call run_pnpm,svelte,lint,pnpm -C svelte lint:fix)
+	$(call run_pnpm,svelte,format,pnpm -C svelte format:fix)
+	$(call run_pnpm,svelte,audit --ignore-unfixable --ignore-registry-errors,pnpm -C svelte audit --fix --ignore-unfixable && pnpm -C svelte install --no-frozen-lockfile)
+	$(call run_pnpm,svelte,build)
+endif
 
-.PHONY: svelte-install
-svelte-install:
-	$(call run_pnpm,install --frozen-lockfile)
-
-.PHONY: svelte-lint
-svelte-lint:
-	$(call run_pnpm,lint)
-
-.PHONY: svelte-lint-fix
-svelte-lint-fix:
-	$(call run_pnpm,lint:fix)
-
-.PHONY: svelte-format
-svelte-format:
-	$(call run_pnpm,format)
-
-.PHONY: svelte-format-fix
-svelte-format-fix:
-	$(call run_pnpm,format:fix)
-
-.PHONY: svelte-build
-svelte-build:
-	$(call run_pnpm,build)
-
-.PHONY: svelte-audit
-svelte-audit:
-	$(call run_pnpm,audit --ignore-unfixable --ignore-registry-errors)
-
-.PHONY: svelte-audit-fix
-svelte-audit-fix:
-	$(call run_pnpm,audit --fix --ignore-unfixable)
-	$(call run_pnpm,install --no-frozen-lockfile)
-
-.PHONY: checks
-checks: laravel-format laravel-test svelte-overrides svelte-install svelte-lint svelte-format svelte-build svelte-audit
-	@echo "✅  All checks passed"
-
-.PHONY: pnpm-update
-pnpm-update:
-	@echo "➡️  Updating pnpm to the latest version..."
-	corepack prepare pnpm@latest --activate
-	@echo "✅  pnpm updated to: $$(pnpm --version)"
+.PHONY: checks-skin-svelte
+checks-skin-svelte:
+ifeq ($(USE_CACHE),1)
+	$(call run_cached,checks-skin-svelte,$(MAKE) USE_CACHE=0 checks-skin-svelte,mwz/skins/ZetaSkin/svelte)
+else
+	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,install --frozen-lockfile)
+	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,lint,pnpm -C mwz/skins/ZetaSkin/svelte lint:fix)
+	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,format,pnpm -C mwz/skins/ZetaSkin/svelte format:fix)
+	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,audit --ignore-unfixable --ignore-registry-errors,pnpm -C mwz/skins/ZetaSkin/svelte audit --fix --ignore-unfixable && pnpm -C mwz/skins/ZetaSkin/svelte install --no-frozen-lockfile)
+	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,build)
+endif
