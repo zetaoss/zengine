@@ -4,12 +4,12 @@
 
   import TocNode from './TocNode.svelte'
 
-  export let toc: DataToc
+  export let dataToc: DataToc
   export let activeIds: string[] = []
   export let headerOffset = 64
   export let showRail = true
 
-  $: sections = toc?.['array-sections'] ?? []
+  $: sections = dataToc?.['array-sections'] ?? []
 
   const scrollToAnchor = (id: string) => {
     const el = document.getElementById(id)
@@ -23,7 +23,8 @@
     scrollToAnchor(id)
     const nextHash = `#${id}`
     if (window.location.hash !== nextHash) {
-      history.pushState(null, '', nextHash)
+      // Keep back-button history clean for in-page TOC jumps.
+      history.replaceState(null, '', nextHash)
     }
   }
 </script>

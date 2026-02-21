@@ -15,6 +15,8 @@
   let isTocPast = false
   let activeIds: string[] = []
   let raf = 0
+  let needsMeasure = true
+  let sectionBounds: Array<{ id: string; top: number; bottom: number }> = []
 
   const coerceBool = (value: boolean | string) => value === true || value === '' || value === 'true'
 
@@ -38,13 +40,13 @@
     return out
   }
 
-  const { datatoc } = getRLCONF()
-  const anchors = flattenAnchors(datatoc)
+  const { dataToc } = getRLCONF()
+  const anchors = flattenAnchors(dataToc)
   $: isDrawerMode = !isSide && isTocPast
   $: enableScrollSpy = isSide || isDrawerMode
 
-  const getSections = () => {
-    return anchors
+  const measureSections = () => {
+    sectionBounds = anchors
       .map((id) => {
         const el = document.getElementById(id)
         if (!el) return null
@@ -63,7 +65,7 @@
       return
     }
 
-    const list = getSections()
+    const list = sectionBounds
     if (!list.length) {
       activeIds = []
       return
@@ -96,8 +98,17 @@
     if (raf) return
     raf = requestAnimationFrame(() => {
       raf = 0
+      if (needsMeasure) {
+        measureSections()
+        needsMeasure = false
+      }
       computeActiveIds()
     })
+  }
+
+  const scheduleMeasureRecalc = () => {
+    needsMeasure = true
+    scheduleRecalc()
   }
 
   $: if (enableScrollSpy) {
@@ -112,10 +123,11 @@
 
   function scheduleRecalcForAnchors(anchorIds: string[]) {
     if (!anchorIds.length) {
+      sectionBounds = []
       activeIds = []
       return
     }
-    scheduleRecalc()
+    scheduleMeasureRecalc()
   }
 
   let observer: IntersectionObserver | null = null
@@ -143,14 +155,16 @@
   }
 
   onMount(() => {
-    scheduleRecalc()
+    scheduleMeasureRecalc()
     window.addEventListener('scroll', scheduleRecalc, { passive: true })
-    window.addEventListener('resize', scheduleRecalc)
+    window.addEventListener('resize', scheduleMeasureRecalc)
+    window.addEventListener('load', scheduleMeasureRecalc)
 
     return () => {
       if (raf) cancelAnimationFrame(raf)
       window.removeEventListener('scroll', scheduleRecalc)
-      window.removeEventListener('resize', scheduleRecalc)
+      window.removeEventListener('resize', scheduleMeasureRecalc)
+      window.removeEventListener('load', scheduleMeasureRecalc)
     }
   })
 
@@ -160,32 +174,27 @@
   })
 
   const marginY = 16
-  const styleVars = () => {
-    const top = `calc(var(--navbar-visible-height) + ${marginY}px)`
-    const marginTop = `${marginY}px`
-    const height = `calc(100vh - (var(--navbar-visible-height) + var(--footer-visible-height) + ${marginY * 2}px))`
-    return {
-      marginTop,
-      top,
-      height,
-    }
-  }
+  const stickyStyle = [
+    `margin-top:${marginY}px`,
+    `top:calc(var(--navbar-visible-height) + ${marginY}px)`,
+    `height:calc(100vh - (var(--navbar-visible-height) + var(--footer-visible-height) + ${marginY * 2}px))`,
+  ].join(';')
 </script>
 
-{#if datatoc}
+{#if dataToc}
   {#if isSide}
     <div
       class="flex-none shrink-0 z-30 transition-[width] sticky"
-      style={`position: sticky; margin-top:${styleVars().marginTop}; top:${styleVars().top}; height:${styleVars().height};`}
+      style={stickyStyle}
     >
       <div class="z-scrollbar h-full w-full overflow-y-auto">
-        <TocTree toc={datatoc} {activeIds} headerOffset={headerOffsetNum} />
+        <TocTree {dataToc} {activeIds} headerOffset={headerOffsetNum} />
       </div>
     </div>
   {:else}
     <div bind:this={tocRef}>
       <div class="inline-block rounded-md border border-slate-200 p-3 my-3">
-        <TocTree toc={datatoc} {activeIds} headerOffset={headerOffsetNum} showRail={false} />
+        <TocTree {dataToc} {activeIds} headerOffset={headerOffsetNum} showRail={false} />
       </div>
     </div>
   {/if}
