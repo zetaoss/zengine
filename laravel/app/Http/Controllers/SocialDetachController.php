@@ -36,7 +36,7 @@ class SocialDetachController extends Controller
                 ]);
 
             if ($updated > 0) {
-                $this->rotateUserToken($this->normalizeUserId($row->user_id));
+                $this->rotateUserToken($row->user_id);
             }
         });
 
@@ -74,7 +74,7 @@ class SocialDetachController extends Controller
                 ]);
 
             if ($updated > 0) {
-                $this->rotateUserToken($this->normalizeUserId($row->user_id));
+                $this->rotateUserToken($row->user_id);
             }
         });
 
@@ -176,25 +176,16 @@ class SocialDetachController extends Controller
         return is_string($decoded) ? $decoded : null;
     }
 
-    private function normalizeUserId(mixed $userId): int
+    private function rotateUserToken(?int $userId): void
     {
-        if ($userId === null) {
-            return 0;
+        if ($userId === null || $userId < 1) {
+            return;
         }
 
-        $normalized = (int) $userId;
-
-        return $normalized > 0 ? $normalized : 0;
-    }
-
-    private function rotateUserToken(int $userId): void
-    {
-        if ($userId > 0) {
-            User::query()
-                ->whereKey($userId)
-                ->update([
-                    'user_token' => bin2hex(random_bytes(16)),
-                ]);
-        }
+        User::query()
+            ->whereKey($userId)
+            ->update([
+                'user_token' => bin2hex(random_bytes(16)),
+            ]);
     }
 }
