@@ -21,6 +21,13 @@ jobs:
           php-version: 8.3
       - name: Install Composer dependencies
         run: composer install --working-dir=laravel --no-interaction --prefer-dist --no-progress
+      - name: Restore make checks cache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/make-checks
+          key: ${{ runner.os }}-make-checks-${{ hashFiles('Makefile') }}
+          restore-keys: |
+            ${{ runner.os }}-make-checks-
       - run: make checks
 
   docker-build:
@@ -35,6 +42,8 @@ jobs:
           images: |
             ghcr.io/${{ github.repository }}
           tags: |
+            type=ref,event=pr
+            type=sha
             type=ref,event=tag
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -49,6 +58,8 @@ jobs:
         with:
           push: false
           context: .
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
