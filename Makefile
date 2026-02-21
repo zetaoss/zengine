@@ -13,13 +13,13 @@ endef
 
 .PHONY: laravel-format
 laravel-format:
-	@echo "➡️  $(LARAVEL_DIR): vendor/bin/pint --test"
-	cd $(LARAVEL_DIR) && vendor/bin/pint --test
+	@echo "➡️  $(LARAVEL_DIR): pint --test (prefer vendor/bin/pint)"
+	cd $(LARAVEL_DIR) && ( [ -x vendor/bin/pint ] && vendor/bin/pint --test || pint --test )
 
 .PHONY: laravel-format-fix
 laravel-format-fix:
-	@echo "➡️  $(LARAVEL_DIR): vendor/bin/pint"
-	cd $(LARAVEL_DIR) && vendor/bin/pint
+	@echo "➡️  $(LARAVEL_DIR): pint (prefer vendor/bin/pint)"
+	cd $(LARAVEL_DIR) && ( [ -x vendor/bin/pint ] && vendor/bin/pint || pint )
 
 .PHONY: svelte-overrides
 svelte-overrides:
