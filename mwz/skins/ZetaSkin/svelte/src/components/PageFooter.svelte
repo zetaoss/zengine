@@ -45,13 +45,16 @@
 
     const rows = data ?? []
     if (token !== fetchDataToken) return
+
+    const linkedMessages = await linkify(rows.map((row) => row.message || ''))
     if (token !== fetchDataToken) return
-    docComments = await Promise.all(
-      rows.map(async (row) => ({
-        ...row,
-        messageHtml: (await linkify(row.message || '')).replace(/\n/g, '<br />'),
-      })),
-    )
+
+    const nextDocComments = rows.map((row, i) => ({
+      ...row,
+      messageHtml: (linkedMessages[i] || '').replace(/\n/g, '<br />'),
+    }))
+    if (token !== fetchDataToken) return
+    docComments = nextDocComments
   }
 
   async function postNew() {
