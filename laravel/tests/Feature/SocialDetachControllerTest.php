@@ -28,6 +28,12 @@ class SocialDetachControllerTest extends TestCase
                 deleted_at TEXT NULL
             )
         ');
+        DB::statement('
+            CREATE TABLE zetawiki.user (
+                user_id INTEGER PRIMARY KEY,
+                user_token TEXT NOT NULL
+            )
+        ');
 
         config()->set('services.facebook.client_secret', 'test-facebook-secret');
 
@@ -55,6 +61,11 @@ class SocialDetachControllerTest extends TestCase
 
     public function test_facebook_deauthorize_marks_deauthorized_at(): void
     {
+        DB::table('zetawiki.user')->insert([
+            'user_id' => 88,
+            'user_token' => 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        ]);
+
         DB::table('zetawiki.user_social')->insert([
             'provider' => 'facebook',
             'social_id' => 'fb-user-deauth-123',
@@ -83,10 +94,22 @@ class SocialDetachControllerTest extends TestCase
         $this->assertSame(88, (int) $row->user_id);
         $this->assertSame('keep-existing-code', $row->deletion_code);
         $this->assertNotNull($row->deauthorized_at);
+
+        $token = DB::table('zetawiki.user')
+            ->where('user_id', 88)
+            ->value('user_token');
+        $this->assertIsString($token);
+        $this->assertNotSame('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', $token);
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{32}$/', $token);
     }
 
     public function test_facebook_deletion_updates_user_social_and_returns_confirmation(): void
     {
+        DB::table('zetawiki.user')->insert([
+            'user_id' => 77,
+            'user_token' => 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+        ]);
+
         DB::table('zetawiki.user_social')->insert([
             'provider' => 'facebook',
             'social_id' => 'fb-user-123',
@@ -120,6 +143,13 @@ class SocialDetachControllerTest extends TestCase
         $this->assertNull($row->social_id);
         $this->assertSame($code, $row->deletion_code);
         $this->assertNotNull($row->deleted_at);
+
+        $token = DB::table('zetawiki.user')
+            ->where('user_id', 77)
+            ->value('user_token');
+        $this->assertIsString($token);
+        $this->assertNotSame('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', $token);
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{32}$/', $token);
     }
 
     public function test_facebook_deletion_status_returns_completed_for_valid_code(): void

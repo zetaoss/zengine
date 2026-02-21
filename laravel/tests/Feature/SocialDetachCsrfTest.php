@@ -28,12 +28,23 @@ class SocialDetachCsrfTest extends TestCase
                 deleted_at TEXT NULL
             )
         ');
+        DB::statement('
+            CREATE TABLE zetawiki.user (
+                user_id INTEGER PRIMARY KEY,
+                user_token TEXT NOT NULL
+            )
+        ');
 
         config()->set('services.facebook.client_secret', 'test-facebook-secret');
     }
 
     public function test_facebook_deauthorize_callback_is_not_blocked_by_csrf(): void
     {
+        DB::table('zetawiki.user')->insert([
+            'user_id' => 77,
+            'user_token' => 'cccccccccccccccccccccccccccccccc',
+        ]);
+
         DB::table('zetawiki.user_social')->insert([
             'provider' => 'facebook',
             'social_id' => 'fb-user-csrf-123',
