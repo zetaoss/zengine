@@ -7,16 +7,12 @@ use SkinMustache;
 class SkinZetaSkin extends SkinMustache
 {
     private static $menu = [];
-
     private static $action;
-
     private static $pageId;
-
     private static $binders;
-
-    private static $datatoc;
-
-    private static $isArticleView = false;
+    private static $dataToc;
+    private static $lastModified;
+    private static $isArticleView;
 
     public static function onBeforePageDisplay($out, $skin)
     {
@@ -34,13 +30,14 @@ class SkinZetaSkin extends SkinMustache
     {
         $data = parent::getTemplateData();
 
+        self::$lastModified = $data['data-last-modified']['timestamp'];
         self::$isArticleView = $data['is-article'] && self::$action == 'view';
         $data['hasMeta'] = self::$isArticleView;
         self::$binders = self::$isArticleView ? PageDataProvider::fetchBinders(self::$pageId) : [];
         $data['hasBinders'] = ! empty(self::$binders);
 
-        self::$datatoc = $data['data-toc'] ?? [];
-        $data['hasToc'] = ! empty(self::$datatoc);
+        self::$dataToc = $data['data-toc'] ?? [];
+        $data['hasToc'] = ! empty(self::$dataToc);
 
         if ($data['is-anon'] && self::$isArticleView) {
             $data['ads'] = [
@@ -71,10 +68,10 @@ class SkinZetaSkin extends SkinMustache
     public static function onMakeGlobalVariablesScript(array &$vars, $out)
     {
         $vars['binders'] = self::$binders;
-        $vars['datatoc'] = self::$datatoc;
+        $vars['dataToc'] = self::$dataToc;
         $vars['contributors'] = self::$isArticleView ? PageDataProvider::fetchContributors(self::$pageId) : [];
-        $vars['revtime'] = $out->getRevisionTimestamp();
-        $vars['mm'] = self::$menu;
+        $vars['lastModified'] = self::$lastModified;
+        $vars['menu'] = self::$menu;
     }
 
     private function getPageButtons(): array

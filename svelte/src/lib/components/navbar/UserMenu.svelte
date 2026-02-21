@@ -8,7 +8,7 @@
   import useAuthStore from '$lib/stores/auth'
   import AvatarIcon from '$shared/components/avatar/AvatarIcon.svelte'
   import { useDismissable } from '$shared/composables/useDismissable'
-  import type { Link } from '$shared/types/links'
+  import type { Link } from '$shared/types/menu'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import getShortcut from '$shared/utils/shortcut'
 

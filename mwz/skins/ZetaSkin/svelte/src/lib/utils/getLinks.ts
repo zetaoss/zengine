@@ -1,4 +1,4 @@
-import type { Link } from '$shared/types/links'
+import type { Link } from '$shared/types/menu'
 import getShortcut from '$shared/utils/shortcut'
 
 import getRLCONF from './rlconf'
@@ -7,14 +7,14 @@ type Filter = string | [key: string, override?: Partial<Link>]
 type MaybeFilter = Filter | false | null | undefined
 
 export default function getLinks(...filters: MaybeFilter[]): Link[] {
-  const { mm } = getRLCONF()
+  const { menu } = getRLCONF()
 
   return filters.flatMap((filter) => {
     if (!filter) return []
 
     const [path, override] = typeof filter === 'string' ? [filter, undefined] : filter
     const [group, key] = path.split('.', 2)
-    const item = mm[group]?.[key]
+    const item = menu[group]?.[key]
     if (!item) return []
 
     const link = { ...item, ...(override ?? {}) }
