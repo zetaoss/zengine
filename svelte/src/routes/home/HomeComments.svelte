@@ -7,9 +7,10 @@
   import linkify from '$shared/utils/linkify'
 
   interface Row {
+    id: number
+    page_id: number
     page_title: string
     message: string
-    page_name: string
 
     user_id: number
     user_name: string
@@ -43,7 +44,7 @@
   onMount(load)
 </script>
 
-{#each rows as r, i (r.page_title + '-' + r.user_id + '-' + r.message + '-' + i)}
+{#each rows as r (r.id)}
   <div class="py-2">
     <a href={`/wiki/${r.page_title}`} rel="external" data-sveltekit-reload>{r.page_title.replace(/_/g, ' ')}</a>
     <span class="silver ml-3">
