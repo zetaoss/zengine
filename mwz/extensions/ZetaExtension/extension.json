@@ -29,6 +29,7 @@
     "PageSaveComplete": "ZetaExtension\\Binder\\BinderHooks::onPageSaveComplete",
     "PageDeleteComplete": "ZetaExtension\\Binder\\BinderHooks::onPageDeleteComplete",
     "PageUndeleteComplete": "ZetaExtension\\Binder\\BinderHooks::onPageUndeleteComplete",
+    "SpecialSearchNogomatch": "ZetaExtension\\WriteRequest\\SearchHooks::onSpecialSearchNogomatch",
     "ParserFirstCallInit": "ZetaExtension\\Tag\\Tag::onParserFirstCallInit",
     "PostLoginRedirect": "ZetaExtension\\Auth\\Hooks::onPostLoginRedirect",
     "SpecialPageBeforeExecute": "ZetaExtension\\Auth\\Hooks::onSpecialPageBeforeExecute",

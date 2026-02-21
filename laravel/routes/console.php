@@ -2,6 +2,4 @@
 
 use Illuminate\Support\Facades\Schedule;
 
-Schedule::command('app:common-report-timeout')
-    ->everyMinute()
-    ->appendOutputTo('/proc/1/fd/1');
+Schedule::command('app:cleanup-not-matches')->daily();

@@ -26,7 +26,7 @@ class CommonReportService
                 ]);
             }
 
-            CommonReportJob::dispatch($report->id);
+            $this->dispatchReportJobs($report->id);
 
             return $report;
         });
@@ -35,7 +35,7 @@ class CommonReportService
     public function rerun(CommonReport $report): void
     {
         $report->update(['phase' => 'pending']);
-        CommonReportJob::dispatch($report->id);
+        $this->dispatchReportJobs($report->id);
     }
 
     public function clone(CommonReport $original, int $userId, string $userName): CommonReport
@@ -54,7 +54,7 @@ class CommonReportService
                 ]);
             }
 
-            CommonReportJob::dispatch($clone->id);
+            $this->dispatchReportJobs($clone->id);
 
             return $clone;
         });
@@ -78,6 +78,11 @@ class CommonReportService
         $this->updateReportData($report, $response->json());
 
         $report->update(['phase' => 'succeeded']);
+    }
+
+    private function dispatchReportJobs(int $reportId): void
+    {
+        CommonReportJob::dispatch($reportId);
     }
 
     private function buildUrl(CommonReport $report): string
@@ -109,23 +114,5 @@ class CommonReportService
             $item->updateTotal();
             $item->save();
         });
-    }
-
-    public function markTimedOutReports(): int
-    {
-        $threshold = new \DateTimeImmutable('-1 minute');
-
-        $updatedCount = 0;
-
-        CommonReport::whereIn('phase', ['pending', 'running'])
-            ->where('created_at', '<', $threshold)
-            ->chunk(100, function ($reports) use (&$updatedCount) {
-                foreach ($reports as $report) {
-                    $report->update(['phase' => 'failed']);
-                    $updatedCount++;
-                }
-            });
-
-        return $updatedCount;
     }
 }
