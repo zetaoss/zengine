@@ -36,7 +36,7 @@ class WriteRequestController extends Controller
     public function indexDone()
     {
         return $this->baseQuery()
-            ->where('w.writer_id', '>', 0)
+            ->where('w.writer_id', '>=', 0)
             ->orderByDesc('w.writed_at')
             ->orderByDesc('w.id')
             ->paginate(25);

@@ -16,7 +16,7 @@ final class WriteRequestService
     public static function markDoneIfMatched($wikiPage, $user): void
     {
         $title = $wikiPage->getTitle();
-        if (! $title || ! $title->canExist()) {
+        if (! $title || $title->getNamespace() !== \NS_MAIN || ! $title->canExist()) {
             return;
         }
 
@@ -38,6 +38,7 @@ final class WriteRequestService
             ->update('ldb.write_requests')
             ->set([
                 'writer_id' => $writerId > 0 ? $writerId : 0,
+                'writer_name' => $writerId > 0 ? (string) $user->getName() : 'Unknown',
                 'writed_at' => $now,
                 'updated_at' => $now,
             ])

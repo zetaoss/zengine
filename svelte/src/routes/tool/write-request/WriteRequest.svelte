@@ -179,8 +179,8 @@
 
   function getDisplayUser(row: Row) {
     return {
-      id: row.writer_id > 0 ? row.writer_id : row.user_id,
-      name: row.writer_name || row.user_name,
+      id: row.writer_id > 0 ? row.writer_id : 0,
+      name: row.writer_name || (row.writer_id === 0 ? 'Unknown' : ''),
     }
   }
 </script>
