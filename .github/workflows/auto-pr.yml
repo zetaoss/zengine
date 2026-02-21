@@ -33,7 +33,13 @@ jobs:
               return;
             }
 
-            const prTitle = context.payload.head_commit.message
+            const headCommitMessage = context.payload.head_commit?.message;
+            if (!headCommitMessage) {
+              core.info('Skip: head_commit is null (branch deletion or non-standard push event).');
+              return;
+            }
+
+            const prTitle = headCommitMessage
               .split('\n')[0]
               .trim();
             const prBody = [

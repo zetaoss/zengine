@@ -27,10 +27,11 @@ async function linkifyWiki(s: string, existsMap: Record<string, boolean>) {
   return s.replace(wikiLinkRegex, (_match, targetRaw: string, displayRaw: string | undefined) => {
     const target = (targetRaw || '').trim()
     const display = (displayRaw || targetRaw).trim()
-    const exists = existsMap[target] === true
-    const classList = exists ? 'internal' : 'internal new'
+    const exists = existsMap[target]
+    const isMissing = exists === false
+    const classList = isMissing ? 'internal new' : 'internal'
     const pageHref = `/wiki/${encodeURIComponent(target.replace(/ /g, '_'))}`
-    const href = exists ? pageHref : `${pageHref}/edit?redlink=1`
+    const href = isMissing ? `${pageHref}/edit?redlink=1` : pageHref
     return `<a href="${href}" class="${classList}" data-sveltekit-reload>${display}</a>`
   })
 }
