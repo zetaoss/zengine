@@ -104,7 +104,7 @@ checks-php:
 .PHONY: checks-laravel
 checks-laravel:
 ifeq ($(USE_CACHE),1)
-	$(call run_cached,checks-laravel,$(MAKE) USE_CACHE=0 checks-laravel,laravel)
+	$(call run_cached,checks-laravel,$(MAKE) USE_CACHE=0 checks-laravel,laravel pint.json)
 else
 	$(call run_pint,laravel,laravel/vendor/bin/pint laravel)
 	@echo "➡️  laravel: php artisan test"
@@ -114,7 +114,7 @@ endif
 .PHONY: checks-extension
 checks-extension:
 ifeq ($(USE_CACHE),1)
-	$(call run_cached,checks-extension,$(MAKE) USE_CACHE=0 checks-extension,mwz/extensions/ZetaExtension)
+	$(call run_cached,checks-extension,$(MAKE) USE_CACHE=0 checks-extension,mwz/extensions/ZetaExtension pint.json)
 else
 	$(call run_pint,mwz/extensions/ZetaExtension,laravel/vendor/bin/pint mwz/extensions/ZetaExtension)
 endif
@@ -122,7 +122,7 @@ endif
 .PHONY: checks-skin
 checks-skin:
 ifeq ($(USE_CACHE),1)
-	$(call run_cached,checks-skin,$(MAKE) USE_CACHE=0 checks-skin,mwz/skins/ZetaSkin)
+	$(call run_cached,checks-skin,$(MAKE) USE_CACHE=0 checks-skin,mwz/skins/ZetaSkin pint.json)
 else
 	$(call run_pint,mwz/skins/ZetaSkin,laravel/vendor/bin/pint mwz/skins/ZetaSkin)
 endif
