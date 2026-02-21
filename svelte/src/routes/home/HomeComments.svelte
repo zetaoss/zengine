@@ -23,12 +23,12 @@
       return
     }
 
-    rows = await Promise.all(
-      data.map(async (x) => ({
-        ...x,
-        message: await linkify(x.message),
-      })),
-    )
+    const safeRows = data ?? []
+    const linkedMessages = await linkify(safeRows.map((x) => x.message || ''))
+    rows = safeRows.map((x, i) => ({
+      ...x,
+      message: linkedMessages[i] ?? '',
+    }))
   }
 
   onMount(load)
