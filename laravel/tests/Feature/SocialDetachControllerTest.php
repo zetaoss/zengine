@@ -2,14 +2,11 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\WithoutMiddleware;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class SocialDetachControllerTest extends TestCase
 {
-    use WithoutMiddleware;
-
     protected function setUp(): void
     {
         parent::setUp();
