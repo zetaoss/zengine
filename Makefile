@@ -1,6 +1,7 @@
 SHELL := /bin/bash
 
 SVELTE_DIRS := svelte mwz/skins/ZetaSkin/svelte
+LARAVEL_DIR := laravel
 
 define run_pnpm
 	@set -e; \
@@ -9,6 +10,21 @@ define run_pnpm
 		pnpm -C $$d $(1); \
 	done
 endef
+
+.PHONY: laravel-format
+laravel-format:
+	@echo "➡️  $(LARAVEL_DIR): vendor/bin/pint --test"
+	cd $(LARAVEL_DIR) && vendor/bin/pint --test
+
+.PHONY: laravel-format-fix
+laravel-format-fix:
+	@echo "➡️  $(LARAVEL_DIR): vendor/bin/pint"
+	cd $(LARAVEL_DIR) && vendor/bin/pint
+
+.PHONY: laravel-test
+laravel-test:
+	@echo "➡️  $(LARAVEL_DIR): php artisan test"
+	cd $(LARAVEL_DIR) && php artisan test
 
 .PHONY: svelte-overrides
 svelte-overrides:
@@ -28,6 +44,10 @@ svelte-install:
 svelte-lint:
 	$(call run_pnpm,lint)
 
+.PHONY: svelte-lint-fix
+svelte-lint-fix:
+	$(call run_pnpm,lint:fix)
+
 .PHONY: svelte-format
 svelte-format:
 	$(call run_pnpm,format)
@@ -40,18 +60,14 @@ svelte-build:
 svelte-audit:
 	$(call run_pnpm,audit --ignore-unfixable --ignore-registry-errors)
 
-.PHONY: checks
-checks: svelte-overrides svelte-install svelte-lint svelte-format svelte-build svelte-audit
-	@echo "✅  All checks passed"
-
-.PHONY: svelte-lint-fix
-svelte-lint-fix:
-	$(call run_pnpm,lint:fix)
-
 .PHONY: svelte-audit-fix
 svelte-audit-fix:
 	$(call run_pnpm,audit --fix --ignore-unfixable)
 	$(call run_pnpm,install --no-frozen-lockfile)
+
+.PHONY: checks
+checks: laravel-format laravel-test svelte-overrides svelte-install svelte-lint svelte-format svelte-build svelte-audit
+	@echo "✅  All checks passed"
 
 .PHONY: pnpm-update
 pnpm-update:

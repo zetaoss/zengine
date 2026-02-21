@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Gate;
 class PageReactionController extends Controller
 {
     private array $emojis = ['👍', '😆', '😢', '😮', '❤️', '❤'];
-
     private array $codes = [128077, 128518, 128546, 128558, 10084, 10084];
 
     private function emoji2code(string $emoji): int

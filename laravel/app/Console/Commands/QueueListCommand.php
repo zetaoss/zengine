@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\DB;
 class QueueListCommand extends Command
 {
     protected $signature = 'app:queue-list';
-
     protected $description = 'List all pending jobs in the queue';
 
     public function handle(): int
