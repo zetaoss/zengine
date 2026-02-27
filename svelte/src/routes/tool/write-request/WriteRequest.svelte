@@ -11,6 +11,7 @@
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'
+  import ZBadge from '$shared/ui/ZBadge.svelte'
   import ZButton from '$shared/ui/ZButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
@@ -189,28 +190,28 @@
   <h2 class="my-5 text-2xl font-bold">작성 요청</h2>
   <WriteRequestNew show={showModal} on:close={closeModal} />
 
-  <div class="pb-3">
-    <button
-      type="button"
-      class={`inline-block rounded-l border p-3 ${mode === 'todo' ? 'bg-slate-100 dark:bg-slate-700' : 'bg-white dark:bg-slate-900'}`}
+  <div class="inline-flex pb-3">
+    <ZButton
+      cooldown={0}
+      class={`rounded-r-none p-3 ring-gray-300 dark:ring-slate-700 ${mode === 'todo' ? 'bg-slate-100 dark:bg-slate-700' : 'bg-white dark:bg-slate-900'}`}
       onclick={() => setMode('todo')}
     >
-      요청 <span class="rounded-full bg-gray-400 px-1 text-xs text-white">{count.todo}</span>
-    </button>
-    <button
-      type="button"
-      class={`inline-block border border-l-0 p-3 ${mode === 'todo-top' ? 'bg-slate-100 dark:bg-slate-700' : 'bg-white dark:bg-slate-900'}`}
+      요청 <ZBadge class="ml-1">{count.todo}</ZBadge>
+    </ZButton>
+    <ZButton
+      cooldown={0}
+      class={`-ml-px rounded-none p-3 ring-gray-300 dark:ring-slate-700 ${mode === 'todo-top' ? 'bg-slate-100 dark:bg-slate-700' : 'bg-white dark:bg-slate-900'}`}
       onclick={() => setMode('todo-top')}
     >
       추천
-    </button>
-    <button
-      type="button"
-      class={`inline-block rounded-r border border-l-0 p-3 ${mode === 'done' ? 'bg-slate-100 dark:bg-slate-700' : 'bg-white dark:bg-slate-900'}`}
+    </ZButton>
+    <ZButton
+      cooldown={0}
+      class={`-ml-px rounded-l-none p-3 ring-gray-300 dark:ring-slate-700 ${mode === 'done' ? 'bg-slate-100 dark:bg-slate-700' : 'bg-white dark:bg-slate-900'}`}
       onclick={() => setMode('done')}
     >
-      완료 <span class="rounded-full bg-gray-400 px-2 text-xs text-white">{count.done}</span>
-    </button>
+      완료 <ZBadge class="ml-1">{count.done}</ZBadge>
+    </ZButton>
   </div>
 
   <table class="mytable z-card w-full">
