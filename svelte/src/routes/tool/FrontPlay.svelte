@@ -2,7 +2,8 @@
   import { html } from '@codemirror/lang-html'
   import { javascript } from '@codemirror/lang-javascript'
   import { defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language'
-  import { EditorState } from '@codemirror/state'
+  import { Compartment, EditorState } from '@codemirror/state'
+  import { oneDark } from '@codemirror/theme-one-dark'
   import { EditorView, lineNumbers } from '@codemirror/view'
   import { onDestroy, onMount } from 'svelte'
 
@@ -31,6 +32,9 @@ console.log("Hello HTML");
   let jsEditorHost: HTMLDivElement | null = null
   let htmlView: EditorView | null = null
   let jsView: EditorView | null = null
+  let darkClassObserver: MutationObserver | null = null
+
+  const themeCompartment = new Compartment()
 
   let iframeSrcDoc = ''
   const bridgeId = `frontplay_${Math.random().toString(36).slice(2)}`
@@ -44,6 +48,49 @@ console.log("Hello HTML");
     iframeSrcDoc = `${buildHtml(bridgeId, htmlCode, jsCode)}\n<!-- run:${Date.now()} -->`
   }
 
+  function isDarkEnabled() {
+    return document.documentElement.classList.contains('dark')
+  }
+
+  function getThemeExtension() {
+    return isDarkEnabled() ? oneDark : syntaxHighlighting(defaultHighlightStyle, { fallback: true })
+  }
+
+  function createEditor(host: HTMLDivElement, doc: string, languageExtension: ReturnType<typeof html> | ReturnType<typeof javascript>, onChange: (nextDoc: string) => void) {
+    return new EditorView({
+      state: EditorState.create({
+        doc,
+        extensions: [
+          languageExtension,
+          lineNumbers(),
+          themeCompartment.of(getThemeExtension()),
+          EditorView.lineWrapping,
+          EditorView.updateListener.of((update) => {
+            if (!update.docChanged) return
+            onChange(update.state.doc.toString())
+          }),
+        ],
+      }),
+      parent: host,
+    })
+  }
+
+  function refreshEditorsTheme() {
+    const theme = getThemeExtension()
+
+    if (htmlView) {
+      htmlView.dispatch({
+        effects: themeCompartment.reconfigure(theme),
+      })
+    }
+
+    if (jsView) {
+      jsView.dispatch({
+        effects: themeCompartment.reconfigure(theme),
+      })
+    }
+  }
+
   if (typeof window !== 'undefined') {
     const bridgeWindow = window as unknown as Record<string, unknown>
     bridgeWindow[bridgeId] = (payload: unknown) => {
@@ -54,6 +101,7 @@ console.log("Hello HTML");
   }
 
   onDestroy(() => {
+    darkClassObserver?.disconnect()
     htmlView?.destroy()
     jsView?.destroy()
 
@@ -65,42 +113,25 @@ console.log("Hello HTML");
 
   onMount(() => {
     if (htmlEditorHost) {
-      htmlView = new EditorView({
-        state: EditorState.create({
-          doc: htmlCode,
-          extensions: [
-            html(),
-            lineNumbers(),
-            syntaxHighlighting(defaultHighlightStyle),
-            EditorView.lineWrapping,
-            EditorView.updateListener.of((update) => {
-              if (!update.docChanged) return
-              htmlCode = update.state.doc.toString()
-            }),
-          ],
-        }),
-        parent: htmlEditorHost,
+      htmlView = createEditor(htmlEditorHost, htmlCode, html(), (nextDoc) => {
+        htmlCode = nextDoc
       })
     }
 
     if (jsEditorHost) {
-      jsView = new EditorView({
-        state: EditorState.create({
-          doc: jsCode,
-          extensions: [
-            javascript(),
-            lineNumbers(),
-            syntaxHighlighting(defaultHighlightStyle),
-            EditorView.lineWrapping,
-            EditorView.updateListener.of((update) => {
-              if (!update.docChanged) return
-              jsCode = update.state.doc.toString()
-            }),
-          ],
-        }),
-        parent: jsEditorHost,
+      jsView = createEditor(jsEditorHost, jsCode, javascript(), (nextDoc) => {
+        jsCode = nextDoc
       })
     }
+
+    refreshEditorsTheme()
+    darkClassObserver = new MutationObserver(() => {
+      refreshEditorsTheme()
+    })
+    darkClassObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    })
 
     run()
   })
