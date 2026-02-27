@@ -27,8 +27,6 @@
   const updateLogs = (nextLogs: SandboxLog[]) => {
     logs = nextLogs
   }
-
-  let consoleRef: HTMLElement | null = null
 </script>
 
 <slot />
@@ -45,7 +43,7 @@
   />
 
   {#if logs.length > 0}
-    <div bind:this={consoleRef} class="max-h-40 overflow-y-auto mt-1 bg-(--console-bg)">
+    <div class="max-h-40 overflow-y-auto mt-1 bg-(--console-bg)">
       <SandboxConsole {logs} className="rounded-lg" />
     </div>
   {/if}

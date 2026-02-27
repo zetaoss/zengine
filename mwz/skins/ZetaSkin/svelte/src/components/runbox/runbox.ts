@@ -200,7 +200,7 @@ function mountBox(store: JobStore, el: Element, seq: number) {
     props: {
       job: store,
       seq,
-      contentHtml: originalHTML,
+      content: originalHTML,
     },
   })
 }

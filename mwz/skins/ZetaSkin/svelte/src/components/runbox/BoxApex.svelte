@@ -4,6 +4,7 @@
   import type { Writable } from 'svelte/store'
 
   import ZIcon from '$shared/ui/ZIcon.svelte'
+  import { colorizeCss, colorizeHtml } from '$shared/utils/colorize'
 
   import BoxFront from './BoxFront.svelte'
   import BoxLang from './BoxLang.svelte'
@@ -13,7 +14,7 @@
 
   export let job: Writable<Job>
   export let seq: number
-  export let contentHtml = ''
+  export let content = ''
 
   const componentMap = {
     front: BoxFront,
@@ -28,7 +29,7 @@
   type SimpleBox = { lang: string; text: string }
 
   $: box = (jobValue.boxes?.[seq] as SimpleBox | undefined) ?? { lang: '', text: '' }
-  $: renderedContentHtml = box.lang === 'css' ? enhanceCssColorPreview(contentHtml) : contentHtml
+  $: rendered = box.lang === 'css' ? colorizeCss(content) : box.lang === 'html' ? colorizeHtml(content) : content
 
   let copied = false
   let copyTimer: number | null = null
@@ -45,74 +46,6 @@
     } catch (e) {
       console.error(e)
     }
-  }
-
-  const CSS_COLOR_TOKEN = /#[0-9a-fA-F]{3,8}\b|rgba?\([^)\n]+\)|hsla?\([^)\n]+\)|\b[a-zA-Z-]+\b/g
-  const SKIP_COLOR_KEYWORDS = ['inherit', 'initial', 'unset', 'revert', 'revert-layer', 'transparent', 'currentcolor']
-
-  function isCssColorToken(token: string): boolean {
-    if (typeof CSS === 'undefined' || typeof CSS.supports !== 'function') return false
-    const normalized = token.trim()
-    if (!normalized) return false
-    if (SKIP_COLOR_KEYWORDS.includes(normalized.toLowerCase())) return false
-    return CSS.supports('color', normalized)
-  }
-
-  function enhanceCssColorPreview(sourceHtml: string): string {
-    if (typeof document === 'undefined') return sourceHtml
-    if (!sourceHtml) return sourceHtml
-
-    const root = document.createElement('div')
-    root.innerHTML = sourceHtml
-
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
-    const textNodes: Text[] = []
-
-    while (walker.nextNode()) {
-      textNodes.push(walker.currentNode as Text)
-    }
-
-    for (const textNode of textNodes) {
-      const text = textNode.data
-      const fragments = document.createDocumentFragment()
-      let lastIndex = 0
-      let hasReplacement = false
-      CSS_COLOR_TOKEN.lastIndex = 0
-      let match = CSS_COLOR_TOKEN.exec(text)
-
-      while (match) {
-        const token = match[0]
-        const index = match.index
-
-        if (isCssColorToken(token)) {
-          if (index > lastIndex) {
-            fragments.appendChild(document.createTextNode(text.slice(lastIndex, index)))
-          }
-
-          const swatch = document.createElement('span')
-          swatch.className = 'z-color-preview-swatch'
-          swatch.style.backgroundColor = token
-          swatch.title = token
-
-          fragments.appendChild(swatch)
-          fragments.appendChild(document.createTextNode(token))
-
-          lastIndex = index + token.length
-          hasReplacement = true
-        }
-
-        match = CSS_COLOR_TOKEN.exec(text)
-      }
-
-      if (!hasReplacement) continue
-      if (lastIndex < text.length) {
-        fragments.appendChild(document.createTextNode(text.slice(lastIndex)))
-      }
-
-      textNode.parentNode?.replaceChild(fragments, textNode)
-    }
-
-    return root.innerHTML
   }
 </script>
 
@@ -148,7 +81,7 @@
 
           <div class="py-3">
             <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-            {@html renderedContentHtml}
+            {@html rendered}
           </div>
         </div>
       </svelte:component>
@@ -157,7 +90,7 @@
 {/if}
 
 <style>
-  :global(.z-color-preview-swatch) {
+  :global(.colorize) {
     display: inline-block;
     width: 0.7em;
     height: 0.7em;
