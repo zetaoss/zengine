@@ -5,6 +5,7 @@
   import { Compartment, EditorState } from '@codemirror/state'
   import { oneDark } from '@codemirror/theme-one-dark'
   import { EditorView, lineNumbers } from '@codemirror/view'
+  import { color } from '@uiw/codemirror-extensions-color'
   import { onDestroy, onMount } from 'svelte'
 
   import buildHtml from '$shared/components/sandbox/buildHtml'
@@ -68,6 +69,7 @@ console.log("Hello HTML");
         extensions: [
           languageExtension,
           lineNumbers(),
+          color,
           themeCompartment.of(getThemeExtension()),
           EditorView.lineWrapping,
           EditorView.updateListener.of((update) => {
