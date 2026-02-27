@@ -73,7 +73,7 @@
     "stylelint": "^17.3.0",
     "stylelint-config-idiomatic-order": "^10.0.0",
     "stylelint-order": "^7.0.1",
-    "svelte": "^5.25.0",
+    "svelte": "^5.53.5",
     "svelte-check": "^4.3.3",
     "svelte-eslint-parser": "^1.4.1",
     "tailwindcss": "^4.1.18",
