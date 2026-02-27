@@ -11,6 +11,9 @@ importers:
 
   .:
     dependencies:
+      '@babel/runtime':
+        specifier: ^7.28.6
+        version: 7.28.6
       '@codemirror/lang-html':
         specifier: ^6.4.11
         version: 6.4.11
@@ -71,6 +74,9 @@ importers:
       '@tiptap/starter-kit':
         specifier: ^3.18.0
         version: 3.19.0
+      '@uiw/codemirror-extensions-color':
+        specifier: ^4.25.5
+        version: 4.25.5(@codemirror/language@6.12.2)(@codemirror/state@6.5.4)(@codemirror/view@6.39.15)
       autolinker:
         specifier: ^4.1.5
         version: 4.1.5
@@ -201,6 +207,10 @@ packages:
 
   '@babel/helper-validator-identifier@7.28.5':
     resolution: {integrity: sha512-qSs4ifwzKJSV39ucNjsvc6WVHs6b7S03sOh2OcHF9UHfVPqWWALUsNUVzhSBiItjRZoLHx7nIarVjqKVusUZ1Q==}
+    engines: {node: '>=6.9.0'}
+
+  '@babel/runtime@7.28.6':
+    resolution: {integrity: sha512-05WQkdpL9COIMz4LjTxGpPNCdlpyimKppYNoJ5Di5EUObifl8t4tuLuUBBZEpoLYOmfvIWrsp9fCl0HoPRVTdA==}
     engines: {node: '>=6.9.0'}
 
   '@cacheable/memory@2.0.7':
@@ -1207,6 +1217,13 @@ packages:
     resolution: {integrity: sha512-AxNRwEie8Nn4eFS1FzDMJWIISMGoXMb037sgCBJ3UR6o0fQTzr2tqN9WT+DkWJPhIdQCfV7T6D387566VtnCJA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
+  '@uiw/codemirror-extensions-color@4.25.5':
+    resolution: {integrity: sha512-YMPj19r65Zzdsd3+Gm5vPIpxw4IzIwEJRHFD+NxQ5agPPhwJUe8IrQnN6UGw4+zdSA8altSUDBBX3ygTIgKCUw==}
+    peerDependencies:
+      '@codemirror/language': '>=6.0.0'
+      '@codemirror/state': '>=6.0.0'
+      '@codemirror/view': '>=6.0.0'
+
   '@vitest/eslint-plugin@1.6.6':
     resolution: {integrity: sha512-bwgQxQWRtnTVzsUHK824tBmHzjV0iTx3tZaiQIYDjX3SA7TsQS8CuDVqxXrRY3FaOUMgbGavesCxI9MOfFLm7Q==}
     engines: {node: '>=18'}
@@ -1360,6 +1377,14 @@ packages:
 
   colord@2.9.3:
     resolution: {integrity: sha512-jeC1axXpnb0/2nn/Y1LPuLdgXBLH7aDcHu4KEKfqw3CUhX7ZpfBSlPKyqXE6btIgEzfWtrX3/tyBCaCvXvMkOw==}
+
+  colors-named-hex@1.0.3:
+    resolution: {integrity: sha512-vhUoMdCdOKgD9Ni3p6uV3ET1JJCHzlcK6lN3/yl+6TUHinDE6HUFlmnvkh/NDZ2M9049Ipn3mX85qu6akRiC1g==}
+    engines: {node: '>=14.16'}
+
+  colors-named@1.0.4:
+    resolution: {integrity: sha512-R254qrKSxFJNa7QmM7vrRaz5Hygr7MIaNbXcIx7WfmlYJ9OjZQ+aczGlnKS8lLtNT0GM9aGZ4EcmNXrh5ttv6g==}
+    engines: {node: '>=14.16'}
 
   concat-map@0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
@@ -1695,6 +1720,10 @@ packages:
 
   hookified@1.15.1:
     resolution: {integrity: sha512-MvG/clsADq1GPM2KGo2nyfaWVyn9naPiXrqIe4jYjXNZQt238kWyOGrsyc/DmRAQ+Re6yeo6yX/yoNCG5KAEVg==}
+
+  hsl-matcher@1.2.4:
+    resolution: {integrity: sha512-tS7XnJS33Egirm+6cI+Z/kH/aVZt94uxGlJxOZlGql2/yqbAzPg3zHHnTnVN4cVpoJnEYEGq+LE3iXbuUIe8BA==}
+    engines: {node: '>=16.0.0'}
 
   html-encoding-sniffer@6.0.0:
     resolution: {integrity: sha512-CV9TW3Y3f8/wT0BRFc1/KAVQ3TUHiXmaAb6VW9vtiMFf7SLoMd1PdAc4W3KFOFETBJUb90KatHqlsZMWV+R9Gg==}
@@ -2705,6 +2734,8 @@ snapshots:
 
   '@babel/helper-validator-identifier@7.28.5': {}
 
+  '@babel/runtime@7.28.6': {}
+
   '@cacheable/memory@2.0.7':
     dependencies:
       '@cacheable/utils': 2.3.4
@@ -3639,6 +3670,15 @@ snapshots:
       '@typescript-eslint/types': 8.55.0
       eslint-visitor-keys: 4.2.1
 
+  '@uiw/codemirror-extensions-color@4.25.5(@codemirror/language@6.12.2)(@codemirror/state@6.5.4)(@codemirror/view@6.39.15)':
+    dependencies:
+      '@codemirror/language': 6.12.2
+      '@codemirror/state': 6.5.4
+      '@codemirror/view': 6.39.15
+      colors-named: 1.0.4
+      colors-named-hex: 1.0.3
+      hsl-matcher: 1.2.4
+
   '@vitest/eslint-plugin@1.6.6(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)(vitest@4.0.18(@types/node@25.2.2)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.2))':
     dependencies:
       '@typescript-eslint/scope-manager': 8.54.0
@@ -3786,6 +3826,10 @@ snapshots:
   color-name@1.1.4: {}
 
   colord@2.9.3: {}
+
+  colors-named-hex@1.0.3: {}
+
+  colors-named@1.0.4: {}
 
   concat-map@0.0.1: {}
 
@@ -4147,6 +4191,8 @@ snapshots:
   highlight.js@11.11.1: {}
 
   hookified@1.15.1: {}
+
+  hsl-matcher@1.2.4: {}
 
   html-encoding-sniffer@6.0.0:
     dependencies:
