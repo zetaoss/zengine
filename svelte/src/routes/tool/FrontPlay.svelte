@@ -1,4 +1,10 @@
 <script lang="ts">
+  import { html } from '@codemirror/lang-html'
+  import { javascript } from '@codemirror/lang-javascript'
+  import { defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language'
+  import { Compartment, EditorState } from '@codemirror/state'
+  import { oneDark } from '@codemirror/theme-one-dark'
+  import { EditorView, lineNumbers } from '@codemirror/view'
   import { onDestroy, onMount } from 'svelte'
 
   import buildHtml from '$shared/components/sandbox/buildHtml'
@@ -22,6 +28,14 @@ console.log("Hello HTML");
   let logs: LogItem[] = []
   let logSeed = 0
 
+  let htmlEditorHost: HTMLDivElement | null = null
+  let jsEditorHost: HTMLDivElement | null = null
+  let htmlView: EditorView | null = null
+  let jsView: EditorView | null = null
+  let darkClassObserver: MutationObserver | null = null
+
+  const themeCompartment = new Compartment()
+
   let iframeSrcDoc = ''
   const bridgeId = `frontplay_${Math.random().toString(36).slice(2)}`
 
@@ -34,6 +48,54 @@ console.log("Hello HTML");
     iframeSrcDoc = `${buildHtml(bridgeId, htmlCode, jsCode)}\n<!-- run:${Date.now()} -->`
   }
 
+  function isDarkEnabled() {
+    return document.documentElement.classList.contains('dark')
+  }
+
+  function getThemeExtension() {
+    return isDarkEnabled() ? oneDark : syntaxHighlighting(defaultHighlightStyle, { fallback: true })
+  }
+
+  function createEditor(
+    host: HTMLDivElement,
+    doc: string,
+    languageExtension: ReturnType<typeof html> | ReturnType<typeof javascript>,
+    onChange: (nextDoc: string) => void,
+  ) {
+    return new EditorView({
+      state: EditorState.create({
+        doc,
+        extensions: [
+          languageExtension,
+          lineNumbers(),
+          themeCompartment.of(getThemeExtension()),
+          EditorView.lineWrapping,
+          EditorView.updateListener.of((update) => {
+            if (!update.docChanged) return
+            onChange(update.state.doc.toString())
+          }),
+        ],
+      }),
+      parent: host,
+    })
+  }
+
+  function refreshEditorsTheme() {
+    const theme = getThemeExtension()
+
+    if (htmlView) {
+      htmlView.dispatch({
+        effects: themeCompartment.reconfigure(theme),
+      })
+    }
+
+    if (jsView) {
+      jsView.dispatch({
+        effects: themeCompartment.reconfigure(theme),
+      })
+    }
+  }
+
   if (typeof window !== 'undefined') {
     const bridgeWindow = window as unknown as Record<string, unknown>
     bridgeWindow[bridgeId] = (payload: unknown) => {
@@ -44,6 +106,10 @@ console.log("Hello HTML");
   }
 
   onDestroy(() => {
+    darkClassObserver?.disconnect()
+    htmlView?.destroy()
+    jsView?.destroy()
+
     if (typeof window !== 'undefined') {
       const bridgeWindow = window as unknown as Record<string, unknown>
       delete bridgeWindow[bridgeId]
@@ -51,6 +117,27 @@ console.log("Hello HTML");
   })
 
   onMount(() => {
+    if (htmlEditorHost) {
+      htmlView = createEditor(htmlEditorHost, htmlCode, html(), (nextDoc) => {
+        htmlCode = nextDoc
+      })
+    }
+
+    if (jsEditorHost) {
+      jsView = createEditor(jsEditorHost, jsCode, javascript(), (nextDoc) => {
+        jsCode = nextDoc
+      })
+    }
+
+    refreshEditorsTheme()
+    darkClassObserver = new MutationObserver(() => {
+      refreshEditorsTheme()
+    })
+    darkClassObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    })
+
     run()
   })
 </script>
@@ -65,12 +152,12 @@ console.log("Hello HTML");
     </div>
 
     <div class="space-y-2">
-      <textarea bind:value={htmlCode} class="h-[35vh] w-full resize-none rounded border p-2 font-mono"></textarea>
-      <textarea bind:value={jsCode} class="h-[35vh] w-full resize-none rounded border p-2 font-mono"></textarea>
+      <div id="html" class="code-editor" bind:this={htmlEditorHost}></div>
+      <div id="js" class="code-editor" bind:this={jsEditorHost}></div>
     </div>
   </div>
 
-  <div class="flex flex-col gap-2">
+  <div id="output" class="flex flex-col gap-2">
     <div class="h-[50vh] overflow-hidden rounded border">
       <iframe title="FrontPlay Sandbox" srcdoc={iframeSrcDoc} class="h-full w-full"></iframe>
     </div>
@@ -137,5 +224,32 @@ console.log("Hello HTML");
 
   .console :global(.objkey) {
     color: var(--console-objkey);
+  }
+
+  .code-editor {
+    overflow: hidden;
+    height: 35vh;
+    border: 1px solid rgb(203 213 225);
+    border-radius: 0.25rem;
+  }
+
+  :global(.dark) .code-editor {
+    border-color: rgb(71 85 105);
+  }
+
+  .code-editor :global(.cm-editor),
+  .code-editor :global(.cm-scroller) {
+    height: 100%;
+  }
+
+  .code-editor :global(.cm-content),
+  .code-editor :global(.cm-gutters) {
+    min-height: 100%;
+  }
+
+  .code-editor :global(.cm-scroller) {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
   }
 </style>
