@@ -4,6 +4,7 @@
   import type { Writable } from 'svelte/store'
 
   import ZIcon from '$shared/ui/ZIcon.svelte'
+  import { colorizeCss, colorizeHtml } from '$shared/utils/colorize'
 
   import BoxFront from './BoxFront.svelte'
   import BoxLang from './BoxLang.svelte'
@@ -13,7 +14,7 @@
 
   export let job: Writable<Job>
   export let seq: number
-  export let contentHtml = ''
+  export let content = ''
 
   const componentMap = {
     front: BoxFront,
@@ -28,6 +29,7 @@
   type SimpleBox = { lang: string; text: string }
 
   $: box = (jobValue.boxes?.[seq] as SimpleBox | undefined) ?? { lang: '', text: '' }
+  $: rendered = box.lang === 'css' ? colorizeCss(content) : box.lang === 'html' ? colorizeHtml(content) : content
 
   let copied = false
   let copyTimer: number | null = null
@@ -79,10 +81,22 @@
 
           <div class="py-3">
             <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-            {@html contentHtml}
+            {@html rendered}
           </div>
         </div>
       </svelte:component>
     </div>
   </div>
 {/if}
+
+<style>
+  :global(.colorize) {
+    display: inline-block;
+    width: 0.7em;
+    height: 0.7em;
+    border: 1px solid rgb(148 163 184 / 0.8);
+    border-radius: 0.1rem;
+    margin-right: 0.2rem;
+    vertical-align: middle;
+  }
+</style>

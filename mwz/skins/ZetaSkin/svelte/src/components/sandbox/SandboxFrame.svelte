@@ -1,33 +1,33 @@
 <!-- SandboxFrame.svelte -->
 <script lang="ts">
-  import { createEventDispatcher, onDestroy, onMount } from 'svelte'
+  import { onDestroy, onMount } from 'svelte'
 
-  import buildHtml from './buildHtml'
+  import buildHtml from '$shared/components/sandbox/buildHtml'
+
   import ResizableBox from './ResizableBox.svelte'
   import type { SandboxLog } from './types'
 
   export let id: string
+  export let css = ''
   export let html: string
   export let js: string
   export let resizable = false
   export let className = ''
-
-  const dispatch = createEventDispatcher<{ 'update:logs': SandboxLog[] }>()
-
+  export let onUpdateLogs: ((logs: SandboxLog[]) => void) | undefined = undefined
   let iframe: HTMLIFrameElement | null = null
   let logs: SandboxLog[] = []
 
   const handleSandboxLog = (log: SandboxLog) => {
     logs = [...logs, log]
-    dispatch('update:logs', logs)
+    onUpdateLogs?.(logs)
   }
 
   const run = () => {
     logs = []
-    dispatch('update:logs', logs)
+    onUpdateLogs?.(logs)
 
     if (!iframe) return
-    const content = buildHtml(id, html, js)
+    const content = buildHtml(id, css, html, js)
     iframe.srcdoc = content
   }
 
