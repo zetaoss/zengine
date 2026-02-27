@@ -1,4 +1,9 @@
 <script lang="ts">
+  import { html } from '@codemirror/lang-html'
+  import { javascript } from '@codemirror/lang-javascript'
+  import { defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language'
+  import { EditorState } from '@codemirror/state'
+  import { EditorView, lineNumbers } from '@codemirror/view'
   import { onDestroy, onMount } from 'svelte'
 
   import buildHtml from '$shared/components/sandbox/buildHtml'
@@ -22,6 +27,11 @@ console.log("Hello HTML");
   let logs: LogItem[] = []
   let logSeed = 0
 
+  let htmlEditorHost: HTMLDivElement | null = null
+  let jsEditorHost: HTMLDivElement | null = null
+  let htmlView: EditorView | null = null
+  let jsView: EditorView | null = null
+
   let iframeSrcDoc = ''
   const bridgeId = `frontplay_${Math.random().toString(36).slice(2)}`
 
@@ -44,6 +54,9 @@ console.log("Hello HTML");
   }
 
   onDestroy(() => {
+    htmlView?.destroy()
+    jsView?.destroy()
+
     if (typeof window !== 'undefined') {
       const bridgeWindow = window as unknown as Record<string, unknown>
       delete bridgeWindow[bridgeId]
@@ -51,6 +64,44 @@ console.log("Hello HTML");
   })
 
   onMount(() => {
+    if (htmlEditorHost) {
+      htmlView = new EditorView({
+        state: EditorState.create({
+          doc: htmlCode,
+          extensions: [
+            html(),
+            lineNumbers(),
+            syntaxHighlighting(defaultHighlightStyle),
+            EditorView.lineWrapping,
+            EditorView.updateListener.of((update) => {
+              if (!update.docChanged) return
+              htmlCode = update.state.doc.toString()
+            }),
+          ],
+        }),
+        parent: htmlEditorHost,
+      })
+    }
+
+    if (jsEditorHost) {
+      jsView = new EditorView({
+        state: EditorState.create({
+          doc: jsCode,
+          extensions: [
+            javascript(),
+            lineNumbers(),
+            syntaxHighlighting(defaultHighlightStyle),
+            EditorView.lineWrapping,
+            EditorView.updateListener.of((update) => {
+              if (!update.docChanged) return
+              jsCode = update.state.doc.toString()
+            }),
+          ],
+        }),
+        parent: jsEditorHost,
+      })
+    }
+
     run()
   })
 </script>
@@ -65,12 +116,12 @@ console.log("Hello HTML");
     </div>
 
     <div class="space-y-2">
-      <textarea bind:value={htmlCode} class="h-[35vh] w-full resize-none rounded border p-2 font-mono"></textarea>
-      <textarea bind:value={jsCode} class="h-[35vh] w-full resize-none rounded border p-2 font-mono"></textarea>
+      <div id="html" class="code-editor" bind:this={htmlEditorHost}></div>
+      <div id="js" class="code-editor" bind:this={jsEditorHost}></div>
     </div>
   </div>
 
-  <div class="flex flex-col gap-2">
+  <div id="output" class="flex flex-col gap-2">
     <div class="h-[50vh] overflow-hidden rounded border">
       <iframe title="FrontPlay Sandbox" srcdoc={iframeSrcDoc} class="h-full w-full"></iframe>
     </div>
@@ -137,5 +188,32 @@ console.log("Hello HTML");
 
   .console :global(.objkey) {
     color: var(--console-objkey);
+  }
+
+  .code-editor {
+    height: 35vh;
+    border: 1px solid rgb(203 213 225);
+    border-radius: 0.25rem;
+    overflow: hidden;
+  }
+
+  :global(.dark) .code-editor {
+    border-color: rgb(71 85 105);
+  }
+
+  .code-editor :global(.cm-editor),
+  .code-editor :global(.cm-scroller) {
+    height: 100%;
+  }
+
+  .code-editor :global(.cm-content),
+  .code-editor :global(.cm-gutters) {
+    min-height: 100%;
+  }
+
+  .code-editor :global(.cm-scroller) {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
   }
 </style>
