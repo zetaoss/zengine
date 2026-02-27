@@ -262,24 +262,24 @@ console.log("Hello HTML");
 
   .editor-label {
     position: absolute;
+    z-index: 2;
     top: 0.45rem;
     right: 0.6rem;
-    z-index: 2;
     padding: 0.1rem 0.45rem;
+    border: 1px solid rgb(203 213 225 / 0.9);
     border-radius: 0.25rem;
+    background: rgb(241 245 249 / 0.9);
+    color: rgb(71 85 105);
     font-size: 0.68rem;
     font-weight: 700;
     letter-spacing: 0.02em;
-    color: rgb(71 85 105);
-    background: rgb(241 245 249 / 0.9);
-    border: 1px solid rgb(203 213 225 / 0.9);
     pointer-events: none;
   }
 
   :global(.dark) .editor-label {
-    color: rgb(226 232 240);
-    background: rgb(30 41 59 / 0.9);
     border-color: rgb(71 85 105 / 0.9);
+    background: rgb(30 41 59 / 0.9);
+    color: rgb(226 232 240);
   }
 
   .code-editor {
