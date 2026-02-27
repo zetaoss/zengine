@@ -1,8 +1,8 @@
 // buildHtml.ts
-export default function buildHtml(id: string, html: string, js: string): string {
+export default function buildHtml(id: string, css: string, html: string, js: string): string {
   const raw = html.trim()
   const hasHtmlTag = /^<html[\s>]/i.test(raw)
-
+  const escapedCss = css.replace(/`/g, '\\`').replace(/\$\{/g, '\\${')
   const escapedJs = js.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${')
 
   const consoleProxyScript = `
@@ -68,6 +68,8 @@ export default function buildHtml(id: string, html: string, js: string): string 
 </script>
 `
 
+  const styleTag = css !== '' ? `<style>${escapedCss}</style>` : ''
+
   const execScript = `
 <script>
 (function () {
@@ -90,11 +92,11 @@ export default function buildHtml(id: string, html: string, js: string): string 
   let htmlWithProxy = baseHtml
 
   if (/<head>/i.test(htmlWithProxy)) {
-    htmlWithProxy = htmlWithProxy.replace(/<head>/i, `<head>${consoleProxyScript}`)
+    htmlWithProxy = htmlWithProxy.replace(/<head>/i, `<head>${styleTag}${consoleProxyScript}`)
   } else if (/<body[^>]*>/i.test(htmlWithProxy)) {
-    htmlWithProxy = htmlWithProxy.replace(/<body[^>]*>/i, `$&${consoleProxyScript}`)
+    htmlWithProxy = htmlWithProxy.replace(/<body[^>]*>/i, `${styleTag}$&${consoleProxyScript}`)
   } else {
-    htmlWithProxy = consoleProxyScript + htmlWithProxy
+    htmlWithProxy = styleTag + consoleProxyScript + htmlWithProxy
   }
 
   if (/<\/body>/i.test(htmlWithProxy)) {
