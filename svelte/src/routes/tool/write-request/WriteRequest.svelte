@@ -200,14 +200,14 @@
     </ZButton>
     <ZButton
       cooldown={0}
-      class={`-ml-px rounded-none p-3 ring-gray-300 dark:ring-slate-700 ${mode === 'todo-top' ? 'bg-slate-100 dark:bg-slate-700' : 'bg-white dark:bg-slate-900'}`}
+      class={`rounded-none p-3 dark:ring-slate-700 ${mode === 'todo-top' ? 'bg-slate-100 dark:bg-slate-700' : 'bg-white dark:bg-slate-900'}`}
       onclick={() => setMode('todo-top')}
     >
       추천
     </ZButton>
     <ZButton
       cooldown={0}
-      class={`-ml-px rounded-l-none p-3 ring-gray-300 dark:ring-slate-700 ${mode === 'done' ? 'bg-slate-100 dark:bg-slate-700' : 'bg-white dark:bg-slate-900'}`}
+      class={`rounded-l-none p-3 dark:ring-slate-700 ${mode === 'done' ? 'bg-slate-100 dark:bg-slate-700' : 'bg-white dark:bg-slate-900'}`}
       onclick={() => setMode('done')}
     >
       완료 <ZBadge class="ml-1">{count.done}</ZBadge>
