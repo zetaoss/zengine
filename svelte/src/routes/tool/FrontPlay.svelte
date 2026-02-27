@@ -1,8 +1,9 @@
 <script lang="ts">
+  import { css } from '@codemirror/lang-css'
   import { html } from '@codemirror/lang-html'
   import { javascript } from '@codemirror/lang-javascript'
   import { defaultHighlightStyle, syntaxHighlighting } from '@codemirror/language'
-  import { Compartment, EditorState } from '@codemirror/state'
+  import { Compartment, EditorState, type Extension } from '@codemirror/state'
   import { oneDark } from '@codemirror/theme-one-dark'
   import { EditorView, lineNumbers } from '@codemirror/view'
   import { color } from '@uiw/codemirror-extensions-color'
@@ -24,14 +25,17 @@
 console.log("Hello HTML");
 <${'/script'}>`
 
+  let cssCode = `h1 { color: skyblue; }`
   let jsCode = `console.log('Hello JS');`
 
   let logs: LogItem[] = []
   let logSeed = 0
 
   let htmlEditorHost: HTMLDivElement | null = null
+  let cssEditorHost: HTMLDivElement | null = null
   let jsEditorHost: HTMLDivElement | null = null
   let htmlView: EditorView | null = null
+  let cssView: EditorView | null = null
   let jsView: EditorView | null = null
   let darkClassObserver: MutationObserver | null = null
 
@@ -46,7 +50,7 @@ console.log("Hello HTML");
 
   function run() {
     logs = []
-    iframeSrcDoc = `${buildHtml(bridgeId, htmlCode, jsCode)}\n<!-- run:${Date.now()} -->`
+    iframeSrcDoc = `${buildHtml(bridgeId, cssCode, htmlCode, jsCode)}\n<!-- run:${Date.now()} -->`
   }
 
   function isDarkEnabled() {
@@ -60,7 +64,7 @@ console.log("Hello HTML");
   function createEditor(
     host: HTMLDivElement,
     doc: string,
-    languageExtension: ReturnType<typeof html> | ReturnType<typeof javascript>,
+    languageExtension: Extension,
     onChange: (nextDoc: string) => void,
   ) {
     return new EditorView({
@@ -91,6 +95,12 @@ console.log("Hello HTML");
       })
     }
 
+    if (cssView) {
+      cssView.dispatch({
+        effects: themeCompartment.reconfigure(theme),
+      })
+    }
+
     if (jsView) {
       jsView.dispatch({
         effects: themeCompartment.reconfigure(theme),
@@ -110,6 +120,7 @@ console.log("Hello HTML");
   onDestroy(() => {
     darkClassObserver?.disconnect()
     htmlView?.destroy()
+    cssView?.destroy()
     jsView?.destroy()
 
     if (typeof window !== 'undefined') {
@@ -131,6 +142,12 @@ console.log("Hello HTML");
       })
     }
 
+    if (cssEditorHost) {
+      cssView = createEditor(cssEditorHost, cssCode, css(), (nextDoc) => {
+        cssCode = nextDoc
+      })
+    }
+
     refreshEditorsTheme()
     darkClassObserver = new MutationObserver(() => {
       refreshEditorsTheme()
@@ -145,7 +162,7 @@ console.log("Hello HTML");
 </script>
 
 <div class="grid grid-cols-1 gap-4 p-4 md:grid-cols-2">
-  <div>
+  <div class="flex flex-col gap-2">
     <div class="flex items-center py-2">
       <b>Front Play</b>
       <span class="ml-2">
@@ -153,29 +170,40 @@ console.log("Hello HTML");
       </span>
     </div>
 
-    <div class="space-y-2">
+    <div class="editor-wrap">
+      <span class="editor-label">HTML</span>
       <div id="html" class="code-editor" bind:this={htmlEditorHost}></div>
+    </div>
+    <div class="editor-wrap">
+      <span class="editor-label">JS</span>
       <div id="js" class="code-editor" bind:this={jsEditorHost}></div>
     </div>
   </div>
 
-  <div id="output" class="flex flex-col gap-2">
-    <div class="h-[50vh] overflow-hidden rounded border">
-      <iframe title="FrontPlay Sandbox" srcdoc={iframeSrcDoc} class="h-full w-full"></iframe>
+  <div class="flex flex-col gap-2">
+    <div class="editor-wrap">
+      <span class="editor-label">CSS</span>
+      <div id="css" class="code-editor" bind:this={cssEditorHost}></div>
     </div>
 
-    <div class="flex min-h-0 flex-1 flex-col">
-      <header class="bg-slate-400 py-1 text-center font-bold text-white dark:bg-slate-600">Console</header>
-      <div class="console h-[30vh] overflow-y-auto bg-(--console-bg) text-sm">
-        {#if logs.length === 0}
-          <div class="p-2 opacity-60">No logs yet.</div>
-        {:else}
-          {#each logs as log (log.id)}
-            <ConsoleLog level={log.level} args={log.args} />
-          {/each}
-        {/if}
+    <div id="output" class="flex flex-col gap-2">
+      <div class="h-[50vh] overflow-hidden rounded border">
+        <iframe title="FrontPlay Sandbox" srcdoc={iframeSrcDoc} class="h-full w-full"></iframe>
       </div>
-    </div>
+
+      <div class="flex min-h-0 flex-1 flex-col">
+        <header class="bg-slate-400 py-1 text-center font-bold text-white dark:bg-slate-600">Console</header>
+        <div class="console h-[30vh] overflow-y-auto bg-(--console-bg) text-sm">
+          {#if logs.length === 0}
+            <div class="p-2 opacity-60">No logs yet.</div>
+          {:else}
+            {#each logs as log (log.id)}
+              <ConsoleLog level={log.level} args={log.args} />
+            {/each}
+          {/if}
+        </div>
+      </div>
+    </div>    
   </div>
 </div>
 
@@ -226,6 +254,32 @@ console.log("Hello HTML");
 
   .console :global(.objkey) {
     color: var(--console-objkey);
+  }
+
+  .editor-wrap {
+    position: relative;
+  }
+
+  .editor-label {
+    position: absolute;
+    top: 0.45rem;
+    right: 0.6rem;
+    z-index: 2;
+    padding: 0.1rem 0.45rem;
+    border-radius: 0.25rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: rgb(71 85 105);
+    background: rgb(241 245 249 / 0.9);
+    border: 1px solid rgb(203 213 225 / 0.9);
+    pointer-events: none;
+  }
+
+  :global(.dark) .editor-label {
+    color: rgb(226 232 240);
+    background: rgb(30 41 59 / 0.9);
+    border-color: rgb(71 85 105 / 0.9);
   }
 
   .code-editor {

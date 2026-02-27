@@ -162,7 +162,7 @@ export function mountRunbox() {
     if (!mainBox) return
 
     if (mainBox.type === BoxType.Run) {
-      if (['javascript', 'html'].includes(mainBox.lang)) {
+      if (['javascript', 'html', 'css'].includes(mainBox.lang)) {
         job.type = JobType.Front
       } else {
         job.type = JobType.Lang
