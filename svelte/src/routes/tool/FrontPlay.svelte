@@ -56,7 +56,12 @@ console.log("Hello HTML");
     return isDarkEnabled() ? oneDark : syntaxHighlighting(defaultHighlightStyle, { fallback: true })
   }
 
-  function createEditor(host: HTMLDivElement, doc: string, languageExtension: ReturnType<typeof html> | ReturnType<typeof javascript>, onChange: (nextDoc: string) => void) {
+  function createEditor(
+    host: HTMLDivElement,
+    doc: string,
+    languageExtension: ReturnType<typeof html> | ReturnType<typeof javascript>,
+    onChange: (nextDoc: string) => void,
+  ) {
     return new EditorView({
       state: EditorState.create({
         doc,
