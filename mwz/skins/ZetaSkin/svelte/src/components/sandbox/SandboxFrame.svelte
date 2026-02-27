@@ -3,6 +3,7 @@
   import { onDestroy, onMount } from 'svelte'
 
   import buildHtml from '$shared/components/sandbox/buildHtml'
+
   import ResizableBox from './ResizableBox.svelte'
   import type { SandboxLog } from './types'
 

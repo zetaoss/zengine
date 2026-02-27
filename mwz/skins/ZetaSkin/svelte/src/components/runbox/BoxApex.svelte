@@ -158,12 +158,12 @@
 
 <style>
   :global(.z-color-preview-swatch) {
+    display: inline-block;
     width: 0.7em;
     height: 0.7em;
-    margin-right: 0.2rem;
     border: 1px solid rgb(148 163 184 / 0.8);
     border-radius: 0.1rem;
-    display: inline-block;
+    margin-right: 0.2rem;
     vertical-align: middle;
   }
 </style>
