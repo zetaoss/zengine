@@ -21,6 +21,7 @@
     "lint:stylelint:fix": "stylelint \"src/**/*.{css,svelte}\" --fix"
   },
   "dependencies": {
+    "@babel/runtime": "^7.28.6",
     "@codemirror/lang-html": "^6.4.11",
     "@codemirror/lang-javascript": "^6.2.4",
     "@codemirror/language": "^6.12.2",
@@ -41,6 +42,7 @@
     "@tiptap/extension-task-item": "^3.18.0",
     "@tiptap/extension-task-list": "^3.18.0",
     "@tiptap/starter-kit": "^3.18.0",
+    "@uiw/codemirror-extensions-color": "^4.25.5",
     "autolinker": "^4.1.5",
     "highlight.js": "^11.11.1",
     "isomorphic-dompurify": "^2.36.0",
