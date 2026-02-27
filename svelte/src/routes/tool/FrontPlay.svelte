@@ -191,10 +191,10 @@ console.log("Hello HTML");
   }
 
   .code-editor {
+    overflow: hidden;
     height: 35vh;
     border: 1px solid rgb(203 213 225);
     border-radius: 0.25rem;
-    overflow: hidden;
   }
 
   :global(.dark) .code-editor {
