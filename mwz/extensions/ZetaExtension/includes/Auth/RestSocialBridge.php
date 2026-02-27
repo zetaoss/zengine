@@ -49,6 +49,7 @@ class RestSocialBridge extends SimpleHandler
 
         $session = $this->getSession();
         $session->setUser($user);
+        $session->setRememberUser(true);
         $session->persist();
 
         $returnto = (string) ($payload['returnto'] ?? '');
