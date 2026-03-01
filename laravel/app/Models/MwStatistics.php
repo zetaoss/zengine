@@ -8,7 +8,6 @@ class MwStatistics extends Model
 {
     public $timestamps = false;
     protected $table = 'mw_statistics';
-
     protected $fillable = [
         'timeslot',
         'pages',
@@ -20,7 +19,6 @@ class MwStatistics extends Model
         'admins',
         'jobs',
     ];
-
     protected $casts = [
         'timeslot' => 'date',
         'pages' => 'integer',

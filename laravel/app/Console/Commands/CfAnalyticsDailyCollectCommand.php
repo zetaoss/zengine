@@ -11,7 +11,6 @@ class CfAnalyticsDailyCollectCommand extends Command
     protected $signature = 'app:cf-analytics-daily-collect
                             {--days=7 : Number of days to include (today included, UTC)}
                             {--debug : Print raw GraphQL JSON responses}';
-
     protected $description = 'Collect Cloudflare analytics daily dataset';
 
     public function handle(CfAnalyticsDailyCollectorService $daily): int
