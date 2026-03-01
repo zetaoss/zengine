@@ -25,16 +25,7 @@
     selectedLabelMode?: 'date' | 'hour'
   }
 
-  const {
-    title,
-    labels,
-    unit,
-    series,
-    height = 80,
-    hoveredIndex = null,
-    onHoverIndex,
-    selectedLabelMode = 'date',
-  }: Props = $props()
+  const { title, labels, unit, series, height = 80, hoveredIndex = null, onHoverIndex, selectedLabelMode = 'date' }: Props = $props()
 
   let hostEl = $state<HTMLDivElement | null>(null)
   let chartEl = $state<HTMLDivElement | null>(null)
@@ -49,9 +40,7 @@
 
   const structureSignature = $derived.by(() => `${unit}::${series.map((s) => `${s.label}:${s.color}`).join('|')}`)
 
-  const hasAnyData = $derived.by(() =>
-    series.some((line) => line.values.some((v) => typeof v === 'number' && Number.isFinite(v))),
-  )
+  const hasAnyData = $derived.by(() => series.some((line) => line.values.some((v) => typeof v === 'number' && Number.isFinite(v))))
 
   const selectedIdx = $derived.by(() => {
     if (hoveredIndex == null) return null
@@ -195,10 +184,7 @@
     if (!chart) return
     if (idx < 0 || idx >= labels.length) return
 
-    const anchorValue =
-      series
-        .map((line) => toNumber(line.values[idx] ?? null))
-        .find((v): v is number => v !== null) ?? 0
+    const anchorValue = series.map((line) => toNumber(line.values[idx] ?? null)).find((v): v is number => v !== null) ?? 0
 
     const x = chart.valToPos(idx, 'x')
     const y = chart.valToPos(anchorValue, 'y')

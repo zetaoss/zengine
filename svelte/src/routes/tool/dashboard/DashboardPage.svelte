@@ -400,7 +400,6 @@
   {:else if failed}
     <div class="rounded border border-red-300 bg-red-50 p-4 text-sm text-red-700">조회 실패: {failed}</div>
   {:else}
-
     <section>
       <p class="mb-2 text-gray-500">Cloudflare Analytics</p>
       {#each rows as row, idx (row.key)}
@@ -412,7 +411,7 @@
 
           <LineChart
             title={row.label}
-            labels={labels}
+            {labels}
             unit={row.unit}
             selectedLabelMode={range === '24h' ? 'hour' : 'date'}
             hoveredIndex={syncedHoverIndex}
