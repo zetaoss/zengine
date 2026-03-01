@@ -117,6 +117,7 @@ class CfAnalyticsDailyCollectorService
             if ($oldValue === null) {
                 $inserted++;
                 $upsertRows[] = $row;
+
                 continue;
             }
 
@@ -160,8 +161,7 @@ class CfAnalyticsDailyCollectorService
         string $label,
         string $query,
         array $variables
-    ): void
-    {
+    ): void {
         $debugWriter($label, $this->api->encodeDebugJson([
             'variables' => $variables,
             'query' => $query,

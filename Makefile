@@ -99,6 +99,14 @@ fix:
 	@$(MAKE) USE_CACHE=1 fix-main-svelte fix-skin-svelte
 	@echo "✅  Fix completed"
 
+# quickcheck runs non-mutating checks that correspond to `fix`.
+.PHONY: quickcheck
+quickcheck:
+	@$(MAKE) USE_CACHE=1 quickcheck-laravel-format quickcheck-extension quickcheck-skin
+	@$(MAKE) svelte-overrides
+	@$(MAKE) USE_CACHE=1 quickcheck-main-svelte quickcheck-skin-svelte
+	@echo "✅  Quickcheck passed"
+
 # checks-no-cache runs the same tree with USE_CACHE=0.
 .PHONY: checks-no-cache
 checks-no-cache:
@@ -140,6 +148,14 @@ else
 	$(call run_pint_fix,laravel)
 endif
 
+.PHONY: quickcheck-laravel-format
+quickcheck-laravel-format:
+ifeq ($(USE_CACHE),1)
+	$(call run_cached,quickcheck-laravel-format,$(MAKE) USE_CACHE=0 quickcheck-laravel-format,laravel pint.json)
+else
+	$(call run_pint,laravel,make fix)
+endif
+
 .PHONY: checks-extension
 checks-extension:
 ifeq ($(USE_CACHE),1)
@@ -156,6 +172,14 @@ else
 	$(call run_pint_fix,mwz/extensions/ZetaExtension)
 endif
 
+.PHONY: quickcheck-extension
+quickcheck-extension:
+ifeq ($(USE_CACHE),1)
+	$(call run_cached,quickcheck-extension,$(MAKE) USE_CACHE=0 quickcheck-extension,mwz/extensions/ZetaExtension pint.json)
+else
+	$(call run_pint,mwz/extensions/ZetaExtension,make fix)
+endif
+
 .PHONY: checks-skin
 checks-skin:
 ifeq ($(USE_CACHE),1)
@@ -170,6 +194,14 @@ ifeq ($(USE_CACHE),1)
 	$(call run_cached,fix-skin,$(MAKE) USE_CACHE=0 fix-skin,mwz/skins/ZetaSkin pint.json)
 else
 	$(call run_pint_fix,mwz/skins/ZetaSkin)
+endif
+
+.PHONY: quickcheck-skin
+quickcheck-skin:
+ifeq ($(USE_CACHE),1)
+	$(call run_cached,quickcheck-skin,$(MAKE) USE_CACHE=0 quickcheck-skin,mwz/skins/ZetaSkin pint.json)
+else
+	$(call run_pint,mwz/skins/ZetaSkin,make fix)
 endif
 
 .PHONY: checks-svelte
@@ -204,6 +236,16 @@ else
 	$(call run_pnpm,svelte,format:fix)
 endif
 
+.PHONY: quickcheck-main-svelte
+quickcheck-main-svelte:
+ifeq ($(USE_CACHE),1)
+	$(call run_cached,quickcheck-main-svelte,$(MAKE) USE_CACHE=0 quickcheck-main-svelte,svelte)
+else
+	$(call run_pnpm,svelte,install --frozen-lockfile)
+	$(call run_pnpm,svelte,lint,make fix)
+	$(call run_pnpm,svelte,format,make fix)
+endif
+
 .PHONY: checks-skin-svelte
 checks-skin-svelte:
 ifeq ($(USE_CACHE),1)
@@ -224,4 +266,14 @@ else
 	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,install --frozen-lockfile)
 	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,lint:fix)
 	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,format:fix)
+endif
+
+.PHONY: quickcheck-skin-svelte
+quickcheck-skin-svelte:
+ifeq ($(USE_CACHE),1)
+	$(call run_cached,quickcheck-skin-svelte,$(MAKE) USE_CACHE=0 quickcheck-skin-svelte,mwz/skins/ZetaSkin/svelte svelte/src/shared)
+else
+	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,install --frozen-lockfile)
+	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,lint,make fix)
+	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,format,make fix)
 endif

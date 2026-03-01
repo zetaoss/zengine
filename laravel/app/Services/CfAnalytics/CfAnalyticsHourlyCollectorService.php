@@ -140,6 +140,7 @@ class CfAnalyticsHourlyCollectorService
             if ($oldValue === null) {
                 $inserted++;
                 $upsertRows[] = $row;
+
                 continue;
             }
 
@@ -184,8 +185,7 @@ class CfAnalyticsHourlyCollectorService
         string $query,
         array $variables,
         array $rangeMeta = []
-    ): void
-    {
+    ): void {
         $debugWriter($label, $this->api->encodeDebugJson([
             'range' => $rangeMeta,
             'variables' => $variables,
