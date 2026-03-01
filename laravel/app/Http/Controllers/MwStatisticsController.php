@@ -45,7 +45,7 @@ class MwStatisticsController extends Controller
         $series = $this->emptySeries(count($timeslots));
 
         foreach ($rows as $row) {
-            $timeslot = Carbon::parse((string) $row->timeslot)->toDateString();
+            $timeslot = $row->timeslot->toDateString();
             $index = array_search($timeslot, $timeslots, true);
             if ($index === false) {
                 continue;

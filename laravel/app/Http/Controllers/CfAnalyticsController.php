@@ -82,7 +82,7 @@ class CfAnalyticsController extends Controller
         $series = $this->emptySeries(count($timeslots));
 
         foreach ($rows as $row) {
-            $date = Carbon::parse((string) $row->timeslot)->toDateString();
+            $date = $row->timeslot->toDateString();
             $index = array_search($date, $timeslots, true);
             if ($index === false) {
                 continue;

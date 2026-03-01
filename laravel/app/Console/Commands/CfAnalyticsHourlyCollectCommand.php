@@ -27,8 +27,8 @@ class CfAnalyticsHourlyCollectCommand extends Command
             $this->info('Running hourly analytics collection...');
             $hourlyResult = $hourly->collect($days, $debug, $debugWriter);
             $this->info("Zone: {$hourlyResult['zoneId']}");
-            $this->line('Since: '.($hourlyResult['sinceUtc']->utc()->format('Y-m-d\TH:i:s\Z')));
-            $this->line('Until: '.($hourlyResult['untilUtc']->utc()->format('Y-m-d\TH:i:s\Z')));
+            $this->line('Since: '.($hourlyResult['sinceUtc']->format('Y-m-d\TH:i:s\Z')));
+            $this->line('Until: '.($hourlyResult['untilUtc']->format('Y-m-d\TH:i:s\Z')));
             $this->line('Hourly timeslots fetched: '.count((array) ($hourlyResult['timeslots'] ?? [])));
             $this->line(
                 "Hourly DB write: inserted={$hourlyResult['db']['inserted']}, updated={$hourlyResult['db']['updated']}, skipped={$hourlyResult['db']['skipped']}"

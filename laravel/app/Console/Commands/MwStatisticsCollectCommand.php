@@ -73,7 +73,7 @@ class MwStatisticsCollectCommand extends Command
 
         try {
             return CarbonImmutable::parse($dateInput, 'Asia/Seoul')->toDateString();
-        } catch (\Throwable) {
+        } catch (\Carbon\Exceptions\InvalidFormatException) {
             throw new RuntimeException('--date must be in YYYY-MM-DD format.');
         }
     }

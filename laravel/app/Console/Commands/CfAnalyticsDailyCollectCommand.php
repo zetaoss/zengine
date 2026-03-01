@@ -27,8 +27,8 @@ class CfAnalyticsDailyCollectCommand extends Command
             $this->info('Running daily analytics collection...');
             $dailyResult = $daily->collect($days, $debug, $debugWriter);
             $this->info("Zone: {$dailyResult['zoneId']}");
-            $this->line('Since: '.($dailyResult['sinceUtc']->utc()->format('Y-m-d')));
-            $this->line('Until: '.($dailyResult['untilUtc']->utc()->format('Y-m-d')));
+            $this->line('Since: '.($dailyResult['sinceUtc']->format('Y-m-d')));
+            $this->line('Until: '.($dailyResult['untilUtc']->format('Y-m-d')));
             $this->line('Daily timeslots fetched: '.count((array) ($dailyResult['timeslots'] ?? [])));
             $this->line(
                 "Daily DB write: inserted={$dailyResult['db']['inserted']}, updated={$dailyResult['db']['updated']}, skipped={$dailyResult['db']['skipped']}"
