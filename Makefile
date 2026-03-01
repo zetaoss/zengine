@@ -31,6 +31,11 @@ define run_pint
 	}
 endef
 
+define run_pint_fix
+	@echo "➡️  laravel/vendor/bin/pint $(1)"
+	@laravel/vendor/bin/pint $(1)
+endef
+
 define run_cached
 	@bash -lc 'set -euo pipefail; \
 	key="$(1)"; \
@@ -86,6 +91,14 @@ checks:
 	@$(MAKE) USE_CACHE=1 checks-php checks-svelte
 	@echo "✅  All checks passed"
 
+# fix runs auto-fixable checks with cache.
+.PHONY: fix
+fix:
+	@$(MAKE) USE_CACHE=1 fix-laravel-format fix-extension fix-skin
+	@$(MAKE) svelte-overrides
+	@$(MAKE) USE_CACHE=1 fix-main-svelte fix-skin-svelte
+	@echo "✅  Fix completed"
+
 # checks-no-cache runs the same tree with USE_CACHE=0.
 .PHONY: checks-no-cache
 checks-no-cache:
@@ -111,6 +124,22 @@ else
 	cd laravel && php artisan test
 endif
 
+.PHONY: checks-laravel-format
+checks-laravel-format:
+ifeq ($(USE_CACHE),1)
+	$(call run_cached,checks-laravel-format,$(MAKE) USE_CACHE=0 checks-laravel-format,laravel pint.json)
+else
+	$(call run_pint,laravel,laravel/vendor/bin/pint laravel)
+endif
+
+.PHONY: fix-laravel-format
+fix-laravel-format:
+ifeq ($(USE_CACHE),1)
+	$(call run_cached,fix-laravel-format,$(MAKE) USE_CACHE=0 fix-laravel-format,laravel pint.json)
+else
+	$(call run_pint_fix,laravel)
+endif
+
 .PHONY: checks-extension
 checks-extension:
 ifeq ($(USE_CACHE),1)
@@ -119,12 +148,28 @@ else
 	$(call run_pint,mwz/extensions/ZetaExtension,laravel/vendor/bin/pint mwz/extensions/ZetaExtension)
 endif
 
+.PHONY: fix-extension
+fix-extension:
+ifeq ($(USE_CACHE),1)
+	$(call run_cached,fix-extension,$(MAKE) USE_CACHE=0 fix-extension,mwz/extensions/ZetaExtension pint.json)
+else
+	$(call run_pint_fix,mwz/extensions/ZetaExtension)
+endif
+
 .PHONY: checks-skin
 checks-skin:
 ifeq ($(USE_CACHE),1)
 	$(call run_cached,checks-skin,$(MAKE) USE_CACHE=0 checks-skin,mwz/skins/ZetaSkin pint.json)
 else
 	$(call run_pint,mwz/skins/ZetaSkin,laravel/vendor/bin/pint mwz/skins/ZetaSkin)
+endif
+
+.PHONY: fix-skin
+fix-skin:
+ifeq ($(USE_CACHE),1)
+	$(call run_cached,fix-skin,$(MAKE) USE_CACHE=0 fix-skin,mwz/skins/ZetaSkin pint.json)
+else
+	$(call run_pint_fix,mwz/skins/ZetaSkin)
 endif
 
 .PHONY: checks-svelte
@@ -149,6 +194,16 @@ else
 	$(call run_pnpm,svelte,build)
 endif
 
+.PHONY: fix-main-svelte
+fix-main-svelte:
+ifeq ($(USE_CACHE),1)
+	$(call run_cached,fix-main-svelte,$(MAKE) USE_CACHE=0 fix-main-svelte,svelte)
+else
+	$(call run_pnpm,svelte,install --frozen-lockfile)
+	$(call run_pnpm,svelte,lint:fix)
+	$(call run_pnpm,svelte,format:fix)
+endif
+
 .PHONY: checks-skin-svelte
 checks-skin-svelte:
 ifeq ($(USE_CACHE),1)
@@ -159,4 +214,14 @@ else
 	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,format,pnpm -C mwz/skins/ZetaSkin/svelte format:fix)
 	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,audit --ignore-unfixable --ignore-registry-errors,pnpm -C mwz/skins/ZetaSkin/svelte audit --fix --ignore-unfixable && pnpm -C mwz/skins/ZetaSkin/svelte install --no-frozen-lockfile)
 	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,build)
+endif
+
+.PHONY: fix-skin-svelte
+fix-skin-svelte:
+ifeq ($(USE_CACHE),1)
+	$(call run_cached,fix-skin-svelte,$(MAKE) USE_CACHE=0 fix-skin-svelte,mwz/skins/ZetaSkin/svelte svelte/src/shared)
+else
+	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,install --frozen-lockfile)
+	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,lint:fix)
+	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,format:fix)
 endif
