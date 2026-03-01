@@ -3,7 +3,9 @@
 // laravel/routes/api.php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CfAnalyticsController;
 use App\Http\Controllers\CommonReportController;
+use App\Http\Controllers\MwStatisticsController;
 use App\Http\Controllers\OnelineController;
 use App\Http\Controllers\PageCommentController;
 use App\Http\Controllers\PageReactionController;
@@ -33,6 +35,10 @@ Route::get('/me', [AuthController::class, 'me'])->middleware('mwauth:maybe');
 Route::get('/me/avatar', [AuthController::class, 'getAvatar'])->middleware('mwauth');
 Route::post('/me/avatar', [AuthController::class, 'updateAvatar'])->middleware('mwauth');
 Route::get('/me/gravatar/verify', [AuthController::class, 'verifyGravatar'])->middleware('mwauth');
+
+Route::get('/dash/cf-analytics/hourly', [CfAnalyticsController::class, 'hourly']);
+Route::get('/dash/cf-analytics/daily/{days}', [CfAnalyticsController::class, 'daily'])->whereIn('days', ['7', '30']);
+Route::get('/dash/mw-statistics/daily/{days}', [MwStatisticsController::class, 'daily'])->whereIn('days', ['7', '30']);
 
 Route::get('/onelines/recent', [OnelineController::class, 'recent']);
 Route::get('/onelines', [OnelineController::class, 'index']);
