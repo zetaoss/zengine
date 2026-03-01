@@ -8,8 +8,6 @@ use RuntimeException;
 
 class CfAnalyticsApiService
 {
-    private const KST_TIMEZONE = 'Asia/Seoul';
-
     public function resolveCredentials(): array
     {
         $apiToken = (string) config('services.cloudflare.api_token');
@@ -20,19 +18,6 @@ class CfAnalyticsApiService
         }
 
         return [$apiToken, $zoneId];
-    }
-
-    public function kstRangeForDays(int $days): array
-    {
-        if ($days < 1) {
-            throw new RuntimeException('--days must be an integer greater than or equal to 1.');
-        }
-
-        $todayStartKst = CarbonImmutable::now(self::KST_TIMEZONE)->startOfDay();
-        $sinceKst = $todayStartKst->subDays($days - 1);
-        $untilKst = $todayStartKst->addDay();
-
-        return [$sinceKst, $untilKst];
     }
 
     public function utcRangeForDays(int $days): array
@@ -60,36 +45,6 @@ class CfAnalyticsApiService
         return [$sinceUtc, $untilUtc];
     }
 
-    public function kstDateStrings(CarbonImmutable $sinceKst, CarbonImmutable $untilKst): array
-    {
-        $dates = [];
-        $cursor = $sinceKst;
-        while ($cursor->lessThan($untilKst)) {
-            $dates[] = $cursor->toDateString();
-            $cursor = $cursor->addDay();
-        }
-
-        return $dates;
-    }
-
-    public function kstDayWindows(CarbonImmutable $sinceKst, CarbonImmutable $untilKst): array
-    {
-        $windows = [];
-        $cursor = $sinceKst;
-        while ($cursor->lessThan($untilKst)) {
-            $startKst = $cursor;
-            $endKst = $cursor->addDay();
-            $windows[] = [
-                'date_kst' => $startKst->toDateString(),
-                'start_utc' => $startKst->utc(),
-                'end_utc' => $endKst->utc(),
-            ];
-            $cursor = $endKst;
-        }
-
-        return $windows;
-    }
-
     public function utcDayWindows(CarbonImmutable $sinceUtc, CarbonImmutable $untilUtc): array
     {
         $windows = [];
@@ -110,14 +65,18 @@ class CfAnalyticsApiService
 
     public function runGraphql(string $apiToken, string $query, array $variables): array
     {
-        $response = Http::withToken($apiToken)
-            ->acceptJson()
-            ->asJson()
-            ->timeout(20)
-            ->post('https://api.cloudflare.com/client/v4/graphql', [
-                'query' => $query,
-                'variables' => $variables,
-            ]);
+        try {
+            $response = Http::withToken($apiToken)
+                ->acceptJson()
+                ->asJson()
+                ->timeout(20)
+                ->post('https://api.cloudflare.com/client/v4/graphql', [
+                    'query' => $query,
+                    'variables' => $variables,
+                ]);
+        } catch (\Throwable $e) {
+            throw new RuntimeException('Cloudflare API request failed before response: '.$e->getMessage(), 0, $e);
+        }
 
         if (! $response->ok()) {
             throw new RuntimeException("Cloudflare API request failed: HTTP {$response->status()} {$response->body()}");
@@ -143,8 +102,4 @@ class CfAnalyticsApiService
         return $json === false ? '{}' : $json;
     }
 
-    public function todayKstDateString(): string
-    {
-        return CarbonImmutable::now(self::KST_TIMEZONE)->toDateString();
-    }
 }

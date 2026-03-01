@@ -104,14 +104,6 @@ quickcheck:
 	@$(MAKE) USE_CACHE=1 quickcheck-main-svelte quickcheck-skin-svelte
 	@echo "✅  Quickcheck passed"
 
-# fix runs auto-fixable checks with cache.
-.PHONY: fix
-fix:
-	@$(MAKE) USE_CACHE=1 fix-laravel-format fix-extension fix-skin
-	@$(MAKE) svelte-overrides
-	@$(MAKE) USE_CACHE=1 fix-main-svelte fix-skin-svelte
-	@echo "✅  Fix completed"
-
 .PHONY: clear
 clear:
 	@echo "🧹 clear cache: $(CACHE_DIR)"

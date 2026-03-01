@@ -66,6 +66,7 @@
   let syncedHoverIndex = $state<number | null>(null)
   let data = $state<AnalyticsResp>(EMPTY)
   let mwData = $state<MwStatisticsResp>(EMPTY_MW)
+  let fetchVersion = 0
 
   const labels = $derived.by(() => (range === '24h' ? data.timeslots : data.timeslots.map((v) => normalizeDateKey(v))))
   const rows = $derived.by<RowDef[]>(() => buildRows(data))
@@ -73,11 +74,13 @@
   const mwRows = $derived.by<RowDef[]>(() => buildMwRows(mwData))
 
   async function fetchData() {
+    const version = ++fetchVersion
     loading = true
     failed = null
 
     if (range === '24h') {
       const [resp, err] = await httpy.get<AnalyticsResp>('/api/dash/cf-analytics/hourly')
+      if (version !== fetchVersion) return
       if (err) {
         failed = err.message
         loading = false
@@ -94,6 +97,7 @@
       httpy.get<AnalyticsResp>(`/api/dash/cf-analytics/daily/${days}`),
       httpy.get<MwStatisticsResp>(`/api/dash/mw-statistics/daily/${days}`),
     ])
+    if (version !== fetchVersion) return
 
     if (cfErr) {
       failed = cfErr.message
