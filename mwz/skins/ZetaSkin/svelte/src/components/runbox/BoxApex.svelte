@@ -96,7 +96,7 @@
     height: 0.7em;
     border: 1px solid rgb(148 163 184 / 0.8);
     border-radius: 0.1rem;
-    margin-right: 0.2rem;
+    margin: 0.2rem;
     vertical-align: middle;
   }
 </style>

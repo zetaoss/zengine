@@ -9,18 +9,23 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('runboxes', function (Blueprint $table) {
-            $table->id();
-            $table->string('hash', 255)->unique();
-            $table->tinyInteger('step');
+            $table->charset = 'utf8mb4';
+            $table->collation = 'utf8mb4_general_ci';
+
+            $table->increments('id');
+            $table->string('hash', 255);
+            $table->string('phase', 10);
             $table->unsignedInteger('user_id');
             $table->unsignedInteger('page_id');
-            $table->string('type', 8);
+            $table->string('type', 10);
             $table->json('payload');
             $table->json('outs')->nullable();
-            $table->unsignedInteger('cpu')->default(0);
-            $table->unsignedInteger('mem')->default(0);
-            $table->unsignedInteger('time')->default(0);
+            $table->float('cpu')->nullable();
+            $table->float('mem')->nullable();
+            $table->float('time')->nullable();
             $table->timestamps();
+
+            $table->unique('hash', 'unique_hash');
         });
     }
 
