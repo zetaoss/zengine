@@ -7,13 +7,14 @@
   import { page } from '$app/state'
 
   interface NavItem {
-    to: '/tool/common-report' | '/tool/write-request' | '/tool/frontplay'
+    to: '/tool/common-report' | '/tool/write-request' | '/tool/frontplay' | '/tool/dashboard'
     label: string
   }
 
   const navItems: NavItem[] = [
     { to: '/tool/common-report', label: '통용' },
     { to: '/tool/write-request', label: '작성요청' },
+    { to: '/tool/dashboard', label: '대시보드' },
     { to: '/tool/frontplay', label: 'FrontPlay' },
   ]
 

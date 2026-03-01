@@ -49,6 +49,10 @@ return [
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect' => env('APP_URL').'/auth/callback/google',
     ],
+    'cloudflare' => [
+        'api_token' => env('CLOUDFLARE_API_TOKEN'),
+        'zone_id' => env('CLOUDFLARE_ZONE_ID'),
+    ],
     'internal' => [
         'secret_key' => env('INTERNAL_SECRET_KEY'),
     ],
