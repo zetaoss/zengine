@@ -1,12 +1,40 @@
-/* eslint-disable no-undef */
-/* eslint-disable @typescript-eslint/no-unused-expressions */
-
 ;(function () {
   var klaroLoaded = false
   var gaLoaded = false
   var canTrack = false
   var lastTrackedUrl = ''
   var isQueued = false
+  var eeaCache = null
+
+  function getConsent(serviceName) {
+    var raw = localStorage.getItem('klaro')
+    if (!raw) return null
+
+    try {
+      var parsed = JSON.parse(raw)
+      if (!parsed || typeof parsed !== 'object') return null
+
+      var consents = parsed.consents
+      if (!consents || typeof consents !== 'object') return null
+
+      var consent = consents[serviceName]
+      return typeof consent === 'boolean' ? consent : null
+    } catch {
+      return null
+    }
+  }
+
+  function updateGaConsent(analyticsConsent, adsConsent) {
+    var gtag = window.gtag
+    if (typeof gtag !== 'function') return
+
+    gtag('consent', 'update', {
+      ad_personalization: adsConsent ? 'granted' : 'denied',
+      ad_storage: adsConsent ? 'granted' : 'denied',
+      ad_user_data: adsConsent ? 'granted' : 'denied',
+      analytics_storage: analyticsConsent ? 'granted' : 'denied',
+    })
+  }
 
   // https://klaro.org/docs/integration/annotated-configuration
   window.klaroConfig = {
@@ -17,7 +45,6 @@
         name: 'google-analytics',
         purposes: ['analytics'],
         callback: function (consent) {
-          typeof gtag == 'function' && gtag('consent', 'update', { analytics_storage: consent ? 'granted' : 'denied' })
           onAnalyticsConsentChange(consent)
         },
       },
@@ -25,22 +52,28 @@
         name: 'google-adsense',
         purposes: ['advertising'],
         callback: function (consent) {
-          typeof gtag == 'function' &&
-            gtag('consent', 'update', {
-              ad_personalization: consent ? 'granted' : 'denied',
-              ad_storage: consent ? 'granted' : 'denied',
-              ad_user_data: consent ? 'granted' : 'denied',
-            })
+          var analyticsConsent = getConsent('google-analytics') === true
+          if (analyticsConsent || consent === true) {
+            loadGa()
+          }
+          updateGaConsent(analyticsConsent, consent === true)
         },
       },
     ],
   }
 
   function onAnalyticsConsentChange(consent) {
-    canTrack = consent === true
+    var analyticsConsent = consent === true
+    var adsConsent = getConsent('google-adsense') === true
+
+    if (analyticsConsent || adsConsent) {
+      loadGa()
+    }
+    updateGaConsent(analyticsConsent, adsConsent)
+
+    canTrack = analyticsConsent
     if (!canTrack) return
 
-    loadGa()
     trackUrl()
   }
 
@@ -69,11 +102,13 @@
     var gtag =
       window.gtag ||
       function () {
-        window.dataLayer && window.dataLayer.push(arguments)
+        if (window.dataLayer) {
+          window.dataLayer.push(arguments)
+        }
       }
     window.gtag = gtag
 
-    var consent = 'granted'
+    var consent = 'denied'
     gtag('consent', 'default', {
       ad_personalization: consent,
       ad_storage: consent,
@@ -140,10 +175,12 @@
 
   async function getIsEEA(skipEeaLookup) {
     if (skipEeaLookup) return false
+    if (typeof eeaCache === 'boolean') return eeaCache
 
     var cached = localStorage.getItem('eea')
     if (cached === '1' || cached === '0') {
-      return cached === '1'
+      eeaCache = cached === '1'
+      return eeaCache
     }
 
     try {
@@ -153,42 +190,29 @@
       var payload = (await response.text()).trim()
       if (payload !== '0' && payload !== '1') throw new Error('invalid payload')
       localStorage.setItem('eea', payload)
-      return payload === '1'
+      eeaCache = payload === '1'
+      return eeaCache
     } catch {
-      return false
-    }
-  }
-
-  function getConsent(serviceName) {
-    var raw = localStorage.getItem('klaro')
-    if (!raw) return null
-
-    try {
-      var parsed = JSON.parse(raw)
-      if (!parsed || typeof parsed !== 'object') return null
-
-      var consents = parsed.consents
-      if (!consents || typeof consents !== 'object') return null
-
-      var consent = consents[serviceName]
-      return typeof consent === 'boolean' ? consent : null
-    } catch {
-      return null
+      // Fail safe: if lookup fails, assume EEA and require consent.
+      eeaCache = true
+      return eeaCache
     }
   }
 
   async function init() {
     var hasKlaro = localStorage.getItem('klaro') !== null
     var hasAnalyticsConsent = getConsent('google-analytics') === true
+    var hasAdsConsent = getConsent('google-adsense') === true
     var isEEA = await getIsEEA(hasKlaro)
 
     if (hasKlaro || isEEA) {
       loadKlaro()
     }
 
-    canTrack = hasAnalyticsConsent || (!hasKlaro && !isEEA)
-    if (canTrack) {
+    canTrack = hasAnalyticsConsent
+    if (hasAnalyticsConsent || hasAdsConsent) {
       loadGa()
+      updateGaConsent(hasAnalyticsConsent, hasAdsConsent)
     }
     trackUrl()
   }
