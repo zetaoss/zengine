@@ -18,6 +18,7 @@
         purposes: ['analytics'],
         callback: function (consent) {
           typeof gtag == 'function' && gtag('consent', 'update', { analytics_storage: consent ? 'granted' : 'denied' })
+          onAnalyticsConsentChange(consent)
         },
       },
       {
@@ -26,13 +27,21 @@
         callback: function (consent) {
           typeof gtag == 'function' &&
             gtag('consent', 'update', {
+              ad_personalization: consent ? 'granted' : 'denied',
               ad_storage: consent ? 'granted' : 'denied',
               ad_user_data: consent ? 'granted' : 'denied',
-              ad_personalization: consent ? 'granted' : 'denied',
             })
         },
       },
     ],
+  }
+
+  function onAnalyticsConsentChange(consent) {
+    canTrack = consent === true
+    if (!canTrack) return
+
+    loadGa()
+    trackUrl()
   }
 
   function loadKlaro() {
@@ -66,13 +75,13 @@
 
     var consent = 'granted'
     gtag('consent', 'default', {
-      ad_storage: consent,
-      analytics_storage: consent,
-      ad_user_data: consent,
       ad_personalization: consent,
+      ad_storage: consent,
+      ad_user_data: consent,
+      analytics_storage: consent,
     })
     gtag('js', new Date())
-    gtag('config', measurementId)
+    gtag('config', measurementId, { send_page_view: false })
 
     var script = document.createElement('script')
     script.async = true
@@ -150,15 +159,34 @@
     }
   }
 
+  function getConsent(serviceName) {
+    var raw = localStorage.getItem('klaro')
+    if (!raw) return null
+
+    try {
+      var parsed = JSON.parse(raw)
+      if (!parsed || typeof parsed !== 'object') return null
+
+      var consents = parsed.consents
+      if (!consents || typeof consents !== 'object') return null
+
+      var consent = consents[serviceName]
+      return typeof consent === 'boolean' ? consent : null
+    } catch {
+      return null
+    }
+  }
+
   async function init() {
     var hasKlaro = localStorage.getItem('klaro') !== null
+    var hasAnalyticsConsent = getConsent('google-analytics') === true
     var isEEA = await getIsEEA(hasKlaro)
 
     if (hasKlaro || isEEA) {
       loadKlaro()
     }
 
-    canTrack = hasKlaro || !isEEA
+    canTrack = hasAnalyticsConsent || (!hasKlaro && !isEEA)
     if (canTrack) {
       loadGa()
     }

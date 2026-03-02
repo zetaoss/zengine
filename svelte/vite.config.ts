@@ -21,6 +21,7 @@ const minifyStaticJsPlugin = (): Plugin => ({
         try {
           source = await readFile(outputPath, 'utf8')
         } catch {
+          console.warn(`[minify-static-js] Could not read file to minify: ${outputPath}`)
           return
         }
 
