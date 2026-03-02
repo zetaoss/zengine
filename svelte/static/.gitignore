@@ -1,3 +1,4 @@
-*.js
-*.txt
+ads.txt
+config.js
+robots.txt
 !.gitignore

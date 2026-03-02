@@ -23,6 +23,7 @@ class SkinZetaSkin extends SkinMustache
         $out->addHeadItem('adsense', '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='.getenv('ADSENSE_CLIENT').'" crossorigin="anonymous"></script>');
         $out->addStyle('/w/skins/ZetaSkin/dist/app.css?'.ASSET_HASH);
         $out->addScriptFile('/config.js?'.ASSET_HASH);
+        $out->addScriptFile('/track.js?'.ASSET_HASH);
         $out->addScriptFile('/w/skins/ZetaSkin/dist/app.js?'.ASSET_HASH);
     }
 
