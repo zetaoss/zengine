@@ -86,16 +86,16 @@ endef
 # check-svelte   check-overrides     -               overrides
 #                check-main-svelte   main svelte     install, lint, format, audit, build
 #                check-skin-svelte   skin svelte     install, lint, format, audit, build
-# check-go       check-gohttp        gohttp          golangci-lint, test, build
+# check-gohttp   check-gohttp        gohttp          golangci-lint, test, build
 .PHONY: checks
 checks:
-	@$(MAKE) USE_CACHE=1 check-php check-svelte check-go
+	@$(MAKE) USE_CACHE=1 check-php check-svelte check-gohttp
 	@echo "✅  All checks passed"
 
 # checks-no-cache runs the same tree with USE_CACHE=0.
 .PHONY: checks-no-cache
 checks-no-cache:
-	@$(MAKE) USE_CACHE=0 check-php check-svelte check-go
+	@$(MAKE) USE_CACHE=0 check-php check-svelte check-gohttp
 	@echo "✅  All checks passed (no cache)"
 
 # quickcheck runs non-mutating checks that correspond to `fix`.
@@ -103,6 +103,7 @@ checks-no-cache:
 quickcheck:
 	@$(MAKE) USE_CACHE=1 check-laravel-format check-extension check-skin
 	@$(MAKE) USE_CACHE=1 quickcheck-main-svelte quickcheck-skin-svelte
+	@$(MAKE) USE_CACHE=1 check-gohttp
 	@echo "✅  Quickcheck passed"
 
 .PHONY: clear
@@ -152,10 +153,6 @@ endif
 check-svelte:
 	@$(MAKE) svelte-overrides
 	@$(MAKE) USE_CACHE=$(USE_CACHE) check-main-svelte check-skin-svelte
-
-.PHONY: check-go
-check-go:
-	@$(MAKE) USE_CACHE=$(USE_CACHE) check-gohttp
 
 .PHONY: svelte-overrides
 svelte-overrides:
@@ -212,7 +209,12 @@ ifeq ($(USE_CACHE),1)
 	$(call run_cached,check-gohttp,$(MAKE) USE_CACHE=0 check-gohttp,gohttp)
 else
 	@echo "➡️  gohttp: golangci-lint run"
-	cd gohttp && golangci-lint run
+	@if command -v golangci-lint >/dev/null 2>&1; then \
+		cd gohttp && golangci-lint run; \
+	else \
+		echo "ℹ️  golangci-lint not found, using go run fallback"; \
+		cd gohttp && go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8 run; \
+	fi
 	@echo "➡️  gohttp: go test ./..."
 	cd gohttp && go test ./...
 	@echo "➡️  gohttp: go build ./..."
