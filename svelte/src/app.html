@@ -4,6 +4,41 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>제타위키</title>
+    <script>
+      ;(function () {
+        var w = window
+        var measurementId = w.ZCONF && w.ZCONF.gaMeasurementId
+        if (!measurementId || typeof measurementId !== 'string') return
+
+        w.dataLayer = w.dataLayer || []
+        w.gtag =
+          w.gtag ||
+          function () {
+            w.dataLayer.push(arguments)
+          }
+
+        var src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(measurementId)
+        if (!document.querySelector('script[src="' + src + '"]')) {
+          var script = document.createElement('script')
+          script.async = true
+          script.src = src
+          document.head.appendChild(script)
+        }
+
+        if (w.__gtagInitialized__ && w.__gtagConfiguredMeasurementId__ === measurementId) return
+
+        w.gtag('consent', 'default', {
+          ad_storage: 'denied',
+          ad_user_data: 'denied',
+          ad_personalization: 'denied',
+          analytics_storage: 'denied',
+        })
+        w.gtag('js', new Date())
+        w.gtag('config', measurementId, { send_page_view: false })
+        w.__gtagInitialized__ = true
+        w.__gtagConfiguredMeasurementId__ = measurementId
+      })()
+    </script>
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" type="image/svg+xml" href="/zeta.svg" />
     %sveltekit.head%
