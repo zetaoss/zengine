@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Cache;
 
 class CheckRedisCacheCommand extends Command
 {
-    protected $signature = 'app:check-redis-cache';
+    protected $signature = 'z:check-redis-cache';
     protected $description = 'Check redis cache';
 
     public function handle()
