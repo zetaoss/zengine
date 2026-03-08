@@ -3,7 +3,6 @@ package util
 import (
 	"bytes"
 	"net/http"
-	"strconv"
 )
 
 type Injector struct {
@@ -15,10 +14,15 @@ func NewInjector(zConfStatic string) *Injector {
 }
 
 func (i *Injector) InjectScript(html []byte, r *http.Request) []byte {
+	policy := "strict"
+	if r.Header.Get("X-Policy") == "standard" {
+		policy = "standard"
+	}
+
 	return bytes.Replace(
 		html,
 		[]byte("</title>"),
-		[]byte(`</title><script>window.ZCONF={`+i.zConfStatic+`,"policy":`+strconv.Quote(r.Header.Get("X-Policy"))+`};</script>`),
+		[]byte(`</title><script>window.ZCONF={`+i.zConfStatic+`,"policy":"`+policy+`"};</script>`),
 		1,
 	)
 }

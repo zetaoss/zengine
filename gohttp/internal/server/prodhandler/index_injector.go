@@ -3,6 +3,7 @@ package prodhandler
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -37,5 +38,7 @@ func (ii *IndexInjector) ServeInjectedIndex(w http.ResponseWriter, r *http.Reque
 		w.WriteHeader(http.StatusOK)
 		return
 	}
-	_, _ = w.Write(injected)
+	if _, err := w.Write(injected); err != nil {
+		log.Printf("write err: %v", err)
+	}
 }

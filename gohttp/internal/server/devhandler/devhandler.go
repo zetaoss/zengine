@@ -44,7 +44,9 @@ func NewHandler(injector *util.Injector) http.Handler {
 		if err != nil {
 			return err
 		}
-		_ = resp.Body.Close()
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("close err: %v", err)
+		}
 
 		mutated := injector.InjectScript(body, resp.Request)
 		resp.Body = io.NopCloser(bytes.NewReader(mutated))
