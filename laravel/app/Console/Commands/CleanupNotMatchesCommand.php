@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 
 class CleanupNotMatchesCommand extends Command
 {
-    protected $signature = 'app:cleanup-not-matches {max_hit=1}';
+    protected $signature = 'z:cleanup-not-matches {max_hit=1}';
     protected $description = 'Delete low-signal not_matches rows (hit <= max_hit)';
 
     public function handle(): int

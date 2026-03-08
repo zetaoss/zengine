@@ -8,7 +8,7 @@ use RuntimeException;
 
 class CfAnalyticsListCommand extends Command
 {
-    protected $signature = 'app:cf-analytics-list';
+    protected $signature = 'z:cf-analytics-list';
     protected $description = 'List available cf analytics datasets and fields';
 
     public function handle(CfAnalyticsApiService $api): int

@@ -8,7 +8,7 @@ use RuntimeException;
 
 class CfAnalyticsHourlyCollectCommand extends Command
 {
-    protected $signature = 'app:cf-analytics-hourly-collect
+    protected $signature = 'z:cf-analytics-hourly-collect
                             {--days=2 : Number of trailing days from current UTC hour (hour-aligned)}
                             {--debug : Print raw GraphQL JSON responses}';
     protected $description = 'Collect Cloudflare analytics hourly dataset';
