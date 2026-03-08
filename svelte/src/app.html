@@ -4,66 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>제타위키</title>
+    <script src="/tracking-bootstrap.js"></script>
     <script>
       ;(function () {
-        const w = window
-        const measurementId = w.ZCONF && w.ZCONF.gaMeasurementId
-        if (!measurementId || typeof measurementId !== 'string') return
-        const policy = w.ZCONF && w.ZCONF.policy
-
-        const readCookie = function (name) {
-          const key = name + '='
-          const tokens = document.cookie ? document.cookie.split(';') : []
-          for (let i = 0; i < tokens.length; i += 1) {
-            const token = tokens[i].trim()
-            if (!token.startsWith(key)) continue
-            const raw = token.slice(key.length)
-            try {
-              return decodeURIComponent(raw)
-            } catch (_err) {
-              return raw
-            }
-          }
-          return ''
-        }
-
-        const rawConsent = readCookie('consent')
-        let canBootGtag = policy === 'standard'
-        if (rawConsent) {
-          const params = new URLSearchParams(rawConsent)
-          const analyticsGranted = params.get('analytics_storage') === 'granted'
-          const adsGranted = params.get('ad_storage') === 'granted'
-          canBootGtag = analyticsGranted || adsGranted
-        }
-        if (!canBootGtag) return
-
-        w.dataLayer = w.dataLayer || []
-        w.gtag =
-          w.gtag ||
-          function () {
-            w.dataLayer.push(arguments)
-          }
-
-        const src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(measurementId)
-        if (!document.querySelector('script[src="' + src + '"]')) {
-          const script = document.createElement('script')
-          script.async = true
-          script.src = src
-          document.head.appendChild(script)
-        }
-
-        if (w.__gtagInitialized__ && w.__gtagConfiguredMeasurementId__ === measurementId) return
-
-        w.gtag('consent', 'default', {
-          ad_storage: 'denied',
-          ad_user_data: 'denied',
-          ad_personalization: 'denied',
-          analytics_storage: 'denied',
-        })
-        w.gtag('js', new Date())
-        w.gtag('config', measurementId, { send_page_view: false })
-        w.__gtagInitialized__ = true
-        w.__gtagConfiguredMeasurementId__ = measurementId
+        window.zetaTrackingBootstrap?.preloadGtag?.()
       })()
     </script>
     <link rel="icon" href="/favicon.ico" sizes="any" />
