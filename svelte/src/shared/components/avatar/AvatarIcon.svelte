@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { getAvatarBaseUrl } from '$shared/config'
   import type { User } from '$shared/types/user'
+  import { getZConf } from '$shared/utils/zConf'
 
   type AvatarType = 0 | 1 | 2 | 3
 
@@ -9,7 +9,7 @@
   export let typ: AvatarType = 0
   export let showBorder = false
 
-  const baseUrl = getAvatarBaseUrl()
+  const baseUrl = getZConf().avatarBaseUrl
 
   $: src = (() => {
     if (!user) return ''

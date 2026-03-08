@@ -1,0 +1,7 @@
+:root {
+  --color-success: #14866d;
+}
+
+.dark {
+  --color-success: #2cb491;
+}

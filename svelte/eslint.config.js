@@ -33,6 +33,9 @@ export default defineConfig(
         svelteConfig,
       },
     },
+    rules: {
+      'svelte/block-lang': ['error', { script: 'ts', style: [null, 'postcss'] }],
+    },
   },
   {
     name: 'app/import-sorting',

@@ -13,10 +13,10 @@ This repo is a monorepo that contains multiple stacks.
 |   `-- skins/
 |       `-- ZetaSkin/                         # ZetaSkin
 |           |-- dist/                         # - skin Svelte build output
-|           |-- svelte/                       # - skin Svelte project
+|           |-- svelte/                       # - skin Svelte: plain Svelte + Vite project
 |           |   `-- src/lib/shared (symlink)  # - points to main shared source
 |           `-- templates/                    # - skin Mustache templates
-|-- svelte/                                   # main Svelte project
+|-- svelte/                                   # main Svelte: SvelteKit project
 |   |-- src/lib/shared                        # - main shared source
 |   `-- dist/                                 # - main Svelte build output (route /)
 `-- w/                                        # MediaWiki core source (route /w & /wiki)

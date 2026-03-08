@@ -17,11 +17,18 @@ jobs:
   create-or-update-pr:
     if: github.ref_type == 'branch'
     runs-on: ubuntu-latest
+    env:
+      AUTO_PR_TOKEN: ${{ secrets.AUTO_PR_TOKEN }}
     steps:
+      - name: Skip auto-pr (dependabot or missing token)
+        if: ${{ github.actor == 'dependabot[bot]' || env.AUTO_PR_TOKEN == '' }}
+        run: echo "Skip auto-pr: actor=${{ github.actor }}, token_present=${{ env.AUTO_PR_TOKEN != '' }}"
+
       - name: Create or update PR
+        if: ${{ github.actor != 'dependabot[bot]' && env.AUTO_PR_TOKEN != '' }}
         uses: actions/github-script@v8
         with:
-          github-token: ${{ secrets.AUTO_PR_TOKEN }}
+          github-token: ${{ env.AUTO_PR_TOKEN }}
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
