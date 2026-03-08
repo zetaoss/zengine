@@ -22,7 +22,8 @@ jobs:
     steps:
       - name: Skip auto-pr (dependabot or missing token)
         if: ${{ github.actor == 'dependabot[bot]' || env.AUTO_PR_TOKEN == '' }}
-        run: echo "Skip auto-pr: actor=${{ github.actor }}, token_present=${{ env.AUTO_PR_TOKEN != '' }}"
+        run: |
+          echo "Skip auto-pr: actor=${{ github.actor }}, token_present=${{ env.AUTO_PR_TOKEN != '' }}"
 
       - name: Create or update PR
         if: ${{ github.actor != 'dependabot[bot]' && env.AUTO_PR_TOKEN != '' }}
