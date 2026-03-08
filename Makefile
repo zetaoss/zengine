@@ -86,15 +86,16 @@ endef
 # check-svelte   check-overrides     -               overrides
 #                check-main-svelte   main svelte     install, lint, format, audit, build
 #                check-skin-svelte   skin svelte     install, lint, format, audit, build
+# check-go       check-gohttp        gohttp          golangci-lint, test, build
 .PHONY: checks
 checks:
-	@$(MAKE) USE_CACHE=1 check-php check-svelte
+	@$(MAKE) USE_CACHE=1 check-php check-svelte check-go
 	@echo "✅  All checks passed"
 
 # checks-no-cache runs the same tree with USE_CACHE=0.
 .PHONY: checks-no-cache
 checks-no-cache:
-	@$(MAKE) USE_CACHE=0 check-php check-svelte
+	@$(MAKE) USE_CACHE=0 check-php check-svelte check-go
 	@echo "✅  All checks passed (no cache)"
 
 # quickcheck runs non-mutating checks that correspond to `fix`.
@@ -152,6 +153,10 @@ check-svelte:
 	@$(MAKE) svelte-overrides
 	@$(MAKE) USE_CACHE=$(USE_CACHE) check-main-svelte check-skin-svelte
 
+.PHONY: check-go
+check-go:
+	@$(MAKE) USE_CACHE=$(USE_CACHE) check-gohttp
+
 .PHONY: svelte-overrides
 svelte-overrides:
 	@echo "➡️  root: pnpm overrides"
@@ -164,7 +169,7 @@ ifeq ($(USE_CACHE),1)
 else
 	$(call run_pnpm,svelte,install --frozen-lockfile)
 	$(call run_pnpm,svelte,lint,pnpm -C svelte lint)
-	$(call run_pnpm,svelte,format,pnpm -C svelte format)
+	$(call run_pnpm,svelte,format,pnpm -C svelte format:fix)
 	$(call run_pnpm,svelte,audit --ignore-unfixable --ignore-registry-errors,pnpm -C svelte audit --fix --ignore-unfixable && pnpm -C svelte install --no-frozen-lockfile)
 	$(call run_pnpm,svelte,build)
 endif
@@ -176,7 +181,7 @@ ifeq ($(USE_CACHE),1)
 else
 	$(call run_pnpm,svelte,install --frozen-lockfile)
 	$(call run_pnpm,svelte,lint,pnpm -C svelte lint)
-	$(call run_pnpm,svelte,format,pnpm -C svelte format)
+	$(call run_pnpm,svelte,format,pnpm -C svelte format:fix)
 endif
 
 .PHONY: check-skin-svelte
@@ -186,7 +191,7 @@ ifeq ($(USE_CACHE),1)
 else
 	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,install --frozen-lockfile)
 	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,lint,pnpm -C mwz/skins/ZetaSkin/svelte lint)
-	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,format,pnpm -C mwz/skins/ZetaSkin/svelte format)
+	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,format,pnpm -C mwz/skins/ZetaSkin/svelte format:fix)
 	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,audit --ignore-unfixable --ignore-registry-errors,pnpm -C mwz/skins/ZetaSkin/svelte audit --fix --ignore-unfixable && pnpm -C mwz/skins/ZetaSkin/svelte install --no-frozen-lockfile)
 	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,build)
 endif
@@ -198,5 +203,18 @@ ifeq ($(USE_CACHE),1)
 else
 	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,install --frozen-lockfile)
 	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,lint,pnpm -C mwz/skins/ZetaSkin/svelte lint)
-	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,format,pnpm -C mwz/skins/ZetaSkin/svelte format)
+	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,format,pnpm -C mwz/skins/ZetaSkin/svelte format:fix)
+endif
+
+.PHONY: check-gohttp
+check-gohttp:
+ifeq ($(USE_CACHE),1)
+	$(call run_cached,check-gohttp,$(MAKE) USE_CACHE=0 check-gohttp,gohttp)
+else
+	@echo "➡️  gohttp: golangci-lint run"
+	cd gohttp && golangci-lint run
+	@echo "➡️  gohttp: go test ./..."
+	cd gohttp && go test ./...
+	@echo "➡️  gohttp: go build ./..."
+	cd gohttp && go build ./...
 endif

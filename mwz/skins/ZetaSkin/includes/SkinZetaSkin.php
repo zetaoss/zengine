@@ -18,19 +18,15 @@ class SkinZetaSkin extends SkinMustache
     {
         self::$action = $out->getActionName();
         self::$pageId = (int) $skin->getTitle()->getArticleID();
-
         $out->addHTMLClasses($_COOKIE['theme'] ?? '');
-        $out->addHeadItem('adsense', '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='.getenv('ADSENSE_CLIENT').'" crossorigin="anonymous"></script>');
         $out->addStyle('/w/skins/ZetaSkin/dist/app.css?'.ASSET_HASH);
-        $out->addScriptFile('/config.js?'.ASSET_HASH);
-        $out->addScriptFile('/track.js?'.ASSET_HASH);
+        $out->addHeadItem('zconf', '<script>window.ZCONF={'.ZCONF_STATIC.',"policy":'.json_encode($_SERVER['HTTP_X_POLICY'] ?? '').'};</script>');
         $out->addScriptFile('/w/skins/ZetaSkin/dist/app.js?'.ASSET_HASH);
     }
 
     public function getTemplateData()
     {
         $data = parent::getTemplateData();
-
         self::$lastModified = $data['data-last-modified']['timestamp'];
         self::$isArticleView = $data['is-article'] && self::$action == 'view';
         $data['hasMeta'] = self::$isArticleView;
@@ -39,14 +35,6 @@ class SkinZetaSkin extends SkinMustache
 
         self::$dataToc = $data['data-toc'] ?? [];
         $data['hasToc'] = ! empty(self::$dataToc);
-
-        if ($data['is-anon'] && self::$isArticleView) {
-            $data['ads'] = [
-                'client' => getenv('ADSENSE_CLIENT'),
-                'slotTop' => getenv('ADSENSE_SLOT_TOP'),
-                'slotBottom' => getenv('ADSENSE_SLOT_BOTTOM'),
-            ];
-        }
 
         $data['pageButtons'] = $this->getPageButtons();
 

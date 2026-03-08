@@ -15,9 +15,9 @@ Monorepo for the zengine stack.
 |   `-- skins/
 |       `-- ZetaSkin/        # zeta wiki skin
 |           |-- dist/        # skin Svelte build output
-|           |-- svelte/      # skin Svelte project
+|           |-- svelte/      # skin Svelte: plain Svelte + Vite project
 |           `-- templates/   # skin Mustache templates
-|-- svelte/                  # main Svelte project
+|-- svelte/                  # main Svelte: SvelteKit project
 |   `-- dist/                # main Svelte build output (route /)
 `-- w/                       # MediaWiki core source (route /w & /wiki)
 ```
