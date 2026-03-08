@@ -17,6 +17,7 @@ class RefreshWriteRequestCommand extends Command
     {
         try {
             $targets = $this->collectTargets();
+            $targetIds = $targets->pluck('id')->map(fn ($id) => (int) $id)->all();
             if ($targets->isEmpty()) {
                 $this->info('No write-request rows found in first pages.');
 
@@ -64,6 +65,15 @@ class RefreshWriteRequestCommand extends Command
                         ->whereIn('id', $toTodo)
                         ->update([
                             'writed_at' => null,
+                            'updated_at' => $now,
+                        ]);
+                }
+
+                // Mark all checked rows as refreshed so stale sweep keeps rotating.
+                if (! empty($targetIds)) {
+                    DB::table('write_requests')
+                        ->whereIn('id', $targetIds)
+                        ->update([
                             'updated_at' => $now,
                         ]);
                 }
@@ -125,10 +135,7 @@ class RefreshWriteRequestCommand extends Command
 
     private function fetchTitleExistsMap(array $titles): array
     {
-        $apiServer = rtrim((string) env('API_SERVER', ''), '/');
-        if ($apiServer === '') {
-            throw new RuntimeException('Missing API_SERVER environment variable.');
-        }
+        $apiServer = (string) getenv('API_SERVER');
 
         $map = [];
 
@@ -165,7 +172,7 @@ class RefreshWriteRequestCommand extends Command
                 }
                 $exists = ! array_key_exists('missing', $page);
                 foreach ($this->titleVariants($title) as $variant) {
-                    $map[$variant] = $exists;
+                    $map[$this->normalizeTitleKey($variant)] = $exists;
                 }
             }
         }
@@ -176,8 +183,9 @@ class RefreshWriteRequestCommand extends Command
     private function resolveExists(array $map, string $title): bool
     {
         foreach ($this->titleVariants($title) as $variant) {
-            if (array_key_exists($variant, $map)) {
-                return (bool) $map[$variant];
+            $normalized = $this->normalizeTitleKey($variant);
+            if (array_key_exists($normalized, $map)) {
+                return (bool) $map[$normalized];
             }
         }
 
@@ -196,5 +204,10 @@ class RefreshWriteRequestCommand extends Command
             str_replace('_', ' ', $title),
             str_replace(' ', '_', $title),
         ]));
+    }
+
+    private function normalizeTitleKey(string $title): string
+    {
+        return mb_strtolower(trim($title), 'UTF-8');
     }
 }
