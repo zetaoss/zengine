@@ -28,9 +28,9 @@
     const seq = ++renderSeq
     if (!getTrackingState().canShowAds) return block()
 
-    const adSense = getZConf().adSense
-    const client = adSense.client || ''
-    const slot = adSense.slots[index]
+    const zConf = getZConf()
+    const client = zConf.adClient || ''
+    const slot = zConf.adSlots[index]
     if (!client || !slot) return block()
 
     const changed = adClient !== client || adSlot !== slot

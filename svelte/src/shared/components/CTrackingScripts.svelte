@@ -11,7 +11,7 @@
   const loadAdsenseScript = async (): Promise<boolean> => {
     if (!getTrackingState().canShowAds) return false
 
-    const client = getZConf().adSense.client
+    const client = getZConf().adClient
     if (!client) return false
 
     if (adsenseScriptPromise) return adsenseScriptPromise

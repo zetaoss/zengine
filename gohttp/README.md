@@ -10,7 +10,7 @@ Go HTTP server for zengine front routing.
   - Injects runtime config script into HTML responses
 - `prod`
   - Serves static files from `/app/svelte/dist` (fixed)
-  - Returns `404` when requested file is missing
+  - If a requested file exists, serve it; otherwise serve injected `index.html` for routes and return `404` for static asset paths
   - Injects runtime config script into served `index.html`
 
 ## Run
@@ -40,8 +40,8 @@ Runtime config is injected as:
 ```
 
 Injected values are built from:
-- `ADSENSE_CLIENT`
-- `ADSENSE_SLOTS` (comma-separated, e.g. `slotTop,slotBottom`)
+- `AD_CLIENT`
+- `AD_SLOTS` (comma-separated, e.g. `foo,bar`)
 - `AVATAR_BASE_URL`
 - `GA_MEASUREMENT_ID`
 - request header `X-Policy`

@@ -15,7 +15,8 @@ declare global {
     dataLayer?: unknown[]
     gtag?: (...args: unknown[]) => void
     ZCONF?: Partial<ZConf> & {
-      adSense?: Partial<ZConf['adSense']> & { slotTop?: string; slotBottom?: string }
+      adClient?: string
+      adSlots?: string | string[]
     }
   }
 

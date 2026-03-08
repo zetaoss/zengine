@@ -43,10 +43,10 @@ func TestParseMode(t *testing.T) {
 	})
 }
 
-func TestParseCSV(t *testing.T) {
+func TestParseCommaSeparated(t *testing.T) {
 	t.Parallel()
 
-	got := parseCSV("slotA, slotB ,slotC")
+	got := parseCommaSeparated("slotA, slotB ,slotC")
 	want := []string{"slotA", "slotB", "slotC"}
 	if len(got) != len(want) {
 		t.Fatalf("len = %d, want %d (%v)", len(got), len(want), got)
@@ -57,17 +57,28 @@ func TestParseCSV(t *testing.T) {
 		}
 	}
 
-	empty := parseCSV("")
+	empty := parseCommaSeparated("")
 	if len(empty) != 0 {
-		t.Fatalf("parseCSV empty = %v, want []", empty)
+		t.Fatalf("parseCommaSeparated empty = %v, want []", empty)
+	}
+
+	filtered := parseCommaSeparated("slotA, , ,slotB,,   ")
+	filteredWant := []string{"slotA", "slotB"}
+	if len(filtered) != len(filteredWant) {
+		t.Fatalf("filtered len = %d, want %d (%v)", len(filtered), len(filteredWant), filtered)
+	}
+	for i := range filteredWant {
+		if filtered[i] != filteredWant[i] {
+			t.Fatalf("filtered[%d] = %q, want %q", i, filtered[i], filteredWant[i])
+		}
 	}
 }
 
 func TestZConfStaticFromEnv(t *testing.T) {
 	t.Setenv("AVATAR_BASE_URL", "https://avatar.example")
 	t.Setenv("GA_MEASUREMENT_ID", "G-TEST123")
-	t.Setenv("ADSENSE_CLIENT", "ca-pub-123")
-	t.Setenv("ADSENSE_SLOTS", "top,bottom")
+	t.Setenv("AD_CLIENT", "ca-pub-123")
+	t.Setenv("AD_SLOTS", "foo,bar")
 
 	got, err := zConfStaticFromEnv()
 	if err != nil {
@@ -82,8 +93,8 @@ func TestZConfStaticFromEnv(t *testing.T) {
 	checks := []string{
 		`"avatarBaseUrl":"https://avatar.example"`,
 		`"gaMeasurementId":"G-TEST123"`,
-		`"client":"ca-pub-123"`,
-		`"slots":["top","bottom"]`,
+		`"adClient":"ca-pub-123"`,
+		`"adSlots":["foo","bar"]`,
 	}
 	for _, s := range checks {
 		if !strings.Contains(got, s) {

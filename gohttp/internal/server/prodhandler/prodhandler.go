@@ -29,6 +29,10 @@ func NewHandler(injector *util.Injector) (http.Handler, error) {
 			return
 		}
 		if !distPathExists(cleanPath) {
+			if path.Ext(path.Base(cleanPath)) != "" {
+				http.NotFound(w, r)
+				return
+			}
 			indexInjector.ServeInjectedIndex(w, r)
 			return
 		}

@@ -20,7 +20,7 @@ class SkinZetaSkin extends SkinMustache
         self::$pageId = (int) $skin->getTitle()->getArticleID();
         $out->addHTMLClasses($_COOKIE['theme'] ?? '');
         $out->addStyle('/w/skins/ZetaSkin/dist/app.css?'.ASSET_HASH);
-        $out->addHeadItem('zconf', '<script>window.ZCONF={'.ZCONF_STATIC.',"policy":'.json_encode($_SERVER['HTTP_X_POLICY'] ?? '').'};</script>');
+        $out->addHeadItem('zconf', '<script>window.ZCONF={'.ZCONF_STATIC.',"policy":"'.((($_SERVER['HTTP_X_POLICY'] ?? '') === 'standard') ? 'standard' : 'strict').'"};</script>');
         $out->addScriptFile('/w/skins/ZetaSkin/dist/app.js?'.ASSET_HASH);
     }
 

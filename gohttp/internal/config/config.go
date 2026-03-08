@@ -52,10 +52,8 @@ func zConfStaticFromEnv() (string, error) {
 	payload, err := json.Marshal(zConf{
 		AvatarBaseURL:   os.Getenv("AVATAR_BASE_URL"),
 		GAMeasurementID: os.Getenv("GA_MEASUREMENT_ID"),
-		AdSense: adSenseConfig{
-			Client: os.Getenv("ADSENSE_CLIENT"),
-			Slots:  parseCSV(os.Getenv("ADSENSE_SLOTS")),
-		},
+		AdClient:        os.Getenv("AD_CLIENT"),
+		AdSlots:         parseCommaSeparated(os.Getenv("AD_SLOTS")),
 	})
 	if err != nil {
 		return "", fmt.Errorf("build zconf: %w", err)
@@ -68,23 +66,23 @@ func zConfStaticFromEnv() (string, error) {
 }
 
 type zConf struct {
-	AvatarBaseURL   string        `json:"avatarBaseUrl"`
-	GAMeasurementID string        `json:"gaMeasurementId"`
-	AdSense         adSenseConfig `json:"adSense"`
+	AvatarBaseURL   string   `json:"avatarBaseUrl"`
+	GAMeasurementID string   `json:"gaMeasurementId"`
+	AdClient        string   `json:"adClient"`
+	AdSlots         []string `json:"adSlots"`
 }
 
-type adSenseConfig struct {
-	Client string   `json:"client"`
-	Slots  []string `json:"slots"`
-}
-
-func parseCSV(raw string) []string {
+func parseCommaSeparated(raw string) []string {
 	if raw == "" {
 		return []string{}
 	}
 	parts := strings.Split(raw, ",")
-	for i := range parts {
-		parts[i] = strings.TrimSpace(parts[i])
+	result := make([]string, 0, len(parts))
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
 	}
-	return parts
+	return result
 }
