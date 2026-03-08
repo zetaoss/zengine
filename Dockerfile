@@ -23,7 +23,7 @@ ARG TARGETOS
 ARG TARGETARCH
 
 WORKDIR /src/gohttp
-COPY gohttp/go.mod ./
+COPY gohttp/go.* ./
 RUN go mod download
 COPY gohttp/ ./
 RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-$(go env GOARCH)} go build -trimpath -ldflags="-s -w" -o /out/gohttp .
