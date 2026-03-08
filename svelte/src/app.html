@@ -4,6 +4,59 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>제타위키</title>
+    <script>
+      ;(function () {
+        function readCookie(name) {
+          const key = name + '='
+          const tokens = document.cookie ? document.cookie.split(';') : []
+          for (let i = 0; i < tokens.length; i += 1) {
+            const token = tokens[i].trim()
+            if (!token.startsWith(key)) continue
+            const raw = token.slice(key.length)
+            try {
+              return decodeURIComponent(raw)
+            } catch {
+              return raw
+            }
+          }
+          return ''
+        }
+
+        function canBootGtag(zconf) {
+          const policy = zconf && zconf.policy
+          const rawConsent = readCookie('consent')
+          if (!rawConsent) return policy === 'standard'
+          const params = new URLSearchParams(rawConsent)
+          return params.get('analytics_storage') === 'granted' || params.get('ad_storage') === 'granted'
+        }
+
+        const measurementId = window.ZCONF && window.ZCONF.gaMeasurementId
+        if (!measurementId || typeof measurementId !== 'string') return
+        if (!canBootGtag(window.ZCONF)) return
+
+        window.dataLayer = window.dataLayer || []
+        window.gtag =
+          window.gtag ||
+          function () {
+            window.dataLayer.push(arguments)
+          }
+
+        const src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(measurementId)
+        if (document.querySelector('script[src="' + src + '"]')) return
+        const script = document.createElement('script')
+        script.async = true
+        script.dataset.zetaGtag = measurementId
+        script.src = src
+        script.addEventListener(
+          'load',
+          () => {
+            script.dataset.zetaLoaded = '1'
+          },
+          { once: true },
+        )
+        document.head.appendChild(script)
+      })()
+    </script>
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" type="image/svg+xml" href="/zeta.svg" />
     %sveltekit.head%

@@ -8,16 +8,6 @@
 
   let adsenseScriptPromise: Promise<boolean> | null = null
 
-  const hasGtagRuntimeSignals = (): boolean => {
-    const dl = window.dataLayer
-    if (!Array.isArray(dl)) return false
-    return dl.some((entry) => {
-      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return false
-      const event = (entry as { event?: unknown }).event
-      return event === 'gtm.js' || event === 'gtm.dom' || event === 'gtm.load'
-    })
-  }
-
   const loadAdsenseScript = async (): Promise<boolean> => {
     if (!getTrackingState().canShowAds) return false
 
@@ -88,21 +78,7 @@
 
     const existing = document.querySelector<HTMLScriptElement>(`script[src*="googletagmanager.com/gtag/js"][src*="id=${measurementId}"]`)
     if (existing) {
-      w.__gtagScriptPromise__ = new Promise<boolean>((resolve) => {
-        if (existing.dataset.zetaLoaded === '1' || hasGtagRuntimeSignals()) {
-          resolve(true)
-          return
-        }
-
-        const onLoad = () => {
-          existing.dataset.zetaLoaded = '1'
-          resolve(true)
-        }
-        const onError = () => resolve(false)
-        existing.addEventListener('load', onLoad, { once: true })
-        existing.addEventListener('error', onError, { once: true })
-        window.setTimeout(() => resolve(hasGtagRuntimeSignals()), 1500)
-      })
+      w.__gtagScriptPromise__ = Promise.resolve(true)
       return w.__gtagScriptPromise__
     }
 
