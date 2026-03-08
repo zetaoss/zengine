@@ -196,6 +196,9 @@
     installNavTracker()
 
     const w = window
+    w.dataLayer = w.dataLayer || []
+    w.gtag = w.gtag || ((...args: unknown[]) => w.dataLayer?.push(args))
+
     if (w.__gtagInitialized__ && w.__gtagConfiguredMeasurementId__ === measurementId) {
       updateAnalyticsConsent()
       trackPageView()
@@ -204,9 +207,6 @@
 
     const loaded = await loadGtagScript(measurementId)
     if (!loaded) return
-
-    w.dataLayer = w.dataLayer || []
-    w.gtag = w.gtag || ((...args: unknown[]) => w.dataLayer?.push(args))
 
     if (w.__gtagInitialized__ && w.__gtagConfiguredMeasurementId__ === measurementId) {
       updateAnalyticsConsent()
