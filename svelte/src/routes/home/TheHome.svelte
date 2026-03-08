@@ -1,5 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths'
+  import CAdsenseSlot from '$shared/components/CAdsenseSlot.svelte'
   import ZCard from '$shared/ui/ZCard.svelte'
 
   import HomeAbout from './HomeAbout.svelte'
@@ -40,4 +41,5 @@
       <HomeNewPages />
     </ZCard>
   </div>
+  <CAdsenseSlot index={1} />
 </div>
