@@ -10,7 +10,7 @@ use RuntimeException;
 
 class MwStatisticsCollectCommand extends Command
 {
-    protected $signature = 'app:mw-statistics-collect
+    protected $signature = 'z:mw-statistics-collect
                             {--date= : Target KST date (YYYY-MM-DD), default is today KST}
                             {--debug : Print raw JSON payload}';
     protected $description = 'Collect MediaWiki site statistics and upsert daily snapshot';

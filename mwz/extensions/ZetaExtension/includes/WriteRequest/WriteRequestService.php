@@ -44,7 +44,7 @@ final class WriteRequestService
             ])
             ->where([
                 'title' => $candidates,
-                'writer_id' => -1,
+                'writed_at' => null,
             ])
             ->caller(__METHOD__)
             ->execute();

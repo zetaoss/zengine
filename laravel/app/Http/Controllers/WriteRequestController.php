@@ -12,15 +12,15 @@ class WriteRequestController extends Controller
     public function count()
     {
         return DB::table('write_requests')
-            ->selectRaw('COUNT(CASE WHEN writer_id > -1 THEN 1 ELSE NULL END) AS done')
-            ->selectRaw('COUNT(CASE WHEN writer_id = -1 THEN 1 ELSE NULL END) AS todo')
+            ->selectRaw('COUNT(CASE WHEN writed_at IS NOT NULL THEN 1 ELSE NULL END) AS done')
+            ->selectRaw('COUNT(CASE WHEN writed_at IS NULL THEN 1 ELSE NULL END) AS todo')
             ->first();
     }
 
     public function indexTodo()
     {
         return $this->baseQuery()
-            ->where('w.writer_id', '<', 0)
+            ->whereNull('w.writed_at')
             ->orderByDesc('w.id')
             ->paginate(25);
     }
@@ -28,7 +28,7 @@ class WriteRequestController extends Controller
     public function indexTodoTop()
     {
         return $this->baseQuery()
-            ->where('w.writer_id', '<', 0)
+            ->whereNull('w.writed_at')
             ->orderByRaw('w.rate DESC, hit DESC, w.ref DESC, w.id DESC')
             ->paginate(25);
     }
@@ -36,7 +36,7 @@ class WriteRequestController extends Controller
     public function indexDone()
     {
         return $this->baseQuery()
-            ->where('w.writer_id', '>=', 0)
+            ->whereNotNull('w.writed_at')
             ->orderByDesc('w.writed_at')
             ->orderByDesc('w.id')
             ->paginate(25);
