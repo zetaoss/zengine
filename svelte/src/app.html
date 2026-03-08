@@ -9,6 +9,33 @@
         const w = window
         const measurementId = w.ZCONF && w.ZCONF.gaMeasurementId
         if (!measurementId || typeof measurementId !== 'string') return
+        const policy = w.ZCONF && w.ZCONF.policy
+
+        const readCookie = function (name) {
+          const key = name + '='
+          const tokens = document.cookie ? document.cookie.split(';') : []
+          for (let i = 0; i < tokens.length; i += 1) {
+            const token = tokens[i].trim()
+            if (!token.startsWith(key)) continue
+            const raw = token.slice(key.length)
+            try {
+              return decodeURIComponent(raw)
+            } catch (_err) {
+              return raw
+            }
+          }
+          return ''
+        }
+
+        const rawConsent = readCookie('consent')
+        let canBootGtag = policy === 'standard'
+        if (rawConsent) {
+          const params = new URLSearchParams(rawConsent)
+          const analyticsGranted = params.get('analytics_storage') === 'granted'
+          const adsGranted = params.get('ad_storage') === 'granted'
+          canBootGtag = analyticsGranted || adsGranted
+        }
+        if (!canBootGtag) return
 
         w.dataLayer = w.dataLayer || []
         w.gtag =

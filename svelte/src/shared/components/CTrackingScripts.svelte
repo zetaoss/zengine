@@ -162,7 +162,8 @@
 
   const ensureAnalytics = async (): Promise<void> => {
     const measurementId = getZConf().gaMeasurementId
-    if (!measurementId) return
+    const state = getTrackingState()
+    if (!measurementId || !state.canBootGtag) return
 
     installNavTracker()
 
