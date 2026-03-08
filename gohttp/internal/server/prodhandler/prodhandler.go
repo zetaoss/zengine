@@ -24,21 +24,17 @@ func NewHandler(injector *util.Injector) (http.Handler, error) {
 		}
 
 		cleanPath := path.Clean("/" + r.URL.Path)
-		if cleanPath == "/" {
-			indexInjector.ServeInjectedIndex(w, r)
-			return
-		}
-		if !distPathExists(cleanPath) {
-			if path.Ext(path.Base(cleanPath)) != "" {
-				http.NotFound(w, r)
-				return
-			}
+		if shouldServeInjectedIndex(cleanPath, distPathExists(cleanPath)) {
 			indexInjector.ServeInjectedIndex(w, r)
 			return
 		}
 
 		fs.ServeHTTP(w, r)
 	}), nil
+}
+
+func shouldServeInjectedIndex(cleanPath string, exists bool) bool {
+	return cleanPath == "/" || !exists
 }
 
 func distPathExists(cleanPath string) bool {

@@ -1,6 +1,6 @@
 <svelte:options customElement={{ tag: 'c-site-footer', shadow: 'none' }} />
 
-<script>
+<script lang="ts">
   import { onMount } from 'svelte'
 
   import CCookieSettings from '$shared/components/CCookieSettings.svelte'

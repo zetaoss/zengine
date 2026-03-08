@@ -14,10 +14,7 @@ declare global {
     adsbygoogle: Array<Record<string, unknown>>
     dataLayer?: unknown[]
     gtag?: (...args: unknown[]) => void
-    ZCONF?: Partial<ZConf> & {
-      adClient?: string
-      adSlots?: string | string[]
-    }
+    ZCONF?: Partial<ZConf>
   }
 
   namespace App {

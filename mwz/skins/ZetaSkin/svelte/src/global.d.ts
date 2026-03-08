@@ -17,9 +17,6 @@ declare global {
       wgArticleId?: number
       wgUserId?: number
     }
-    ZCONF?: Partial<ZConf> & {
-      adClient?: string
-      adSlots?: string | string[]
-    }
+    ZCONF?: Partial<ZConf>
   }
 }

@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { mdiChevronDown } from '@mdi/js'
 
   import { getTrackingState } from '$shared/stores/trackingStore'
@@ -7,7 +7,7 @@
   import { deleteCookie, writeCookie } from '$shared/utils/cookie'
 
   export let open = false
-  export let onClose = () => {}
+  export let onClose: () => void = () => {}
 
   let analyticsStorage = false
   let marketingStorage = false
@@ -15,7 +15,14 @@
   let analyticsExpanded = false
   let marketingExpanded = false
 
-  function writeConsent(state) {
+  type ConsentState = {
+    analytics_storage: 'granted' | 'denied'
+    ad_storage: 'granted' | 'denied'
+    ad_user_data: 'granted' | 'denied'
+    ad_personalization: 'granted' | 'denied'
+  }
+
+  function writeConsent(state: ConsentState) {
     const value = new URLSearchParams({
       analytics_storage: state.analytics_storage,
       ad_storage: state.ad_storage,
@@ -27,7 +34,7 @@
     legacyKeys.forEach((key) => deleteCookie(key))
   }
 
-  function updateGoogleConsent(state) {
+  function updateGoogleConsent(state: ConsentState) {
     if (typeof window.gtag !== 'function') return
     window.gtag('consent', 'update', {
       ad_storage: state.ad_storage,
@@ -48,7 +55,7 @@
   }
 
   function allowSelection() {
-    const state = {
+    const state: ConsentState = {
       analytics_storage: analyticsStorage ? 'granted' : 'denied',
       ad_storage: marketingStorage ? 'granted' : 'denied',
       ad_user_data: marketingStorage ? 'granted' : 'denied',
