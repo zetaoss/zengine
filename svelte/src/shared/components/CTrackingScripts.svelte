@@ -76,7 +76,7 @@
     const w = window
     if (w.__gtagScriptPromise__) return w.__gtagScriptPromise__
 
-    const existing = document.querySelector<HTMLScriptElement>('script[src*="googletagmanager.com/gtag/js"]')
+    const existing = document.querySelector<HTMLScriptElement>(`script[src*="googletagmanager.com/gtag/js"][src*="id=${measurementId}"]`)
     if (existing) {
       w.__gtagScriptPromise__ = Promise.resolve(true)
       return w.__gtagScriptPromise__
@@ -112,12 +112,15 @@
     const w = window
     const gtag = w.gtag
     if (typeof gtag !== 'function') return
+    const measurementId = w.__gtagConfiguredMeasurementId__
+    if (!measurementId) return
 
     const href = window.location.href
     if (w.__gtagLastTrackedUrl__ === href) return
     w.__gtagLastTrackedUrl__ = href
 
     gtag('event', 'page_view', {
+      send_to: measurementId,
       page_path: window.location.pathname + window.location.search,
       page_location: href,
       page_title: document.title,
@@ -159,19 +162,24 @@
 
   const ensureAnalytics = async (): Promise<void> => {
     const measurementId = getZConf().gaMeasurementId
-    const state = getTrackingState()
-    if (!measurementId || !state.canBootGtag) return
+    if (!measurementId) return
 
     installNavTracker()
+
+    const w = window
+    if (w.__gtagInitialized__ && w.__gtagConfiguredMeasurementId__ === measurementId) {
+      updateAnalyticsConsent()
+      trackPageView()
+      return
+    }
 
     const loaded = await loadGtagScript(measurementId)
     if (!loaded) return
 
-    const w = window
     w.dataLayer = w.dataLayer || []
     w.gtag = w.gtag || ((...args: unknown[]) => w.dataLayer?.push(args))
 
-    if (w.__gtagInitialized__) {
+    if (w.__gtagInitialized__ && w.__gtagConfiguredMeasurementId__ === measurementId) {
       updateAnalyticsConsent()
       trackPageView()
       return
@@ -186,6 +194,7 @@
     w.gtag('js', new Date())
     w.gtag('config', measurementId, { send_page_view: false })
     w.__gtagInitialized__ = true
+    w.__gtagConfiguredMeasurementId__ = measurementId
 
     updateAnalyticsConsent()
     trackPageView()
