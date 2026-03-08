@@ -19,7 +19,8 @@ class SkinZetaSkin extends SkinMustache
         self::$action = $out->getActionName();
         self::$pageId = (int) $skin->getTitle()->getArticleID();
         $policy = ($_SERVER['HTTP_X_POLICY'] ?? '') === 'standard' ? 'standard' : 'strict';
-        $out->addHTMLClasses($_COOKIE['theme'] ?? '');
+        $theme = ($_COOKIE['theme'] ?? '') === 'dark' ? 'dark' : '';
+        $out->addHTMLClasses($theme);
         $out->addHeadItem('zconf', '<script>window.ZCONF={"avatarBaseUrl":"'.AVARTAR_BASE_URL.'","gaMeasurementId":"'.GA_MEASUREMENT_ID.'","adClient":"'.AD_CLIENT.'","adSlots":'.AD_SLOTS.',"policy":"'.$policy.'"};</script>');
         $out->addStyle('/w/skins/ZetaSkin/dist/app.css?'.ASSET_HASH);
         $out->addScriptFile('/w/skins/ZetaSkin/dist/app.js?'.ASSET_HASH);
