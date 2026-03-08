@@ -30,9 +30,12 @@ func New(cfg config.Config) (*http.Server, error) {
 		mux.Handle("/", handler)
 	}
 
-	return &http.Server{
-		Addr:              listenAddr,
-		Handler:           loggingMiddleware(mux),
-		ReadHeaderTimeout: 5 * time.Second,
-	}, nil
+		return &http.Server{
+			Addr:              listenAddr,
+			Handler:           loggingMiddleware(mux),
+			ReadHeaderTimeout: 5 * time.Second,
+			ReadTimeout:       10 * time.Second,
+			WriteTimeout:      15 * time.Second,
+			IdleTimeout:       60 * time.Second,
+		}, nil
 }
