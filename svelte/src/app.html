@@ -6,8 +6,8 @@
     <title>제타위키</title>
     <script>
       ;(function () {
-        var w = window
-        var measurementId = w.ZCONF && w.ZCONF.gaMeasurementId
+        const w = window
+        const measurementId = w.ZCONF && w.ZCONF.gaMeasurementId
         if (!measurementId || typeof measurementId !== 'string') return
 
         w.dataLayer = w.dataLayer || []
@@ -17,9 +17,9 @@
             w.dataLayer.push(arguments)
           }
 
-        var src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(measurementId)
+        const src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(measurementId)
         if (!document.querySelector('script[src="' + src + '"]')) {
-          var script = document.createElement('script')
+          const script = document.createElement('script')
           script.async = true
           script.src = src
           document.head.appendChild(script)
