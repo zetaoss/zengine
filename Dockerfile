@@ -17,6 +17,14 @@ RUN APP_VERSION_NORMALIZED="${APP_VERSION#v}" \
     && sed -i "s/\"version\": \".*\"/\"version\": \"${APP_VERSION_NORMALIZED}\"/" /app/mwz/extensions/ZetaExtension/extension.json \
     && echo ok
 
+FROM golang:1.24-trixie AS gobuild
+
+WORKDIR /src/gohttp
+COPY gohttp/go.mod ./
+RUN go mod download
+COPY gohttp/ ./
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /out/gohttp .
+
 # https://github.com/zetaoss/zbase/pkgs/container/zbase
 FROM ghcr.io/zetaoss/zbase:v0.43.621
 
@@ -24,6 +32,7 @@ ARG APP_VERSION=v0.0.0
 ENV APP_VERSION=${APP_VERSION}
 
 COPY --from=nodebuild /app /app
+COPY --from=gobuild /out/gohttp /app/gohttp/gohttp
 
 RUN set -eux \
     && mv /var/www/html                         /app/w \

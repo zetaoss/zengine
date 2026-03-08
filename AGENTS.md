@@ -6,6 +6,7 @@ This repo is a monorepo that contains multiple stacks.
 .
 |-- .github/                                  # CI/CD workflows
 |-- hack/                                     # helper scripts
+|-- gohttp/                                   # Go HTTP server for frontend routing (port 8080)
 |-- laravel/                                  # Laravel backend (route /api)
 |-- mwz/                                      # MediaWiki custom resources
 |   |-- extensions/
