@@ -5,11 +5,11 @@ import { sveltekit } from '@sveltejs/kit/vite'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig, type Plugin, type ResolvedConfig, transformWithEsbuild } from 'vite'
 
-function minifyTrackJsPlugin(): Plugin {
+function minifyJsPlugin(): Plugin {
   let resolvedConfig: ResolvedConfig
 
   return {
-    name: 'minify-track-js',
+    name: 'minify-js',
     apply: 'build',
     configResolved(config) {
       resolvedConfig = config
@@ -36,7 +36,7 @@ function minifyTrackJsPlugin(): Plugin {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [sveltekit(), tailwindcss(), minifyTrackJsPlugin()],
+  plugins: [sveltekit(), tailwindcss(), minifyJsPlugin()],
   server: {
     allowedHosts: true,
     host: true,
