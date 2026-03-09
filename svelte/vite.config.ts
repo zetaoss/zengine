@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
@@ -30,6 +31,32 @@ function minifyJsPlugin(): Plugin {
         legalComments: 'none',
       })
       await writeFile(trackPath, minified.code)
+    },
+    async closeBundle() {
+      const trackPath = path.resolve(resolvedConfig.root, 'dist', 'track.js')
+      const indexPath = path.resolve(resolvedConfig.root, 'dist', 'index.html')
+
+      let trackSource: string
+      try {
+        trackSource = await readFile(trackPath, 'utf8')
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') return
+        throw error
+      }
+
+      const trackVersion = createHash('sha256').update(trackSource).digest('hex').slice(0, 12)
+      let indexHtml: string
+      try {
+        indexHtml = await readFile(indexPath, 'utf8')
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') return
+        throw error
+      }
+
+      await writeFile(
+        indexPath,
+        indexHtml.replace('<script src="/track.js" defer></script>', `<script src="/track.js?v=${trackVersion}" defer></script>`),
+      )
     },
   }
 }

@@ -64,14 +64,6 @@
       }
     }
 
-    function canBootGtag(zconf) {
-      const policy = zconf && zconf.policy
-      const rawConsent = readCookie('consent')
-      if (!rawConsent) return policy === 'standard'
-      const params = new URLSearchParams(rawConsent)
-      return params.get('analytics_storage') === 'granted' || params.get('ad_storage') === 'granted'
-    }
-
     function loadGtagScript(measurementId) {
       const w = window
       if (w.__gtagScriptPromise__) return w.__gtagScriptPromise__
@@ -321,7 +313,7 @@
     refreshTracking()
     document.addEventListener('visibilitychange', scheduleTrack)
     window.addEventListener('consent:updated', refreshTracking)
-    if (canBootGtag(getZConf())) scheduleTrack()
+    if (getTrackingState().canBootGtag) scheduleTrack()
   }
 
   bootTracking()
