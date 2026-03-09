@@ -6,6 +6,7 @@ import type { ZConf } from '$shared/utils/zConf'
 
 declare global {
   interface Window {
+    __gtagConfiguredMeasurementId__?: string
     __gtagInitialized__?: boolean
     __gtagLastTrackedUrl__?: string
     __gtagNavTrackerInstalled__?: boolean
