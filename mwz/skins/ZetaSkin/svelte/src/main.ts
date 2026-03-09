@@ -9,7 +9,6 @@ import './components/UserMenu.svelte'
 import './components/binder/BinderApex.svelte'
 import './components/toc/TocApex.svelte'
 import '$shared/components/CAdsenseSlot.svelte'
-import '$shared/components/CTrackingScripts.svelte'
 
 import shortcutForPageButtons from '$lib/utils/shortcutForPageButtons'
 import { setTrackingGate } from '$shared/stores/trackingStore'

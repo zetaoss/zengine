@@ -10,7 +10,6 @@ const mainSvelteDir = path.resolve(__dirname, '../../../../svelte')
 const customElementSveltePaths = [
   'src/shared/components/navbar/CSearch.svelte',
   'src/shared/components/CAdsenseSlot.svelte',
-  'src/shared/components/CTrackingScripts.svelte',
   'src/shared/components/CSiteFooter.svelte',
   'src/shared/components/CSiteRemocon.svelte',
   'src/components/PageMeta.svelte',
