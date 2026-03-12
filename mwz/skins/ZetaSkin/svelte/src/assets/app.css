@@ -2,7 +2,7 @@
 @import 'tailwindcss';
 @custom-variant dark (&:where(.dark, .dark *));
 
-@import './mw-apex-dark.css';
+@import './mw-apex-color.css';
 
 @import '../shared/assets/app.css';
 
