@@ -29,7 +29,7 @@ COPY gohttp/ ./
 RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-$(go env GOARCH)} go build -trimpath -ldflags="-s -w" -o /out/gohttp .
 
 # https://github.com/zetaoss/zbase/pkgs/container/zbase
-FROM ghcr.io/zetaoss/zbase:v0.43.631
+FROM ghcr.io/zetaoss/zbase:v0.43.632
 
 ARG APP_VERSION=v0.0.0
 ENV APP_VERSION=${APP_VERSION}
