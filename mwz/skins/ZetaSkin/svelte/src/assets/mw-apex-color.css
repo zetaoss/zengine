@@ -2,6 +2,7 @@
   /* https://github.com/wikimedia/mediawiki/blob/1.45.1/resources/src/mediawiki.less/mediawiki.skin.defaults.less */
   --border-color-subtle: #ccc;
   --border-color-progressive--active: #2a4b8d;
+  --background-color-base: #fff;
   --background-color-interactive-subtle: #f9f9f9;
   --background-color-progressive-subtle: #eaf3ff;
   --color-progressive--active: #2a4b8d;
