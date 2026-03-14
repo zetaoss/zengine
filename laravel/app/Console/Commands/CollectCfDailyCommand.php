@@ -2,18 +2,18 @@
 
 namespace App\Console\Commands;
 
-use App\Services\Stat\CollectDailyCfService;
+use App\Services\Stat\CollectCfDailyService;
 use Illuminate\Console\Command;
 use RuntimeException;
 
-class CollectDailyCfCommand extends Command
+class CollectCfDailyCommand extends Command
 {
-    protected $signature = 'z:collect-daily-cf
+    protected $signature = 'z:collect-cf-daily
                             {--days=7 : Number of days to include (today included, UTC)}
                             {--debug : Print raw GraphQL JSON responses}';
-    protected $description = 'Collect Cloudflare analytics daily dataset';
+    protected $description = 'Collect Cloudflare analytics daily data';
 
-    public function handle(CollectDailyCfService $daily): int
+    public function handle(CollectCfDailyService $daily): int
     {
         $days = (int) $this->option('days');
         $debug = (bool) $this->option('debug');
