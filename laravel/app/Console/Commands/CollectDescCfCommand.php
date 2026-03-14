@@ -2,16 +2,16 @@
 
 namespace App\Console\Commands;
 
-use App\Services\CfAnalytics\CfAnalyticsApiService;
+use App\Services\Stat\CollectCfApiService;
 use Illuminate\Console\Command;
 use RuntimeException;
 
-class CfAnalyticsListCommand extends Command
+class CollectDescCfCommand extends Command
 {
-    protected $signature = 'z:cf-analytics-list';
-    protected $description = 'List available cf analytics datasets and fields';
+    protected $signature = 'z:collect-desc-cf';
+    protected $description = 'List available Cloudflare stat datasets and fields';
 
-    public function handle(CfAnalyticsApiService $api): int
+    public function handle(CollectCfApiService $api): int
     {
         try {
             [$apiToken, $zoneId] = $api->resolveCredentials();

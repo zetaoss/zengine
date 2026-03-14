@@ -4,10 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class MwStatistics extends Model
+class StatDailyMw extends Model
 {
     public $timestamps = false;
-    protected $table = 'mw_statistics';
+    protected $table = 'stat_daily_mw';
     protected $fillable = [
         'timeslot',
         'pages',

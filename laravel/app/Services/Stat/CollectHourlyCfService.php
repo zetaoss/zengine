@@ -1,24 +1,24 @@
 <?php
 
-namespace App\Services\CfAnalytics;
+namespace App\Services\Stat;
 
-use App\Models\CfAnalyticsHourly;
+use App\Models\StatHourlyCf;
 use Carbon\CarbonImmutable;
 use RuntimeException;
 
-class CfAnalyticsHourlyCollectorService
+class CollectHourlyCfService
 {
     private const MAX_DAYS = 3;
 
     public function __construct(
-        private readonly CfAnalyticsApiService $api,
+        private readonly CollectCfApiService $api,
     ) {}
 
     public function collect(int $days, bool $debug, callable $debugWriter): array
     {
         if ($days > self::MAX_DAYS) {
             throw new RuntimeException(
-                '--days for app:cf-analytics-hourly-collect must be 1..3 (Cloudflare 1h dataset retention is about 262800 seconds).'
+                '--days for z:collect-hourly-cf must be 1..3 (Cloudflare 1h dataset retention is about 262800 seconds).'
             );
         }
 
@@ -116,7 +116,7 @@ class CfAnalyticsHourlyCollectorService
         $timeslots = array_values(array_unique(array_map(fn ($row) => (string) $row['timeslot'], $rows)));
         $names = array_values(array_unique(array_map(fn ($row) => (string) $row['name'], $rows)));
 
-        $existing = CfAnalyticsHourly::query()
+        $existing = StatHourlyCf::query()
             ->toBase()
             ->select(['timeslot', 'name', 'value'])
             ->whereIn('timeslot', $timeslots)
@@ -153,7 +153,7 @@ class CfAnalyticsHourlyCollectorService
         }
 
         if (! empty($upsertRows)) {
-            CfAnalyticsHourly::query()->upsert($upsertRows, ['timeslot', 'name'], ['value']);
+            StatHourlyCf::query()->upsert($upsertRows, ['timeslot', 'name'], ['value']);
         }
 
         return ['inserted' => $inserted, 'updated' => $updated, 'skipped' => $skipped];

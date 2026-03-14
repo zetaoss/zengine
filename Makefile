@@ -177,7 +177,7 @@ ifeq ($(USE_CACHE),1)
 	$(call run_cached,quickcheck-main-svelte,$(MAKE) USE_CACHE=0 quickcheck-main-svelte,svelte)
 else
 	$(call run_pnpm,svelte,install --frozen-lockfile)
-	$(call run_pnpm,svelte,lint,pnpm -C svelte lint)
+	$(call run_pnpm,svelte,lint,pnpm -C svelte lint:fix)
 	$(call run_pnpm,svelte,format,pnpm -C svelte format:fix)
 endif
 

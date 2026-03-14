@@ -3,8 +3,8 @@
 <script lang="ts">
   import { onMount } from 'svelte'
 
-  import ZButton from '$shared/ui/ZButton.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
+  import ZToggle from '$shared/ui/ZToggle.svelte'
   import httpy from '$shared/utils/httpy'
 
   import LineChart from './LineChart.svelte'
@@ -36,9 +36,10 @@
   interface RowDef {
     key: string
     label: string
-    statText: string
+    value: number | null
     unit: ChartUnit
     series: Array<{ label: string; color: string; values: Array<number | null> }>
+    diffValues?: Array<number | null>
   }
 
   const EMPTY: AnalyticsResp = {
@@ -63,10 +64,18 @@
   let loading = $state(true)
   let failed = $state<string | null>(null)
   let range = $state<'24h' | '7d' | '30d'>('24h')
+  let valueMode = $state<'compact' | 'exact'>('compact')
+  let diffModeByKey = $state<Record<string, boolean>>({})
   let syncedHoverIndex = $state<number | null>(null)
   let data = $state<AnalyticsResp>(EMPTY)
   let mwData = $state<MwStatisticsResp>(EMPTY_MW)
   let fetchVersion = 0
+
+  const rangeTabs: Array<{ value: '24h' | '7d' | '30d'; label: string }> = [
+    { value: '24h', label: '24 Hours' },
+    { value: '7d', label: '7 Days' },
+    { value: '30d', label: '30 Days' },
+  ]
 
   const labels = $derived.by(() => (range === '24h' ? data.timeslots : data.timeslots.map((v) => normalizeDateKey(v))))
   const rows = $derived.by<RowDef[]>(() => buildRows(data))
@@ -79,23 +88,31 @@
     failed = null
 
     if (range === '24h') {
-      const [resp, err] = await httpy.get<AnalyticsResp>('/api/dash/cf-analytics/hourly')
+      const [[cfResp, cfErr], [mwResp, mwErr]] = await Promise.all([
+        httpy.get<AnalyticsResp>('/api/stat/cf-analytics/hourly'),
+        httpy.get<MwStatisticsResp>('/api/stat/mw-statistics/hourly'),
+      ])
       if (version !== fetchVersion) return
-      if (err) {
-        failed = err.message
+      if (cfErr) {
+        failed = cfErr.message
         loading = false
         return
       }
-      data = normalizeResp(resp)
-      mwData = EMPTY_MW
+      if (mwErr) {
+        failed = mwErr.message
+        loading = false
+        return
+      }
+      data = normalizeResp(cfResp)
+      mwData = normalizeMwResp(mwResp)
       loading = false
       return
     }
 
     const days = range === '7d' ? 7 : 30
     const [[cfResp, cfErr], [mwResp, mwErr]] = await Promise.all([
-      httpy.get<AnalyticsResp>(`/api/dash/cf-analytics/daily/${days}`),
-      httpy.get<MwStatisticsResp>(`/api/dash/mw-statistics/daily/${days}`),
+      httpy.get<AnalyticsResp>(`/api/stat/cf-analytics/daily/${days}`),
+      httpy.get<MwStatisticsResp>(`/api/stat/mw-statistics/daily/${days}`),
     ])
     if (version !== fetchVersion) return
 
@@ -146,35 +163,35 @@
       {
         key: 'unique-visitors',
         label: 'Unique Visitors',
-        statText: fmtCount(sumMetric(resp, 'uniq_uniques')),
+        value: sumMetric(resp, 'uniq_uniques'),
         unit: 'count',
         series: [{ label: 'Unique Visitors', color: '#0891b2', values: seriesOf(resp, 'uniq_uniques') }],
       },
       {
         key: 'total-requests',
         label: 'Total Requests',
-        statText: fmtCount(sumMetric(resp, 'sum_requests')),
+        value: sumMetric(resp, 'sum_requests'),
         unit: 'count',
         series: [{ label: 'Total Requests', color: '#0891b2', values: seriesOf(resp, 'sum_requests') }],
       },
       {
         key: 'percent-cached',
         label: 'Percent Cached',
-        statText: fmtPercent(percentCachedTotal(resp)),
+        value: percentCachedTotal(resp),
         unit: 'percent',
         series: [{ label: 'Percent Cached', color: '#0891b2', values: percentCachedSeries(resp) }],
       },
       {
         key: 'data-served',
         label: 'Total Data Served',
-        statText: fmtBytes(sumMetric(resp, 'sum_bytes')),
+        value: sumMetric(resp, 'sum_bytes'),
         unit: 'bytes',
         series: [{ label: 'Total Data Served', color: '#0891b2', values: seriesOf(resp, 'sum_bytes') }],
       },
       {
         key: 'data-cached',
         label: 'Data Cached',
-        statText: fmtBytes(sumMetric(resp, 'sum_cachedBytes')),
+        value: sumMetric(resp, 'sum_cachedBytes'),
         unit: 'bytes',
         series: [{ label: 'Data Cached', color: '#0891b2', values: seriesOf(resp, 'sum_cachedBytes') }],
       },
@@ -186,56 +203,59 @@
       {
         key: 'mw-pages',
         label: 'Pages',
-        statText: fmtCount(lastMetric(resp, 'pages')),
+        value: lastMetric(resp, 'pages'),
         unit: 'count',
         series: [{ label: 'Pages', color: '#0891b2', values: seriesOfMw(resp, 'pages') }],
+        diffValues: diffSeriesOfMw(resp, 'pages'),
       },
       {
         key: 'mw-articles',
         label: 'Articles',
-        statText: fmtCount(lastMetric(resp, 'articles')),
+        value: lastMetric(resp, 'articles'),
         unit: 'count',
         series: [{ label: 'Articles', color: '#0891b2', values: seriesOfMw(resp, 'articles') }],
+        diffValues: diffSeriesOfMw(resp, 'articles'),
       },
       {
         key: 'mw-edits',
         label: 'Edits',
-        statText: fmtCount(lastMetric(resp, 'edits')),
+        value: lastMetric(resp, 'edits'),
         unit: 'count',
         series: [{ label: 'Edits', color: '#0891b2', values: seriesOfMw(resp, 'edits') }],
+        diffValues: diffSeriesOfMw(resp, 'edits'),
       },
       {
         key: 'mw-images',
         label: 'Images',
-        statText: fmtCount(lastMetric(resp, 'images')),
+        value: lastMetric(resp, 'images'),
         unit: 'count',
         series: [{ label: 'Images', color: '#0891b2', values: seriesOfMw(resp, 'images') }],
       },
       {
         key: 'mw-users',
         label: 'Users',
-        statText: fmtCount(lastMetric(resp, 'users')),
+        value: lastMetric(resp, 'users'),
         unit: 'count',
         series: [{ label: 'Users', color: '#0891b2', values: seriesOfMw(resp, 'users') }],
       },
       {
         key: 'mw-activeusers',
         label: 'Active Users',
-        statText: fmtCount(lastMetric(resp, 'activeusers')),
+        value: lastMetric(resp, 'activeusers'),
         unit: 'count',
         series: [{ label: 'Active Users', color: '#0891b2', values: seriesOfMw(resp, 'activeusers') }],
       },
       {
         key: 'mw-admins',
         label: 'Admins',
-        statText: fmtCount(lastMetric(resp, 'admins')),
+        value: lastMetric(resp, 'admins'),
         unit: 'count',
         series: [{ label: 'Admins', color: '#0891b2', values: seriesOfMw(resp, 'admins') }],
       },
       {
         key: 'mw-jobs',
         label: 'Jobs',
-        statText: fmtCount(lastMetric(resp, 'jobs')),
+        value: lastMetric(resp, 'jobs'),
         unit: 'count',
         series: [{ label: 'Jobs', color: '#0891b2', values: seriesOfMw(resp, 'jobs') }],
       },
@@ -269,6 +289,21 @@
       if (value != null) return value
     }
     return null
+  }
+
+  function diffSeriesOfMw(resp: MwStatisticsResp, key: MwMetricKey): Array<number | null> {
+    const base = seriesOfMw(resp, key)
+    return base.map((value, index) => {
+      if (index === 0 || value == null) return null
+      const prev = base[index - 1]
+      if (prev == null) return null
+      const diff = value - prev
+      return Number.isFinite(diff) ? diff : null
+    })
+  }
+
+  function supportsDiff(row: RowDef) {
+    return Array.isArray(row.diffValues)
   }
 
   function percentCachedSeries(resp: AnalyticsResp): Array<number | null> {
@@ -330,6 +365,24 @@
     return `${value.toFixed(1)}%`
   }
 
+  function fmtExact(value: number | null | undefined, unit: ChartUnit) {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return '-'
+    if (unit === 'percent') {
+      return `${value.toLocaleString('en-US', { maximumFractionDigits: 4 })}%`
+    }
+    if (unit === 'bytes') {
+      return `${value.toLocaleString('en-US', { maximumFractionDigits: 0 })} B`
+    }
+    return value.toLocaleString('en-US', { maximumFractionDigits: 0 })
+  }
+
+  function formatStatValue(value: number | null, unit: ChartUnit) {
+    if (valueMode === 'exact') return fmtExact(value, unit)
+    if (unit === 'bytes') return fmtBytes(value)
+    if (unit === 'percent') return fmtPercent(value)
+    return fmtCount(value)
+  }
+
   function stripZero(value: string) {
     return value.endsWith('.0') ? value.slice(0, -2) : value
   }
@@ -344,55 +397,33 @@
 </script>
 
 <div class="p-5">
-  <h2 class="m-0 text-2xl font-bold">대시보드</h2>
+  <h2 class="m-0 text-2xl font-bold">통계</h2>
 
   <div class="mb-4 mt-3 flex flex-wrap items-center justify-between gap-3">
-    <div class="flex gap-2">
-      <ZButton
-        size="medium"
-        cooldown={0}
-        color={range === '24h' ? 'primary' : 'default'}
-        class={`px-3 py-1 ${range === '24h' ? 'font-semibold' : ''}`}
-        onclick={() => {
-          if (range !== '24h') {
-            range = '24h'
-            void fetchData()
-          }
-        }}
-      >
-        24 Hours
-      </ZButton>
-      <ZButton
-        size="medium"
-        cooldown={0}
-        color={range === '7d' ? 'primary' : 'default'}
-        class={`px-3 py-1 ${range === '7d' ? 'font-semibold' : ''}`}
-        onclick={() => {
-          if (range !== '7d') {
-            range = '7d'
-            void fetchData()
-          }
-        }}
-      >
-        7 Days
-      </ZButton>
-      <ZButton
-        size="medium"
-        cooldown={0}
-        color={range === '30d' ? 'primary' : 'default'}
-        class={`px-3 py-1 ${range === '30d' ? 'font-semibold' : ''}`}
-        onclick={() => {
-          if (range !== '30d') {
-            range = '30d'
-            void fetchData()
-          }
-        }}
-      >
-        30 Days
-      </ZButton>
+    <div class="border-b border-gray-200 dark:border-gray-700">
+      <div class="flex items-end">
+        {#each rangeTabs as tab (tab.value)}
+          <button
+            type="button"
+            class={`relative -mb-px cursor-pointer border-b-2 px-3 py-2 text-sm transition ${
+              range === tab.value
+                ? 'border-slate-900 font-semibold text-slate-900 dark:border-slate-100 dark:text-slate-100'
+                : 'border-transparent text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200'
+            }`}
+            onclick={() => {
+              if (range !== tab.value) {
+                range = tab.value
+                void fetchData()
+              }
+            }}
+          >
+            {tab.label}
+          </button>
+        {/each}
+      </div>
     </div>
 
-    <p class="text-right text-sm text-gray-500">
+    <p class="text-sm text-gray-500 dark:text-gray-400">
       {md(data.timeslots[0])} - {md(data.timeslots[data.timeslots.length - 1])}
     </p>
   </div>
@@ -410,13 +441,14 @@
         <div class="grid items-center md:grid-cols-[220px_minmax(0,760px)] md:justify-center">
           <aside class="rounded">
             <div class="text-gray-500">{row.label}</div>
-            <div class="text-[1.2rem] font-bold">{row.statText}</div>
+            <div class="text-[1.2rem] font-bold">{formatStatValue(row.value, row.unit)}</div>
           </aside>
 
           <LineChart
             title={row.label}
             {labels}
             unit={row.unit}
+            {valueMode}
             selectedLabelMode={range === '24h' ? 'hour' : 'date'}
             hoveredIndex={syncedHoverIndex}
             onHoverIndex={(index) => {
@@ -431,33 +463,70 @@
       {/each}
     </section>
 
-    {#if range !== '24h'}
-      <section class="mt-8">
-        <p class="mb-2 text-gray-500">MediaWiki Statistics</p>
-        {#each mwRows as row, idx (row.key)}
-          <div class="grid items-center md:grid-cols-[220px_minmax(0,760px)] md:justify-center">
-            <aside class="rounded">
-              <div class="text-gray-500">{row.label}</div>
-              <div class="text-[1.2rem] font-bold">{row.statText}</div>
-            </aside>
+    <section class="mt-8">
+      <p class="mb-2 text-gray-500">MediaWiki Statistics</p>
+      {#each mwRows as row, idx (row.key)}
+        <div class="grid items-center md:grid-cols-[220px_minmax(0,760px)] md:justify-center">
+          <aside class="rounded">
+            <div class="text-gray-500">{row.label}</div>
+            <div class="text-[1.2rem] font-bold">{formatStatValue(row.value, row.unit)}</div>
+          </aside>
 
-            <LineChart
-              title={row.label}
-              labels={labelsMw}
-              unit={row.unit}
-              selectedLabelMode="date"
-              hoveredIndex={syncedHoverIndex}
-              onHoverIndex={(index) => {
-                syncedHoverIndex = index
-              }}
-              series={row.series}
-            />
-          </div>
-          {#if idx < mwRows.length - 1}
-            <hr class="border-0 border-t border-gray-200 dark:border-gray-700" />
-          {/if}
-        {/each}
-      </section>
-    {/if}
+          <LineChart
+            title={supportsDiff(row) && diffModeByKey[row.key] === true ? `${row.label} diff` : row.label}
+            labels={labelsMw}
+            unit={row.unit}
+            {valueMode}
+            fillArea={!(supportsDiff(row) && diffModeByKey[row.key] === true)}
+            selectedLabelMode={range === '24h' ? 'hour' : 'date'}
+            hoveredIndex={syncedHoverIndex}
+            onHoverIndex={(index) => {
+              syncedHoverIndex = index
+            }}
+            series={supportsDiff(row) && diffModeByKey[row.key] === true
+              ? [{ label: `${row.label} diff`, color: '#0891b2', values: row.diffValues ?? [] }]
+              : row.series}
+            barValues={supportsDiff(row) && diffModeByKey[row.key] === true ? (row.diffValues ?? []) : null}
+            barColor="#0891b2"
+          />
+        </div>
+        {#if idx < mwRows.length - 1}
+          <hr class="border-0 border-t border-gray-200 dark:border-gray-700" />
+        {/if}
+      {/each}
+    </section>
+
+    <div class="mt-8 flex justify-center">
+      <div class="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-500 dark:text-gray-400">
+        <div class="flex items-center gap-2">
+          <span>exact</span>
+          <ZToggle
+            label="exact"
+            checked={valueMode === 'exact'}
+            showIcon={false}
+            on:change={(event) => {
+              valueMode = event.detail.checked ? 'exact' : 'compact'
+            }}
+          />
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span>diff</span>
+          <ZToggle
+            label="diff"
+            checked={Object.values(diffModeByKey).some(Boolean)}
+            showIcon={false}
+            on:change={(event) => {
+              const checked = event.detail.checked
+              const next: Record<string, boolean> = {}
+              for (const row of mwRows) {
+                if (supportsDiff(row)) next[row.key] = checked
+              }
+              diffModeByKey = next
+            }}
+          />
+        </div>
+      </div>
+    </div>
   {/if}
 </div>

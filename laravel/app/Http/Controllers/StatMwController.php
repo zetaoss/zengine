@@ -2,23 +2,26 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CfAnalyticsDaily;
-use App\Models\CfAnalyticsHourly;
+use App\Models\StatDailyMw;
+use App\Models\StatHourlyMw;
 use Illuminate\Support\Carbon;
 
-class CfAnalyticsController extends Controller
+class StatMwController extends Controller
 {
     private const NAMES = [
-        'uniq_uniques',
-        'sum_requests',
-        'sum_bytes',
-        'sum_cachedBytes',
-        'sum_browserMap',
+        'pages',
+        'articles',
+        'edits',
+        'images',
+        'users',
+        'activeusers',
+        'admins',
+        'jobs',
     ];
 
     public function hourly(): array
     {
-        $latestTimeslot = CfAnalyticsHourly::query()->max('timeslot');
+        $latestTimeslot = StatHourlyMw::query()->max('timeslot');
         if (! $latestTimeslot) {
             return $this->emptySeriesResponse();
         }
@@ -26,16 +29,15 @@ class CfAnalyticsController extends Controller
         $to = Carbon::parse((string) $latestTimeslot, 'UTC')->startOfHour();
         $from = $to->copy()->subHours(23);
 
-        $rows = CfAnalyticsHourly::query()
-            ->select(['timeslot', 'name', 'value'])
+        $rows = StatHourlyMw::query()
+            ->select(array_merge(['timeslot'], self::NAMES))
             ->whereBetween('timeslot', [$from->toDateTimeString(), $to->toDateTimeString()])
-            ->whereIn('name', self::NAMES)
+            ->orderBy('timeslot')
             ->get();
 
         $timeslots = [];
         for ($cursor = $from->copy(); $cursor->lte($to); $cursor->addHour()) {
-            $timeslot = $cursor->utc()->format('Y-m-d\TH:i:s\Z');
-            $timeslots[] = $timeslot;
+            $timeslots[] = $cursor->utc()->format('Y-m-d\TH:i:s\Z');
         }
         $series = $this->emptySeries(count($timeslots));
 
@@ -45,11 +47,11 @@ class CfAnalyticsController extends Controller
             if ($index === false) {
                 continue;
             }
-            $name = (string) $row->name;
-            if (! array_key_exists($name, $series)) {
-                continue;
+
+            foreach (self::NAMES as $name) {
+                $value = $row->{$name} ?? null;
+                $series[$name][$index] = is_numeric($value) ? (float) $value : null;
             }
-            $series[$name][$index] = $this->parseValueText((string) $row->value);
         }
 
         return ['timeslots' => $timeslots] + $series;
@@ -61,7 +63,7 @@ class CfAnalyticsController extends Controller
             abort(404);
         }
 
-        $lastDate = CfAnalyticsDaily::query()->max('timeslot');
+        $lastDate = StatDailyMw::query()->max('timeslot');
         if (! $lastDate) {
             return $this->emptySeriesResponse();
         }
@@ -69,10 +71,10 @@ class CfAnalyticsController extends Controller
         $to = Carbon::parse((string) $lastDate)->startOfDay();
         $from = $to->copy()->subDays($days - 1)->startOfDay();
 
-        $rows = CfAnalyticsDaily::query()
-            ->select(['timeslot', 'name', 'value'])
+        $rows = StatDailyMw::query()
+            ->select(array_merge(['timeslot'], self::NAMES))
             ->whereBetween('timeslot', [$from->toDateString(), $to->toDateString()])
-            ->whereIn('name', self::NAMES)
+            ->orderBy('timeslot')
             ->get();
 
         $timeslots = [];
@@ -82,16 +84,16 @@ class CfAnalyticsController extends Controller
         $series = $this->emptySeries(count($timeslots));
 
         foreach ($rows as $row) {
-            $date = $row->timeslot->toDateString();
-            $index = array_search($date, $timeslots, true);
+            $timeslot = $row->timeslot->toDateString();
+            $index = array_search($timeslot, $timeslots, true);
             if ($index === false) {
                 continue;
             }
-            $name = (string) $row->name;
-            if (! array_key_exists($name, $series)) {
-                continue;
+
+            foreach (self::NAMES as $name) {
+                $value = $row->{$name} ?? null;
+                $series[$name][$index] = is_numeric($value) ? (float) $value : null;
             }
-            $series[$name][$index] = $this->parseValueText((string) $row->value);
         }
 
         return ['timeslots' => $timeslots] + $series;
@@ -110,20 +112,5 @@ class CfAnalyticsController extends Controller
         }
 
         return $series;
-    }
-
-    private function parseValueText(string $value): mixed
-    {
-        $trimmed = trim($value);
-        if ($trimmed === '') {
-            return null;
-        }
-
-        $decoded = json_decode($trimmed, true);
-        if (json_last_error() === JSON_ERROR_NONE) {
-            return $decoded;
-        }
-
-        return null;
     }
 }

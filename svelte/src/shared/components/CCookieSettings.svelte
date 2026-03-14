@@ -175,7 +175,7 @@
                   </span>
                   <span>Performance and analytics cookies</span>
                 </button>
-                <ZToggle bind:checked={analyticsStorage} label="analytics_storage" />
+                <ZToggle bind:checked={analyticsStorage} label="analytics_storage" theme="success" />
               </div>
               {#if analyticsExpanded}
                 <div
@@ -203,7 +203,7 @@
                   </span>
                   <span>Marketing cookies</span>
                 </button>
-                <ZToggle bind:checked={marketingStorage} label="marketing_storage" />
+                <ZToggle bind:checked={marketingStorage} label="marketing_storage" theme="success" />
               </div>
               {#if marketingExpanded}
                 <div

@@ -4,10 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class CfAnalyticsDaily extends Model
+class StatDailyCf extends Model
 {
     public $timestamps = false;
-    protected $table = 'cf_analytics_daily';
+    protected $table = 'stat_daily_cf';
     protected $fillable = [
         'timeslot',
         'name',
