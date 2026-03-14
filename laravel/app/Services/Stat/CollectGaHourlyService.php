@@ -8,6 +8,7 @@ class CollectGaHourlyService
 {
     public function __construct(
         private readonly CollectGaApiService $api,
+        private readonly CollectGaPersistService $persist,
     ) {}
 
     public function collect(int $days, bool $debug, callable $debugWriter): array
@@ -72,66 +73,8 @@ class CollectGaHourlyService
             'sinceLocal' => $sinceLocal,
             'untilLocal' => $untilLocal,
             'timeslots' => array_values(array_map(static fn (array $row): string => (string) $row['timeslot'], $rows)),
-            'db' => $this->persistRows($rows),
+            'db' => $this->persist->persistRows(StatHourlyGa::class, $rows),
         ];
-    }
-
-    private function persistRows(array $rows): array
-    {
-        if (empty($rows)) {
-            return ['inserted' => 0, 'updated' => 0, 'skipped' => 0];
-        }
-
-        $timeslots = array_values(array_unique(array_map(static fn (array $row): string => (string) $row['timeslot'], $rows)));
-        $existing = StatHourlyGa::query()
-            ->toBase()
-            ->select(array_merge(['timeslot'], StatHourlyGa::COLUMN_NAMES))
-            ->whereIn('timeslot', $timeslots)
-            ->get();
-
-        $existingByTimeslot = [];
-        foreach ($existing as $item) {
-            $existingByTimeslot[(string) $item->timeslot] = [
-                'active_users' => (int) $item->active_users,
-                'screen_page_views' => (int) $item->screen_page_views,
-                'sessions' => (int) $item->sessions,
-            ];
-        }
-
-        $upsertRows = [];
-        $inserted = 0;
-        $updated = 0;
-        $skipped = 0;
-
-        foreach ($rows as $row) {
-            $timeslot = (string) $row['timeslot'];
-            $current = [
-                'active_users' => (int) $row['active_users'],
-                'screen_page_views' => (int) $row['screen_page_views'],
-                'sessions' => (int) $row['sessions'],
-            ];
-            $old = $existingByTimeslot[$timeslot] ?? null;
-
-            if ($old === null) {
-                $inserted++;
-                $upsertRows[] = $row;
-
-                continue;
-            }
-
-            if ($old !== $current) {
-                $updated++;
-                $upsertRows[] = $row;
-            } else {
-                $skipped++;
-            }
-        }
-
-        if (! empty($upsertRows)) {
-            StatHourlyGa::query()->upsert($upsertRows, ['timeslot'], StatHourlyGa::COLUMN_NAMES);
-        }
-
-        return ['inserted' => $inserted, 'updated' => $updated, 'skipped' => $skipped];
     }
 
     private function metricValue(array $row, int $index): int
