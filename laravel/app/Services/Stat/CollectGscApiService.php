@@ -15,9 +15,9 @@ class CollectGscApiService
 
     public function resolveCredentials(): array
     {
-        $path = $this->env('GA_READER_FILE');
+        $path = $this->env('GOOGLE_SA_FILE');
         if ($path === false || $path === '') {
-            throw new RuntimeException('Missing GA_READER_FILE environment variable.');
+            throw new RuntimeException('Missing GOOGLE_SA_FILE environment variable.');
         }
 
         if (! is_file($path)) {
