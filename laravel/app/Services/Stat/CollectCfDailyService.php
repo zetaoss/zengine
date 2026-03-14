@@ -2,7 +2,7 @@
 
 namespace App\Services\Stat;
 
-use App\Models\StatDailyCf;
+use App\Models\StatCfDaily;
 
 class CollectCfDailyService
 {
@@ -93,7 +93,7 @@ class CollectCfDailyService
         $timeslots = array_values(array_unique(array_map(fn ($row) => (string) $row['timeslot'], $rows)));
         $names = array_values(array_unique(array_map(fn ($row) => (string) $row['name'], $rows)));
 
-        $existing = StatDailyCf::query()
+        $existing = StatCfDaily::query()
             ->toBase()
             ->select(['timeslot', 'name', 'value'])
             ->whereIn('timeslot', $timeslots)
@@ -130,7 +130,7 @@ class CollectCfDailyService
         }
 
         if (! empty($upsertRows)) {
-            StatDailyCf::query()->upsert($upsertRows, ['timeslot', 'name'], ['value']);
+            StatCfDaily::query()->upsert($upsertRows, ['timeslot', 'name'], ['value']);
         }
 
         return ['inserted' => $inserted, 'updated' => $updated, 'skipped' => $skipped];

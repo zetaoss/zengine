@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\StatDailyMw;
-use App\Models\StatHourlyMw;
+use App\Models\StatMwDaily;
+use App\Models\StatMwHourly;
 use Illuminate\Support\Carbon;
 
 class StatMwController extends Controller
@@ -21,7 +21,7 @@ class StatMwController extends Controller
 
     public function hourly(): array
     {
-        $latestTimeslot = StatHourlyMw::query()->max('timeslot');
+        $latestTimeslot = StatMwHourly::query()->max('timeslot');
         if (! $latestTimeslot) {
             return $this->emptySeriesResponse();
         }
@@ -29,7 +29,7 @@ class StatMwController extends Controller
         $to = Carbon::parse((string) $latestTimeslot, 'UTC')->startOfHour();
         $from = $to->copy()->subHours(23);
 
-        $rows = StatHourlyMw::query()
+        $rows = StatMwHourly::query()
             ->select(array_merge(['timeslot'], self::NAMES))
             ->whereBetween('timeslot', [$from->toDateTimeString(), $to->toDateTimeString()])
             ->orderBy('timeslot')
@@ -63,7 +63,7 @@ class StatMwController extends Controller
             abort(404);
         }
 
-        $lastDate = StatDailyMw::query()->max('timeslot');
+        $lastDate = StatMwDaily::query()->max('timeslot');
         if (! $lastDate) {
             return $this->emptySeriesResponse();
         }
@@ -71,7 +71,7 @@ class StatMwController extends Controller
         $to = Carbon::parse((string) $lastDate)->startOfDay();
         $from = $to->copy()->subDays($days - 1)->startOfDay();
 
-        $rows = StatDailyMw::query()
+        $rows = StatMwDaily::query()
             ->select(array_merge(['timeslot'], self::NAMES))
             ->whereBetween('timeslot', [$from->toDateString(), $to->toDateString()])
             ->orderBy('timeslot')
