@@ -10,6 +10,7 @@
   import LineChart from './LineChart.svelte'
 
   type MetricKey = 'uniq_uniques' | 'sum_requests' | 'sum_bytes' | 'sum_cachedBytes'
+  type GaMetricKey = 'active_users' | 'screen_page_views' | 'sessions'
   type ChartUnit = 'count' | 'bytes' | 'percent'
 
   interface AnalyticsResp {
@@ -18,6 +19,13 @@
     sum_requests: Array<unknown>
     sum_bytes: Array<unknown>
     sum_cachedBytes: Array<unknown>
+  }
+
+  interface GaResp {
+    timeslots: string[]
+    active_users: Array<unknown>
+    screen_page_views: Array<unknown>
+    sessions: Array<unknown>
   }
 
   type MwMetricKey = 'pages' | 'articles' | 'edits' | 'images' | 'users' | 'activeusers' | 'admins' | 'jobs'
@@ -49,6 +57,12 @@
     sum_bytes: [],
     sum_cachedBytes: [],
   }
+  const EMPTY_GA: GaResp = {
+    timeslots: [],
+    active_users: [],
+    screen_page_views: [],
+    sessions: [],
+  }
   const EMPTY_MW: MwStatisticsResp = {
     timeslots: [],
     pages: [],
@@ -68,6 +82,7 @@
   let diffModeByKey = $state<Record<string, boolean>>({})
   let syncedHoverIndex = $state<number | null>(null)
   let data = $state<AnalyticsResp>(EMPTY)
+  let gaData = $state<GaResp>(EMPTY_GA)
   let mwData = $state<MwStatisticsResp>(EMPTY_MW)
   let fetchVersion = 0
 
@@ -78,9 +93,16 @@
   ]
 
   const labels = $derived.by(() => (range === '24h' ? data.timeslots : data.timeslots.map((v) => normalizeDateKey(v))))
+  const labelsGa = $derived.by(() => (range === '24h' ? gaData.timeslots : gaData.timeslots.map((v) => normalizeDateKey(v))))
   const rows = $derived.by<RowDef[]>(() => buildRows(data))
-  const labelsMw = $derived.by(() => mwData.timeslots.map((v) => normalizeDateKey(v)))
+  const gaRows = $derived.by<RowDef[]>(() => buildGaRows(gaData))
+  const labelsMw = $derived.by(() => (range === '24h' ? mwData.timeslots : mwData.timeslots.map((v) => normalizeDateKey(v))))
   const mwRows = $derived.by<RowDef[]>(() => buildMwRows(mwData))
+  const visibleTimeslots = $derived.by(() => {
+    if (data.timeslots.length > 0) return data.timeslots
+    if (gaData.timeslots.length > 0) return gaData.timeslots
+    return mwData.timeslots
+  })
 
   async function fetchData() {
     const version = ++fetchVersion
@@ -88,8 +110,9 @@
     failed = null
 
     if (range === '24h') {
-      const [[cfResp, cfErr], [mwResp, mwErr]] = await Promise.all([
+      const [[cfResp, cfErr], [gaResp, gaErr], [mwResp, mwErr]] = await Promise.all([
         httpy.get<AnalyticsResp>('/api/stat/cf-analytics/hourly'),
+        httpy.get<GaResp>('/api/stat/ga/hourly'),
         httpy.get<MwStatisticsResp>('/api/stat/mw-statistics/hourly'),
       ])
       if (version !== fetchVersion) return
@@ -103,15 +126,22 @@
         loading = false
         return
       }
+      if (gaErr) {
+        failed = gaErr.message
+        loading = false
+        return
+      }
       data = normalizeResp(cfResp)
+      gaData = normalizeGaResp(gaResp)
       mwData = normalizeMwResp(mwResp)
       loading = false
       return
     }
 
     const days = range === '7d' ? 7 : 30
-    const [[cfResp, cfErr], [mwResp, mwErr]] = await Promise.all([
+    const [[cfResp, cfErr], [gaResp, gaErr], [mwResp, mwErr]] = await Promise.all([
       httpy.get<AnalyticsResp>(`/api/stat/cf-analytics/daily/${days}`),
+      httpy.get<GaResp>(`/api/stat/ga/daily/${days}`),
       httpy.get<MwStatisticsResp>(`/api/stat/mw-statistics/daily/${days}`),
     ])
     if (version !== fetchVersion) return
@@ -126,8 +156,14 @@
       loading = false
       return
     }
+    if (gaErr) {
+      failed = gaErr.message
+      loading = false
+      return
+    }
 
     data = normalizeResp(cfResp)
+    gaData = normalizeGaResp(gaResp)
     mwData = normalizeMwResp(mwResp)
     loading = false
   }
@@ -155,6 +191,16 @@
       activeusers: Array.isArray(input.activeusers) ? input.activeusers : [],
       admins: Array.isArray(input.admins) ? input.admins : [],
       jobs: Array.isArray(input.jobs) ? input.jobs : [],
+    }
+  }
+
+  function normalizeGaResp(input: GaResp | null): GaResp {
+    if (!input) return EMPTY_GA
+    return {
+      timeslots: Array.isArray(input.timeslots) ? input.timeslots.map((v) => String(v)) : [],
+      active_users: Array.isArray(input.active_users) ? input.active_users : [],
+      screen_page_views: Array.isArray(input.screen_page_views) ? input.screen_page_views : [],
+      sessions: Array.isArray(input.sessions) ? input.sessions : [],
     }
   }
 
@@ -230,6 +276,7 @@
         value: lastMetric(resp, 'images'),
         unit: 'count',
         series: [{ label: 'Images', color: '#0891b2', values: seriesOfMw(resp, 'images') }],
+        diffValues: diffSeriesOfMw(resp, 'images'),
       },
       {
         key: 'mw-users',
@@ -237,6 +284,7 @@
         value: lastMetric(resp, 'users'),
         unit: 'count',
         series: [{ label: 'Users', color: '#0891b2', values: seriesOfMw(resp, 'users') }],
+        diffValues: diffSeriesOfMw(resp, 'users'),
       },
       {
         key: 'mw-activeusers',
@@ -244,6 +292,7 @@
         value: lastMetric(resp, 'activeusers'),
         unit: 'count',
         series: [{ label: 'Active Users', color: '#0891b2', values: seriesOfMw(resp, 'activeusers') }],
+        diffValues: diffSeriesOfMw(resp, 'activeusers'),
       },
       {
         key: 'mw-admins',
@@ -262,12 +311,53 @@
     ]
   }
 
+  function buildGaRows(resp: GaResp): RowDef[] {
+    return [
+      {
+        key: 'ga-active-users',
+        label: 'Active Users',
+        value: sumGaMetric(resp, 'active_users'),
+        unit: 'count',
+        series: [{ label: 'Active Users', color: '#0891b2', values: seriesOfGa(resp, 'active_users') }],
+      },
+      {
+        key: 'ga-views',
+        label: 'Views',
+        value: sumGaMetric(resp, 'screen_page_views'),
+        unit: 'count',
+        series: [{ label: 'Views', color: '#0891b2', values: seriesOfGa(resp, 'screen_page_views') }],
+      },
+      {
+        key: 'ga-sessions',
+        label: 'Sessions',
+        value: sumGaMetric(resp, 'sessions'),
+        unit: 'count',
+        series: [{ label: 'Sessions', color: '#0891b2', values: seriesOfGa(resp, 'sessions') }],
+      },
+    ]
+  }
+
   function seriesOf(resp: AnalyticsResp, key: MetricKey): Array<number | null> {
     const src = resp[key] ?? []
     return resp.timeslots.map((_, idx) => toNumber(src[idx] ?? null))
   }
 
   function sumMetric(resp: AnalyticsResp, key: MetricKey): number {
+    let total = 0
+    const src = resp[key] ?? []
+    for (let i = 0; i < src.length; i += 1) {
+      const value = toNumber(src[i] ?? null)
+      if (value != null) total += value
+    }
+    return total
+  }
+
+  function seriesOfGa(resp: GaResp, key: GaMetricKey): Array<number | null> {
+    const src = resp[key] ?? []
+    return resp.timeslots.map((_, idx) => toNumber(src[idx] ?? null))
+  }
+
+  function sumGaMetric(resp: GaResp, key: GaMetricKey): number {
     let total = 0
     const src = resp[key] ?? []
     for (let i = 0; i < src.length; i += 1) {
@@ -424,7 +514,7 @@
     </div>
 
     <p class="text-sm text-gray-500 dark:text-gray-400">
-      {md(data.timeslots[0])} - {md(data.timeslots[data.timeslots.length - 1])}
+      {md(visibleTimeslots[0])} - {md(visibleTimeslots[visibleTimeslots.length - 1])}
     </p>
   </div>
 
@@ -458,6 +548,34 @@
           />
         </div>
         {#if idx < rows.length - 1}
+          <hr class="border-0 border-t border-gray-200 dark:border-gray-700" />
+        {/if}
+      {/each}
+    </section>
+
+    <section class="mt-8">
+      <p class="mb-2 text-gray-500">Google Analytics</p>
+      {#each gaRows as row, idx (row.key)}
+        <div class="grid items-center md:grid-cols-[220px_minmax(0,760px)] md:justify-center">
+          <aside class="rounded">
+            <div class="text-gray-500">{row.label}</div>
+            <div class="text-[1.2rem] font-bold">{formatStatValue(row.value, row.unit)}</div>
+          </aside>
+
+          <LineChart
+            title={row.label}
+            labels={labelsGa}
+            unit={row.unit}
+            {valueMode}
+            selectedLabelMode={range === '24h' ? 'hour' : 'date'}
+            hoveredIndex={syncedHoverIndex}
+            onHoverIndex={(index) => {
+              syncedHoverIndex = index
+            }}
+            series={row.series}
+          />
+        </div>
+        {#if idx < gaRows.length - 1}
           <hr class="border-0 border-t border-gray-200 dark:border-gray-700" />
         {/if}
       {/each}

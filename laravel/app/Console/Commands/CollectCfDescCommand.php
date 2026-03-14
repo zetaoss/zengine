@@ -2,46 +2,20 @@
 
 namespace App\Console\Commands;
 
-use App\Services\Stat\CollectCfApiService;
+use App\Services\Stat\CollectCfDescService;
 use Illuminate\Console\Command;
 use RuntimeException;
 
-class CollectDescCfCommand extends Command
+class CollectCfDescCommand extends Command
 {
-    protected $signature = 'z:collect-desc-cf';
-    protected $description = 'List available Cloudflare stat datasets and fields';
+    protected $signature = 'z:collect-cf-desc';
+    protected $description = 'Describe Cloudflare analytics available data fields';
 
-    public function handle(CollectCfApiService $api): int
+    public function handle(CollectCfDescService $desc): int
     {
         try {
-            [$apiToken, $zoneId] = $api->resolveCredentials();
-
-            $query = <<<'GRAPHQL'
-query GetAvailableFields($zoneTag: string) {
-  viewer {
-    zones(filter: { zoneTag: $zoneTag }) {
-      settings {
-        httpRequests1hGroups {
-          enabled
-          availableFields
-        }
-        httpRequests1dGroups {
-          enabled
-          availableFields
-        }
-        httpRequestsAdaptiveGroups {
-          enabled
-          availableFields
-        }
-      }
-    }
-  }
-}
-GRAPHQL;
-
-            $payload = $api->runGraphql($apiToken, $query, ['zoneTag' => $zoneId]);
-
-            $settings = data_get($payload, 'data.viewer.zones.0.settings', []);
+            $result = $desc->collect();
+            $settings = $result['settings'];
             if (empty($settings)) {
                 $this->warn('No settings data found for this zone.');
 
