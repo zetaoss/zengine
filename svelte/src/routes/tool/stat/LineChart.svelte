@@ -164,9 +164,7 @@
     return typeof value === 'number' && Number.isFinite(value) ? value : null
   }
 
-  function fillColor(color: string) {
-    const alpha = 0.16
-
+  function fillColor(color: string, alpha = 0.16) {
     if (/^#[0-9a-fA-F]{6}$/.test(color)) {
       const r = Number.parseInt(color.slice(1, 3), 16)
       const g = Number.parseInt(color.slice(3, 5), 16)
@@ -204,7 +202,7 @@
     ctx.beginPath()
     ctx.rect(left, top, plotWidth, plotHeight)
     ctx.clip()
-    ctx.fillStyle = fillColor(barColor).replace(/0\.16\)$/, '0.32)')
+    ctx.fillStyle = fillColor(barColor, 0.32)
 
     for (let i = 0; i < count; i += 1) {
       const value = toNumber(barValues[i] ?? null)
