@@ -2,7 +2,7 @@
 
 namespace App\Services\Stat;
 
-use App\Models\StatDailyMw;
+use App\Models\StatMwDaily;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -31,7 +31,7 @@ class CollectMwDailyService
             'jobs' => (int) ($statistics['jobs'] ?? 0),
         ];
 
-        StatDailyMw::query()->upsert([$row], ['timeslot'], [
+        StatMwDaily::query()->upsert([$row], ['timeslot'], [
             'pages',
             'articles',
             'edits',

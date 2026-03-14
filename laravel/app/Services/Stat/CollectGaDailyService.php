@@ -2,7 +2,7 @@
 
 namespace App\Services\Stat;
 
-use App\Models\StatDailyGa;
+use App\Models\StatGaDaily;
 
 class CollectGaDailyService
 {
@@ -73,7 +73,7 @@ class CollectGaDailyService
             'sinceLocal' => $sinceLocal,
             'untilLocal' => $untilLocal,
             'timeslots' => array_values(array_map(static fn (array $row): string => (string) $row['timeslot'], $rows)),
-            'db' => $this->persist->persistRows(StatDailyGa::class, $rows),
+            'db' => $this->persist->persistRows(StatGaDaily::class, $rows),
         ];
     }
 

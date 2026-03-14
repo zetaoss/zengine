@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\StatDailyCf;
-use App\Models\StatHourlyCf;
+use App\Models\StatCfDaily;
+use App\Models\StatCfHourly;
 use Illuminate\Support\Carbon;
 
 class StatCfController extends Controller
@@ -18,7 +18,7 @@ class StatCfController extends Controller
 
     public function hourly(): array
     {
-        $latestTimeslot = StatHourlyCf::query()->max('timeslot');
+        $latestTimeslot = StatCfHourly::query()->max('timeslot');
         if (! $latestTimeslot) {
             return $this->emptySeriesResponse();
         }
@@ -26,7 +26,7 @@ class StatCfController extends Controller
         $to = Carbon::parse((string) $latestTimeslot, 'UTC')->startOfHour();
         $from = $to->copy()->subHours(23);
 
-        $rows = StatHourlyCf::query()
+        $rows = StatCfHourly::query()
             ->select(['timeslot', 'name', 'value'])
             ->whereBetween('timeslot', [$from->toDateTimeString(), $to->toDateTimeString()])
             ->whereIn('name', self::NAMES)
@@ -61,7 +61,7 @@ class StatCfController extends Controller
             abort(404);
         }
 
-        $lastDate = StatDailyCf::query()->max('timeslot');
+        $lastDate = StatCfDaily::query()->max('timeslot');
         if (! $lastDate) {
             return $this->emptySeriesResponse();
         }
@@ -69,7 +69,7 @@ class StatCfController extends Controller
         $to = Carbon::parse((string) $lastDate)->startOfDay();
         $from = $to->copy()->subDays($days - 1)->startOfDay();
 
-        $rows = StatDailyCf::query()
+        $rows = StatCfDaily::query()
             ->select(['timeslot', 'name', 'value'])
             ->whereBetween('timeslot', [$from->toDateString(), $to->toDateString()])
             ->whereIn('name', self::NAMES)

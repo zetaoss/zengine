@@ -2,24 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\StatGaDaily;
-use App\Models\StatGaHourly;
+use App\Models\StatGscDaily;
+use App\Models\StatGscHourly;
 use Illuminate\Support\Carbon;
 
-class StatGaController extends Controller
+class StatGscController extends Controller
 {
     public function hourly(): array
     {
-        $latestTimeslot = StatGaHourly::query()->max('timeslot');
+        $latestTimeslot = StatGscHourly::query()->max('timeslot');
         if (! $latestTimeslot) {
-            return $this->emptySeriesResponse(StatGaHourly::COLUMN_NAMES);
+            return $this->emptySeriesResponse(StatGscHourly::COLUMN_NAMES);
         }
 
         $to = Carbon::parse((string) $latestTimeslot, 'UTC')->startOfHour();
         $from = $to->copy()->subHours(23);
 
-        $rows = StatGaHourly::query()
-            ->select(array_merge(['timeslot'], StatGaHourly::COLUMN_NAMES))
+        $rows = StatGscHourly::query()
+            ->select(array_merge(['timeslot'], StatGscHourly::COLUMN_NAMES))
             ->whereBetween('timeslot', [$from->toDateTimeString(), $to->toDateTimeString()])
             ->orderBy('timeslot')
             ->get();
@@ -28,7 +28,7 @@ class StatGaController extends Controller
         for ($cursor = $from->copy(); $cursor->lte($to); $cursor->addHour()) {
             $timeslots[] = $cursor->utc()->format('Y-m-d\TH:i:s\Z');
         }
-        $series = $this->emptySeries(count($timeslots), StatGaHourly::COLUMN_NAMES);
+        $series = $this->emptySeries(count($timeslots), StatGscHourly::COLUMN_NAMES);
 
         foreach ($rows as $row) {
             $timeslot = Carbon::parse((string) $row->timeslot, 'UTC')->utc()->format('Y-m-d\TH:i:s\Z');
@@ -37,7 +37,7 @@ class StatGaController extends Controller
                 continue;
             }
 
-            foreach (StatGaHourly::COLUMN_NAMES as $name) {
+            foreach (StatGscHourly::COLUMN_NAMES as $name) {
                 $value = $row->{$name} ?? null;
                 $series[$name][$index] = is_numeric($value) ? (float) $value : null;
             }
@@ -52,16 +52,16 @@ class StatGaController extends Controller
             abort(404);
         }
 
-        $lastDate = StatGaDaily::query()->max('timeslot');
+        $lastDate = StatGscDaily::query()->max('timeslot');
         if (! $lastDate) {
-            return $this->emptySeriesResponse(StatGaDaily::COLUMN_NAMES);
+            return $this->emptySeriesResponse(StatGscDaily::COLUMN_NAMES);
         }
 
         $to = Carbon::parse((string) $lastDate)->startOfDay();
         $from = $to->copy()->subDays($days - 1)->startOfDay();
 
-        $rows = StatGaDaily::query()
-            ->select(array_merge(['timeslot'], StatGaDaily::COLUMN_NAMES))
+        $rows = StatGscDaily::query()
+            ->select(array_merge(['timeslot'], StatGscDaily::COLUMN_NAMES))
             ->whereBetween('timeslot', [$from->toDateString(), $to->toDateString()])
             ->orderBy('timeslot')
             ->get();
@@ -70,7 +70,7 @@ class StatGaController extends Controller
         for ($cursor = $from->copy(); $cursor->lte($to); $cursor->addDay()) {
             $timeslots[] = $cursor->toDateString();
         }
-        $series = $this->emptySeries(count($timeslots), StatGaDaily::COLUMN_NAMES);
+        $series = $this->emptySeries(count($timeslots), StatGscDaily::COLUMN_NAMES);
 
         foreach ($rows as $row) {
             $timeslot = $row->timeslot->toDateString();
@@ -79,7 +79,7 @@ class StatGaController extends Controller
                 continue;
             }
 
-            foreach (StatGaDaily::COLUMN_NAMES as $name) {
+            foreach (StatGscDaily::COLUMN_NAMES as $name) {
                 $value = $row->{$name} ?? null;
                 $series[$name][$index] = is_numeric($value) ? (float) $value : null;
             }

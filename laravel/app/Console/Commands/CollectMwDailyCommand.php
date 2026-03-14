@@ -22,7 +22,7 @@ class CollectMwDailyCommand extends Command
                 $this->line(json_encode($result['payload'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}');
             }
 
-            $this->info("Stored stat_daily_mw row for timeslot={$result['row']['timeslot']}");
+            $this->info("Stored stat_mw_daily row for timeslot={$result['row']['timeslot']}");
             $this->table(array_keys($result['row']), [$result['row']]);
 
             return Command::SUCCESS;

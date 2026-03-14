@@ -11,7 +11,7 @@
 
   type MetricKey = 'uniq_uniques' | 'sum_requests' | 'sum_bytes' | 'sum_cachedBytes'
   type GaMetricKey = 'active_users' | 'screen_page_views' | 'sessions'
-  type ChartUnit = 'count' | 'bytes' | 'percent'
+  type ChartUnit = 'count' | 'bytes' | 'percent' | 'rank'
 
   interface AnalyticsResp {
     timeslots: string[]
@@ -26,6 +26,15 @@
     active_users: Array<unknown>
     screen_page_views: Array<unknown>
     sessions: Array<unknown>
+  }
+
+  type GscMetricKey = 'clicks' | 'impressions' | 'ctr' | 'position'
+  interface GscResp {
+    timeslots: string[]
+    clicks: Array<unknown>
+    impressions: Array<unknown>
+    ctr: Array<unknown>
+    position: Array<unknown>
   }
 
   type MwMetricKey = 'pages' | 'articles' | 'edits' | 'images' | 'users' | 'activeusers' | 'admins' | 'jobs'
@@ -46,7 +55,7 @@
     label: string
     value: number | null
     unit: ChartUnit
-    series: Array<{ label: string; color: string; values: Array<number | null> }>
+    series: Array<{ label: string; color?: string; values: Array<number | null> }>
     diffValues?: Array<number | null>
   }
 
@@ -63,6 +72,13 @@
     screen_page_views: [],
     sessions: [],
   }
+  const EMPTY_GSC: GscResp = {
+    timeslots: [],
+    clicks: [],
+    impressions: [],
+    ctr: [],
+    position: [],
+  }
   const EMPTY_MW: MwStatisticsResp = {
     timeslots: [],
     pages: [],
@@ -74,6 +90,7 @@
     admins: [],
     jobs: [],
   }
+  const DEFAULT_LINE_COLOR = '#0891b2'
 
   let loading = $state(true)
   let failed = $state<string | null>(null)
@@ -83,6 +100,7 @@
   let syncedHoverIndex = $state<number | null>(null)
   let data = $state<AnalyticsResp>(EMPTY)
   let gaData = $state<GaResp>(EMPTY_GA)
+  let gscData = $state<GscResp>(EMPTY_GSC)
   let mwData = $state<MwStatisticsResp>(EMPTY_MW)
   let fetchVersion = 0
 
@@ -96,11 +114,14 @@
   const labelsGa = $derived.by(() => (range === '24h' ? gaData.timeslots : gaData.timeslots.map((v) => normalizeDateKey(v))))
   const rows = $derived.by<RowDef[]>(() => buildRows(data))
   const gaRows = $derived.by<RowDef[]>(() => buildGaRows(gaData))
+  const labelsGsc = $derived.by(() => (range === '24h' ? gscData.timeslots : gscData.timeslots.map((v) => normalizeDateKey(v))))
+  const gscRows = $derived.by<RowDef[]>(() => buildGscRows(gscData))
   const labelsMw = $derived.by(() => (range === '24h' ? mwData.timeslots : mwData.timeslots.map((v) => normalizeDateKey(v))))
   const mwRows = $derived.by<RowDef[]>(() => buildMwRows(mwData))
   const visibleTimeslots = $derived.by(() => {
     if (data.timeslots.length > 0) return data.timeslots
     if (gaData.timeslots.length > 0) return gaData.timeslots
+    if (gscData.timeslots.length > 0) return gscData.timeslots
     return mwData.timeslots
   })
 
@@ -110,9 +131,10 @@
     failed = null
 
     if (range === '24h') {
-      const [[cfResp, cfErr], [gaResp, gaErr], [mwResp, mwErr]] = await Promise.all([
+      const [[cfResp, cfErr], [gaResp, gaErr], [gscResp, gscErr], [mwResp, mwErr]] = await Promise.all([
         httpy.get<AnalyticsResp>('/api/stat/cf-analytics/hourly'),
         httpy.get<GaResp>('/api/stat/ga/hourly'),
+        httpy.get<GscResp>('/api/stat/gsc/hourly'),
         httpy.get<MwStatisticsResp>('/api/stat/mw-statistics/hourly'),
       ])
       if (version !== fetchVersion) return
@@ -126,6 +148,11 @@
         loading = false
         return
       }
+      if (gscErr) {
+        failed = gscErr.message
+        loading = false
+        return
+      }
       if (gaErr) {
         failed = gaErr.message
         loading = false
@@ -133,15 +160,17 @@
       }
       data = normalizeResp(cfResp)
       gaData = normalizeGaResp(gaResp)
+      gscData = normalizeGscResp(gscResp)
       mwData = normalizeMwResp(mwResp)
       loading = false
       return
     }
 
     const days = range === '7d' ? 7 : 30
-    const [[cfResp, cfErr], [gaResp, gaErr], [mwResp, mwErr]] = await Promise.all([
+    const [[cfResp, cfErr], [gaResp, gaErr], [gscResp, gscErr], [mwResp, mwErr]] = await Promise.all([
       httpy.get<AnalyticsResp>(`/api/stat/cf-analytics/daily/${days}`),
       httpy.get<GaResp>(`/api/stat/ga/daily/${days}`),
+      httpy.get<GscResp>(`/api/stat/gsc/daily/${days}`),
       httpy.get<MwStatisticsResp>(`/api/stat/mw-statistics/daily/${days}`),
     ])
     if (version !== fetchVersion) return
@@ -156,6 +185,11 @@
       loading = false
       return
     }
+    if (gscErr) {
+      failed = gscErr.message
+      loading = false
+      return
+    }
     if (gaErr) {
       failed = gaErr.message
       loading = false
@@ -164,6 +198,7 @@
 
     data = normalizeResp(cfResp)
     gaData = normalizeGaResp(gaResp)
+    gscData = normalizeGscResp(gscResp)
     mwData = normalizeMwResp(mwResp)
     loading = false
   }
@@ -204,6 +239,17 @@
     }
   }
 
+  function normalizeGscResp(input: GscResp | null): GscResp {
+    if (!input) return EMPTY_GSC
+    return {
+      timeslots: Array.isArray(input.timeslots) ? input.timeslots.map((v) => String(v)) : [],
+      clicks: Array.isArray(input.clicks) ? input.clicks : [],
+      impressions: Array.isArray(input.impressions) ? input.impressions : [],
+      ctr: Array.isArray(input.ctr) ? input.ctr : [],
+      position: Array.isArray(input.position) ? input.position : [],
+    }
+  }
+
   function buildRows(resp: AnalyticsResp): RowDef[] {
     return [
       {
@@ -211,35 +257,35 @@
         label: 'Unique Visitors',
         value: sumMetric(resp, 'uniq_uniques'),
         unit: 'count',
-        series: [{ label: 'Unique Visitors', color: '#0891b2', values: seriesOf(resp, 'uniq_uniques') }],
+        series: [{ label: 'Unique Visitors', values: seriesOf(resp, 'uniq_uniques') }],
       },
       {
         key: 'total-requests',
         label: 'Total Requests',
         value: sumMetric(resp, 'sum_requests'),
         unit: 'count',
-        series: [{ label: 'Total Requests', color: '#0891b2', values: seriesOf(resp, 'sum_requests') }],
+        series: [{ label: 'Total Requests', values: seriesOf(resp, 'sum_requests') }],
       },
       {
         key: 'percent-cached',
         label: 'Percent Cached',
         value: percentCachedTotal(resp),
         unit: 'percent',
-        series: [{ label: 'Percent Cached', color: '#0891b2', values: percentCachedSeries(resp) }],
+        series: [{ label: 'Percent Cached', values: percentCachedSeries(resp) }],
       },
       {
         key: 'data-served',
         label: 'Total Data Served',
         value: sumMetric(resp, 'sum_bytes'),
         unit: 'bytes',
-        series: [{ label: 'Total Data Served', color: '#0891b2', values: seriesOf(resp, 'sum_bytes') }],
+        series: [{ label: 'Total Data Served', values: seriesOf(resp, 'sum_bytes') }],
       },
       {
         key: 'data-cached',
         label: 'Data Cached',
         value: sumMetric(resp, 'sum_cachedBytes'),
         unit: 'bytes',
-        series: [{ label: 'Data Cached', color: '#0891b2', values: seriesOf(resp, 'sum_cachedBytes') }],
+        series: [{ label: 'Data Cached', values: seriesOf(resp, 'sum_cachedBytes') }],
       },
     ]
   }
@@ -251,7 +297,7 @@
         label: 'Pages',
         value: lastMetric(resp, 'pages'),
         unit: 'count',
-        series: [{ label: 'Pages', color: '#0891b2', values: seriesOfMw(resp, 'pages') }],
+        series: [{ label: 'Pages', values: seriesOfMw(resp, 'pages') }],
         diffValues: diffSeriesOfMw(resp, 'pages'),
       },
       {
@@ -259,7 +305,7 @@
         label: 'Articles',
         value: lastMetric(resp, 'articles'),
         unit: 'count',
-        series: [{ label: 'Articles', color: '#0891b2', values: seriesOfMw(resp, 'articles') }],
+        series: [{ label: 'Articles', values: seriesOfMw(resp, 'articles') }],
         diffValues: diffSeriesOfMw(resp, 'articles'),
       },
       {
@@ -267,7 +313,7 @@
         label: 'Edits',
         value: lastMetric(resp, 'edits'),
         unit: 'count',
-        series: [{ label: 'Edits', color: '#0891b2', values: seriesOfMw(resp, 'edits') }],
+        series: [{ label: 'Edits', values: seriesOfMw(resp, 'edits') }],
         diffValues: diffSeriesOfMw(resp, 'edits'),
       },
       {
@@ -275,7 +321,7 @@
         label: 'Images',
         value: lastMetric(resp, 'images'),
         unit: 'count',
-        series: [{ label: 'Images', color: '#0891b2', values: seriesOfMw(resp, 'images') }],
+        series: [{ label: 'Images', values: seriesOfMw(resp, 'images') }],
         diffValues: diffSeriesOfMw(resp, 'images'),
       },
       {
@@ -283,30 +329,28 @@
         label: 'Users',
         value: lastMetric(resp, 'users'),
         unit: 'count',
-        series: [{ label: 'Users', color: '#0891b2', values: seriesOfMw(resp, 'users') }],
-        diffValues: diffSeriesOfMw(resp, 'users'),
+        series: [{ label: 'Users', values: seriesOfMw(resp, 'users') }],
       },
       {
         key: 'mw-activeusers',
         label: 'Active Users',
         value: lastMetric(resp, 'activeusers'),
         unit: 'count',
-        series: [{ label: 'Active Users', color: '#0891b2', values: seriesOfMw(resp, 'activeusers') }],
-        diffValues: diffSeriesOfMw(resp, 'activeusers'),
+        series: [{ label: 'Active Users', values: seriesOfMw(resp, 'activeusers') }],
       },
       {
         key: 'mw-admins',
         label: 'Admins',
         value: lastMetric(resp, 'admins'),
         unit: 'count',
-        series: [{ label: 'Admins', color: '#0891b2', values: seriesOfMw(resp, 'admins') }],
+        series: [{ label: 'Admins', values: seriesOfMw(resp, 'admins') }],
       },
       {
         key: 'mw-jobs',
         label: 'Jobs',
         value: lastMetric(resp, 'jobs'),
         unit: 'count',
-        series: [{ label: 'Jobs', color: '#0891b2', values: seriesOfMw(resp, 'jobs') }],
+        series: [{ label: 'Jobs', values: seriesOfMw(resp, 'jobs') }],
       },
     ]
   }
@@ -318,21 +362,54 @@
         label: 'Active Users',
         value: sumGaMetric(resp, 'active_users'),
         unit: 'count',
-        series: [{ label: 'Active Users', color: '#0891b2', values: seriesOfGa(resp, 'active_users') }],
+        series: [{ label: 'Active Users', values: seriesOfGa(resp, 'active_users') }],
       },
       {
         key: 'ga-views',
         label: 'Views',
         value: sumGaMetric(resp, 'screen_page_views'),
         unit: 'count',
-        series: [{ label: 'Views', color: '#0891b2', values: seriesOfGa(resp, 'screen_page_views') }],
+        series: [{ label: 'Views', values: seriesOfGa(resp, 'screen_page_views') }],
       },
       {
         key: 'ga-sessions',
         label: 'Sessions',
         value: sumGaMetric(resp, 'sessions'),
         unit: 'count',
-        series: [{ label: 'Sessions', color: '#0891b2', values: seriesOfGa(resp, 'sessions') }],
+        series: [{ label: 'Sessions', values: seriesOfGa(resp, 'sessions') }],
+      },
+    ]
+  }
+
+  function buildGscRows(resp: GscResp): RowDef[] {
+    return [
+      {
+        key: 'gsc-clicks',
+        label: 'Clicks',
+        value: sumGscMetric(resp, 'clicks'),
+        unit: 'count',
+        series: [{ label: 'Clicks', values: seriesOfGsc(resp, 'clicks') }],
+      },
+      {
+        key: 'gsc-impressions',
+        label: 'Impressions',
+        value: sumGscMetric(resp, 'impressions'),
+        unit: 'count',
+        series: [{ label: 'Impressions', values: seriesOfGsc(resp, 'impressions') }],
+      },
+      {
+        key: 'gsc-ctr',
+        label: 'CTR',
+        value: totalCtr(resp),
+        unit: 'percent',
+        series: [{ label: 'CTR', values: seriesOfGsc(resp, 'ctr') }],
+      },
+      {
+        key: 'gsc-position',
+        label: 'Position',
+        value: weightedAveragePosition(resp),
+        unit: 'rank',
+        series: [{ label: 'Position', values: seriesOfGsc(resp, 'position') }],
       },
     ]
   }
@@ -365,6 +442,44 @@
       if (value != null) total += value
     }
     return total
+  }
+
+  function seriesOfGsc(resp: GscResp, key: GscMetricKey): Array<number | null> {
+    const src = resp[key] ?? []
+    return resp.timeslots.map((_, idx) => toNumber(src[idx] ?? null))
+  }
+
+  function sumGscMetric(resp: GscResp, key: Extract<GscMetricKey, 'clicks' | 'impressions'>): number {
+    let total = 0
+    const src = resp[key] ?? []
+    for (let i = 0; i < src.length; i += 1) {
+      const value = toNumber(src[i] ?? null)
+      if (value != null) total += value
+    }
+    return total
+  }
+
+  function totalCtr(resp: GscResp): number | null {
+    const clicks = sumGscMetric(resp, 'clicks')
+    const impressions = sumGscMetric(resp, 'impressions')
+    if (!Number.isFinite(impressions) || impressions <= 0) return null
+    return (clicks / impressions) * 100
+  }
+
+  function weightedAveragePosition(resp: GscResp): number | null {
+    let weighted = 0
+    let totalImpressions = 0
+
+    for (let i = 0; i < resp.timeslots.length; i += 1) {
+      const position = toNumber(resp.position[i] ?? null)
+      const impressions = toNumber(resp.impressions[i] ?? null)
+      if (position == null || impressions == null || impressions <= 0) continue
+      weighted += position * impressions
+      totalImpressions += impressions
+    }
+
+    if (!Number.isFinite(totalImpressions) || totalImpressions <= 0) return null
+    return weighted / totalImpressions
   }
 
   function seriesOfMw(resp: MwStatisticsResp, key: MwMetricKey): Array<number | null> {
@@ -455,6 +570,11 @@
     return `${value.toFixed(1)}%`
   }
 
+  function fmtRank(value: number | null | undefined) {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return '-'
+    return value.toFixed(1)
+  }
+
   function fmtExact(value: number | null | undefined, unit: ChartUnit) {
     if (typeof value !== 'number' || !Number.isFinite(value)) return '-'
     if (unit === 'percent') {
@@ -463,6 +583,9 @@
     if (unit === 'bytes') {
       return `${value.toLocaleString('en-US', { maximumFractionDigits: 0 })} B`
     }
+    if (unit === 'rank') {
+      return value.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 2 })
+    }
     return value.toLocaleString('en-US', { maximumFractionDigits: 0 })
   }
 
@@ -470,6 +593,7 @@
     if (valueMode === 'exact') return fmtExact(value, unit)
     if (unit === 'bytes') return fmtBytes(value)
     if (unit === 'percent') return fmtPercent(value)
+    if (unit === 'rank') return fmtRank(value)
     return fmtCount(value)
   }
 
@@ -538,6 +662,7 @@
             title={row.label}
             {labels}
             unit={row.unit}
+            color={DEFAULT_LINE_COLOR}
             {valueMode}
             selectedLabelMode={range === '24h' ? 'hour' : 'date'}
             hoveredIndex={syncedHoverIndex}
@@ -566,6 +691,7 @@
             title={row.label}
             labels={labelsGa}
             unit={row.unit}
+            color={DEFAULT_LINE_COLOR}
             {valueMode}
             selectedLabelMode={range === '24h' ? 'hour' : 'date'}
             hoveredIndex={syncedHoverIndex}
@@ -576,6 +702,35 @@
           />
         </div>
         {#if idx < gaRows.length - 1}
+          <hr class="border-0 border-t border-gray-200 dark:border-gray-700" />
+        {/if}
+      {/each}
+    </section>
+
+    <section class="mt-8">
+      <p class="mb-2 text-gray-500">Google Search Console</p>
+      {#each gscRows as row, idx (row.key)}
+        <div class="grid items-center md:grid-cols-[220px_minmax(0,760px)] md:justify-center">
+          <aside class="rounded">
+            <div class="text-gray-500">{row.label}</div>
+            <div class="text-[1.2rem] font-bold">{formatStatValue(row.value, row.unit)}</div>
+          </aside>
+
+          <LineChart
+            title={row.label}
+            labels={labelsGsc}
+            unit={row.unit}
+            color={DEFAULT_LINE_COLOR}
+            {valueMode}
+            selectedLabelMode={range === '24h' ? 'hour' : 'date'}
+            hoveredIndex={syncedHoverIndex}
+            onHoverIndex={(index) => {
+              syncedHoverIndex = index
+            }}
+            series={row.series}
+          />
+        </div>
+        {#if idx < gscRows.length - 1}
           <hr class="border-0 border-t border-gray-200 dark:border-gray-700" />
         {/if}
       {/each}
@@ -594,6 +749,7 @@
             title={supportsDiff(row) && diffModeByKey[row.key] === true ? `${row.label} diff` : row.label}
             labels={labelsMw}
             unit={row.unit}
+            color={DEFAULT_LINE_COLOR}
             {valueMode}
             fillArea={!(supportsDiff(row) && diffModeByKey[row.key] === true)}
             selectedLabelMode={range === '24h' ? 'hour' : 'date'}
@@ -602,10 +758,10 @@
               syncedHoverIndex = index
             }}
             series={supportsDiff(row) && diffModeByKey[row.key] === true
-              ? [{ label: `${row.label} diff`, color: '#0891b2', values: row.diffValues ?? [] }]
+              ? [{ label: `${row.label} diff`, values: row.diffValues ?? [] }]
               : row.series}
             barValues={supportsDiff(row) && diffModeByKey[row.key] === true ? (row.diffValues ?? []) : null}
-            barColor="#0891b2"
+            barColor={DEFAULT_LINE_COLOR}
           />
         </div>
         {#if idx < mwRows.length - 1}

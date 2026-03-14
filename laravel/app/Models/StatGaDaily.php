@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class StatDailyGa extends Model
+class StatGaDaily extends Model
 {
     public const COLUMN_NAMES = [
         'active_users',
@@ -13,7 +13,7 @@ class StatDailyGa extends Model
     ];
 
     public $timestamps = false;
-    protected $table = 'stat_daily_ga';
+    protected $table = 'stat_ga_daily';
     protected $fillable = [
         'timeslot',
         'active_users',

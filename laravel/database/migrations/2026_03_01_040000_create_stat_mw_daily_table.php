@@ -8,9 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('stat_hourly_mw', function (Blueprint $table) {
+        Schema::create('stat_mw_daily', function (Blueprint $table) {
             $table->id();
-            $table->dateTime('timeslot')->comment('UTC hour');
+            $table->date('timeslot')->comment('KST date');
             $table->unsignedBigInteger('pages')->default(0);
             $table->unsignedBigInteger('articles')->default(0);
             $table->unsignedBigInteger('edits')->default(0);
@@ -20,13 +20,12 @@ return new class extends Migration
             $table->unsignedBigInteger('admins')->default(0);
             $table->unsignedBigInteger('jobs')->default(0);
 
-            $table->unique('timeslot', 'stat_hourly_mw_timeslot_unique');
-            $table->index('timeslot', 'stat_hourly_mw_timeslot_index');
+            $table->unique('timeslot', 'stat_mw_daily_timeslot_unique');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('stat_hourly_mw');
+        Schema::dropIfExists('stat_mw_daily');
     }
 };

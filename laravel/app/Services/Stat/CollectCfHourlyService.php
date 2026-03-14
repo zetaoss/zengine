@@ -2,7 +2,7 @@
 
 namespace App\Services\Stat;
 
-use App\Models\StatHourlyCf;
+use App\Models\StatCfHourly;
 use Carbon\CarbonImmutable;
 use RuntimeException;
 
@@ -116,7 +116,7 @@ class CollectCfHourlyService
         $timeslots = array_values(array_unique(array_map(fn ($row) => (string) $row['timeslot'], $rows)));
         $names = array_values(array_unique(array_map(fn ($row) => (string) $row['name'], $rows)));
 
-        $existing = StatHourlyCf::query()
+        $existing = StatCfHourly::query()
             ->toBase()
             ->select(['timeslot', 'name', 'value'])
             ->whereIn('timeslot', $timeslots)
@@ -153,7 +153,7 @@ class CollectCfHourlyService
         }
 
         if (! empty($upsertRows)) {
-            StatHourlyCf::query()->upsert($upsertRows, ['timeslot', 'name'], ['value']);
+            StatCfHourly::query()->upsert($upsertRows, ['timeslot', 'name'], ['value']);
         }
 
         return ['inserted' => $inserted, 'updated' => $updated, 'skipped' => $skipped];
