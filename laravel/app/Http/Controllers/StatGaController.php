@@ -12,7 +12,7 @@ class StatGaController extends Controller
     {
         $latestTimeslot = StatHourlyGa::query()->max('timeslot');
         if (! $latestTimeslot) {
-            return $this->emptySeriesResponse();
+            return $this->emptySeriesResponse(StatHourlyGa::COLUMN_NAMES);
         }
 
         $to = Carbon::parse((string) $latestTimeslot, 'UTC')->startOfHour();
@@ -28,7 +28,7 @@ class StatGaController extends Controller
         for ($cursor = $from->copy(); $cursor->lte($to); $cursor->addHour()) {
             $timeslots[] = $cursor->utc()->format('Y-m-d\TH:i:s\Z');
         }
-        $series = $this->emptySeries(count($timeslots));
+        $series = $this->emptySeries(count($timeslots), StatHourlyGa::COLUMN_NAMES);
 
         foreach ($rows as $row) {
             $timeslot = Carbon::parse((string) $row->timeslot, 'UTC')->utc()->format('Y-m-d\TH:i:s\Z');
@@ -54,7 +54,7 @@ class StatGaController extends Controller
 
         $lastDate = StatDailyGa::query()->max('timeslot');
         if (! $lastDate) {
-            return $this->emptySeriesResponse();
+            return $this->emptySeriesResponse(StatDailyGa::COLUMN_NAMES);
         }
 
         $to = Carbon::parse((string) $lastDate)->startOfDay();
@@ -70,7 +70,7 @@ class StatGaController extends Controller
         for ($cursor = $from->copy(); $cursor->lte($to); $cursor->addDay()) {
             $timeslots[] = $cursor->toDateString();
         }
-        $series = $this->emptySeries(count($timeslots));
+        $series = $this->emptySeries(count($timeslots), StatDailyGa::COLUMN_NAMES);
 
         foreach ($rows as $row) {
             $timeslot = $row->timeslot->toDateString();
@@ -88,15 +88,15 @@ class StatGaController extends Controller
         return ['timeslots' => $timeslots] + $series;
     }
 
-    private function emptySeriesResponse(): array
+    private function emptySeriesResponse(array $columnNames): array
     {
-        return ['timeslots' => []] + $this->emptySeries(0);
+        return ['timeslots' => []] + $this->emptySeries(0, $columnNames);
     }
 
-    private function emptySeries(int $size): array
+    private function emptySeries(int $size, array $columnNames): array
     {
         $series = [];
-        foreach (StatDailyGa::COLUMN_NAMES as $name) {
+        foreach ($columnNames as $name) {
             $series[$name] = array_fill(0, $size, null);
         }
 

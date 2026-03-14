@@ -16,7 +16,6 @@ return new class extends Migration
             $table->unsignedBigInteger('sessions')->default(0);
 
             $table->unique('timeslot', 'stat_hourly_ga_timeslot_unique');
-            $table->index('timeslot', 'stat_hourly_ga_timeslot_index');
         });
     }
 
