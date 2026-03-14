@@ -6,7 +6,7 @@ use App\Models\StatHourlyCf;
 use Carbon\CarbonImmutable;
 use RuntimeException;
 
-class CollectHourlyCfService
+class CollectCfHourlyService
 {
     private const MAX_DAYS = 3;
 
@@ -18,7 +18,7 @@ class CollectHourlyCfService
     {
         if ($days > self::MAX_DAYS) {
             throw new RuntimeException(
-                '--days for z:collect-hourly-cf must be 1..3 (Cloudflare 1h dataset retention is about 262800 seconds).'
+                '--days for z:collect-cf-hourly must be 1..3 (Cloudflare 1h dataset retention is about 262800 seconds).'
             );
         }
 

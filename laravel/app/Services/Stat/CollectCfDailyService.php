@@ -4,7 +4,7 @@ namespace App\Services\Stat;
 
 use App\Models\StatDailyCf;
 
-class CollectDailyCfService
+class CollectCfDailyService
 {
     public function __construct(
         private readonly CollectCfApiService $api,

@@ -12,6 +12,7 @@ use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\ReplyController;
 use App\Http\Controllers\RunboxController;
 use App\Http\Controllers\StatCfController;
+use App\Http\Controllers\StatGaController;
 use App\Http\Controllers\StatMwController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserProfileController;
@@ -38,6 +39,8 @@ Route::get('/me/gravatar/verify', [AuthController::class, 'verifyGravatar'])->mi
 
 Route::get('/stat/cf-analytics/hourly', [StatCfController::class, 'hourly']);
 Route::get('/stat/cf-analytics/daily/{days}', [StatCfController::class, 'daily'])->whereIn('days', ['7', '30']);
+Route::get('/stat/ga/hourly', [StatGaController::class, 'hourly']);
+Route::get('/stat/ga/daily/{days}', [StatGaController::class, 'daily'])->whereIn('days', ['7', '30']);
 Route::get('/stat/mw-statistics/hourly', [StatMwController::class, 'hourly']);
 Route::get('/stat/mw-statistics/daily/{days}', [StatMwController::class, 'daily'])->whereIn('days', ['7', '30']);
 
