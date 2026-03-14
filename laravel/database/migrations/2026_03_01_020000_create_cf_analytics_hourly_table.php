@@ -8,19 +8,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('cf_analytics_hourly', function (Blueprint $table) {
+        Schema::create('stat_hourly_cf', function (Blueprint $table) {
             $table->id();
             $table->dateTime('timeslot')->comment('UTC');
             $table->string('name', 64);
             $table->text('value')->comment('JSON text');
 
-            $table->unique(['timeslot', 'name'], 'cf_analytics_hourly_timeslot_name_unique');
-            $table->index('timeslot', 'cf_analytics_hourly_timeslot_index');
+            $table->unique(['timeslot', 'name'], 'stat_hourly_cf_timeslot_name_unique');
+            $table->index('timeslot', 'stat_hourly_cf_timeslot_index');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('cf_analytics_hourly');
+        Schema::dropIfExists('stat_hourly_cf');
     }
 };

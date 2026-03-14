@@ -19,13 +19,30 @@
     labels: string[]
     unit: Unit
     series: LineSeries[]
+    barValues?: Array<number | null> | null
+    barColor?: string
+    fillArea?: boolean
+    valueMode?: 'compact' | 'exact'
     height?: number
     hoveredIndex?: number | null
     onHoverIndex?: (index: number | null) => void
     selectedLabelMode?: 'date' | 'hour'
   }
 
-  const { title, labels, unit, series, height = 80, hoveredIndex = null, onHoverIndex, selectedLabelMode = 'date' }: Props = $props()
+  const {
+    title,
+    labels,
+    unit,
+    series,
+    barValues = null,
+    barColor = '#0891b2',
+    fillArea = true,
+    valueMode = 'compact',
+    height = 80,
+    hoveredIndex = null,
+    onHoverIndex,
+    selectedLabelMode = 'date',
+  }: Props = $props()
 
   let hostEl = $state<HTMLDivElement | null>(null)
   let chartEl = $state<HTMLDivElement | null>(null)
@@ -38,7 +55,9 @@
   let valueLabelX = $state(0)
   let valueLabelY = $state(0)
 
-  const structureSignature = $derived.by(() => `${unit}::${series.map((s) => `${s.label}:${s.color}`).join('|')}`)
+  const structureSignature = $derived.by(
+    () => `${unit}::${series.map((s) => `${s.label}:${s.color}`).join('|')}::${barColor}::${barValues ? barValues.length : 0}`,
+  )
 
   const hasAnyData = $derived.by(() => series.some((line) => line.values.some((v) => typeof v === 'number' && Number.isFinite(v))))
 
@@ -76,6 +95,18 @@
   function formatValue(value: number | null) {
     if (value == null) return '-'
 
+    if (valueMode === 'exact') {
+      if (unit === 'percent') {
+        return `${formatExactNumber(value, 4)}%`
+      }
+
+      if (unit === 'bytes') {
+        return `${formatExactNumber(value)} B`
+      }
+
+      return formatExactNumber(value)
+    }
+
     if (unit === 'percent') {
       return `${value.toFixed(1)}%`
     }
@@ -97,6 +128,12 @@
     if (abs >= 1_000_000) return `${(rounded / 1_000_000).toFixed(1)}M`
     if (abs >= 1_000) return `${(rounded / 1_000).toFixed(1)}k`
     return `${rounded}`
+  }
+
+  function formatExactNumber(value: number, maxFractionDigits = 0) {
+    return value.toLocaleString('en-US', {
+      maximumFractionDigits: maxFractionDigits,
+    })
   }
 
   function formatDateLabel(value: string | undefined) {
@@ -127,9 +164,7 @@
     return typeof value === 'number' && Number.isFinite(value) ? value : null
   }
 
-  function fillColor(color: string) {
-    const alpha = 0.16
-
+  function fillColor(color: string, alpha = 0.16) {
     if (/^#[0-9a-fA-F]{6}$/.test(color)) {
       const r = Number.parseInt(color.slice(1, 3), 16)
       const g = Number.parseInt(color.slice(3, 5), 16)
@@ -151,6 +186,39 @@
     const x = labels.map((_, i) => i)
     const ys = series.map((line) => line.values.map((v) => (typeof v === 'number' && Number.isFinite(v) ? v : null)))
     return [x, ...ys]
+  }
+
+  function drawBars(u: uPlot) {
+    if (!barValues) return
+
+    const ctx = u.ctx
+    const { left, top, width: plotWidth, height: plotHeight } = u.bbox
+    const count = labels.length
+    if (count === 0) return
+
+    const barWidth = Math.max(4, Math.min(18, plotWidth / Math.max(count * 1.8, 1)))
+
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(left, top, plotWidth, plotHeight)
+    ctx.clip()
+    ctx.fillStyle = fillColor(barColor, 0.32)
+
+    for (let i = 0; i < count; i += 1) {
+      const value = toNumber(barValues[i] ?? null)
+      if (value == null || value < 0) continue
+
+      const xCenter = u.valToPos(i, 'x', true)
+      const yTop = u.valToPos(value, 'y', true)
+      const yBase = u.valToPos(0, 'y', true)
+      const barHeight = yBase - yTop
+
+      if (!Number.isFinite(xCenter) || !Number.isFinite(yTop) || !Number.isFinite(yBase) || barHeight < 0) continue
+
+      ctx.fillRect(xCenter - barWidth / 2, yTop, barWidth, Math.max(barHeight, 1))
+    }
+
+    ctx.restore()
   }
 
   function getWidth() {
@@ -259,7 +327,7 @@
         {},
         ...series.map((line) => ({
           stroke: line.color,
-          fill: fillColor(line.color),
+          fill: fillArea ? fillColor(line.color) : 'transparent',
           width: 2.2,
           points: { show: true, size: 8, width: 0, fill: line.color, stroke: line.color },
         })),
@@ -268,6 +336,11 @@
         drag: { x: false, y: false },
       },
       hooks: {
+        drawClear: [
+          (u) => {
+            drawBars(u)
+          },
+        ],
         setCursor: [
           (u) => {
             updateHoverIndex(u)

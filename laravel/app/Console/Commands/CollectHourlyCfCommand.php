@@ -2,18 +2,18 @@
 
 namespace App\Console\Commands;
 
-use App\Services\CfAnalytics\CfAnalyticsHourlyCollectorService;
+use App\Services\Stat\CollectHourlyCfService;
 use Illuminate\Console\Command;
 use RuntimeException;
 
-class CfAnalyticsHourlyCollectCommand extends Command
+class CollectHourlyCfCommand extends Command
 {
-    protected $signature = 'z:cf-analytics-hourly-collect
+    protected $signature = 'z:collect-hourly-cf
                             {--days=2 : Number of trailing days from current UTC hour (hour-aligned)}
                             {--debug : Print raw GraphQL JSON responses}';
     protected $description = 'Collect Cloudflare analytics hourly dataset';
 
-    public function handle(CfAnalyticsHourlyCollectorService $hourly): int
+    public function handle(CollectHourlyCfService $hourly): int
     {
         $days = (int) $this->option('days');
         $debug = (bool) $this->option('debug');

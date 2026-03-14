@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Services\CfAnalytics;
+namespace App\Services\Stat;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
-class CfAnalyticsApiService
+class CollectCfApiService
 {
     public function resolveCredentials(): array
     {
