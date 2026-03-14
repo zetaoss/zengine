@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Services\CfAnalytics;
+namespace App\Services\Stat;
 
-use App\Models\CfAnalyticsDaily;
+use App\Models\StatDailyCf;
 
-class CfAnalyticsDailyCollectorService
+class CollectDailyCfService
 {
     public function __construct(
-        private readonly CfAnalyticsApiService $api,
+        private readonly CollectCfApiService $api,
     ) {}
 
     public function collect(int $days, bool $debug, callable $debugWriter): array
@@ -93,7 +93,7 @@ class CfAnalyticsDailyCollectorService
         $timeslots = array_values(array_unique(array_map(fn ($row) => (string) $row['timeslot'], $rows)));
         $names = array_values(array_unique(array_map(fn ($row) => (string) $row['name'], $rows)));
 
-        $existing = CfAnalyticsDaily::query()
+        $existing = StatDailyCf::query()
             ->toBase()
             ->select(['timeslot', 'name', 'value'])
             ->whereIn('timeslot', $timeslots)
@@ -130,7 +130,7 @@ class CfAnalyticsDailyCollectorService
         }
 
         if (! empty($upsertRows)) {
-            CfAnalyticsDaily::query()->upsert($upsertRows, ['timeslot', 'name'], ['value']);
+            StatDailyCf::query()->upsert($upsertRows, ['timeslot', 'name'], ['value']);
         }
 
         return ['inserted' => $inserted, 'updated' => $updated, 'skipped' => $skipped];

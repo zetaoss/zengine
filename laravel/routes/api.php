@@ -3,9 +3,7 @@
 // laravel/routes/api.php
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\CfAnalyticsController;
 use App\Http\Controllers\CommonReportController;
-use App\Http\Controllers\MwStatisticsController;
 use App\Http\Controllers\OnelineController;
 use App\Http\Controllers\PageCommentController;
 use App\Http\Controllers\PageReactionController;
@@ -13,6 +11,8 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\ReplyController;
 use App\Http\Controllers\RunboxController;
+use App\Http\Controllers\StatCfController;
+use App\Http\Controllers\StatMwController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\WriteRequestController;
@@ -36,9 +36,10 @@ Route::get('/me/avatar', [AuthController::class, 'getAvatar'])->middleware('mwau
 Route::post('/me/avatar', [AuthController::class, 'updateAvatar'])->middleware('mwauth');
 Route::get('/me/gravatar/verify', [AuthController::class, 'verifyGravatar'])->middleware('mwauth');
 
-Route::get('/dash/cf-analytics/hourly', [CfAnalyticsController::class, 'hourly']);
-Route::get('/dash/cf-analytics/daily/{days}', [CfAnalyticsController::class, 'daily'])->whereIn('days', ['7', '30']);
-Route::get('/dash/mw-statistics/daily/{days}', [MwStatisticsController::class, 'daily'])->whereIn('days', ['7', '30']);
+Route::get('/stat/cf-analytics/hourly', [StatCfController::class, 'hourly']);
+Route::get('/stat/cf-analytics/daily/{days}', [StatCfController::class, 'daily'])->whereIn('days', ['7', '30']);
+Route::get('/stat/mw-statistics/hourly', [StatMwController::class, 'hourly']);
+Route::get('/stat/mw-statistics/daily/{days}', [StatMwController::class, 'daily'])->whereIn('days', ['7', '30']);
 
 Route::get('/onelines/recent', [OnelineController::class, 'recent']);
 Route::get('/onelines', [OnelineController::class, 'index']);
