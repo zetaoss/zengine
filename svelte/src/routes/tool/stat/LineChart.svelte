@@ -6,11 +6,11 @@
   import { onDestroy, onMount } from 'svelte'
   import uPlot from 'uplot'
 
-  type Unit = 'count' | 'bytes' | 'percent'
+  type Unit = 'count' | 'bytes' | 'percent' | 'rank'
 
   interface LineSeries {
     label: string
-    color: string
+    color?: string
     values: Array<number | null>
   }
 
@@ -21,6 +21,7 @@
     series: LineSeries[]
     barValues?: Array<number | null> | null
     barColor?: string
+    color?: string
     fillArea?: boolean
     valueMode?: 'compact' | 'exact'
     height?: number
@@ -36,6 +37,7 @@
     series,
     barValues = null,
     barColor = '#0891b2',
+    color = '#0891b2',
     fillArea = true,
     valueMode = 'compact',
     height = 80,
@@ -56,7 +58,7 @@
   let valueLabelY = $state(0)
 
   const structureSignature = $derived.by(
-    () => `${unit}::${series.map((s) => `${s.label}:${s.color}`).join('|')}::${barColor}::${barValues ? barValues.length : 0}`,
+    () => `${unit}::${series.map((s) => `${s.label}:${s.color ?? color}`).join('|')}::${barColor}::${barValues ? barValues.length : 0}`,
   )
 
   const hasAnyData = $derived.by(() => series.some((line) => line.values.some((v) => typeof v === 'number' && Number.isFinite(v))))
@@ -104,6 +106,10 @@
         return `${formatExactNumber(value)} B`
       }
 
+      if (unit === 'rank') {
+        return formatExactNumber(value, 2)
+      }
+
       return formatExactNumber(value)
     }
 
@@ -120,6 +126,10 @@
         u += 1
       }
       return `${n.toFixed(1)}${units[u]}`
+    }
+
+    if (unit === 'rank') {
+      return value.toFixed(1)
     }
 
     const rounded = Math.round(value)
@@ -295,7 +305,13 @@
       scales: {
         x: { time: false },
         y: {
-          range: (_, __, max) => {
+          range: (_, min, max) => {
+            if (unit === 'rank') {
+              const lower = Number.isFinite(min) && min >= 0 ? min : 0
+              const upper = Number.isFinite(max) && max > lower ? max : Math.max(lower + 1, 1)
+              return [upper, lower]
+            }
+
             const upper = Number.isFinite(max) && max > 0 ? max : 1
             return [0, upper]
           },
@@ -326,10 +342,11 @@
       series: [
         {},
         ...series.map((line) => ({
-          stroke: line.color,
-          fill: fillArea ? fillColor(line.color) : 'transparent',
+          stroke: line.color ?? color,
+          fill: fillArea ? fillColor(line.color ?? color) : 'transparent',
+          fillTo: (_u: uPlot, _seriesIdx: number, min: number, max: number) => (unit === 'rank' ? max : 0),
           width: 2.2,
-          points: { show: true, size: 8, width: 0, fill: line.color, stroke: line.color },
+          points: { show: true, size: 8, width: 0, fill: line.color ?? color, stroke: line.color ?? color },
         })),
       ],
       cursor: {

@@ -2,7 +2,7 @@
 
 namespace App\Services\Stat;
 
-use App\Models\StatHourlyMw;
+use App\Models\StatMwHourly;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -31,7 +31,7 @@ class CollectMwHourlyService
             'jobs' => (int) ($statistics['jobs'] ?? 0),
         ];
 
-        StatHourlyMw::query()->upsert([$row], ['timeslot'], [
+        StatMwHourly::query()->upsert([$row], ['timeslot'], [
             'pages',
             'articles',
             'edits',

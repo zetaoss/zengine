@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class StatHourlyGa extends Model
+class StatGaHourly extends Model
 {
     public const COLUMN_NAMES = [
         'active_users',
@@ -13,7 +13,7 @@ class StatHourlyGa extends Model
     ];
 
     public $timestamps = false;
-    protected $table = 'stat_hourly_ga';
+    protected $table = 'stat_ga_hourly';
     protected $fillable = [
         'timeslot',
         'active_users',

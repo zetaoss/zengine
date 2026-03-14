@@ -6,11 +6,11 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
-class CollectGaApiService
+class CollectGscApiService
 {
-    private const SCOPE = 'https://www.googleapis.com/auth/analytics.readonly';
+    private const SCOPE = 'https://www.googleapis.com/auth/webmasters.readonly';
     private const DEFAULT_TOKEN_URI = 'https://oauth2.googleapis.com/token';
-    private const DEFAULT_TIMEZONE = 'UTC';
+    private const DEFAULT_TIMEZONE = 'America/Los_Angeles';
     private const DEFAULT_AUDIENCE = 'https://oauth2.googleapis.com/token';
 
     public function resolveCredentials(): array
@@ -21,88 +21,75 @@ class CollectGaApiService
         }
 
         if (! is_file($path)) {
-            throw new RuntimeException("Missing Google Analytics credential file: {$path}");
+            throw new RuntimeException("Missing Google Search Console credential file: {$path}");
         }
 
         $json = file_get_contents($path);
         if ($json === false) {
-            throw new RuntimeException("Failed to read Google Analytics credential file: {$path}");
+            throw new RuntimeException("Failed to read Google Search Console credential file: {$path}");
         }
 
         $config = json_decode($json, true);
         if (! is_array($config)) {
-            throw new RuntimeException("Google Analytics credential file is not valid JSON: {$path}");
+            throw new RuntimeException("Google Search Console credential file is not valid JSON: {$path}");
         }
 
-        $propertyId = $this->firstNonEmpty(
-            $config['property_id'] ?? null,
-            $config['propertyId'] ?? null,
-            $this->env('GA_PROPERTY_ID')
+        $siteUrl = $this->firstNonEmpty(
+            $this->env('GSC_SITE_URL'),
+            $config['gsc_site_url'] ?? null,
+            $config['gscSiteUrl'] ?? null,
+            $config['site_url'] ?? null,
+            $config['siteUrl'] ?? null
         );
         $clientEmail = $config['client_email'] ?? '';
         $privateKey = $config['private_key'] ?? '';
-        $timezone = $this->firstNonEmpty(
-            $config['timezone'] ?? null,
-            $config['time_zone'] ?? null,
-            self::DEFAULT_TIMEZONE
-        );
         $tokenUri = $config['token_uri'] ?? self::DEFAULT_TOKEN_URI;
         $type = $config['type'] ?? '';
 
         if ($type !== '' && $type !== 'service_account') {
-            throw new RuntimeException("Google Analytics credential file must be a service account key: {$path}");
+            throw new RuntimeException("Google Search Console credential file must be a service account key: {$path}");
         }
 
         if ($clientEmail === '' || $privateKey === '') {
             throw new RuntimeException(
-                "Google Analytics credential file must include client_email and private_key: {$path}"
+                "Google Search Console credential file must include client_email and private_key: {$path}"
             );
         }
 
-        if ($propertyId === '') {
+        if ($siteUrl === '') {
             throw new RuntimeException(
-                'Missing Google Analytics property ID. Set GA_PROPERTY_ID '
-                ."or add property_id to the credential file: {$path}"
+                'Missing Google Search Console site URL. Set GSC_SITE_URL '
+                ."or add gsc_site_url to the credential file: {$path}"
             );
-        }
-
-        if (! preg_match('/^\d+$/', (string) $propertyId)) {
-            throw new RuntimeException("Google Analytics property ID must be numeric: {$propertyId}");
         }
 
         $privateKey = str_replace('\n', "\n", $privateKey);
 
         if (! openssl_pkey_get_private($privateKey)) {
-            throw new RuntimeException("Google Analytics private_key is not a valid private key: {$path}");
+            throw new RuntimeException("Google Search Console private_key is not a valid private key: {$path}");
         }
 
-        try {
-            CarbonImmutable::now($timezone);
-        } catch (\Throwable) {
-            throw new RuntimeException("Google Analytics timezone must be a valid timezone identifier: {$path}");
-        }
-
-        return [$propertyId, $clientEmail, $privateKey, $timezone, $tokenUri];
+        return [$siteUrl, $clientEmail, $privateKey, self::DEFAULT_TIMEZONE, $tokenUri];
     }
 
-    public function propertyDateRangeForDays(int $days, string $timezone): array
+    public function propertyDateRangeForDays(int $days): array
     {
         if ($days < 1) {
             throw new RuntimeException('--days must be an integer greater than or equal to 1.');
         }
 
-        $todayStart = CarbonImmutable::now($timezone)->startOfDay();
+        $todayStart = CarbonImmutable::now(self::DEFAULT_TIMEZONE)->startOfDay();
 
         return [$todayStart->subDays($days - 1), $todayStart];
     }
 
-    public function propertyHourAnchoredRangeForDays(int $days, string $timezone): array
+    public function propertyHourAnchoredRangeForDays(int $days): array
     {
-        if ($days < 1) {
-            throw new RuntimeException('--days must be an integer greater than or equal to 1.');
+        if ($days < 1 || $days > 10) {
+            throw new RuntimeException('--days must be an integer between 1 and 10 for Search Console hourly data.');
         }
 
-        $until = CarbonImmutable::now($timezone)->startOfHour();
+        $until = CarbonImmutable::now(self::DEFAULT_TIMEZONE)->startOfHour();
 
         return [$until->subDays($days), $until];
     }
@@ -137,9 +124,10 @@ class CollectGaApiService
         return $accessToken;
     }
 
-    public function runReport(string $accessToken, string $propertyId, array $body): array
+    public function query(string $accessToken, string $siteUrl, array $body): array
     {
-        $url = "https://analyticsdata.googleapis.com/v1beta/properties/{$propertyId}:runReport";
+        $encodedSiteUrl = rawurlencode($siteUrl);
+        $url = "https://searchconsole.googleapis.com/webmasters/v3/sites/{$encodedSiteUrl}/searchAnalytics/query";
 
         try {
             $response = Http::withToken($accessToken)
@@ -148,16 +136,16 @@ class CollectGaApiService
                 ->timeout(20)
                 ->post($url, $body);
         } catch (\Throwable $e) {
-            throw new RuntimeException('Google Analytics Data API request failed before response: '.$e->getMessage(), 0, $e);
+            throw new RuntimeException('Google Search Console API request failed before response: '.$e->getMessage(), 0, $e);
         }
 
         if (! $response->ok()) {
-            throw new RuntimeException("Google Analytics Data API request failed: HTTP {$response->status()} {$response->body()}");
+            throw new RuntimeException("Google Search Console API request failed: HTTP {$response->status()} {$response->body()}");
         }
 
         $payload = $response->json();
         if (! is_array($payload)) {
-            throw new RuntimeException('Google Analytics Data API returned invalid JSON.');
+            throw new RuntimeException('Google Search Console API returned invalid JSON.');
         }
 
         return $payload;
@@ -172,21 +160,26 @@ class CollectGaApiService
 
     public function normalizeDateDimension(string $raw): ?string
     {
-        if (! preg_match('/^\d{8}$/', $raw)) {
+        if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $raw)) {
             return null;
         }
 
-        return substr($raw, 0, 4).'-'.substr($raw, 4, 2).'-'.substr($raw, 6, 2);
+        return $raw;
     }
 
-    public function parseDateHourDimension(string $raw, string $timezone): ?CarbonImmutable
+    public function parseDateHourDimension(string $dateRaw, string $hourRaw): ?CarbonImmutable
     {
-        if (! preg_match('/^\d{10}$/', $raw)) {
+        if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateRaw) || ! preg_match('/^\d{1,2}$/', $hourRaw)) {
+            return null;
+        }
+
+        $hour = (int) $hourRaw;
+        if ($hour < 0 || $hour > 23) {
             return null;
         }
 
         try {
-            $timeslot = CarbonImmutable::createFromFormat('YmdH', $raw, $timezone);
+            $timeslot = CarbonImmutable::createFromFormat('Y-m-d H', "{$dateRaw} ".str_pad((string) $hour, 2, '0', STR_PAD_LEFT), self::DEFAULT_TIMEZONE);
         } catch (\Throwable) {
             return null;
         }
@@ -196,6 +189,17 @@ class CollectGaApiService
         }
 
         return $timeslot->startOfHour();
+    }
+
+    public function parseHourDimension(string $raw): ?CarbonImmutable
+    {
+        try {
+            $timeslot = CarbonImmutable::parse($raw, self::DEFAULT_TIMEZONE);
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return $timeslot->setTimezone(self::DEFAULT_TIMEZONE)->startOfHour();
     }
 
     private function buildAssertion(string $clientEmail, string $privateKey, string $tokenUri, int $now): string
@@ -216,7 +220,7 @@ class CollectGaApiService
         $signature = '';
         $privateKeyResource = openssl_pkey_get_private($privateKey);
         if (! $privateKeyResource) {
-            throw new RuntimeException('Google Analytics private_key is not a valid private key.');
+            throw new RuntimeException('Google Search Console private_key is not a valid private key.');
         }
 
         if (! openssl_sign($signingInput, $signature, $privateKeyResource, OPENSSL_ALGO_SHA256)) {

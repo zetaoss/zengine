@@ -22,7 +22,7 @@ class CollectMwHourlyCommand extends Command
                 $this->line(json_encode($result['payload'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}');
             }
 
-            $this->info("Stored stat_hourly_mw row for timeslot={$result['timeslot_iso']}");
+            $this->info("Stored stat_mw_hourly row for timeslot={$result['timeslot_iso']}");
             $this->table(array_keys($result['row']), [$result['row']]);
 
             return Command::SUCCESS;
