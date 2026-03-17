@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\StatGaDaily;
 use App\Models\StatGaHourly;
-use App\Services\Stat\CollectGaApiService;
 use App\Support\StatWindow;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Carbon;
@@ -50,13 +49,13 @@ class StatGaController extends Controller
         return ['timeslots' => $timeslots] + $series;
     }
 
-    public function daily(int $days, CollectGaApiService $api): array
+    public function daily(int $days): array
     {
         if (! in_array($days, [7, 30], true)) {
             abort(404);
         }
 
-        [, , , $timezone] = $api->resolveCredentials();
+        $timezone = (string) config('services.google_analytics.timezone', 'UTC');
         $to = Carbon::instance(StatWindow::dailyEnd(CarbonImmutable::now($timezone)));
         $from = $to->copy()->subDays($days - 1)->startOfDay();
 

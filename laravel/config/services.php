@@ -49,6 +49,9 @@ return [
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect' => env('APP_URL').'/auth/callback/google',
     ],
+    'google_analytics' => [
+        'timezone' => env('GA_TIMEZONE', 'UTC'),
+    ],
     'cloudflare' => [
         'api_token' => env('CLOUDFLARE_API_TOKEN'),
         'zone_id' => env('CLOUDFLARE_ZONE_ID'),
