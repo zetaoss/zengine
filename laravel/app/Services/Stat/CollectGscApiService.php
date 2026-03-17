@@ -2,6 +2,7 @@
 
 namespace App\Services\Stat;
 
+use App\Support\StatWindow;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -72,13 +73,18 @@ class CollectGscApiService
         return [$siteUrl, $clientEmail, $privateKey, self::DEFAULT_TIMEZONE, $tokenUri];
     }
 
+    public function timezone(): string
+    {
+        return self::DEFAULT_TIMEZONE;
+    }
+
     public function propertyDateRangeForDays(int $days): array
     {
         if ($days < 1) {
             throw new RuntimeException('--days must be an integer greater than or equal to 1.');
         }
 
-        $todayStart = CarbonImmutable::now(self::DEFAULT_TIMEZONE)->startOfDay();
+        $todayStart = StatWindow::dailyEnd(CarbonImmutable::now(self::DEFAULT_TIMEZONE));
 
         return [$todayStart->subDays($days - 1), $todayStart];
     }
@@ -89,7 +95,8 @@ class CollectGscApiService
             throw new RuntimeException('--days must be an integer between 1 and 10 for Search Console hourly data.');
         }
 
-        $until = CarbonImmutable::now(self::DEFAULT_TIMEZONE)->startOfHour();
+        // The query range uses an exclusive upper bound in Search Console's timezone.
+        $until = StatWindow::hourlyEnd(CarbonImmutable::now(self::DEFAULT_TIMEZONE))->addHour();
 
         return [$until->subDays($days), $until];
     }

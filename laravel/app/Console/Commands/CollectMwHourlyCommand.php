@@ -9,7 +9,7 @@ use RuntimeException;
 class CollectMwHourlyCommand extends Command
 {
     protected $signature = 'z:collect-mw-hourly
-                            {--at= : Target UTC hour (YYYY-MM-DDTHH:00:00Z), default is current UTC hour}
+                            {--at= : Target UTC hour (YYYY-MM-DDTHH:00:00Z), default follows the hourly display cutoff}
                             {--debug : Print raw JSON payload}';
     protected $description = 'Collect MediaWiki hourly data';
 

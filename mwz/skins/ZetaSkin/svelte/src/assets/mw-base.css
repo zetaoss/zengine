@@ -5,6 +5,10 @@
   @apply text-base leading-7;
 }
 
+fieldset {
+  @apply border my-4 p-4 pt-2;
+}
+
 article {
   & input,
   & select,

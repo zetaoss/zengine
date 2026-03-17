@@ -3,6 +3,7 @@
 namespace App\Services\Stat;
 
 use App\Models\StatMwDaily;
+use App\Support\StatWindow;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -51,7 +52,7 @@ class CollectMwDailyService
     private function resolveTargetDate(string $dateInput): string
     {
         if ($dateInput === '') {
-            return CarbonImmutable::now('Asia/Seoul')->toDateString();
+            return StatWindow::dailyEnd(CarbonImmutable::now('Asia/Seoul'))->toDateString();
         }
 
         try {

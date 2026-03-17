@@ -4,28 +4,31 @@ namespace App\Http\Controllers;
 
 use App\Models\StatGaDaily;
 use App\Models\StatGaHourly;
+use App\Support\StatWindow;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class StatGaController extends Controller
 {
+    private const HOURLY_TABLES = ['stat_hourly_ga', 'stat_ga_hourly'];
+
+    private const DAILY_TABLES = ['stat_daily_ga', 'stat_ga_daily'];
+
     public function hourly(): array
     {
-        $latestTimeslot = StatGaHourly::query()->max('timeslot');
-        if (! $latestTimeslot) {
-            return $this->emptySeriesResponse(StatGaHourly::COLUMN_NAMES);
-        }
+        $to = Carbon::instance(StatWindow::hourlyEnd());
+        $from = $to->copy()->subHours(35);
 
-        $to = Carbon::parse((string) $latestTimeslot, 'UTC')->startOfHour();
-        $from = $to->copy()->subHours(23);
-
-        $rows = StatGaHourly::query()
-            ->select(array_merge(['timeslot'], StatGaHourly::COLUMN_NAMES))
-            ->whereBetween('timeslot', [$from->toDateTimeString(), $to->toDateTimeString()])
-            ->orderBy('timeslot')
-            ->get();
+        $rows = $this->loadRows(
+            self::HOURLY_TABLES,
+            array_merge(['timeslot'], StatGaHourly::COLUMN_NAMES),
+            [$from->toDateTimeString(), $to->toDateTimeString()]
+        );
 
         $timeslots = [];
-        for ($cursor = $from->copy(); $cursor->lte($to); $cursor->addHour()) {
+        for ($cursor = $from->copy(); $cursor->lte($to); $cursor = $cursor->addHour()) {
             $timeslots[] = $cursor->utc()->format('Y-m-d\TH:i:s\Z');
         }
         $series = $this->emptySeries(count($timeslots), StatGaHourly::COLUMN_NAMES);
@@ -52,28 +55,25 @@ class StatGaController extends Controller
             abort(404);
         }
 
-        $lastDate = StatGaDaily::query()->max('timeslot');
-        if (! $lastDate) {
-            return $this->emptySeriesResponse(StatGaDaily::COLUMN_NAMES);
-        }
-
-        $to = Carbon::parse((string) $lastDate)->startOfDay();
+        $timezone = (string) config('services.google_analytics.timezone', 'UTC');
+        $to = Carbon::instance(StatWindow::dailyEnd(CarbonImmutable::now($timezone)));
         $from = $to->copy()->subDays($days - 1)->startOfDay();
 
-        $rows = StatGaDaily::query()
-            ->select(array_merge(['timeslot'], StatGaDaily::COLUMN_NAMES))
-            ->whereBetween('timeslot', [$from->toDateString(), $to->toDateString()])
-            ->orderBy('timeslot')
-            ->get();
+        $rows = $this->loadRows(
+            self::DAILY_TABLES,
+            array_merge(['timeslot'], StatGaDaily::COLUMN_NAMES),
+            [$from->toDateString(), $to->toDateString()],
+            true
+        );
 
         $timeslots = [];
-        for ($cursor = $from->copy(); $cursor->lte($to); $cursor->addDay()) {
+        for ($cursor = $from->copy(); $cursor->lte($to); $cursor = $cursor->addDay()) {
             $timeslots[] = $cursor->toDateString();
         }
         $series = $this->emptySeries(count($timeslots), StatGaDaily::COLUMN_NAMES);
 
         foreach ($rows as $row) {
-            $timeslot = $row->timeslot->toDateString();
+            $timeslot = Carbon::parse((string) $row->timeslot)->toDateString();
             $index = array_search($timeslot, $timeslots, true);
             if ($index === false) {
                 continue;
@@ -101,5 +101,36 @@ class StatGaController extends Controller
         }
 
         return $series;
+    }
+
+    private function loadRows(array $tables, array $columns, array $between, bool $dateOnly = false): array
+    {
+        $merged = [];
+
+        foreach ($tables as $table) {
+            if (! Schema::hasTable($table)) {
+                continue;
+            }
+
+            $query = DB::table($table)
+                ->select($columns)
+                ->orderBy('timeslot');
+
+            if ($dateOnly) {
+                $query
+                    ->whereDate('timeslot', '>=', $between[0])
+                    ->whereDate('timeslot', '<=', $between[1]);
+            } else {
+                $query->whereBetween('timeslot', $between);
+            }
+
+            $rows = $query->get();
+
+            foreach ($rows as $row) {
+                $merged[(string) $row->timeslot] = $row;
+            }
+        }
+
+        return array_values($merged);
     }
 }
