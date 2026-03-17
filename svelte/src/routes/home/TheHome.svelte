@@ -1,5 +1,8 @@
 <script lang="ts">
+  import { onMount } from 'svelte'
+
   import { resolve } from '$app/paths'
+  import useAuthStore from '$lib/stores/auth'
   import CAdsenseSlot from '$shared/components/CAdsenseSlot.svelte'
   import ZCard from '$shared/ui/ZCard.svelte'
 
@@ -8,6 +11,13 @@
   import HomeForum from './HomeForum.svelte'
   import HomeNewPages from './HomeNewPages.svelte'
   import HomeOnelines from './HomeOnelines.svelte'
+
+  const auth = useAuthStore()
+  const { isLoggedIn } = auth
+
+  onMount(() => {
+    auth.update()
+  })
 </script>
 
 <div class="p-5">
@@ -41,5 +51,7 @@
       <HomeNewPages />
     </ZCard>
   </div>
-  <CAdsenseSlot index={1} />
+  {#if !$isLoggedIn}
+    <CAdsenseSlot index={1} />
+  {/if}
 </div>

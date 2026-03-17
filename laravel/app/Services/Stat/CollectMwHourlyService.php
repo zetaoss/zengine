@@ -3,6 +3,7 @@
 namespace App\Services\Stat;
 
 use App\Models\StatMwHourly;
+use App\Support\StatWindow;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -52,7 +53,7 @@ class CollectMwHourlyService
     private function resolveTargetHour(string $atInput): CarbonImmutable
     {
         if ($atInput === '') {
-            return CarbonImmutable::now('UTC')->startOfHour();
+            return StatWindow::hourlyEnd();
         }
 
         try {

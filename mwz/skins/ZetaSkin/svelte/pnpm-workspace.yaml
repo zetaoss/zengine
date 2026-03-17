@@ -1,4 +1,4 @@
-auditConfig: { ignoreCves: null }
+auditConfig: {}
 
 ignoredBuiltDependencies:
   - esbuild

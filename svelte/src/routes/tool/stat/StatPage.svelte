@@ -94,7 +94,7 @@
 
   let loading = $state(true)
   let failed = $state<string | null>(null)
-  let range = $state<'24h' | '7d' | '30d'>('24h')
+  let range = $state<'36h' | '7d' | '30d'>('36h')
   let valueMode = $state<'compact' | 'exact'>('compact')
   let diffModeByKey = $state<Record<string, boolean>>({})
   let syncedHoverIndex = $state<number | null>(null)
@@ -104,19 +104,19 @@
   let mwData = $state<MwStatisticsResp>(EMPTY_MW)
   let fetchVersion = 0
 
-  const rangeTabs: Array<{ value: '24h' | '7d' | '30d'; label: string }> = [
-    { value: '24h', label: '24 Hours' },
+  const rangeTabs: Array<{ value: '36h' | '7d' | '30d'; label: string }> = [
+    { value: '36h', label: '36 Hours' },
     { value: '7d', label: '7 Days' },
     { value: '30d', label: '30 Days' },
   ]
 
-  const labels = $derived.by(() => (range === '24h' ? data.timeslots : data.timeslots.map((v) => normalizeDateKey(v))))
-  const labelsGa = $derived.by(() => (range === '24h' ? gaData.timeslots : gaData.timeslots.map((v) => normalizeDateKey(v))))
+  const labels = $derived.by(() => (range === '36h' ? data.timeslots : data.timeslots.map((v) => normalizeDateKey(v))))
+  const labelsGa = $derived.by(() => (range === '36h' ? gaData.timeslots : gaData.timeslots.map((v) => normalizeDateKey(v))))
   const rows = $derived.by<RowDef[]>(() => buildRows(data))
   const gaRows = $derived.by<RowDef[]>(() => buildGaRows(gaData))
-  const labelsGsc = $derived.by(() => (range === '24h' ? gscData.timeslots : gscData.timeslots.map((v) => normalizeDateKey(v))))
+  const labelsGsc = $derived.by(() => (range === '36h' ? gscData.timeslots : gscData.timeslots.map((v) => normalizeDateKey(v))))
   const gscRows = $derived.by<RowDef[]>(() => buildGscRows(gscData))
-  const labelsMw = $derived.by(() => (range === '24h' ? mwData.timeslots : mwData.timeslots.map((v) => normalizeDateKey(v))))
+  const labelsMw = $derived.by(() => (range === '36h' ? mwData.timeslots : mwData.timeslots.map((v) => normalizeDateKey(v))))
   const mwRows = $derived.by<RowDef[]>(() => buildMwRows(mwData))
   const visibleTimeslots = $derived.by(() => {
     if (data.timeslots.length > 0) return data.timeslots
@@ -130,7 +130,7 @@
     loading = true
     failed = null
 
-    if (range === '24h') {
+    if (range === '36h') {
       const [[cfResp, cfErr], [gaResp, gaErr], [gscResp, gscErr], [mwResp, mwErr]] = await Promise.all([
         httpy.get<AnalyticsResp>('/api/stat/cf-analytics/hourly'),
         httpy.get<GaResp>('/api/stat/ga/hourly'),
@@ -664,7 +664,7 @@
             unit={row.unit}
             color={DEFAULT_LINE_COLOR}
             {valueMode}
-            selectedLabelMode={range === '24h' ? 'hour' : 'date'}
+            selectedLabelMode={range === '36h' ? 'hour' : 'date'}
             hoveredIndex={syncedHoverIndex}
             onHoverIndex={(index) => {
               syncedHoverIndex = index
@@ -693,7 +693,7 @@
             unit={row.unit}
             color={DEFAULT_LINE_COLOR}
             {valueMode}
-            selectedLabelMode={range === '24h' ? 'hour' : 'date'}
+            selectedLabelMode={range === '36h' ? 'hour' : 'date'}
             hoveredIndex={syncedHoverIndex}
             onHoverIndex={(index) => {
               syncedHoverIndex = index
@@ -722,7 +722,7 @@
             unit={row.unit}
             color={DEFAULT_LINE_COLOR}
             {valueMode}
-            selectedLabelMode={range === '24h' ? 'hour' : 'date'}
+            selectedLabelMode={range === '36h' ? 'hour' : 'date'}
             hoveredIndex={syncedHoverIndex}
             onHoverIndex={(index) => {
               syncedHoverIndex = index
@@ -752,7 +752,7 @@
             color={DEFAULT_LINE_COLOR}
             {valueMode}
             fillArea={!(supportsDiff(row) && diffModeByKey[row.key] === true)}
-            selectedLabelMode={range === '24h' ? 'hour' : 'date'}
+            selectedLabelMode={range === '36h' ? 'hour' : 'date'}
             hoveredIndex={syncedHoverIndex}
             onHoverIndex={(index) => {
               syncedHoverIndex = index

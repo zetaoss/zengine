@@ -2,7 +2,6 @@
   :root {
     color-scheme: light;
 
-    /* --x-gray-100: theme(colors.gray.100); */
     --x-gray-200: theme(colors.gray.200);
     --x-gray-300: theme(colors.gray.300);
 
@@ -62,7 +61,6 @@
 .dark {
   color-scheme: dark;
 
-  /* --x-gray-100: theme(colors.gray.800); */
   --x-gray-200: theme(colors.gray.700);
   --x-gray-300: theme(colors.gray.600);
 
@@ -81,7 +79,7 @@
   --z-link: #3ad;
   --z-link-ext: #3a6;
   --z-link-ext-alpha: #3a66;
-  --z-link-new: #c66;
+  --z-link-new: #d76;
 
   --z-link-bg: #6af3;
   --z-link-bg-hover: #6af4;
