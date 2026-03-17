@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\StatGaDaily;
 use App\Models\StatGaHourly;
+use App\Services\Stat\CollectGaApiService;
 use App\Support\StatWindow;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -48,13 +50,14 @@ class StatGaController extends Controller
         return ['timeslots' => $timeslots] + $series;
     }
 
-    public function daily(int $days): array
+    public function daily(int $days, CollectGaApiService $api): array
     {
         if (! in_array($days, [7, 30], true)) {
             abort(404);
         }
 
-        $to = Carbon::instance(StatWindow::dailyEnd());
+        [, , , $timezone] = $api->resolveCredentials();
+        $to = Carbon::instance(StatWindow::dailyEnd(CarbonImmutable::now($timezone)));
         $from = $to->copy()->subDays($days - 1)->startOfDay();
 
         $rows = $this->loadRows(
@@ -99,32 +102,6 @@ class StatGaController extends Controller
         }
 
         return $series;
-    }
-
-    private function latestAvailableTimeslot(array $tables, ?string $timezone = null): ?Carbon
-    {
-        $latest = null;
-
-        foreach ($tables as $table) {
-            if (! Schema::hasTable($table)) {
-                continue;
-            }
-
-            $timeslot = DB::table($table)->max('timeslot');
-            if (! $timeslot) {
-                continue;
-            }
-
-            $candidate = $timezone
-                ? Carbon::parse((string) $timeslot, $timezone)
-                : Carbon::parse((string) $timeslot);
-
-            if ($latest === null || $candidate->gt($latest)) {
-                $latest = $candidate;
-            }
-        }
-
-        return $latest?->startOfDay()->setTimezone($timezone ?? $latest->getTimezone());
     }
 
     private function loadRows(array $tables, array $columns, array $between, bool $dateOnly = false): array

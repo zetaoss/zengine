@@ -92,7 +92,7 @@ class CollectGaApiService
             throw new RuntimeException('--days must be an integer greater than or equal to 1.');
         }
 
-        $todayStart = CarbonImmutable::now($timezone)->startOfDay();
+        $todayStart = StatWindow::dailyEnd(CarbonImmutable::now($timezone));
 
         return [$todayStart->subDays($days - 1), $todayStart];
     }

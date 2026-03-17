@@ -5,10 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\StatMwDaily;
 use App\Models\StatMwHourly;
 use App\Support\StatWindow;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Carbon;
 
 class StatMwController extends Controller
 {
+    private const DAILY_TIMEZONE = 'Asia/Seoul';
+
     private const NAMES = [
         'pages',
         'articles',
@@ -59,7 +62,7 @@ class StatMwController extends Controller
             abort(404);
         }
 
-        $to = Carbon::instance(StatWindow::dailyEnd());
+        $to = Carbon::instance(StatWindow::dailyEnd(CarbonImmutable::now(self::DAILY_TIMEZONE)));
         $from = $to->copy()->subDays($days - 1)->startOfDay();
 
         $rows = StatMwDaily::query()

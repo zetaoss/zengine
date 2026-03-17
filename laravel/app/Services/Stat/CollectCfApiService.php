@@ -27,7 +27,7 @@ class CollectCfApiService
             throw new RuntimeException('--days must be an integer greater than or equal to 1.');
         }
 
-        $todayStartUtc = CarbonImmutable::now('UTC')->startOfDay();
+        $todayStartUtc = StatWindow::dailyEnd();
         $sinceUtc = $todayStartUtc->subDays($days - 1);
         $untilUtc = $todayStartUtc->addDay();
 

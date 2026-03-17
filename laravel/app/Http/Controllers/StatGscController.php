@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\StatGscDaily;
 use App\Models\StatGscHourly;
+use App\Services\Stat\CollectGscApiService;
 use App\Support\StatWindow;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Carbon;
 
 class StatGscController extends Controller
@@ -42,13 +44,14 @@ class StatGscController extends Controller
         return ['timeslots' => $timeslots] + $series;
     }
 
-    public function daily(int $days): array
+    public function daily(int $days, CollectGscApiService $api): array
     {
         if (! in_array($days, [7, 30], true)) {
             abort(404);
         }
 
-        $to = Carbon::instance(StatWindow::dailyEnd());
+        [, , , $timezone] = $api->resolveCredentials();
+        $to = Carbon::instance(StatWindow::dailyEnd(CarbonImmutable::now($timezone)));
         $from = $to->copy()->subDays($days - 1)->startOfDay();
 
         $rows = StatGscDaily::query()
