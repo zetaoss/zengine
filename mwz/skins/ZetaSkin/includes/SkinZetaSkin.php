@@ -68,23 +68,23 @@ class SkinZetaSkin extends SkinMustache
         $buttons = array_filter([
             'view' => self::$action === 'view' ? null : (self::$menu['views']['view'] ?? null),
             'edit' => self::$action === 'edit' ? null : (self::$menu['views']['edit'] ?? null),
-            'viewsource' => self::$menu['actions']['viewsource'] ?? null,
+            'viewsource' => self::$menu['views']['viewsource'] ?? null,
             'whatlinkshere' => self::$menu['toolbox']['whatlinkshere'] ?? null,
             'talk' => self::$menu['namespaces']['talk'] ?? null,
         ]);
 
-        foreach ($buttons as $key => &$button) {
-            switch ($key) {
+        foreach ($buttons as $k => &$b) {
+            switch ($k) {
                 case 'edit':
-                    $button['id'] = 'ca-edit';
+                    $b['id'] = 'ca-edit';
                     break;
                 case 'whatlinkshere':
-                    $button['text'] = '역링크';
+                    $b['text'] = '역링크';
                     break;
                 case 'talk':
-                    $button['id'] = 'ca-talk';
+                    $b['id'] = 'ca-talk';
             }
-            $button['title'] = $button['text'];
+            $b['title'] = $b['text'];
         }
 
         return array_values($buttons);

@@ -2,6 +2,7 @@
 
 namespace App\Services\Stat;
 
+use App\Support\StatWindow;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -39,7 +40,8 @@ class CollectCfApiService
             throw new RuntimeException('--days must be an integer greater than or equal to 1.');
         }
 
-        $untilUtc = CarbonImmutable::now('UTC')->startOfHour();
+        // The query upper bound is exclusive, so advance one hour past the display cutoff.
+        $untilUtc = StatWindow::hourlyEnd()->addHour();
         $sinceUtc = $untilUtc->subDays($days);
 
         return [$sinceUtc, $untilUtc];

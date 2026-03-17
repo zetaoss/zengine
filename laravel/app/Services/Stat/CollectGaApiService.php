@@ -2,6 +2,7 @@
 
 namespace App\Services\Stat;
 
+use App\Support\StatWindow;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -102,7 +103,8 @@ class CollectGaApiService
             throw new RuntimeException('--days must be an integer greater than or equal to 1.');
         }
 
-        $until = CarbonImmutable::now($timezone)->startOfHour();
+        // The API range is filtered with an exclusive upper bound in local time.
+        $until = StatWindow::hourlyEnd(CarbonImmutable::now($timezone))->addHour();
 
         return [$until->subDays($days), $until];
     }

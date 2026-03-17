@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\StatCfDaily;
 use App\Models\StatCfHourly;
+use App\Support\StatWindow;
 use Illuminate\Support\Carbon;
 
 class StatCfController extends Controller
@@ -18,13 +19,8 @@ class StatCfController extends Controller
 
     public function hourly(): array
     {
-        $latestTimeslot = StatCfHourly::query()->max('timeslot');
-        if (! $latestTimeslot) {
-            return $this->emptySeriesResponse();
-        }
-
-        $to = Carbon::parse((string) $latestTimeslot, 'UTC')->startOfHour();
-        $from = $to->copy()->subHours(23);
+        $to = Carbon::instance(StatWindow::hourlyEnd());
+        $from = $to->copy()->subHours(35);
 
         $rows = StatCfHourly::query()
             ->select(['timeslot', 'name', 'value'])
@@ -33,7 +29,7 @@ class StatCfController extends Controller
             ->get();
 
         $timeslots = [];
-        for ($cursor = $from->copy(); $cursor->lte($to); $cursor->addHour()) {
+        for ($cursor = $from->copy(); $cursor->lte($to); $cursor = $cursor->addHour()) {
             $timeslot = $cursor->utc()->format('Y-m-d\TH:i:s\Z');
             $timeslots[] = $timeslot;
         }
@@ -61,28 +57,24 @@ class StatCfController extends Controller
             abort(404);
         }
 
-        $lastDate = StatCfDaily::query()->max('timeslot');
-        if (! $lastDate) {
-            return $this->emptySeriesResponse();
-        }
-
-        $to = Carbon::parse((string) $lastDate)->startOfDay();
+        $to = Carbon::instance(StatWindow::dailyEnd());
         $from = $to->copy()->subDays($days - 1)->startOfDay();
 
         $rows = StatCfDaily::query()
             ->select(['timeslot', 'name', 'value'])
-            ->whereBetween('timeslot', [$from->toDateString(), $to->toDateString()])
+            ->whereDate('timeslot', '>=', $from->toDateString())
+            ->whereDate('timeslot', '<=', $to->toDateString())
             ->whereIn('name', self::NAMES)
             ->get();
 
         $timeslots = [];
-        for ($cursor = $from->copy(); $cursor->lte($to); $cursor->addDay()) {
+        for ($cursor = $from->copy(); $cursor->lte($to); $cursor = $cursor->addDay()) {
             $timeslots[] = $cursor->toDateString();
         }
         $series = $this->emptySeries(count($timeslots));
 
         foreach ($rows as $row) {
-            $date = $row->timeslot->toDateString();
+            $date = Carbon::parse((string) $row->timeslot)->toDateString();
             $index = array_search($date, $timeslots, true);
             if ($index === false) {
                 continue;

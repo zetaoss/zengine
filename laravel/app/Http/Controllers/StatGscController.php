@@ -4,19 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\StatGscDaily;
 use App\Models\StatGscHourly;
+use App\Support\StatWindow;
 use Illuminate\Support\Carbon;
 
 class StatGscController extends Controller
 {
     public function hourly(): array
     {
-        $latestTimeslot = StatGscHourly::query()->max('timeslot');
-        if (! $latestTimeslot) {
-            return $this->emptySeriesResponse(StatGscHourly::COLUMN_NAMES);
-        }
-
-        $to = Carbon::parse((string) $latestTimeslot, 'UTC')->startOfHour();
-        $from = $to->copy()->subHours(23);
+        $to = Carbon::instance(StatWindow::hourlyEnd());
+        $from = $to->copy()->subHours(35);
 
         $rows = StatGscHourly::query()
             ->select(array_merge(['timeslot'], StatGscHourly::COLUMN_NAMES))
@@ -25,7 +21,7 @@ class StatGscController extends Controller
             ->get();
 
         $timeslots = [];
-        for ($cursor = $from->copy(); $cursor->lte($to); $cursor->addHour()) {
+        for ($cursor = $from->copy(); $cursor->lte($to); $cursor = $cursor->addHour()) {
             $timeslots[] = $cursor->utc()->format('Y-m-d\TH:i:s\Z');
         }
         $series = $this->emptySeries(count($timeslots), StatGscHourly::COLUMN_NAMES);
@@ -52,28 +48,24 @@ class StatGscController extends Controller
             abort(404);
         }
 
-        $lastDate = StatGscDaily::query()->max('timeslot');
-        if (! $lastDate) {
-            return $this->emptySeriesResponse(StatGscDaily::COLUMN_NAMES);
-        }
-
-        $to = Carbon::parse((string) $lastDate)->startOfDay();
+        $to = Carbon::instance(StatWindow::dailyEnd());
         $from = $to->copy()->subDays($days - 1)->startOfDay();
 
         $rows = StatGscDaily::query()
             ->select(array_merge(['timeslot'], StatGscDaily::COLUMN_NAMES))
-            ->whereBetween('timeslot', [$from->toDateString(), $to->toDateString()])
+            ->whereDate('timeslot', '>=', $from->toDateString())
+            ->whereDate('timeslot', '<=', $to->toDateString())
             ->orderBy('timeslot')
             ->get();
 
         $timeslots = [];
-        for ($cursor = $from->copy(); $cursor->lte($to); $cursor->addDay()) {
+        for ($cursor = $from->copy(); $cursor->lte($to); $cursor = $cursor->addDay()) {
             $timeslots[] = $cursor->toDateString();
         }
         $series = $this->emptySeries(count($timeslots), StatGscDaily::COLUMN_NAMES);
 
         foreach ($rows as $row) {
-            $timeslot = $row->timeslot->toDateString();
+            $timeslot = Carbon::parse((string) $row->timeslot)->toDateString();
             $index = array_search($timeslot, $timeslots, true);
             if ($index === false) {
                 continue;

@@ -223,7 +223,7 @@
   }
 
   .new {
-    color: #d53f8c;
+    color: var(--z-link-new);
   }
 
   .progress-wrap {
