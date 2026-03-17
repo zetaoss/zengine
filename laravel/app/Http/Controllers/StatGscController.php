@@ -50,7 +50,7 @@ class StatGscController extends Controller
             abort(404);
         }
 
-        [, , , $timezone] = $api->resolveCredentials();
+        $timezone = $api->timezone();
         $to = Carbon::instance(StatWindow::dailyEnd(CarbonImmutable::now($timezone)));
         $from = $to->copy()->subDays($days - 1)->startOfDay();
 

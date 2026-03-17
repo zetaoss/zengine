@@ -73,6 +73,11 @@ class CollectGscApiService
         return [$siteUrl, $clientEmail, $privateKey, self::DEFAULT_TIMEZONE, $tokenUri];
     }
 
+    public function timezone(): string
+    {
+        return self::DEFAULT_TIMEZONE;
+    }
+
     public function propertyDateRangeForDays(int $days): array
     {
         if ($days < 1) {
