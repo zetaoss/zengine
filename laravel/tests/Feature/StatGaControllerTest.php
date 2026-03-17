@@ -25,18 +25,19 @@ it('returns the hourly ga stat payload without hanging when using immutable disp
         $response = $this->getJson('/api/stat/ga/hourly');
 
         $response->assertOk();
-        $response->assertJsonPath('timeslots.0', '2026-03-15T04:00:00Z');
-        $response->assertJsonPath('timeslots.35', '2026-03-16T15:00:00Z');
-        $response->assertJsonPath('active_users.35', 11);
-        $response->assertJsonPath('screen_page_views.35', 22);
-        $response->assertJsonPath('sessions.35', 33);
+        $response->assertJsonPath('timeslots.0', '2026-03-15T05:00:00Z');
+        $response->assertJsonPath('timeslots.35', '2026-03-16T16:00:00Z');
+        $response->assertJsonPath('active_users.34', 11);
+        $response->assertJsonPath('screen_page_views.34', 22);
+        $response->assertJsonPath('sessions.34', 33);
+        $response->assertJsonPath('active_users.35', null);
     } finally {
         Carbon::setTestNow();
         CarbonImmutable::setTestNow();
     }
 });
 
-it('anchors the hourly ga window to the latest stored timeslot', function () {
+it('anchors the hourly ga window to the current display cutoff', function () {
     $now = CarbonImmutable::parse('2026-03-17 18:20:00', 'UTC');
 
     Carbon::setTestNow($now);
@@ -53,8 +54,10 @@ it('anchors the hourly ga window to the latest stored timeslot', function () {
         $response = $this->getJson('/api/stat/ga/hourly');
 
         $response->assertOk();
-        $response->assertJsonPath('timeslots.35', '2026-03-16T15:00:00Z');
-        $response->assertJsonPath('active_users.35', 11);
+        $response->assertJsonPath('timeslots.0', '2026-03-16T07:00:00Z');
+        $response->assertJsonPath('timeslots.35', '2026-03-17T18:00:00Z');
+        $response->assertJsonPath('active_users.8', 11);
+        $response->assertJsonPath('active_users.35', null);
     } finally {
         Carbon::setTestNow();
         CarbonImmutable::setTestNow();

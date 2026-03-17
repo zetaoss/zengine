@@ -7,7 +7,7 @@ afterEach(function () {
     CarbonImmutable::setTestNow();
 });
 
-it('defaults to the last completed utc hour', function () {
+it('defaults to the hourly display cutoff', function () {
     CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-03-16 16:55:00', 'UTC'));
 
     $service = new CollectMwHourlyService;
@@ -16,7 +16,7 @@ it('defaults to the last completed utc hour', function () {
 
     $result = $method->invoke($service, '');
 
-    expect($result->format('Y-m-d H:i:s'))->toBe('2026-03-16 15:00:00');
+    expect($result->format('Y-m-d H:i:s'))->toBe('2026-03-16 16:00:00');
 });
 
 it('normalizes an explicit utc hour input to the hour start', function () {
