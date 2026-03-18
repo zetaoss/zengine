@@ -7,12 +7,14 @@
   import { page } from '$app/state'
   import RouteLinkButton from '$lib/components/RouteLinkButton.svelte'
   import useAuthStore from '$lib/stores/auth'
+  import { titlesExist } from '$lib/utils/mediawiki'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'
   import ZButton from '$shared/ui/ZButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import httpy from '$shared/utils/httpy'
+  import { getWikiHref } from '$shared/utils/wikiLink'
 
   import TheStar from './TheStar.svelte'
   import type { Row } from './types'
@@ -34,6 +36,7 @@
   let activeTooltip = $state<ActionKey | null>(null)
   let hideTooltipTimer: ReturnType<typeof setTimeout> | null = null
   let retryTimer: ReturnType<typeof setTimeout> | null = null
+  let titleExists = $state<Record<string, boolean>>({})
 
   let currentId = $state(0)
   let observedId = 0
@@ -161,6 +164,12 @@
     }
 
     row = data
+    await syncTitleExists(data)
+  }
+
+  async function syncTitleExists(data: Row) {
+    const titles = [...new Set(data.items.map((item) => item.name).filter((name) => name.trim().length > 0))]
+    titleExists = titles.length > 0 ? await titlesExist(titles) : {}
   }
 
   async function fetchDataWithRetry(retryDelay = 1000) {
@@ -196,6 +205,14 @@
     const hh = String(date.getHours()).padStart(2, '0')
     const mm = String(date.getMinutes()).padStart(2, '0')
     return `${y}-${m}-${d} ${hh}:${mm}`
+  }
+
+  function wikiHref(name: string) {
+    return getWikiHref(name, titleExists[name])
+  }
+
+  function wikiClass(name: string) {
+    return titleExists[name] === false ? 'new' : undefined
   }
 </script>
 
@@ -254,7 +271,7 @@
             <th colspan="2">표기</th>
             {#each row.items as item (item.id)}
               <td>
-                <a class="new" href={`/wiki/${item.name}`} rel="external" data-sveltekit-reload>{item.name}</a>
+                <a class={wikiClass(item.name)} href={wikiHref(item.name)} rel="external" data-sveltekit-reload>{item.name}</a>
               </td>
             {/each}
           </tr>

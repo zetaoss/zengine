@@ -2,6 +2,7 @@ import Autolinker from 'autolinker'
 import DOMPurify from 'isomorphic-dompurify'
 
 import { titlesExist } from '$shared/utils/mediawiki'
+import { getWikiHref } from '$shared/utils/wikiLink'
 
 const wikiLinkRegex = /\[\[([^\]|]+)(?:\|([^\]]*))?\]\]/g
 
@@ -30,8 +31,7 @@ async function linkifyWiki(s: string, existsMap: Record<string, boolean>) {
     const exists = existsMap[target]
     const isMissing = exists === false
     const classList = isMissing ? 'internal new' : 'internal'
-    const pageHref = `/wiki/${encodeURIComponent(target.replace(/ /g, '_'))}`
-    const href = isMissing ? `${pageHref}/edit?redlink=1` : pageHref
+    const href = getWikiHref(target, exists)
     return `<a href="${href}" class="${classList}" data-sveltekit-reload>${display}</a>`
   })
 }

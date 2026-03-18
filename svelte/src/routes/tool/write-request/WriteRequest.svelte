@@ -137,6 +137,7 @@
     const [, err] = await httpy.delete(`/api/write-request/${row.id}`)
     if (err) {
       console.error(err)
+      showToast(err.message || '삭제 실패')
       return
     }
 
@@ -256,7 +257,7 @@
           <td class="w-[35%]">
             <a href={getTitleHref(row)} rel="external" class={mode === 'done' ? '' : 'new'}>{row.title}</a>
             {#if $canDelete(row.user_id)}
-              <ZButton color="ghost" class="py-1 align-middle leading-none text-[#888]" on:click={() => del(row)}>
+              <ZButton color="ghost" class="py-1 align-middle leading-none text-[#888]" onclick={() => del(row)}>
                 <ZIcon path={mdiDelete} />
               </ZButton>
             {/if}

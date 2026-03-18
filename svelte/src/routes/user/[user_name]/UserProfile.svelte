@@ -13,6 +13,7 @@
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
   import httpy from '$shared/utils/httpy'
+  import { getWikiViewHref } from '$shared/utils/wikiLink'
 
   import ContributionMap from './ContributionMap.svelte'
 
@@ -53,10 +54,9 @@
   let loadError = $state<string | null>(null)
 
   let userName = $derived(page.params.user_name ?? '')
-  let encodedUsername = $derived(userName.replace(/ /g, '_'))
-
-  let userPageHref = $derived(`/wiki/User:${encodedUsername}`)
-  let contribPageHref = $derived(`/wiki/특수:기여/${encodedUsername}`)
+  let encodedUsername = $derived(encodeURIComponent(userName))
+  let userPageHref = $derived(getWikiViewHref(`User:${userName}`))
+  let contribPageHref = $derived(getWikiViewHref(`특수:기여/${userName}`))
   let isMe = $derived($isLoggedIn && ($userInfo?.id ?? 0) === userId)
 
   const today = new SvelteDate()
@@ -226,7 +226,7 @@
             <tr class="border-b">
               <td>{agoDate(new Date(c.timestamp))}</td>
               <td>
-                <a href={`/wiki/${encodeURIComponent(c.title.replace(/ /g, '_'))}`} rel="external" data-sveltekit-reload>
+                <a href={getWikiViewHref(c.title)} rel="external" data-sveltekit-reload>
                   {c.title}
                 </a>
               </td>
