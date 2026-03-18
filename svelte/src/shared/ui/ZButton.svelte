@@ -35,6 +35,6 @@
   }
 </script>
 
-<button {...$$restProps} {type} class={classes} disabled={isDisabled} on:click={handleClick} on:click>
+<button {...$$restProps} {type} class={classes} disabled={isDisabled} on:click={handleClick}>
   <slot />
 </button>

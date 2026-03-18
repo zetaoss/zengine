@@ -21,7 +21,6 @@
   const { isLoggedIn, userInfo } = auth
 
   let userName = $derived(page.params.user_name ?? '')
-  let encodedUsername = $derived(userName.replace(/ /g, '_'))
 
   let isLoading = $state(false)
   let loadError = $state<string | null>(null)
@@ -247,7 +246,7 @@
       <svelte:fragment slot="header">
         <div class="flex items-baseline justify-between">
           <span class="text-base font-semibold">프로필 편집</span>
-          <a href={resolve(`/user/${encodedUsername}`)} class="text-sm">돌아가기</a>
+          <a href={resolve('/user/[user_name]', { user_name: userName })} class="text-sm">돌아가기</a>
         </div>
       </svelte:fragment>
 
