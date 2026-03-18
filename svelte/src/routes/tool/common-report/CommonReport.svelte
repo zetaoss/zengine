@@ -14,6 +14,7 @@
   import ZButton from '$shared/ui/ZButton.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
   import httpy from '$shared/utils/httpy'
+  import { getWikiHref } from '$shared/utils/wikiLink'
 
   import CommonReportNew from './CommonReportNew.svelte'
   import { useRetrier } from './retrier'
@@ -115,7 +116,7 @@
   }
 
   function wikiHref(name: string, existsMap: Record<string, boolean>): string {
-    return titleState(name, existsMap) === 'new' ? `/wiki/${name}/edit?redlink=1` : `/wiki/${name}`
+    return getWikiHref(name, existsMap[name])
   }
 </script>
 

@@ -38,7 +38,7 @@
   const links: Link[] = $derived(
     ($isLoggedIn
       ? [
-          { text: '프로필', href: `/user/${$userInfo?.name ?? ''}` },
+          { text: '프로필', href: `/user/${encodeURIComponent(($userInfo?.name ?? '').replace(/ /g, '_'))}` },
           { text: '사용자 문서', href: '/wiki/특수:내사용자문서', accesskey: '.' },
           { text: '사용자 토론', href: '/wiki/특수:내사용자토론', accesskey: 'n' },
           { text: '환경 설정', href: '/wiki/특수:환경설정' },
