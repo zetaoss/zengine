@@ -103,7 +103,7 @@
           <span class="ml-1">{@html r.message}</span>
           <span class="z-muted2 ml-1 text-xs">{r.created.substring(0, 10)}</span>
           {#if $canDelete(r.user_id)}
-            <ZButton color="ghost" class="z-muted3 py-1 align-middle leading-none" on:click={() => del(r)}>
+            <ZButton color="ghost" class="z-muted3 py-1 align-middle leading-none" onclick={() => del(r)}>
               <ZIcon path={mdiDelete} />
             </ZButton>
           {/if}
