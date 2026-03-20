@@ -53,6 +53,20 @@
     }
   }
 
+  function onInputKeydown(event: KeyboardEvent) {
+    if (event.key !== 'Enter' || event.isComposing) return
+
+    event.preventDefault()
+    if (canSubmit) {
+      void ok()
+      return
+    }
+
+    if (canCheck) {
+      void check()
+    }
+  }
+
   async function ok() {
     if (!canSubmit) return
 
@@ -90,6 +104,7 @@
         class="flex-1 rounded border p-1 px-2"
         placeholder="제목 입력"
         on:input={onInput}
+        on:keydown={onInputKeydown}
       />
       <button
         type="button"

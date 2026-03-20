@@ -1,0 +1,10 @@
+.client-js .mw-changeslist ul {
+  margin-left: 1em;
+  padding: 0;
+  list-style: none;
+
+  li {
+    border-bottom: 1px solid #8888;
+    padding: 0.5rem 0;
+  }
+}

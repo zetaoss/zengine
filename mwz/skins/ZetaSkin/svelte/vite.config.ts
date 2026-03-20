@@ -95,7 +95,6 @@ export default defineConfig(({ command }) => ({
     alias: {
       $lib: '/src/lib',
       $shared: '/src/shared',
-      '$app/paths': '/src/lib/shims/app-paths.ts',
     },
   },
 }))
