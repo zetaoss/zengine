@@ -253,6 +253,7 @@ final class BinderService
             return null;
         }
 
+        $title = $page->getTitle()->getText();
         $html = (string) $po->getText();
         libxml_use_internal_errors(true);
         $dom = new \DOMDocument;
@@ -261,10 +262,14 @@ final class BinderService
 
         $uls = $dom->getElementsByTagName('ul');
         if ($uls->length === 0) {
-            return null;
+            return [
+                'id' => $id,
+                'title' => $title,
+                'title_doc' => '',
+                'trees' => [],
+            ];
         }
 
-        $title = $page->getTitle()->getText();
         $trees = self::parseUl($uls->item(0));
 
         return [

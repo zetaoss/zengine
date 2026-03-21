@@ -120,6 +120,7 @@
     <div class="z-scrollbar h-full w-full overflow-y-auto">
       {#each bindersRef as binder (binder.id)}
         <div>
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
           <header
             class="book sticky top-0 z-10 flex items-center justify-between rounded-lg px-3 py-2 bg-gray-200/80 dark:bg-gray-800/80 border-gray-400/60 dark:border-gray-600/60 font-bold"
             on:dblclick={handleRefresh}
