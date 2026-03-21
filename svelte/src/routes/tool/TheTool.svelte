@@ -29,32 +29,26 @@
 
 <div class="h-full grid md:grid-cols-[140px_1fr]">
   <aside class="z-bg-muted h-full p-4">
-    <table class="w-full">
-      <thead>
-        <tr>
-          <th class="text-left text-lg font-bold">도구</th>
-        </tr>
-      </thead>
-      <tbody>
+    <nav aria-label="도구" class="w-full">
+      <p class="mb-3 text-left text-lg font-bold">도구</p>
+      <ul class="m-0 w-full list-none p-0">
         {#each navItems as item (item.to)}
-          <tr>
-            <td>
-              <a
-                href={resolve(item.to)}
-                class={`block w-full rounded px-3 py-2 text-left transition z-text hover:bg-gray-200 dark:hover:bg-gray-800 ${
-                  isActive(pathname, item.to) ? 'bg-gray-200 font-semibold dark:bg-gray-800' : ''
-                }`}
-              >
-                {item.label}
-              </a>
-            </td>
-          </tr>
+          <li>
+            <a
+              href={resolve(item.to)}
+              class={`block w-full rounded px-3 py-2 text-left no-underline transition z-text hover:bg-gray-200 hover:no-underline dark:hover:bg-gray-800 ${
+                isActive(pathname, item.to) ? 'bg-gray-200 font-semibold dark:bg-gray-800' : ''
+              }`}
+            >
+              {item.label}
+            </a>
+          </li>
         {/each}
-      </tbody>
-    </table>
+      </ul>
+    </nav>
   </aside>
 
-  <div>
+  <div class="pt-2 md:pt-3">
     {@render children?.()}
   </div>
 </div>

@@ -611,7 +611,7 @@
 </script>
 
 <div class="p-5">
-  <h2 class="m-0 text-2xl font-bold">통계</h2>
+  <h1 class="mb-5 text-2xl font-bold tracking-tight">통계</h1>
 
   <div class="mb-4 mt-3 flex flex-wrap items-center justify-between gap-3">
     <div class="border-b border-gray-200 dark:border-gray-700">

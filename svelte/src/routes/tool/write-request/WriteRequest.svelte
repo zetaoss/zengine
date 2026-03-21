@@ -188,7 +188,7 @@
 </script>
 
 <div class="p-5">
-  <h2 class="my-5 text-2xl font-bold">작성 요청</h2>
+  <h1 class="mb-5 text-2xl font-bold tracking-tight">작성 요청</h1>
   <WriteRequestNew show={showModal} on:close={closeModal} />
 
   <div class="inline-flex pb-3">

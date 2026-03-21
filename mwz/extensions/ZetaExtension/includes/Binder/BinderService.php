@@ -157,15 +157,16 @@ final class BinderService
         if ($data === null) {
             return null;
         }
+        $dbw = self::dbw();
         $row = [
             'id' => $id,
             'data' => json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
             'docs' => self::countDocs($data),
             'links' => self::countLinks($data),
             'title_doc' => self::extractTitleDoc($data),
-            'updated_at' => date('Y-m-d H:i:s'),
+            'updated_at' => $dbw->timestamp(),
         ];
-        self::dbw()->upsert('ldb.binders', $row, ['id'], $row, __METHOD__);
+        $dbw->upsert('ldb.binders', $row, ['id'], $row, __METHOD__);
 
         return $data;
     }

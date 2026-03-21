@@ -121,7 +121,7 @@
 </script>
 
 <div class="p-5">
-  <h2 class="my-5 text-2xl font-bold">통용 보고서</h2>
+  <h1 class="mb-5 text-2xl font-bold tracking-tight">통용 보고서</h1>
   <CommonReportNew show={showModal} onClose={closeModal} />
 
   <table class="w-full">
