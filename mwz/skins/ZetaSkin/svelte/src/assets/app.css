@@ -1,10 +1,6 @@
 /* app.css */
-@import 'tailwindcss';
-@custom-variant dark (&:where(.dark, .dark *));
-
-@import './mw-apex-color.css';
-
 @import '../shared/assets/app.css';
+@import './mw-apex-dark.css';
 
 @import './has-binders.css';
 

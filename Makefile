@@ -130,7 +130,7 @@ check-laravel-format:
 ifeq ($(USE_CACHE),1)
 	$(call run_cached,check-laravel-format,$(MAKE) USE_CACHE=0 check-laravel-format,laravel pint.json)
 else
-	$(call run_pint,laravel,laravel/vendor/bin/pint laravel)
+	$(call run_pint,laravel,/app/laravel/vendor/bin/pint /app/laravel)
 endif
 
 .PHONY: check-extension
@@ -138,7 +138,7 @@ check-extension:
 ifeq ($(USE_CACHE),1)
 	$(call run_cached,check-extension,$(MAKE) USE_CACHE=0 check-extension,mwz/extensions/ZetaExtension pint.json)
 else
-	$(call run_pint,mwz/extensions/ZetaExtension,laravel/vendor/bin/pint mwz/extensions/ZetaExtension)
+	$(call run_pint,mwz/extensions/ZetaExtension,/app/laravel/vendor/bin/pint /app/mwz/extensions/ZetaExtension)
 endif
 
 .PHONY: check-skin
@@ -146,7 +146,7 @@ check-skin:
 ifeq ($(USE_CACHE),1)
 	$(call run_cached,check-skin,$(MAKE) USE_CACHE=0 check-skin,mwz/skins/ZetaSkin pint.json)
 else
-	$(call run_pint,mwz/skins/ZetaSkin,laravel/vendor/bin/pint mwz/skins/ZetaSkin)
+	$(call run_pint,mwz/skins/ZetaSkin,/app/laravel/vendor/bin/pint /app/mwz/skins/ZetaSkin)
 endif
 
 .PHONY: check-svelte
@@ -164,11 +164,11 @@ check-main-svelte:
 ifeq ($(USE_CACHE),1)
 	$(call run_cached,check-main-svelte,$(MAKE) USE_CACHE=0 check-main-svelte,svelte)
 else
-	$(call run_pnpm,svelte,install --frozen-lockfile)
-	$(call run_pnpm,svelte,lint,pnpm -C svelte lint)
-	$(call run_pnpm,svelte,format,pnpm -C svelte format:fix)
-	$(call run_pnpm,svelte,audit --ignore-unfixable --ignore-registry-errors,pnpm -C svelte audit --fix --ignore-unfixable && pnpm -C svelte install --no-frozen-lockfile)
-	$(call run_pnpm,svelte,build)
+	$(call run_pnpm,/app/svelte,install --frozen-lockfile)
+	$(call run_pnpm,/app/svelte,lint,pnpm -C svelte lint)
+	$(call run_pnpm,/app/svelte,format,pnpm -C svelte format:fix)
+	$(call run_pnpm,/app/svelte,audit --ignore-unfixable --ignore-registry-errors,pnpm -C svelte audit --fix --ignore-unfixable && pnpm -C svelte install --no-frozen-lockfile)
+	$(call run_pnpm,/app/svelte,build)
 endif
 
 .PHONY: quickcheck-main-svelte
@@ -176,9 +176,9 @@ quickcheck-main-svelte:
 ifeq ($(USE_CACHE),1)
 	$(call run_cached,quickcheck-main-svelte,$(MAKE) USE_CACHE=0 quickcheck-main-svelte,svelte)
 else
-	$(call run_pnpm,svelte,install --frozen-lockfile)
-	$(call run_pnpm,svelte,lint,pnpm -C svelte lint:fix)
-	$(call run_pnpm,svelte,format,pnpm -C svelte format:fix)
+	$(call run_pnpm,/app/svelte,install --frozen-lockfile)
+	$(call run_pnpm,/app/svelte,lint,pnpm -C /app/svelte lint:fix)
+	$(call run_pnpm,/app/svelte,format,pnpm -C /app/svelte format:fix)
 endif
 
 .PHONY: check-skin-svelte
@@ -186,11 +186,11 @@ check-skin-svelte:
 ifeq ($(USE_CACHE),1)
 	$(call run_cached,check-skin-svelte,$(MAKE) USE_CACHE=0 check-skin-svelte,mwz/skins/ZetaSkin/svelte svelte/src/shared)
 else
-	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,install --frozen-lockfile)
-	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,lint,pnpm -C mwz/skins/ZetaSkin/svelte lint)
-	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,format,pnpm -C mwz/skins/ZetaSkin/svelte format:fix)
-	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,audit --ignore-unfixable --ignore-registry-errors,pnpm -C mwz/skins/ZetaSkin/svelte audit --fix --ignore-unfixable && pnpm -C mwz/skins/ZetaSkin/svelte install --no-frozen-lockfile)
-	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,build)
+	$(call run_pnpm,/app/mwz/skins/ZetaSkin/svelte,install --frozen-lockfile)
+	$(call run_pnpm,/app/mwz/skins/ZetaSkin/svelte,lint,pnpm -C /app/mwz/skins/ZetaSkin/svelte lint:fix)
+	$(call run_pnpm,/app/mwz/skins/ZetaSkin/svelte,format,pnpm -C /app/mwz/skins/ZetaSkin/svelte format:fix)
+	$(call run_pnpm,/app/mwz/skins/ZetaSkin/svelte,audit --ignore-unfixable --ignore-registry-errors,pnpm -C /app/mwz/skins/ZetaSkin/svelte audit --fix --ignore-unfixable && pnpm -C mwz/skins/ZetaSkin/svelte install --no-frozen-lockfile)
+	$(call run_pnpm,/app/mwz/skins/ZetaSkin/svelte,build)
 endif
 
 .PHONY: quickcheck-skin-svelte
@@ -198,9 +198,9 @@ quickcheck-skin-svelte:
 ifeq ($(USE_CACHE),1)
 	$(call run_cached,quickcheck-skin-svelte,$(MAKE) USE_CACHE=0 quickcheck-skin-svelte,mwz/skins/ZetaSkin/svelte svelte/src/shared)
 else
-	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,install --frozen-lockfile)
-	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,lint,pnpm -C mwz/skins/ZetaSkin/svelte lint)
-	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,format,pnpm -C mwz/skins/ZetaSkin/svelte format:fix)
+	$(call run_pnpm,/app/mwz/skins/ZetaSkin/svelte,install --frozen-lockfile)
+	$(call run_pnpm,/app/mwz/skins/ZetaSkin/svelte,lint,pnpm -C /app/mwz/skins/ZetaSkin/svelte lint:fix)
+	$(call run_pnpm,/app/mwz/skins/ZetaSkin/svelte,format,pnpm -C /app/mwz/skins/ZetaSkin/svelte format:fix)
 endif
 
 .PHONY: check-gohttp
