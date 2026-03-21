@@ -4,6 +4,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CommonReportController;
+use App\Http\Controllers\InternalProfileController;
 use App\Http\Controllers\OnelineController;
 use App\Http\Controllers\PageCommentController;
 use App\Http\Controllers\PageReactionController;
@@ -16,7 +17,6 @@ use App\Http\Controllers\StatGaController;
 use App\Http\Controllers\StatGscController;
 use App\Http\Controllers\StatMwController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\WriteRequestController;
 use Illuminate\Support\Facades\Route;
 
@@ -84,4 +84,4 @@ Route::post('/write-request', [WriteRequestController::class, 'store'])->middlew
 Route::post('/write-request/{writeRequest}/recommend', [WriteRequestController::class, 'recommend'])->middleware('mwauth');
 Route::delete('/write-request/{writeRequest}', [WriteRequestController::class, 'destroy'])->middleware('mwauth');
 
-Route::get('/internal/profiles/{userId}', [UserProfileController::class, 'show'])->middleware('internal');
+Route::get('/internal/profiles/{userId}', [InternalProfileController::class, 'show'])->middleware('internal');

@@ -84,6 +84,10 @@ export async function titlesExist(titles: string[]): Promise<Record<string, bool
   return results
 }
 
+export function displayTitle(title: string): string {
+  return title.replace(/_/g, ' ')
+}
+
 export interface TitleExistsStore {
   prefetch: (titles: string[]) => Promise<void>
   get: (title: string) => boolean | undefined

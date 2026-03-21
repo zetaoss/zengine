@@ -1,0 +1,21 @@
+@layer base {
+  :root {
+    --x-gray-50: theme(colors.gray.50);
+    --x-gray-100: theme(colors.gray.100);
+    --x-gray-200: theme(colors.gray.200);
+    --x-gray-300: theme(colors.gray.300);
+    --x-gray-400: theme(colors.gray.400);
+    --x-gray-500: theme(colors.gray.500);
+    --x-gray-700: theme(colors.gray.700);
+  }
+}
+
+.dark {
+  --x-gray-50: theme(colors.gray.900);
+  --x-gray-100: theme(colors.gray.800);
+  --x-gray-200: theme(colors.gray.700);
+  --x-gray-300: theme(colors.gray.600);
+  --x-gray-400: theme(colors.gray.500);
+  --x-gray-500: theme(colors.gray.400);
+  --x-gray-700: theme(colors.gray.200);
+}

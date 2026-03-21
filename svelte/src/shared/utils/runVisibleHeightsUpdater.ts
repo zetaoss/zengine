@@ -1,5 +1,7 @@
 // $shared/utils/runVisibleHeightsUpdater.ts
 export function runVisibleHeightsUpdater() {
+  let started = false
+
   const calc = (el: HTMLElement | null) => {
     if (!el) return 0
     const r = el.getBoundingClientRect()
@@ -16,6 +18,8 @@ export function runVisibleHeightsUpdater() {
   }
 
   const start = () => {
+    if (started) return
+    started = true
     update()
     requestAnimationFrame(update)
     window.addEventListener('scroll', update, { passive: true })
@@ -23,6 +27,11 @@ export function runVisibleHeightsUpdater() {
 
     const ro = new ResizeObserver(update)
     ro.observe(document.documentElement)
+  }
+
+  if (document.readyState === 'complete') {
+    start()
+    return
   }
 
   window.addEventListener('load', start, { once: true })

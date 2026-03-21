@@ -1,6 +1,13 @@
 /* app.css */
-@import './base_layer.css';
-@import './base_tags.css';
+@import 'tailwindcss';
+@custom-variant dark (&:where(.dark, .dark *));
+
+@import './appcolor-mw.css';
+@import './appcolor-x.css';
+@import './appcolor-z.css';
+@import './appemoji-console.css';
+@import './base-border.css';
+@import './base-elements.css';
 
 @import './navbar.css';
 

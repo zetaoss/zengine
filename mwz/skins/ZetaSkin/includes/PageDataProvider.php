@@ -21,7 +21,6 @@ class PageDataProvider
             ->join('ldb.binders', 'B', 'B.id = BP.binder_id')
             ->where([
                 'BP.page_id' => $pageId,
-                'B.deleted' => 0,
                 'B.enabled' => 1,
             ])
             ->fetchResultSet();

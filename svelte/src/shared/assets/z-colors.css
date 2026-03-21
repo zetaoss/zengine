@@ -37,3 +37,7 @@
 .z-link {
   color: var(--z-link);
 }
+
+.z-link-new {
+  color: var(--z-link-new);
+}
