@@ -23,6 +23,10 @@ define run_pnpm
 	}
 endef
 
+define strip_ignore_cves_null
+	@sed -i 's| ignoreCves: null ||' $(1)
+endef
+
 define run_pint
 	@echo "➡️  laravel/vendor/bin/pint --test $(1)"
 	@laravel/vendor/bin/pint --test $(1) || { \
@@ -98,14 +102,6 @@ checks-no-cache:
 	@$(MAKE) USE_CACHE=0 check-php check-svelte check-gohttp
 	@echo "✅  All checks passed (no cache)"
 
-# quickcheck runs non-mutating checks that correspond to `fix`.
-.PHONY: quickcheck
-quickcheck:
-	@$(MAKE) USE_CACHE=1 check-laravel-format check-extension check-skin
-	@$(MAKE) USE_CACHE=1 quickcheck-main-svelte quickcheck-skin-svelte
-	@$(MAKE) USE_CACHE=1 check-gohttp
-	@echo "✅  Quickcheck passed"
-
 .PHONY: clear
 clear:
 	@echo "🧹 clear cache: $(CACHE_DIR)"
@@ -123,14 +119,6 @@ else
 	$(call run_pint,laravel,laravel/vendor/bin/pint laravel)
 	@echo "➡️  laravel: php artisan test"
 	cd laravel && php artisan test
-endif
-
-.PHONY: check-laravel-format
-check-laravel-format:
-ifeq ($(USE_CACHE),1)
-	$(call run_cached,check-laravel-format,$(MAKE) USE_CACHE=0 check-laravel-format,laravel pint.json)
-else
-	$(call run_pint,laravel,laravel/vendor/bin/pint laravel)
 endif
 
 .PHONY: check-extension
@@ -152,12 +140,21 @@ endif
 .PHONY: check-svelte
 check-svelte:
 	@$(MAKE) svelte-overrides
+	@$(MAKE) install-main-svelte install-skin-svelte
 	@$(MAKE) USE_CACHE=$(USE_CACHE) check-main-svelte check-skin-svelte
 
 .PHONY: svelte-overrides
 svelte-overrides:
 	@echo "➡️  root: pnpm overrides"
 	pnpm overrides
+
+.PHONY: install-main-svelte
+install-main-svelte:
+	$(call run_pnpm,svelte,install --frozen-lockfile)
+
+.PHONY: install-skin-svelte
+install-skin-svelte:
+	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,install --frozen-lockfile)
 
 .PHONY: check-main-svelte
 check-main-svelte:
@@ -168,17 +165,8 @@ else
 	$(call run_pnpm,svelte,lint,pnpm -C svelte lint)
 	$(call run_pnpm,svelte,format,pnpm -C svelte format:fix)
 	$(call run_pnpm,svelte,audit --ignore-unfixable --ignore-registry-errors,pnpm -C svelte audit --fix --ignore-unfixable && pnpm -C svelte install --no-frozen-lockfile)
+	$(call strip_ignore_cves_null,svelte/pnpm-workspace.yaml)
 	$(call run_pnpm,svelte,build)
-endif
-
-.PHONY: quickcheck-main-svelte
-quickcheck-main-svelte:
-ifeq ($(USE_CACHE),1)
-	$(call run_cached,quickcheck-main-svelte,$(MAKE) USE_CACHE=0 quickcheck-main-svelte,svelte)
-else
-	$(call run_pnpm,svelte,install --frozen-lockfile)
-	$(call run_pnpm,svelte,lint,pnpm -C svelte lint:fix)
-	$(call run_pnpm,svelte,format,pnpm -C svelte format:fix)
 endif
 
 .PHONY: check-skin-svelte
@@ -190,17 +178,8 @@ else
 	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,lint,pnpm -C mwz/skins/ZetaSkin/svelte lint:fix)
 	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,format,pnpm -C mwz/skins/ZetaSkin/svelte format:fix)
 	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,audit --ignore-unfixable --ignore-registry-errors,pnpm -C mwz/skins/ZetaSkin/svelte audit --fix --ignore-unfixable && pnpm -C mwz/skins/ZetaSkin/svelte install --no-frozen-lockfile)
+	$(call strip_ignore_cves_null,mwz/skins/ZetaSkin/svelte/pnpm-workspace.yaml)
 	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,build)
-endif
-
-.PHONY: quickcheck-skin-svelte
-quickcheck-skin-svelte:
-ifeq ($(USE_CACHE),1)
-	$(call run_cached,quickcheck-skin-svelte,$(MAKE) USE_CACHE=0 quickcheck-skin-svelte,mwz/skins/ZetaSkin/svelte svelte/src/shared)
-else
-	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,install --frozen-lockfile)
-	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,lint,pnpm -C mwz/skins/ZetaSkin/svelte lint:fix)
-	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,format,pnpm -C mwz/skins/ZetaSkin/svelte format:fix)
 endif
 
 .PHONY: check-gohttp
