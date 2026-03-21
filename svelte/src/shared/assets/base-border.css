@@ -1,0 +1,7 @@
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--z-border);
+  }
+}

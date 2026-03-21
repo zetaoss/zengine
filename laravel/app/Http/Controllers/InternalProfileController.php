@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\UserProfileService;
 
-class UserProfileController extends Controller
+class InternalProfileController extends Controller
 {
     public function show(int $userId)
     {

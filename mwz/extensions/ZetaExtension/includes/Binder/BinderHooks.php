@@ -20,14 +20,14 @@ final class BinderHooks
     public static function onPageDeleteComplete($wikiPage, $user, $reason, $pageId, $deletedRev, $logEntry, $archivedRevisionCount): void
     {
         if ($wikiPage->getNamespace() === self::NS_BINDER) {
-            BinderService::markDeleted($pageId);
+            BinderService::deleteBinder($pageId);
         }
     }
 
     public static function onPageUndeleteComplete($title, $user, $reason, $restoredPageId, $restoredRev, $logEntry, $restoredRevisionCount, $created, $restoredPageIds): void
     {
         if ($title->getNamespace() === self::NS_BINDER) {
-            BinderService::unmarkDeletedAndResync($restoredPageId);
+            BinderService::syncRelations($restoredPageId);
         }
     }
 }
