@@ -16,7 +16,7 @@ class PageDataProvider
 
         $res = self::dbr()->newSelectQueryBuilder()
             ->distinct()
-            ->select(['B.data'])
+            ->select(['B.cache'])
             ->from('ldb.binder_pages', 'BP')
             ->join('ldb.binders', 'B', 'B.id = BP.binder_id')
             ->where([
@@ -27,9 +27,9 @@ class PageDataProvider
 
         $binders = [];
         foreach ($res as $row) {
-            $data = $row->data ? json_decode($row->data, true) : null;
-            if (is_array($data) && $data) {
-                $binders[] = $data;
+            $cache = $row->cache ? json_decode($row->cache, true) : null;
+            if (is_array($cache) && $cache) {
+                $binders[] = $cache;
             }
         }
 

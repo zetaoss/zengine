@@ -2,10 +2,10 @@
   import { mdiMinus, mdiPlus } from '@mdi/js'
   import { onMount, tick } from 'svelte'
 
-  import type { BinderItem } from '$lib/types/binder'
+  import type { BinderNode } from '$lib/types/binder'
   import ZIcon from '$shared/ui/ZIcon.svelte'
 
-  export let node: BinderItem
+  export let node: BinderNode
   export let depth = 0
   export let wgArticleId: number
   export let binderId: number
@@ -14,6 +14,7 @@
 
   let expanded = depth === 0
   let rowEl: HTMLElement | null = null
+  let revealedCurrent = false
 
   const key = () => pathKey
   const storageKey = () => `binder-${binderId}`
@@ -43,6 +44,12 @@
     writeMap(map)
   }
 
+  const isCurrent = () => node?.id === wgArticleId
+  const isLink = () => !!node?.href
+  const hasChildren = () => !!node?.nodes?.length
+  const isInlineToggle = () => !isLink() && hasChildren()
+  const isSplitToggle = () => hasChildren() && !isInlineToggle()
+
   const toggle = () => {
     expanded = !expanded
     persist()
@@ -56,22 +63,29 @@
     onReveal?.()
   }
 
-  const isCurrent = () => node?.id === wgArticleId
-  const isLink = () => !!node?.href
-  const hasChildren = () => !!node?.nodes?.length
-  const isInlineToggle = () => !isLink() && hasChildren()
-  const isSplitToggle = () => hasChildren() && !isInlineToggle()
+  const waitForPaint = () =>
+    new Promise<void>((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => resolve())
+      })
+    })
+
+  const scrollCurrentIntoView = async () => {
+    if (!isCurrent() || revealedCurrent) return
+    revealedCurrent = true
+
+    onReveal?.()
+    await tick()
+    await waitForPaint()
+    rowEl?.scrollIntoView({ block: 'center', inline: 'nearest' })
+  }
 
   onMount(async () => {
     const map = readMap()
     const saved = map[key()]
     if (saved === 0 || saved === 1) expanded = !!saved
 
-    if (isCurrent()) {
-      onReveal?.()
-      await tick()
-      rowEl?.scrollIntoView({ block: 'center' })
-    }
+    await scrollCurrentIntoView()
   })
 </script>
 

@@ -30,7 +30,7 @@ final class BinderService
         foreach ($res as $row) {
             $rows[] = [
                 'id' => (int) $row->id,
-                'title' => (string) $row->page_title,
+                'title' => (string) ($row->page_title ?? ''),
                 'docs' => (int) ($row->docs ?? 0),
                 'links' => (int) ($row->links ?? 0),
                 'title_doc' => (string) ($row->title_doc ?? ''),
@@ -40,61 +40,82 @@ final class BinderService
         return $rows;
     }
 
-    public static function getBindersForPageId(int $pageId, bool $refresh = false): array
+    public static function getTreesForPageId(int $pageId, bool $refresh = false): array
     {
         if ($pageId < 1) {
             return [];
         }
 
-        $binderIDs = self::dbr()->newSelectQueryBuilder()
-            ->select('binder_id')
-            ->from('ldb.binder_pages')
-            ->where(['page_id' => $pageId])
-            ->fetchFieldValues();
+        if (! $refresh) {
+            $caches = self::dbr()->newSelectQueryBuilder()
+                ->select('B.cache')
+                ->from('ldb.binder_pages', 'BP')
+                ->join('ldb.binders', 'B', 'B.id = BP.binder_id')
+                ->where([
+                    'BP.page_id' => $pageId,
+                    'B.enabled' => 1,
+                ])
+                ->fetchFieldValues();
 
-        if (! $binderIDs) {
-            return [];
-        }
-
-        if ($refresh) {
             $out = [];
-            foreach ($binderIDs as $id) {
-                $data = self::buildAndStoreBinderData((int) $id);
-                if (is_array($data)) {
-                    $out[] = $data;
-
-                    continue;
-                }
-
-                $cached = self::readStoredBinderData((int) $id);
-                if (is_array($cached)) {
-                    $out[] = $cached;
+            foreach ($caches as $cache) {
+                $tree = self::decodeCache($cache);
+                if ($tree !== []) {
+                    $out[] = $tree;
                 }
             }
 
             return $out;
         }
 
-        $res = self::dbr()->newSelectQueryBuilder()
-            ->select(['id', 'data'])
-            ->from('ldb.binders')
-            ->where(['id' => $binderIDs, 'enabled' => 1])
-            ->fetchResultSet();
+        $binderIds = self::dbw()->newSelectQueryBuilder()
+            ->select('B.id')
+            ->from('ldb.binder_pages', 'BP')
+            ->join('ldb.binders', 'B', 'B.id = BP.binder_id')
+            ->where([
+                'BP.page_id' => $pageId,
+                'B.enabled' => 1,
+            ])
+            ->fetchFieldValues();
+
+        if (! $binderIds) {
+            return [];
+        }
 
         $out = [];
-        foreach ($res as $row) {
-            $data = $row->data ? json_decode($row->data, true) : null;
-            if (is_array($data)) {
-                $out[] = $data;
-            } else {
-                $rebuilt = self::buildAndStoreBinderData((int) $row->id);
-                if (is_array($rebuilt)) {
-                    $out[] = $rebuilt;
-                }
+        foreach ($binderIds as $id) {
+            $binder = self::rebuildBinder((int) $id);
+            $tree = self::decodeCache($binder['cache'] ?? null);
+            if ($tree !== []) {
+                $out[] = $tree;
             }
         }
 
         return $out;
+    }
+
+    public static function rebuildBinder(int $binderId): ?array
+    {
+        if ($binderId < 1) {
+            return null;
+        }
+
+        $tree = self::buildTree($binderId);
+        if ($tree === null) {
+            return null;
+        }
+
+        $row = [
+            'id' => $binderId,
+            'cache' => json_encode($tree, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'docs' => self::countDocs($tree['nodes'] ?? []),
+            'links' => self::countLinks($tree['nodes'] ?? []),
+            'title_doc' => self::findTitleDoc($tree['nodes'] ?? []),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+        self::dbw()->upsert('ldb.binders', $row, ['id'], $row, __METHOD__);
+
+        return $row;
     }
 
     public static function syncRelations(int $binderId): void
@@ -124,7 +145,7 @@ final class BinderService
             $dbw->insert('ldb.binder_pages', $rows);
         }
         $dbw->upsert('ldb.binders', ['id' => $binderId], ['id'], [], __METHOD__);
-        self::buildAndStoreBinderData($binderId);
+        self::rebuildBinder($binderId);
     }
 
     public static function deleteBinder(int $binderId): void
@@ -134,40 +155,15 @@ final class BinderService
         $dbw->delete('ldb.binders', ['id' => $binderId]);
     }
 
-    private static function readStoredBinderData(int $id): ?array
+    private static function decodeCache($raw): array
     {
-        $raw = self::dbr()->newSelectQueryBuilder()
-            ->select('data')
-            ->from('ldb.binders')
-            ->where(['id' => $id])
-            ->fetchField();
-
         if (! is_string($raw) || $raw === '') {
-            return null;
+            return [];
         }
 
-        $data = json_decode($raw, true);
+        $tree = json_decode($raw, true);
 
-        return is_array($data) ? $data : null;
-    }
-
-    private static function buildAndStoreBinderData(int $id): ?array
-    {
-        $data = self::buildBinderData($id);
-        if ($data === null) {
-            return null;
-        }
-        $row = [
-            'id' => $id,
-            'data' => json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-            'docs' => self::countDocs($data),
-            'links' => self::countLinks($data),
-            'title_doc' => self::extractTitleDoc($data),
-            'updated_at' => date('Y-m-d H:i:s'),
-        ];
-        self::dbw()->upsert('ldb.binders', $row, ['id'], $row, __METHOD__);
-
-        return $data;
+        return is_array($tree) ? $tree : [];
     }
 
     private static function wikiPageFromId(int $pageId)
@@ -177,18 +173,9 @@ final class BinderService
         }
 
         $svc = MediaWikiServices::getInstance();
+        $page = $svc->getWikiPageFactory()->newFromID($pageId);
 
-        if (method_exists($svc, 'getWikiPageFactory')) {
-            $page = $svc->getWikiPageFactory()->newFromID($pageId);
-        } else {
-            $t = \Title::newFromID($pageId);
-            $page = $t ? \WikiPage::factory($t) : null;
-        }
-
-        if (! $page) {
-            return null;
-        }
-        if (method_exists($page, 'exists') && ! $page->exists()) {
+        if (! $page || ! $page->exists()) {
             return null;
         }
 
@@ -236,25 +223,15 @@ final class BinderService
         return $t->getId();
     }
 
-    private static function buildBinderData(int $id): ?array
+    private static function buildTree(int $id): ?array
     {
         $page = self::wikiPageFromId($id);
         if (! $page) {
             return null;
         }
 
-        $svc = MediaWikiServices::getInstance();
-        $popts = method_exists($svc, 'getParserOptionsFactory')
-            ? $svc->getParserOptionsFactory()->newFromAnon()
-            : \ParserOptions::newFromAnon();
-
-        $po = method_exists($page, 'getParserOutput') ? $page->getParserOutput($popts) : null;
-        if (! $po) {
-            return null;
-        }
-
-        $title = $page->getTitle()->getText();
-        $html = (string) $po->getText();
+        $title = str_replace('_', ' ', $page->getTitle()->getText());
+        $html = $page->getParserOutput()->getText();
         libxml_use_internal_errors(true);
         $dom = new \DOMDocument;
         $dom->loadHTML('<?xml encoding="utf-8" ?>'.$html, LIBXML_NOERROR | LIBXML_NOWARNING);
@@ -264,19 +241,17 @@ final class BinderService
         if ($uls->length === 0) {
             return [
                 'id' => $id,
-                'title' => $title,
-                'title_doc' => '',
-                'trees' => [],
+                'text' => $title,
+                'nodes' => [],
             ];
         }
 
-        $trees = self::parseUl($uls->item(0));
+        $nodes = self::parseUl($uls->item(0));
 
         return [
             'id' => $id,
-            'title' => $title,
-            'title_doc' => self::findTitleDoc($trees),
-            'trees' => $trees,
+            'text' => $title,
+            'nodes' => $nodes,
         ];
     }
 
@@ -312,9 +287,9 @@ final class BinderService
                 if ($titleAttr !== '') {
                     $titleText = html_entity_decode($titleAttr, ENT_QUOTES | ENT_HTML5, 'UTF-8');
                     $node['title'] = $titleText;
-                    $id = self::titleToIdByText($titleText);
-                    if ($id > 0) {
-                        $node['id'] = $id;
+                    $targetId = self::titleToIdByText($titleText);
+                    if ($targetId > 0) {
+                        $node['id'] = $targetId;
                     } else {
                         $node['new'] = 1;
                     }
@@ -346,27 +321,7 @@ final class BinderService
         return $nodes;
     }
 
-    private static function countDocs(array $data): int
-    {
-        $trees = $data['trees'] ?? [];
-        if (! is_array($trees)) {
-            return 0;
-        }
-
-        return self::countNodeDocs($trees);
-    }
-
-    private static function countLinks(array $data): int
-    {
-        $trees = $data['trees'] ?? [];
-        if (! is_array($trees)) {
-            return 0;
-        }
-
-        return self::countNodeLinks($trees);
-    }
-
-    private static function countNodeDocs(array $nodes): int
+    private static function countDocs(array $nodes): int
     {
         $count = 0;
 
@@ -380,14 +335,14 @@ final class BinderService
             }
 
             if (isset($node['nodes']) && is_array($node['nodes'])) {
-                $count += self::countNodeDocs($node['nodes']);
+                $count += self::countDocs($node['nodes']);
             }
         }
 
         return $count;
     }
 
-    private static function countNodeLinks(array $nodes): int
+    private static function countLinks(array $nodes): int
     {
         $count = 0;
 
@@ -401,18 +356,11 @@ final class BinderService
             }
 
             if (isset($node['nodes']) && is_array($node['nodes'])) {
-                $count += self::countNodeLinks($node['nodes']);
+                $count += self::countLinks($node['nodes']);
             }
         }
 
         return $count;
-    }
-
-    private static function extractTitleDoc(array $data): string
-    {
-        $titleDoc = $data['title_doc'] ?? '';
-
-        return is_string($titleDoc) ? $titleDoc : '';
     }
 
     private static function findTitleDoc(array $nodes): string
