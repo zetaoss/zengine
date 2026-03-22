@@ -23,12 +23,14 @@ class RestBinder extends SimpleHandler
         if ($pageid === null) {
             return BinderService::listBinders();
         }
+
         $id = (int) $pageid;
         if ($id < 1) {
             return [];
         }
+
         $refresh = isset($_GET['refresh']);
 
-        return BinderService::getBindersForPageId($id, $refresh);
+        return BinderService::getTreesForPageId($id, $refresh);
     }
 }
