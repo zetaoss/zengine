@@ -32,7 +32,7 @@ class RebuildBinders extends Maintenance
             $progress = sprintf('[%d/%d]', $index + 1, $total);
 
             try {
-                $rebuilt = BinderService::rebuildBinder($id);
+                $rebuilt = BinderService::refreshBinder($id);
                 if (! is_array($rebuilt)) {
                     throw new RuntimeException('Binder rebuild returned no data.');
                 }
