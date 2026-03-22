@@ -141,7 +141,6 @@ final class BinderService
         if ($rows) {
             $dbw->insert('ldb.binder_pages', $rows);
         }
-        $dbw->upsert('ldb.binders', ['id' => $binderId], ['id'], [], __METHOD__);
     }
 
     private static function storeBinder(int $binderId, array $tree): array
