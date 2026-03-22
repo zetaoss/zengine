@@ -12,8 +12,8 @@
 
   function isBinder(value: unknown): value is Binder {
     if (!value || typeof value !== 'object') return false
-    const obj = value as { id?: unknown; title?: unknown; trees?: unknown }
-    return typeof obj.id === 'number' && typeof obj.title === 'string' && Array.isArray(obj.trees)
+    const obj = value as { id?: unknown; text?: unknown; nodes?: unknown }
+    return typeof obj.id === 'number' && typeof obj.text === 'string' && Array.isArray(obj.nodes)
   }
 
   function toBinders(value: unknown): Binder[] {
@@ -125,8 +125,8 @@
             class="book sticky top-0 z-10 flex items-center justify-between rounded-lg px-3 py-2 bg-gray-200/80 dark:bg-gray-800/80 border-gray-400/60 dark:border-gray-600/60 font-bold"
             on:dblclick={handleRefresh}
           >
-            <a href={`/wiki/Binder:${binder.title}`} class="binder-title-link inline-flex min-w-0 items-center gap-2">
-              <span class="truncate">{binder.title}</span>
+            <a href={`/wiki/Binder:${binder.text}`} class="binder-title-link inline-flex min-w-0 items-center gap-2">
+              <span class="truncate">{binder.text}</span>
               {#if refreshingId === wgArticleId}
                 <span class="refresh-dot" aria-hidden="true"></span>
               {/if}
@@ -134,8 +134,8 @@
           </header>
 
           <ul class="m-0 p-0 pt-2 pb-10 list-none text-[.9rem]">
-            {#each binder.trees || [] as tree, index (`${binder.id}:${index}`)}
-              <BinderNode node={tree} depth={0} {wgArticleId} binderId={binder.id} pathKey={`${binder.id}:${index}`} />
+            {#each binder.nodes || [] as node, index (`${binder.id}:${index}`)}
+              <BinderNode {node} depth={0} {wgArticleId} binderId={binder.id} pathKey={`${binder.id}:${index}`} />
             {/each}
           </ul>
         </div>

@@ -1,13 +1,12 @@
-export type BinderItem = {
+export type BinderNode = {
   id?: number
   href?: string
   new?: boolean | number
-  nodes?: BinderItem[]
+  nodes?: BinderNode[]
   text: string
 }
 
-export type Binder = {
+export type Binder = BinderNode & {
   id: number
-  title: string
-  trees: BinderItem[]
+  nodes: BinderNode[]
 }
