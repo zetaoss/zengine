@@ -105,35 +105,32 @@ final class BinderService
             return null;
         }
 
-        $row = [
-            'id' => $binderId,
-            'cache' => json_encode($tree, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-            'docs' => self::countDocs($tree['nodes'] ?? []),
-            'links' => self::countLinks($tree['nodes'] ?? []),
-            'title_doc' => self::findTitleDoc($tree['nodes'] ?? []),
-            'updated_at' => date('Y-m-d H:i:s'),
-        ];
-        self::dbw()->upsert('ldb.binders', $row, ['id'], $row, __METHOD__);
-
-        return $row;
+        return self::storeBinder($binderId, $tree);
     }
 
-    public static function syncRelations(int $binderId): void
+    public static function refreshBinder(int $binderId): ?array
+    {
+        if ($binderId < 1) {
+            return null;
+        }
+
+        $tree = self::buildTree($binderId);
+        if ($tree === null) {
+            return null;
+        }
+
+        self::syncRelations($binderId, self::collectNodePageIds($tree['nodes'] ?? []));
+
+        return self::storeBinder($binderId, $tree);
+    }
+
+    private static function syncRelations(int $binderId, array $pageIds): void
     {
         $dbw = self::dbw();
-        $res = $dbw->newSelectQueryBuilder()
-            ->select(['target_id' => $dbw->buildCoalesce(['p2.page_id', 'p.page_id'])])
-            ->from('pagelinks', 'pl')
-            ->join('page', 'p', 'p.page_namespace = pl.pl_namespace AND p.page_title = pl.pl_title')
-            ->leftJoin('redirect', 'rd', 'rd.rd_from = p.page_id')
-            ->leftJoin('page', 'p2', 'p2.page_namespace = rd.rd_namespace AND p2.page_title = rd.rd_title')
-            ->where(['pl.pl_from' => $binderId])
-            ->fetchResultSet();
 
         $seen = [];
         $rows = [];
-        foreach ($res as $row) {
-            $pid = (int) $row->target_id;
+        foreach ($pageIds as $pid) {
             if ($pid > 0 && ! isset($seen[$pid])) {
                 $seen[$pid] = true;
                 $rows[] = ['binder_id' => $binderId, 'page_id' => $pid];
@@ -145,7 +142,21 @@ final class BinderService
             $dbw->insert('ldb.binder_pages', $rows);
         }
         $dbw->upsert('ldb.binders', ['id' => $binderId], ['id'], [], __METHOD__);
-        self::rebuildBinder($binderId);
+    }
+
+    private static function storeBinder(int $binderId, array $tree): array
+    {
+        $row = [
+            'id' => $binderId,
+            'cache' => json_encode($tree, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'docs' => self::countDocs($tree['nodes'] ?? []),
+            'links' => self::countLinks($tree['nodes'] ?? []),
+            'title_doc' => self::findTitleDoc($tree['nodes'] ?? []),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+        self::dbw()->upsert('ldb.binders', $row, ['id'], $row, __METHOD__);
+
+        return $row;
     }
 
     public static function deleteBinder(int $binderId): void
@@ -340,6 +351,29 @@ final class BinderService
         }
 
         return $count;
+    }
+
+    private static function collectNodePageIds(array $nodes): array
+    {
+        $ids = [];
+
+        foreach ($nodes as $node) {
+            if (! is_array($node)) {
+                continue;
+            }
+
+            if (isset($node['id']) && (int) $node['id'] > 0) {
+                $ids[] = (int) $node['id'];
+            }
+
+            if (isset($node['nodes']) && is_array($node['nodes'])) {
+                foreach (self::collectNodePageIds($node['nodes']) as $childId) {
+                    $ids[] = $childId;
+                }
+            }
+        }
+
+        return $ids;
     }
 
     private static function countLinks(array $nodes): int

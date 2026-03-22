@@ -22,13 +22,21 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --working-dir=laravel --no-interaction --prefer-dist --no-progress
       - name: Restore make checks cache
-        uses: actions/cache@v4
+        id: make-checks-cache-restore
+        uses: actions/cache/restore@v4
         with:
           path: /tmp/make-checks
-          key: ${{ runner.os }}-make-checks-${{ hashFiles('Makefile') }}
+          key: ${{ runner.os }}-make-checks-${{ github.event.pull_request.head.ref }}-${{ github.sha }}
           restore-keys: |
+            ${{ runner.os }}-make-checks-${{ github.event.pull_request.head.ref }}-
             ${{ runner.os }}-make-checks-
       - run: make checks
+      - name: Save make checks cache
+        if: always() && steps.make-checks-cache-restore.outputs.cache-matched-key != format('{0}-make-checks-{1}-{2}', runner.os, github.event.pull_request.head.ref, github.sha)
+        uses: actions/cache/save@v4
+        with:
+          path: /tmp/make-checks
+          key: ${{ runner.os }}-make-checks-${{ github.event.pull_request.head.ref }}-${{ github.sha }}
 
   docker-build:
     runs-on: ubuntu-latest

@@ -11,7 +11,7 @@ final class BinderHooks
     public static function onPageSaveComplete($wikiPage, $user, $summary, $flags, $revisionRecord, $editResult): void
     {
         if ($wikiPage->getNamespace() === self::NS_BINDER) {
-            BinderService::syncRelations($wikiPage->getId());
+            BinderService::refreshBinder($wikiPage->getId());
         }
 
         WriteRequestService::markDoneIfMatched($wikiPage, $user);
@@ -27,7 +27,7 @@ final class BinderHooks
     public static function onPageUndeleteComplete($title, $user, $reason, $restoredPageId, $restoredRev, $logEntry, $restoredRevisionCount, $created, $restoredPageIds): void
     {
         if ($title->getNamespace() === self::NS_BINDER) {
-            BinderService::syncRelations($restoredPageId);
+            BinderService::refreshBinder($restoredPageId);
         }
     }
 }
