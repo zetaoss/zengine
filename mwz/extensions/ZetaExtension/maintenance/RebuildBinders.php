@@ -32,7 +32,7 @@ class RebuildBinders extends Maintenance
             $progress = sprintf('[%d/%d]', $index + 1, $total);
 
             try {
-                $rebuilt = BinderService::rebuildBinder($id);
+                $rebuilt = BinderService::refreshBinder($id);
                 if (! is_array($rebuilt)) {
                     throw new RuntimeException('Binder rebuild returned no data.');
                 }
@@ -60,6 +60,15 @@ class RebuildBinders extends Maintenance
         $this->output(sprintf("Rebuilt %d/%d binders.\n", $successes, $total));
 
         if ($failures !== []) {
+            $this->output("Failed binders:\n");
+            foreach ($failures as $failure) {
+                $this->output(sprintf(
+                    "- #%d %s: %s\n",
+                    (int) ($failure['id'] ?? 0),
+                    (string) ($failure['title'] ?? ''),
+                    (string) ($failure['error'] ?? 'Unknown error')
+                ));
+            }
             $this->fatalError(sprintf('Failed to rebuild %d binders.', count($failures)));
         }
     }
