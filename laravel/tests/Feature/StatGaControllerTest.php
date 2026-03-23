@@ -91,3 +91,39 @@ it('returns the daily ga stat payload without hanging when using immutable displ
         CarbonImmutable::setTestNow();
     }
 });
+
+it('anchors the daily ga window to the property timezone', function () {
+    config()->set('services.google_analytics.timezone', 'America/Los_Angeles');
+
+    $now = CarbonImmutable::parse('2026-03-24 01:00:00', 'UTC');
+
+    Carbon::setTestNow($now);
+    CarbonImmutable::setTestNow($now);
+
+    try {
+        StatGaDaily::query()->create([
+            'timeslot' => '2026-03-14',
+            'active_users' => 7,
+            'screen_page_views' => 14,
+            'sessions' => 21,
+        ]);
+
+        StatGaDaily::query()->create([
+            'timeslot' => '2026-03-23',
+            'active_users' => 8,
+            'screen_page_views' => 16,
+            'sessions' => 24,
+        ]);
+
+        $response = $this->getJson('/api/stat/ga/daily/10');
+
+        $response->assertOk();
+        $response->assertJsonPath('timeslots.0', '2026-03-14');
+        $response->assertJsonPath('timeslots.9', '2026-03-23');
+        $response->assertJsonPath('active_users.0', 7);
+        $response->assertJsonPath('active_users.9', 8);
+    } finally {
+        Carbon::setTestNow();
+        CarbonImmutable::setTestNow();
+    }
+});
