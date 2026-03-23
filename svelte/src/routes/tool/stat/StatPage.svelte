@@ -94,7 +94,7 @@
 
   let loading = $state(true)
   let failed = $state<string | null>(null)
-  let range = $state<'36h' | '7d' | '30d'>('36h')
+  let range = $state<'36h' | '10d' | '30d'>('36h')
   let valueMode = $state<'compact' | 'exact'>('compact')
   let diffModeByKey = $state<Record<string, boolean>>({})
   let syncedHoverIndex = $state<number | null>(null)
@@ -104,9 +104,9 @@
   let mwData = $state<MwStatisticsResp>(EMPTY_MW)
   let fetchVersion = 0
 
-  const rangeTabs: Array<{ value: '36h' | '7d' | '30d'; label: string }> = [
+  const rangeTabs: Array<{ value: '36h' | '10d' | '30d'; label: string }> = [
     { value: '36h', label: '36 Hours' },
-    { value: '7d', label: '7 Days' },
+    { value: '10d', label: '10 Days' },
     { value: '30d', label: '30 Days' },
   ]
 
@@ -166,7 +166,7 @@
       return
     }
 
-    const days = range === '7d' ? 7 : 30
+    const days = range === '10d' ? 10 : 30
     const [[cfResp, cfErr], [gaResp, gaErr], [gscResp, gscErr], [mwResp, mwErr]] = await Promise.all([
       httpy.get<AnalyticsResp>(`/api/stat/cf-analytics/daily/${days}`),
       httpy.get<GaResp>(`/api/stat/ga/daily/${days}`),

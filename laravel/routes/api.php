@@ -39,13 +39,13 @@ Route::post('/me/avatar', [AuthController::class, 'updateAvatar'])->middleware('
 Route::get('/me/gravatar/verify', [AuthController::class, 'verifyGravatar'])->middleware('mwauth');
 
 Route::get('/stat/cf-analytics/hourly', [StatCfController::class, 'hourly']);
-Route::get('/stat/cf-analytics/daily/{days}', [StatCfController::class, 'daily'])->whereIn('days', ['7', '30']);
+Route::get('/stat/cf-analytics/daily/{days}', [StatCfController::class, 'daily'])->whereIn('days', ['10', '30']);
 Route::get('/stat/ga/hourly', [StatGaController::class, 'hourly']);
-Route::get('/stat/ga/daily/{days}', [StatGaController::class, 'daily'])->whereIn('days', ['7', '30']);
+Route::get('/stat/ga/daily/{days}', [StatGaController::class, 'daily'])->whereIn('days', ['10', '30']);
 Route::get('/stat/gsc/hourly', [StatGscController::class, 'hourly']);
-Route::get('/stat/gsc/daily/{days}', [StatGscController::class, 'daily'])->whereIn('days', ['7', '30']);
+Route::get('/stat/gsc/daily/{days}', [StatGscController::class, 'daily'])->whereIn('days', ['10', '30']);
 Route::get('/stat/mw-statistics/hourly', [StatMwController::class, 'hourly']);
-Route::get('/stat/mw-statistics/daily/{days}', [StatMwController::class, 'daily'])->whereIn('days', ['7', '30']);
+Route::get('/stat/mw-statistics/daily/{days}', [StatMwController::class, 'daily'])->whereIn('days', ['10', '30']);
 
 Route::get('/onelines/recent', [OnelineController::class, 'recent']);
 Route::get('/onelines', [OnelineController::class, 'index']);
