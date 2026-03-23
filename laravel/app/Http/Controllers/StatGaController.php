@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\StatGaDaily;
 use App\Models\StatGaHourly;
 use App\Support\StatWindow;
-use Carbon\CarbonImmutable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -51,12 +50,11 @@ class StatGaController extends Controller
 
     public function daily(int $days): array
     {
-        if (! in_array($days, [7, 30], true)) {
+        if (! in_array($days, [10, 30], true)) {
             abort(404);
         }
 
-        $timezone = (string) config('services.google_analytics.timezone', 'UTC');
-        $to = Carbon::instance(StatWindow::dailyEnd(CarbonImmutable::now($timezone)));
+        $to = Carbon::instance(StatWindow::dailyEnd());
         $from = $to->copy()->subDays($days - 1)->startOfDay();
 
         $rows = $this->loadRows(

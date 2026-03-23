@@ -86,13 +86,13 @@ class CollectGaApiService
         return [$propertyId, $clientEmail, $privateKey, $timezone, $tokenUri];
     }
 
-    public function propertyDateRangeForDays(int $days, string $timezone): array
+    public function utcDateRangeForDays(int $days): array
     {
         if ($days < 1) {
             throw new RuntimeException('--days must be an integer greater than or equal to 1.');
         }
 
-        $todayStart = StatWindow::dailyEnd(CarbonImmutable::now($timezone));
+        $todayStart = StatWindow::dailyEnd();
 
         return [$todayStart->subDays($days - 1), $todayStart];
     }

@@ -78,14 +78,14 @@ it('returns the daily ga stat payload without hanging when using immutable displ
             'sessions' => 21,
         ]);
 
-        $response = $this->getJson('/api/stat/ga/daily/7');
+        $response = $this->getJson('/api/stat/ga/daily/10');
 
         $response->assertOk();
-        $response->assertJsonPath('timeslots.0', '2026-03-10');
-        $response->assertJsonPath('timeslots.6', '2026-03-16');
-        $response->assertJsonPath('active_users.6', 7);
-        $response->assertJsonPath('screen_page_views.6', 14);
-        $response->assertJsonPath('sessions.6', 21);
+        $response->assertJsonPath('timeslots.0', '2026-03-07');
+        $response->assertJsonPath('timeslots.9', '2026-03-16');
+        $response->assertJsonPath('active_users.9', 7);
+        $response->assertJsonPath('screen_page_views.9', 14);
+        $response->assertJsonPath('sessions.9', 21);
     } finally {
         Carbon::setTestNow();
         CarbonImmutable::setTestNow();

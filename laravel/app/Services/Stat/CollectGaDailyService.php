@@ -14,7 +14,7 @@ class CollectGaDailyService
     public function collect(int $days, bool $debug, callable $debugWriter): array
     {
         [$propertyId, $clientEmail, $privateKey, $timezone, $tokenUri] = $this->api->resolveCredentials();
-        [$sinceLocal, $untilLocal] = $this->api->propertyDateRangeForDays($days, $timezone);
+        [$sinceLocal, $untilLocal] = $this->api->utcDateRangeForDays($days);
 
         $requestBody = [
             'dateRanges' => [[

@@ -84,7 +84,7 @@ class CollectGscApiService
             throw new RuntimeException('--days must be an integer greater than or equal to 1.');
         }
 
-        $todayStart = StatWindow::dailyEnd(CarbonImmutable::now(self::DEFAULT_TIMEZONE));
+        $todayStart = StatWindow::dailyEnd();
 
         return [$todayStart->subDays($days - 1), $todayStart];
     }

@@ -6,7 +6,6 @@ use App\Models\StatGscDaily;
 use App\Models\StatGscHourly;
 use App\Services\Stat\CollectGscApiService;
 use App\Support\StatWindow;
-use Carbon\CarbonImmutable;
 use Illuminate\Support\Carbon;
 
 class StatGscController extends Controller
@@ -46,12 +45,11 @@ class StatGscController extends Controller
 
     public function daily(int $days, CollectGscApiService $api): array
     {
-        if (! in_array($days, [7, 30], true)) {
+        if (! in_array($days, [10, 30], true)) {
             abort(404);
         }
 
-        $timezone = $api->timezone();
-        $to = Carbon::instance(StatWindow::dailyEnd(CarbonImmutable::now($timezone)));
+        $to = Carbon::instance(StatWindow::dailyEnd());
         $from = $to->copy()->subDays($days - 1)->startOfDay();
 
         $rows = StatGscDaily::query()
