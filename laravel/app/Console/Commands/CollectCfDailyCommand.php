@@ -9,7 +9,7 @@ use RuntimeException;
 class CollectCfDailyCommand extends Command
 {
     protected $signature = 'z:collect-cf-daily
-                            {--days=7 : Number of days to include (today included, UTC)}
+                            {--days=10 : Number of days to include (today included, UTC)}
                             {--debug : Print raw GraphQL JSON responses}';
     protected $description = 'Collect Cloudflare analytics daily data';
 

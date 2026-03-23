@@ -24,7 +24,7 @@
 
 <a
   href={anchor ? `#${anchor}` : '#'}
-  class={`flex w-full items-start gap-1 z-text2 hover:no-underline hover:text-(--link) ${showRail ? 'border-l-2' : ''}`}
+  class={`flex w-full items-start gap-1 z-text2 hover:no-underline ${showRail ? 'border-l-2' : ''}`}
   style={`padding-left: calc((${depth} + 1) * 0.75rem); ${showRail ? `border-color: ${isInView ? '#999' : '#9993'};` : ''}`}
   aria-current={isInView ? 'location' : undefined}
   on:click={onClick}
@@ -35,7 +35,7 @@
       <span>.</span>
     {/if}
   </span>
-  <span class="flex-1">{label}</span>
+  <span class="flex-1 hover:underline">{label}</span>
 </a>
 
 {#if children?.length > 0}

@@ -190,7 +190,7 @@
     </div>
   {:else}
     <div bind:this={tocRef}>
-      <div class="inline-block rounded-md border border-slate-200 p-3 my-3">
+      <div class="inline-block rounded w-full border border-[#9995] p-3 my-3">
         <TocTree {dataToc} {activeIds} headerOffset={headerOffsetNum} showRail={false} />
       </div>
     </div>

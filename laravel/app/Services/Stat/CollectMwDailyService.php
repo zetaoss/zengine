@@ -4,7 +4,6 @@ namespace App\Services\Stat;
 
 use App\Models\StatMwDaily;
 use App\Support\StatWindow;
-use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -52,11 +51,11 @@ class CollectMwDailyService
     private function resolveTargetDate(string $dateInput): string
     {
         if ($dateInput === '') {
-            return StatWindow::dailyEnd(CarbonImmutable::now('Asia/Seoul'))->toDateString();
+            return StatWindow::dailyEnd()->toDateString();
         }
 
         try {
-            return CarbonImmutable::parse($dateInput, 'Asia/Seoul')->toDateString();
+            return \Carbon\CarbonImmutable::parse($dateInput, 'UTC')->toDateString();
         } catch (\Carbon\Exceptions\InvalidFormatException) {
             throw new RuntimeException('--date must be in YYYY-MM-DD format.');
         }

@@ -9,7 +9,7 @@ use RuntimeException;
 class CollectGaDailyCommand extends Command
 {
     protected $signature = 'z:collect-ga-daily
-                            {--days=7 : Number of trailing days to refresh (today included, property timezone)}
+                            {--days=10 : Number of trailing days to refresh (today included, property timezone)}
                             {--debug : Print raw Google Analytics JSON responses}';
     protected $description = 'Collect Google Analytics daily data';
 
