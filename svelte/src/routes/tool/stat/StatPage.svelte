@@ -94,7 +94,7 @@
 
   let loading = $state(true)
   let failed = $state<string | null>(null)
-  let range = $state<'36h' | '10d' | '30d'>('36h')
+  let range = $state<'48h' | '15d' | '90d'>('48h')
   let valueMode = $state<'compact' | 'exact'>('compact')
   let diffModeByKey = $state<Record<string, boolean>>({})
   let syncedHoverIndex = $state<number | null>(null)
@@ -104,19 +104,19 @@
   let mwData = $state<MwStatisticsResp>(EMPTY_MW)
   let fetchVersion = 0
 
-  const rangeTabs: Array<{ value: '36h' | '10d' | '30d'; label: string }> = [
-    { value: '36h', label: '36 Hours' },
-    { value: '10d', label: '10 Days' },
-    { value: '30d', label: '30 Days' },
+  const rangeTabs: Array<{ value: '48h' | '15d' | '90d'; label: string }> = [
+    { value: '48h', label: '48 Hours' },
+    { value: '15d', label: '15 Days' },
+    { value: '90d', label: '90 Days' },
   ]
 
-  const labels = $derived.by(() => (range === '36h' ? data.timeslots : data.timeslots.map((v) => normalizeDateKey(v))))
-  const labelsGa = $derived.by(() => (range === '36h' ? gaData.timeslots : gaData.timeslots.map((v) => normalizeDateKey(v))))
+  const labels = $derived.by(() => (range === '48h' ? data.timeslots : data.timeslots.map((v) => normalizeDateKey(v))))
+  const labelsGa = $derived.by(() => (range === '48h' ? gaData.timeslots : gaData.timeslots.map((v) => normalizeDateKey(v))))
   const rows = $derived.by<RowDef[]>(() => buildRows(data))
   const gaRows = $derived.by<RowDef[]>(() => buildGaRows(gaData))
-  const labelsGsc = $derived.by(() => (range === '36h' ? gscData.timeslots : gscData.timeslots.map((v) => normalizeDateKey(v))))
+  const labelsGsc = $derived.by(() => (range === '48h' ? gscData.timeslots : gscData.timeslots.map((v) => normalizeDateKey(v))))
   const gscRows = $derived.by<RowDef[]>(() => buildGscRows(gscData))
-  const labelsMw = $derived.by(() => (range === '36h' ? mwData.timeslots : mwData.timeslots.map((v) => normalizeDateKey(v))))
+  const labelsMw = $derived.by(() => (range === '48h' ? mwData.timeslots : mwData.timeslots.map((v) => normalizeDateKey(v))))
   const mwRows = $derived.by<RowDef[]>(() => buildMwRows(mwData))
   const visibleTimeslots = $derived.by(() => {
     if (data.timeslots.length > 0) return data.timeslots
@@ -130,7 +130,7 @@
     loading = true
     failed = null
 
-    if (range === '36h') {
+    if (range === '48h') {
       const [[cfResp, cfErr], [gaResp, gaErr], [gscResp, gscErr], [mwResp, mwErr]] = await Promise.all([
         httpy.get<AnalyticsResp>('/api/stat/cf-analytics/hourly'),
         httpy.get<GaResp>('/api/stat/ga/hourly'),
@@ -166,7 +166,7 @@
       return
     }
 
-    const days = range === '10d' ? 10 : 30
+    const days = range === '15d' ? 15 : 90
     const [[cfResp, cfErr], [gaResp, gaErr], [gscResp, gscErr], [mwResp, mwErr]] = await Promise.all([
       httpy.get<AnalyticsResp>(`/api/stat/cf-analytics/daily/${days}`),
       httpy.get<GaResp>(`/api/stat/ga/daily/${days}`),
@@ -610,7 +610,7 @@
   })
 </script>
 
-<div class="p-5">
+<div class="px-2 py-5">
   <h2 class="m-0 text-2xl font-bold">통계</h2>
 
   <div class="mb-4 mt-3 flex flex-wrap items-center justify-between gap-3">
@@ -652,7 +652,7 @@
     <section>
       <p class="mb-2 text-gray-500">Cloudflare Analytics</p>
       {#each rows as row, idx (row.key)}
-        <div class="grid items-center md:grid-cols-[220px_minmax(0,760px)] md:justify-center">
+        <div class="grid items-center md:grid-cols-[180px_minmax(0,1fr)]">
           <aside class="rounded">
             <div class="text-gray-500">{row.label}</div>
             <div class="text-[1.2rem] font-bold">{formatStatValue(row.value, row.unit)}</div>
@@ -664,7 +664,7 @@
             unit={row.unit}
             color={DEFAULT_LINE_COLOR}
             {valueMode}
-            selectedLabelMode={range === '36h' ? 'hour' : 'date'}
+            selectedLabelMode={range === '48h' ? 'hour' : 'date'}
             hoveredIndex={syncedHoverIndex}
             onHoverIndex={(index) => {
               syncedHoverIndex = index
@@ -681,7 +681,7 @@
     <section class="mt-8">
       <p class="mb-2 text-gray-500">Google Analytics</p>
       {#each gaRows as row, idx (row.key)}
-        <div class="grid items-center md:grid-cols-[220px_minmax(0,760px)] md:justify-center">
+        <div class="grid items-center md:grid-cols-[180px_minmax(0,1fr)]">
           <aside class="rounded">
             <div class="text-gray-500">{row.label}</div>
             <div class="text-[1.2rem] font-bold">{formatStatValue(row.value, row.unit)}</div>
@@ -693,7 +693,7 @@
             unit={row.unit}
             color={DEFAULT_LINE_COLOR}
             {valueMode}
-            selectedLabelMode={range === '36h' ? 'hour' : 'date'}
+            selectedLabelMode={range === '48h' ? 'hour' : 'date'}
             hoveredIndex={syncedHoverIndex}
             onHoverIndex={(index) => {
               syncedHoverIndex = index
@@ -710,7 +710,7 @@
     <section class="mt-8">
       <p class="mb-2 text-gray-500">Google Search Console</p>
       {#each gscRows as row, idx (row.key)}
-        <div class="grid items-center md:grid-cols-[220px_minmax(0,760px)] md:justify-center">
+        <div class="grid items-center md:grid-cols-[180px_minmax(0,1fr)]">
           <aside class="rounded">
             <div class="text-gray-500">{row.label}</div>
             <div class="text-[1.2rem] font-bold">{formatStatValue(row.value, row.unit)}</div>
@@ -722,7 +722,7 @@
             unit={row.unit}
             color={DEFAULT_LINE_COLOR}
             {valueMode}
-            selectedLabelMode={range === '36h' ? 'hour' : 'date'}
+            selectedLabelMode={range === '48h' ? 'hour' : 'date'}
             hoveredIndex={syncedHoverIndex}
             onHoverIndex={(index) => {
               syncedHoverIndex = index
@@ -739,7 +739,7 @@
     <section class="mt-8">
       <p class="mb-2 text-gray-500">MediaWiki Statistics</p>
       {#each mwRows as row, idx (row.key)}
-        <div class="grid items-center md:grid-cols-[220px_minmax(0,760px)] md:justify-center">
+        <div class="grid items-center md:grid-cols-[180px_minmax(0,1fr)]">
           <aside class="rounded">
             <div class="text-gray-500">{row.label}</div>
             <div class="text-[1.2rem] font-bold">{formatStatValue(row.value, row.unit)}</div>
@@ -752,7 +752,7 @@
             color={DEFAULT_LINE_COLOR}
             {valueMode}
             fillArea={!(supportsDiff(row) && diffModeByKey[row.key] === true)}
-            selectedLabelMode={range === '36h' ? 'hour' : 'date'}
+            selectedLabelMode={range === '48h' ? 'hour' : 'date'}
             hoveredIndex={syncedHoverIndex}
             onHoverIndex={(index) => {
               syncedHoverIndex = index
@@ -778,8 +778,8 @@
             label="exact"
             checked={valueMode === 'exact'}
             showIcon={false}
-            on:change={(event) => {
-              valueMode = event.detail.checked ? 'exact' : 'compact'
+            onchange={(event) => {
+              valueMode = event.checked ? 'exact' : 'compact'
             }}
           />
         </div>
@@ -790,8 +790,8 @@
             label="diff"
             checked={Object.values(diffModeByKey).some(Boolean)}
             showIcon={false}
-            on:change={(event) => {
-              const checked = event.detail.checked
+            onchange={(event) => {
+              const checked = event.checked
               const next: Record<string, boolean> = {}
               for (const row of mwRows) {
                 if (supportsDiff(row)) next[row.key] = checked

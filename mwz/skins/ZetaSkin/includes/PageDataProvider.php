@@ -23,6 +23,7 @@ class PageDataProvider
                 'BP.page_id' => $pageId,
                 'B.enabled' => 1,
             ])
+            ->caller(__METHOD__)
             ->fetchResultSet();
 
         $binders = [];
@@ -57,6 +58,7 @@ class PageDataProvider
             ->groupBy(['AC.actor_user', 'AC.actor_name'])
             ->orderBy('last_rev', 'DESC')
             ->limit(10)
+            ->caller(__METHOD__)
             ->fetchResultSet();
 
         $contributors = [];

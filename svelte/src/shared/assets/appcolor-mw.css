@@ -7,6 +7,9 @@
   --border-color-subtle: #ccc;
   --border-color-progressive--active: #2a4b8d;
 
+  --color-subtle: #555;
+  --color-base--subtle: #767676; /* deprecated */
+
   --color-progressive: #0645ad;
   --color-progressive--hover: #447ff5;
   --color-progressive--active: #2a4b8d;
@@ -63,7 +66,7 @@
 
   --color-base: #eaecf0;
   --color-base--hover: #f8f9fa;
-  --color-base--subtle: #a2a9b1;
+  --color-base--subtle: #a2a9b1; /* deprecated */
   --color-emphasized: #f8f9fa;
   --color-subtle: #a2a9b1;
   --color-inverted: #101418;

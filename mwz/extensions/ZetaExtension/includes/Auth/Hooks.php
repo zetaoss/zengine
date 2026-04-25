@@ -4,14 +4,24 @@ namespace ZetaExtension\Auth;
 
 class Hooks
 {
-    private static function redirectToSpa($special, string $path): bool
+    private static function redirectWithReturnTo($special, string $path): bool
     {
         $req = $special->getRequest();
         $returnto = $req->getVal('returnto', '');
+        $returntoquery = $req->getVal('returntoquery', '');
+
+        $query = [];
+        if ($returnto !== '') {
+            $query['returnto'] = $returnto;
+        }
+        if ($returntoquery !== '') {
+            $query['returntoquery'] = $returntoquery;
+        }
 
         $target = $path;
-        if ($returnto !== '') {
-            $target .= '?returnto='.rawurlencode($returnto);
+        if (! empty($query)) {
+            $separator = str_contains($path, '?') ? '&' : '?';
+            $target .= $separator.http_build_query($query);
         }
 
         $special->getOutput()->redirect($target);
@@ -22,11 +32,11 @@ class Hooks
     public static function onSpecialPageBeforeExecute($special, $subPage)
     {
         if ($special instanceof \SpecialUserLogin) {
-            return self::redirectToSpa($special, '/login');
+            return self::redirectWithReturnTo($special, '/login');
         }
 
         if ($special instanceof \SpecialUserLogout) {
-            return self::redirectToSpa($special, '/logout');
+            return self::redirectWithReturnTo($special, '/logout');
         }
 
         return true;
@@ -44,15 +54,12 @@ class Hooks
 
     private static function __returnTo()
     {
-        $returnto = $_GET['returnto'] ?? false;
-        if (! $returnto) {
-            return true;
+        $target = (string) ($_GET['returnto'] ?? '');
+        if (str_starts_with($target, ':/') && ! str_starts_with($target, '://')) {
+            header('Location: '.substr($target, 1));
+            exit;
         }
-        global $wgZetaAllowHosts;
-        if (! in_array(parse_url($returnto, PHP_URL_HOST), $wgZetaAllowHosts)) {
-            return true;
-        }
-        header('Location: '.$returnto);
-        exit;
+
+        return true;
     }
 }

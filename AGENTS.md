@@ -14,6 +14,10 @@ This file is for coding agents working in this monorepo.
 - Frontend page wiring: `svelte/src/routes/**`
 - MediaWiki hook side effects: `mwz/extensions/ZetaExtension/extension.json` and `includes/**`
 
+## Frontend Styling Guideline
+
+- When editing Svelte UI, prefer existing design tokens over hardcoded colors, checking `svelte/src/shared/assets/appcolor-mw.css` first.
+
 ## Route Investigation Workflow
 
 1. Confirm route in `laravel/routes/api.php` or `laravel/routes/web.php`.

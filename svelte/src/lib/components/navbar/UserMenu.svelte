@@ -35,6 +35,11 @@
     }
   })
 
+  const currentReturnto = $derived.by(() => {
+    const path = `${page.url.pathname}${page.url.search}`
+    return encodeURIComponent(`:${path || '/'}`)
+  })
+
   const links: Link[] = $derived(
     ($isLoggedIn
       ? [
@@ -46,10 +51,10 @@
           { text: '기여', href: '/wiki/특수:내기여', accesskey: 'y' },
           { text: '업로드', href: '/wiki/특수:올리기' },
           { text: '특수문서', href: '/wiki/특수:특수문서' },
-          { text: '로그아웃', href: '/logout' },
+          { text: '로그아웃', href: `/logout?returnto=${currentReturnto}` },
         ]
       : [
-          { text: '로그인', href: '/login', accesskey: 'o' },
+          { text: '로그인', href: `/login?returnto=${currentReturnto}`, accesskey: 'o' },
           { text: '계정 만들기', href: '/wiki/특수:계정만들기' },
         ]
     ).map((link) => {
