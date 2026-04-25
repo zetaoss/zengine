@@ -41,5 +41,13 @@ class AuthServiceProvider extends ServiceProvider
 
             return in_array('sysop', (array) ($user->groups ?? []), true);
         });
+
+        Gate::define('sysop', function ($user) {
+            if (! $user) {
+                return false;
+            }
+
+            return in_array('sysop', (array) ($user->groups ?? []), true);
+        });
     }
 }

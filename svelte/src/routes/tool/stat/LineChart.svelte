@@ -231,6 +231,57 @@
     ctx.restore()
   }
 
+  function drawWeekendBands(u: uPlot) {
+    const ctx = u.ctx
+    const { left, top, width: plotWidth, height: plotHeight } = u.bbox
+    const count = labels.length
+    if (count === 0) return
+
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(left, top, plotWidth, plotHeight)
+    ctx.clip()
+    ctx.fillStyle = '#88888817'
+
+    for (let i = 0; i < count; i += 1) {
+      if (!isWeekendLabel(labels[i])) continue
+
+      const xCenter = u.valToPos(i, 'x', true)
+      const xPrev = i > 0 ? u.valToPos(i - 1, 'x', true) : xCenter - pointStep(u, i, count)
+      const xNext = i < count - 1 ? u.valToPos(i + 1, 'x', true) : xCenter + pointStep(u, i, count)
+      const xStart = (xPrev + xCenter) / 2
+      const xEnd = (xCenter + xNext) / 2
+
+      if (!Number.isFinite(xStart) || !Number.isFinite(xEnd)) continue
+      ctx.fillRect(xStart, top, Math.max(xEnd - xStart, 1), plotHeight)
+    }
+
+    ctx.restore()
+  }
+
+  function pointStep(u: uPlot, index: number, count: number) {
+    if (count <= 1) return u.bbox.width
+    if (index > 0) return Math.abs(u.valToPos(index, 'x', true) - u.valToPos(index - 1, 'x', true))
+    return Math.abs(u.valToPos(index + 1, 'x', true) - u.valToPos(index, 'x', true))
+  }
+
+  function isWeekendLabel(value: string | undefined) {
+    if (!value) return false
+
+    const date = selectedLabelMode === 'hour' ? new Date(value) : parseDateKey(value)
+    if (Number.isNaN(date.getTime())) return false
+
+    const day = date.getDay()
+    return day === 0 || day === 6
+  }
+
+  function parseDateKey(value: string) {
+    const dayPart = value.trim().slice(0, 10)
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dayPart)
+    if (!match) return new Date(Number.NaN)
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+  }
+
   function getWidth() {
     const base = chartEl?.clientWidth ?? hostEl?.clientWidth ?? 0
     return Math.max(Math.floor(base), 320)
@@ -346,15 +397,17 @@
           fill: fillArea ? fillColor(line.color ?? color) : 'transparent',
           fillTo: (_u: uPlot, _seriesIdx: number, min: number, max: number) => (unit === 'rank' ? max : 0),
           width: 2.2,
-          points: { show: true, size: 8, width: 0, fill: line.color ?? color, stroke: line.color ?? color },
+          points: { show: false },
         })),
       ],
       cursor: {
         drag: { x: false, y: false },
+        points: { show: false },
       },
       hooks: {
         drawClear: [
           (u) => {
+            drawWeekendBands(u)
             drawBars(u)
           },
         ],
@@ -364,7 +417,7 @@
           },
         ],
       },
-      padding: [8, 8, 8, 8],
+      padding: [8, 2, 8, 2],
     }
 
     chart = new uPlot(opts, buildData(), chartEl)

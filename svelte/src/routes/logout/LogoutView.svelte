@@ -8,8 +8,15 @@
   import httpy, { HttpyError } from '$shared/utils/httpy'
 
   function getReturnto() {
-    const r = (page.url.searchParams.get('returnto') ?? '').trim()
-    return r.length > 0 ? `/wiki/${r}` : '/'
+    const returnto = (page.url.searchParams.get('returnto') ?? '').trim()
+    if (returnto.startsWith(':')) {
+      const route = returnto.slice(1)
+      if (route.startsWith('/')) {
+        return route
+      }
+    }
+
+    return returnto.length > 0 ? `/wiki/${returnto}` : '/'
   }
 
   async function getCsrfToken(): Promise<[string, HttpyError | null]> {

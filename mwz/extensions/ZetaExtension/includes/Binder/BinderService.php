@@ -24,6 +24,7 @@ final class BinderService
             ->from('ldb.binders', 'A')
             ->leftJoin('page', 'B', 'A.id = B.page_id')
             ->where(['A.enabled' => 1])
+            ->caller(__METHOD__)
             ->fetchResultSet();
 
         $rows = [];
@@ -55,6 +56,7 @@ final class BinderService
                     'BP.page_id' => $pageId,
                     'B.enabled' => 1,
                 ])
+                ->caller(__METHOD__)
                 ->fetchFieldValues();
 
             $out = [];
@@ -76,6 +78,7 @@ final class BinderService
                 'BP.page_id' => $pageId,
                 'B.enabled' => 1,
             ])
+            ->caller(__METHOD__)
             ->fetchFieldValues();
 
         if (! $binderIds) {
@@ -108,20 +111,34 @@ final class BinderService
         return self::storeBinder($binderId, $tree);
     }
 
-    public static function refreshBinder(int $binderId): ?array
+    public static function ensureBinder(int $binderId): ?array
     {
         if ($binderId < 1) {
             return null;
         }
 
-        $tree = self::buildTree($binderId);
+        $realBinderId = self::resolveRealBinderId($binderId);
+        if ($realBinderId < 1) {
+            return null;
+        }
+
+        if ($realBinderId !== $binderId) {
+            self::deleteBinder($binderId);
+        }
+
+        $tree = self::buildTree($realBinderId);
         if ($tree === null) {
             return null;
         }
 
-        self::syncRelations($binderId, self::collectNodePageIds($tree['nodes'] ?? []));
+        $nodes = $tree['nodes'] ?? [];
+        $pageIds = self::collectNodePageIds($nodes);
 
-        return self::storeBinder($binderId, $tree);
+        self::syncRelations($realBinderId, $pageIds);
+
+        $row = self::storeBinder($realBinderId, $tree);
+
+        return $row;
     }
 
     private static function syncRelations(int $binderId, array $pageIds): void
@@ -145,15 +162,20 @@ final class BinderService
 
     private static function storeBinder(int $binderId, array $tree): array
     {
+        $now = date('Y-m-d H:i:s');
         $row = [
             'id' => $binderId,
             'cache' => json_encode($tree, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
             'docs' => self::countDocs($tree['nodes'] ?? []),
             'links' => self::countLinks($tree['nodes'] ?? []),
             'title_doc' => self::findTitleDoc($tree['nodes'] ?? []),
-            'updated_at' => date('Y-m-d H:i:s'),
+            'created_at' => $now,
+            'updated_at' => $now,
         ];
-        self::dbw()->upsert('ldb.binders', $row, ['id'], $row, __METHOD__);
+        $updateRow = $row;
+        unset($updateRow['id']);
+        unset($updateRow['created_at']);
+        self::dbw()->upsert('ldb.binders', $row, 'id', $updateRow, __METHOD__);
 
         return $row;
     }
@@ -233,6 +255,19 @@ final class BinderService
         return $t->getId();
     }
 
+    private static function resolveRealBinderId(int $binderId): int
+    {
+        $page = self::wikiPageFromId($binderId);
+        if (! $page) {
+            return 0;
+        }
+
+        $sourceTitle = $page->getTitle();
+        $targetTitle = self::resolveRedirects($sourceTitle) ?: $sourceTitle;
+
+        return (int) $targetTitle->getId();
+    }
+
     private static function buildTree(int $id): ?array
     {
         $page = self::wikiPageFromId($id);
@@ -240,8 +275,19 @@ final class BinderService
             return null;
         }
 
-        $title = str_replace('_', ' ', $page->getTitle()->getText());
-        $html = $page->getParserOutput()->getText();
+        $sourceTitle = $page->getTitle();
+        $targetTitle = self::resolveRedirects($sourceTitle) ?: $sourceTitle;
+        $parsePage = $page;
+
+        if ($targetTitle->getId() > 0 && $targetTitle->getId() !== $sourceTitle->getId()) {
+            $resolvedPage = self::wikiPageFromId((int) $targetTitle->getId());
+            if ($resolvedPage) {
+                $parsePage = $resolvedPage;
+            }
+        }
+
+        $title = str_replace('_', ' ', $targetTitle->getText());
+        $html = $parsePage->getParserOutput()->getText();
         libxml_use_internal_errors(true);
         $dom = new \DOMDocument;
         $dom->loadHTML('<?xml encoding="utf-8" ?>'.$html, LIBXML_NOERROR | LIBXML_NOWARNING);
