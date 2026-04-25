@@ -7,13 +7,13 @@ const sizeClasses: Record<ZButtonSize, string> = {
 }
 
 const baseClass =
-  'text-[var(--z-text)] inline-flex cursor-pointer items-center justify-center rounded transition ring-1 hover:no-underline leading-none'
+  'text-[var(--z-text)] inline-flex cursor-pointer items-center justify-center rounded transition ring-1 hover:no-underline hover:shadow-[inset_0_0_0_9999px_#8884] leading-none'
 
 const colorClasses: Record<ZButtonColor, string> = {
-  default: 'bg-[var(--z-btn-bg)] ring-[var(--z-btn-hover)] hover:bg-[var(--z-btn-hover)]',
-  danger: 'bg-[var(--z-danger-bg)] ring-[var(--z-danger-hover)] hover:bg-[var(--z-danger-hover)]',
-  ghost: 'bg-transparent ring-transparent hover:bg-[var(--z-btn-hover)]',
-  primary: 'bg-[var(--z-primary-bg)] ring-[var(--z-primary-hover)] hover:bg-[var(--z-primary-hover)]',
+  default: 'bg-[var(--z-btn-bg)] ring-[var(--z-btn-hover)]',
+  danger: 'bg-[var(--z-danger-bg)] ring-[var(--z-danger-hover)]',
+  ghost: 'bg-transparent ring-transparent',
+  primary: 'bg-[var(--z-primary-bg)] ring-[var(--z-primary-hover)]',
 }
 
 const disabledClass = 'opacity-50 brightness-[.9] cursor-not-allowed pointer-events-none text-[var(--z-btn-text-disabled)]'

@@ -23,7 +23,7 @@ class StatMwController extends Controller
     public function hourly(): array
     {
         $to = Carbon::instance(StatWindow::hourlyEnd());
-        $from = $to->copy()->subHours(35);
+        $from = $to->copy()->subHours(47);
 
         $rows = StatMwHourly::query()
             ->select(array_merge(['timeslot'], self::NAMES))
@@ -55,7 +55,7 @@ class StatMwController extends Controller
 
     public function daily(int $days): array
     {
-        if (! in_array($days, [10, 30], true)) {
+        if (! in_array($days, [15, 90], true)) {
             abort(404);
         }
 

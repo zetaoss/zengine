@@ -13,17 +13,13 @@ class RestBinder extends SimpleHandler
             'pageid' => [
                 self::PARAM_SOURCE => 'path',
                 ParamValidator::PARAM_TYPE => 'integer',
-                ParamValidator::PARAM_REQUIRED => false,
+                ParamValidator::PARAM_REQUIRED => true,
             ],
         ];
     }
 
-    public function run($pageid = null)
+    public function run($pageid)
     {
-        if ($pageid === null) {
-            return BinderService::listBinders();
-        }
-
         $id = (int) $pageid;
         if ($id < 1) {
             return [];

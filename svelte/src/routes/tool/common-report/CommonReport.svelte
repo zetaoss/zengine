@@ -4,6 +4,8 @@
   import { onDestroy } from 'svelte'
   import { get } from 'svelte/store'
 
+  import { goto } from '$app/navigation'
+  import { resolve } from '$app/paths'
   import { page } from '$app/state'
   import ThePagination from '$lib/components/pagination/ThePagination.svelte'
   import type { PaginateData } from '$lib/components/pagination/types'
@@ -99,7 +101,8 @@
 
   async function openModal() {
     if (!get(canWrite)) {
-      window.location.href = '/login?redirect=/tool/common-report'
+      const searchParams = new URLSearchParams({ returnto: ':/tool/common-report' })
+      await goto(resolve(`/login?${searchParams}` as '/login'))
       return
     }
     showModal = true

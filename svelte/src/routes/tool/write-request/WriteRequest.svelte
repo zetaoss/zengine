@@ -4,6 +4,8 @@
   import { mdiDelete } from '@mdi/js'
   import { get } from 'svelte/store'
 
+  import { goto } from '$app/navigation'
+  import { resolve } from '$app/paths'
   import { page } from '$app/state'
   import ThePagination from '$lib/components/pagination/ThePagination.svelte'
   import type { PaginateData } from '$lib/components/pagination/types'
@@ -112,12 +114,32 @@
     await fetchPage()
   }
 
-  async function openModal() {
-    if (!get(canWrite)) {
-      window.location.href = '/login?redirect=/tool/write-request'
-      return
+  async function requireAuthConfirm(actionMsg: string) {
+    if (get(canWrite)) return true
+
+    if (
+      await showConfirm(`${actionMsg}하려면 로그인이 필요합니다. 로그인하시겠습니까?`, {
+        okColor: 'primary',
+        okText: '로그인',
+      })
+    ) {
+      await goto(resolve(loginPath() as '/login'))
     }
+    return false
+  }
+
+  async function openModal() {
+    if (!(await requireAuthConfirm('작성요청을 등록'))) return
+
     showModal = true
+  }
+
+  function loginPath() {
+    const searchParams = new URLSearchParams({
+      returnto: `:${page.url.pathname}${page.url.search}`,
+    })
+
+    return `/login?${searchParams}`
   }
 
   function closeModal() {
@@ -146,10 +168,7 @@
   }
 
   async function recommend(row: Row) {
-    if (!get(canWrite)) {
-      window.location.href = '/login?redirect=/tool/write-request'
-      return
-    }
+    if (!(await requireAuthConfirm('추천'))) return
 
     const [data, err] = await httpy.post<{ ok: boolean; rate: number }>(`/api/write-request/${row.id}/recommend`)
     if (err) {
@@ -197,7 +216,7 @@
       class={`rounded-r-none p-3 ring-gray-300 dark:ring-slate-700 ${mode === 'todo' ? 'bg-slate-100 dark:bg-slate-700' : 'bg-white dark:bg-slate-900'}`}
       onclick={() => setMode('todo')}
     >
-      요청 <ZBadge class="ml-1">{count.todo}</ZBadge>
+      요청 <ZBadge class="ml-1" text={String(count.todo)} />
     </ZButton>
     <ZButton
       cooldown={0}
@@ -211,7 +230,7 @@
       class={`rounded-l-none p-3 dark:ring-slate-700 ${mode === 'done' ? 'bg-slate-100 dark:bg-slate-700' : 'bg-white dark:bg-slate-900'}`}
       onclick={() => setMode('done')}
     >
-      완료 <ZBadge class="ml-1">{count.done}</ZBadge>
+      완료 <ZBadge class="ml-1" text={String(count.done)} />
     </ZButton>
   </div>
 
@@ -252,12 +271,12 @@
 
     <tbody>
       {#each respData.data as row (row.id)}
-        <tr class="align-top border-b border-[#88888866]">
+        <tr class="align-top border-b border-(--border-color-subtle)">
           <td class="px-2 text-center">{row.id}</td>
           <td class="w-[35%]">
             <a href={getTitleHref(row)} rel="external" class={mode === 'done' ? '' : 'new'}>{row.title}</a>
             {#if $canDelete(row.user_id)}
-              <ZButton color="ghost" class="py-1 align-middle leading-none text-[#888]" onclick={() => del(row)}>
+              <ZButton color="ghost" class="py-1 align-middle leading-none text-(--color-subtle)" onclick={() => del(row)}>
                 <ZIcon path={mdiDelete} />
               </ZButton>
             {/if}
@@ -298,7 +317,7 @@
   </table>
 
   <div class="py-4 text-right">
-    <ZButton disabled={!$canWrite} onclick={openModal}>등록</ZButton>
+    <ZButton onclick={openModal}>등록</ZButton>
   </div>
 
   {#if paginateData}
@@ -318,14 +337,14 @@
     overflow: hidden;
     width: 100%;
     height: 4px;
-    background: rgba(5, 114, 206, 0.05);
+    background: var(--background-color-progressive-subtle);
   }
 
   .progress-bar {
     width: 100%;
     height: 100%;
     animation: write-request-progress 1s infinite linear;
-    background: rgb(5, 114, 206);
+    background: var(--color-progressive);
     transform-origin: 0% 50%;
   }
 

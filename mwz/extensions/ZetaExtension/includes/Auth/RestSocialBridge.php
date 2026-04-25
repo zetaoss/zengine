@@ -79,6 +79,13 @@ class RestSocialBridge extends SimpleHandler
             return '/';
         }
 
+        if (str_starts_with($returnto, ':')) {
+            $route = substr($returnto, 1);
+            if ($route !== '' && $route[0] === '/' && ! str_starts_with($route, '//')) {
+                return $route;
+            }
+        }
+
         $returnto = str_replace(' ', '_', $returnto);
         $encoded = implode('/', array_map(
             static fn ($seg) => rawurlencode($seg),

@@ -1,27 +1,18 @@
 <script lang="ts">
   import { mdiCheck, mdiClose } from '@mdi/js'
-  import { createEventDispatcher } from 'svelte'
 
   import ZIcon from '$shared/ui/ZIcon.svelte'
-
-  const dispatch = createEventDispatcher<{ change: { checked: boolean } }>()
 
   export let checked = false
   export let label = ''
   export let disabled = false
-  export let showIcon = true
-  export let theme: 'default' | 'success' = 'default'
-
-  $: toneClass = checked
-    ? theme === 'success'
-      ? 'border-[var(--color-success)] text-[var(--color-success)]'
-      : 'border-neutral-700 text-neutral-700 dark:border-slate-300 dark:text-slate-300'
-    : 'border-neutral-400 text-neutral-400 dark:border-slate-500 dark:text-slate-500'
+  export let showIcon = false
+  export let onchange: ((event: { checked: boolean }) => void) | undefined = undefined
 
   function toggle() {
     if (disabled) return
     checked = !checked
-    dispatch('change', { checked })
+    onchange?.({ checked })
   }
 </script>
 
@@ -31,17 +22,26 @@
   aria-checked={checked}
   aria-disabled={disabled}
   aria-label={label}
-  class={`relative inline-flex h-6 w-11 items-center rounded-full border-2 bg-transparent transition-colors ${toneClass} ${
-    disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
-  }`}
+  class="z-toggle relative inline-flex h-5 w-9 items-center rounded-full border-2 bg-transparent transition"
+  class:cursor-not-allowed={disabled}
+  class:cursor-pointer={!disabled}
+  class:opacity-40={!checked}
+  class:opacity-60={disabled && checked}
   onclick={toggle}
   {disabled}
 >
   <span
-    class={`inline-flex h-4 w-4 transform items-center justify-center rounded-full bg-current transition-transform ${checked ? 'translate-x-5.5' : 'translate-x-0.5'}`}
+    class={`inline-flex h-3 w-3 transform items-center justify-center rounded-full bg-current transition-transform ${checked ? 'translate-x-4.5' : 'translate-x-1'}`}
   >
     {#if showIcon}
-      <ZIcon path={checked ? mdiCheck : mdiClose} size={24} class="text-(--z-base)" />
+      <ZIcon path={checked ? mdiCheck : mdiClose} size={24} />
     {/if}
   </span>
 </button>
+
+<style>
+  .z-toggle {
+    border-color: var(--color-subtle);
+    color: var(--color-subtle);
+  }
+</style>

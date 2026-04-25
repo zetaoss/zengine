@@ -17,9 +17,8 @@
   let password = $state('')
   let loading = $state(false)
 
-  function queryValue(name: string): string {
-    return (page.url.searchParams.get(name) ?? '').trim()
-  }
+  let returnto = $derived(page.url.searchParams.get('returnto')?.trim() ?? '')
+  let errorParam = $derived(page.url.searchParams.get('error')?.trim() ?? '')
 
   function socialErrorMessage(code: string): string {
     const byCode: Record<string, string> = {
@@ -31,14 +30,15 @@
   }
 
   function redirectAfterLogin() {
-    const redirect = queryValue('redirect')
-    if (redirect.startsWith('/')) {
-      window.location.href = redirect
-      return
+    if (returnto.startsWith(':/')) {
+      const route = returnto.slice(1)
+      if (!route.startsWith('//')) {
+        window.location.href = route
+        return
+      }
     }
 
-    const returnto = queryValue('returnto')
-    if (returnto.length > 0) {
+    if (returnto) {
       window.location.href = `/wiki/${returnto}`
       return
     }
@@ -49,13 +49,7 @@
   function socialHref(provider: 'google' | 'github' | 'facebook') {
     let href = `/auth/redirect/${provider}`
 
-    let returnto = queryValue('returnto')
-    const redirect = queryValue('redirect')
-    if (!returnto && redirect.startsWith('/wiki/')) {
-      returnto = redirect.slice('/wiki/'.length)
-    }
-
-    if (returnto.length > 0) {
+    if (returnto) {
       href += `?returnto=${encodeURIComponent(returnto)}`
     }
 
@@ -93,11 +87,9 @@
 
   $effect(() => {
     if (message.length > 0) return
+    if (!errorParam) return
 
-    const error = queryValue('error')
-    if (!error) return
-
-    message = socialErrorMessage(error)
+    message = socialErrorMessage(errorParam)
   })
 </script>
 

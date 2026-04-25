@@ -30,13 +30,13 @@ it('anchors the daily gsc window to the search console timezone', function () {
             'position' => 2.5,
         ]);
 
-        $response = $this->getJson('/api/stat/gsc/daily/10');
+        $response = $this->getJson('/api/stat/gsc/daily/15');
 
         $response->assertOk();
-        $response->assertJsonPath('timeslots.0', '2026-03-14');
-        $response->assertJsonPath('timeslots.9', '2026-03-23');
-        $response->assertJsonPath('clicks.0', 7);
-        $response->assertJsonPath('clicks.9', 9);
+        $response->assertJsonPath('timeslots.0', '2026-03-09');
+        $response->assertJsonPath('timeslots.14', '2026-03-23');
+        $response->assertJsonPath('clicks.5', 7);
+        $response->assertJsonPath('clicks.14', 9);
     } finally {
         Carbon::setTestNow();
         CarbonImmutable::setTestNow();

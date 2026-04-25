@@ -37,11 +37,6 @@
   },
   "RestRoutes": [
     {
-      "path": "/binder",
-      "method": "GET",
-      "class": "ZetaExtension\\Binder\\RestBinder"
-    },
-    {
       "path": "/binder/{pageid}",
       "method": "GET",
       "class": "ZetaExtension\\Binder\\RestBinder"
