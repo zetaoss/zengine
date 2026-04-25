@@ -11,7 +11,7 @@
     const returnto = (page.url.searchParams.get('returnto') ?? '').trim()
     if (returnto.startsWith(':')) {
       const route = returnto.slice(1)
-      if (route.startsWith('/')) {
+      if (route.startsWith('/') && !route.startsWith('//')) {
         return route
       }
     }

@@ -31,8 +31,11 @@
 
   function redirectAfterLogin() {
     if (returnto.startsWith(':/')) {
-      window.location.href = returnto.slice(1)
-      return
+      const route = returnto.slice(1)
+      if (!route.startsWith('//')) {
+        window.location.href = route
+        return
+      }
     }
 
     if (returnto) {

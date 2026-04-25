@@ -175,7 +175,7 @@ final class BinderService
         $updateRow = $row;
         unset($updateRow['id']);
         unset($updateRow['created_at']);
-        self::dbw()->upsert('ldb.binders', $row, 'id', $updateRow, __METHOD__);
+        self::dbw()->upsert('ldb.binders', $row, ['id'], $updateRow, __METHOD__);
 
         return $row;
     }
