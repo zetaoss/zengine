@@ -1,6 +1,8 @@
 <?php
 
-uses(Tests\TestCase::class)->in('Feature', 'Unit');
+use Tests\TestCase;
+
+uses(TestCase::class)->in('Feature', 'Unit');
 
 expect()->extend('toBeOne', function () {
     return $this->toBe(1);

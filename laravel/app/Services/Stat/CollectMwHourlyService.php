@@ -5,6 +5,7 @@ namespace App\Services\Stat;
 use App\Models\StatMwHourly;
 use App\Support\StatWindow;
 use Carbon\CarbonImmutable;
+use Carbon\Exceptions\InvalidFormatException;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -58,7 +59,7 @@ class CollectMwHourlyService
 
         try {
             return CarbonImmutable::parse($atInput, 'UTC')->startOfHour()->utc();
-        } catch (\Carbon\Exceptions\InvalidFormatException) {
+        } catch (InvalidFormatException) {
             throw new RuntimeException('--at must be a valid UTC datetime such as 2026-03-14T15:00:00Z.');
         }
     }
