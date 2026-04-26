@@ -1,8 +1,10 @@
 :root {
   --background-color-base: #fff;
   --background-color-interactive: #eee;
+  --background-color-interactive--hover: #dadde3;
   --background-color-interactive-subtle: #f9f9f9;
   --background-color-progressive-subtle: #eaf3ff;
+  --background-color-neutral-subtle: #f8f9fa;
 
   --border-color-subtle: #ccc;
   --border-color-progressive--active: #2a4b8d;
@@ -23,6 +25,7 @@
   --background-color-neutral: #27292d;
   --background-color-neutral-subtle: #202122;
   --background-color-interactive: #27292d;
+  --background-color-interactive--hover: #404244;
   --background-color-interactive-subtle: #202122;
   --background-color-disabled: #54595d;
   --background-color-disabled-subtle: #404244;

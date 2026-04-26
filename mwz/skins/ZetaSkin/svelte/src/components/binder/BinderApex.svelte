@@ -23,28 +23,28 @@
   const { wgArticleId, binders } = getRLCONF()
 
   let bindersRef: Binder[] = toBinders(binders)
-  let collapsed = false
-  let isOverlay = false
+  let isCollapsed = false
+  let isDrawer = false
   let refreshingId: number | null = null
   let root: HTMLElement | null = null
 
   const updateMedia = () => {
     const match = window.matchMedia('(max-width: 768px)')
-    isOverlay = match.matches
-    if (isOverlay && !collapsed) collapsed = true
-    if (!isOverlay && collapsed) collapsed = false
+    isDrawer = match.matches
+    if (isDrawer && !isCollapsed) isCollapsed = true
+    if (!isDrawer && isCollapsed) isCollapsed = false
   }
 
   const toggle = () => {
-    collapsed = !collapsed
+    isCollapsed = !isCollapsed
   }
 
   const close = () => {
-    collapsed = true
+    isCollapsed = true
   }
 
   const onMouseDown = (e: MouseEvent) => {
-    if (!isOverlay || collapsed) return
+    if (!isDrawer || isCollapsed) return
     if (!root) return
     if (root.contains(e.target as Node)) return
     close()
@@ -74,11 +74,11 @@
   $: styleVars = (() => {
     const marginY = 0
     const top = `calc(var(--navbar-visible-height) + ${marginY}px)`
-    const height = isOverlay
+    const height = isDrawer
       ? `calc(100vh - (var(--navbar-visible-height) + ${marginY * 2}px))`
       : `calc(100vh - (var(--navbar-visible-height) + var(--footer-visible-height) + ${marginY * 2}px))`
     return {
-      width: collapsed ? '0' : '240px',
+      width: isCollapsed ? '0' : '240px',
       marginTop: `${marginY}px`,
       top,
       height,
@@ -104,13 +104,13 @@
 {#if bindersRef.length > 0}
   <div
     bind:this={root}
-    class={`flex-none shrink-0 z-30 transition-[width] ${isOverlay ? 'fixed' : 'sticky'} ${collapsed ? 'overflow-hidden' : ''}`}
+    class={`flex-none shrink-0 z-30 transition-[width] bg-(--background-color-neutral-subtle) border-r ${isDrawer ? 'fixed' : 'sticky'}`}
     style={`width:${styleVars.width}; margin-top:${styleVars.marginTop}; top:${styleVars.top}; height:${styleVars.height};`}
   >
-    {#if isOverlay}
+    {#if isDrawer}
       <button
-        class="binder-menu-toggle absolute p-2 z-20 flex rounded-r-lg opacity-75 bg-gray-200 dark:bg-neutral-700 right-0 translate-x-full"
-        aria-expanded={!collapsed}
+        class="binder-menu-toggle absolute p-2 z-20 flex rounded-r opacity-80 cursor-pointer bg-(--background-color-interactive--hover) right-0 translate-x-full"
+        aria-expanded={!isCollapsed}
         on:click={toggle}
       >
         <ZIcon path={mdiMenu} />
