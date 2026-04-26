@@ -7,6 +7,7 @@
   export let color: ZButtonColor = 'default'
   export let size: ZButtonSize = 'medium'
   export let cooldown = 300
+  export let title: string | undefined = undefined
   export let onclick: ((event: MouseEvent) => void) | undefined = undefined
 
   let isCooling = false
@@ -35,6 +36,6 @@
   }
 </script>
 
-<button {...$$restProps} {type} class={classes} disabled={isDisabled} on:click={handleClick}>
+<button {...$$restProps} {type} aria-label={title} class={classes} disabled={isDisabled} on:click={handleClick}>
   <slot />
 </button>
