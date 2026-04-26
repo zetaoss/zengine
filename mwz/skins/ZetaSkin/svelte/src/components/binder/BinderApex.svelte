@@ -1,11 +1,12 @@
 <svelte:options customElement={{ tag: 'binder-apex', shadow: 'none' }} />
 
 <script lang="ts">
-  import { mdiMenu } from '@mdi/js'
+  import { mdiChevronLeft, mdiChevronRight, mdiMenu, mdiRefresh } from '@mdi/js'
   import { onMount } from 'svelte'
 
   import type { Binder } from '$lib/types/binder'
   import getRLCONF from '$lib/utils/rlconf'
+  import ZButton from '$shared/ui/ZButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
 
   import BinderNode from './BinderNode.svelte'
@@ -29,10 +30,11 @@
   let root: HTMLElement | null = null
 
   const updateMedia = () => {
-    const match = window.matchMedia('(max-width: 768px)')
-    isDrawer = match.matches
-    if (isDrawer && !isCollapsed) isCollapsed = true
-    if (!isDrawer && isCollapsed) isCollapsed = false
+    const isMobile = window.matchMedia('(max-width: 768px)').matches
+    if (isDrawer !== isMobile) {
+      isDrawer = isMobile
+      isCollapsed = isMobile
+    }
   }
 
   const toggle = () => {
@@ -65,12 +67,6 @@
     }
   }
 
-  const handleRefresh = async (event: MouseEvent) => {
-    event.preventDefault()
-    event.stopPropagation()
-    await refreshBinder()
-  }
-
   $: styleVars = (() => {
     const marginY = 0
     const top = `calc(var(--navbar-visible-height) + ${marginY}px)`
@@ -78,7 +74,7 @@
       ? `calc(100vh - (var(--navbar-visible-height) + ${marginY * 2}px))`
       : `calc(100vh - (var(--navbar-visible-height) + var(--footer-visible-height) + ${marginY * 2}px))`
     return {
-      width: isCollapsed ? '0' : '240px',
+      width: isCollapsed ? (isDrawer ? '0' : '2.25rem') : '240px',
       marginTop: `${marginY}px`,
       top,
       height,
@@ -117,31 +113,48 @@
       </button>
     {/if}
 
-    <div class="z-scrollbar h-full w-full overflow-y-auto">
-      {#each bindersRef as binder (binder.id)}
-        <div>
-          <!-- svelte-ignore a11y_no_static_element_interactions -->
-          <header
-            class="book sticky top-0 z-10 flex items-center justify-between rounded-lg px-3 py-2 bg-gray-200/80 dark:bg-gray-800/80 border-gray-400/60 dark:border-gray-600/60 font-bold"
-            on:dblclick={handleRefresh}
-          >
-            <a href={`/wiki/Binder:${binder.text}`} class="binder-title-link inline-flex min-w-0 items-center gap-2">
-              <span class="truncate">{binder.text}</span>
-              {#if refreshingId === wgArticleId}
-                <span class="refresh-dot" aria-hidden="true"></span>
+    {#if isCollapsed && !isDrawer}
+      <div class="h-full w-full">
+        <ZButton color="ghost" class="h-full! w-full! rounded-none! p-0!" title="바인더 펼치기" onclick={toggle}>
+          <ZIcon path={mdiChevronRight} />
+        </ZButton>
+      </div>
+    {:else}
+      <div class="z-scrollbar h-full w-full overflow-y-auto">
+        {#each bindersRef as binder (binder.id)}
+          <div>
+            <header
+              class={`book sticky top-0 z-10 grid min-h-9 ${isDrawer ? 'grid-cols-[minmax(0,1fr)_2.25rem]' : 'grid-cols-[minmax(0,1fr)_2.25rem_2.25rem]'} items-stretch overflow-hidden rounded bg-gray-200/80 dark:bg-gray-800/80 border-gray-400/60 dark:border-gray-600/60 font-bold`}
+            >
+              <a href={`/wiki/Binder:${binder.text}`} class="binder-title-link inline-flex min-w-0 items-center px-3 py-2">
+                <span>{binder.text}</span>
+              </a>
+              <ZButton
+                color="ghost"
+                class="h-full! w-full! rounded-none! p-0!"
+                disabled={refreshingId !== null}
+                title="바인더 새로고침"
+                onclick={refreshBinder}
+              >
+                <ZIcon path={mdiRefresh} class={refreshingId === wgArticleId ? 'animate-spin' : ''} />
+              </ZButton>
+              {#if !isDrawer}
+                <ZButton color="ghost" class="h-full! w-full! rounded-none! p-0!" title="바인더 접기" onclick={toggle}>
+                  <ZIcon path={mdiChevronLeft} />
+                </ZButton>
               {/if}
-            </a>
-          </header>
+            </header>
 
-          <ul class="m-0 p-0 pt-2 pb-10 list-none text-[.9rem]">
-            {#each binder.nodes || [] as node, index (`${binder.id}:${index}`)}
-              <BinderNode {node} depth={0} {wgArticleId} binderId={binder.id} pathKey={`${binder.id}:${index}`} />
-            {/each}
-          </ul>
-        </div>
-      {/each}
-    </div>
-    <footer class="nav-blur"></footer>
+            <ul class="m-0 p-0 pt-2 pb-10 list-none text-[.9rem]">
+              {#each binder.nodes || [] as node, index (`${binder.id}:${index}`)}
+                <BinderNode {node} depth={0} {wgArticleId} binderId={binder.id} pathKey={`${binder.id}:${index}`} />
+              {/each}
+            </ul>
+          </div>
+        {/each}
+      </div>
+      <footer class="nav-blur"></footer>
+    {/if}
   </div>
 {/if}
 
@@ -177,27 +190,5 @@
 
   :global(.dark) .binder-menu-toggle:hover {
     background-color: rgb(82 82 82);
-  }
-
-  .refresh-dot {
-    width: 0.45rem;
-    height: 0.45rem;
-    flex: 0 0 auto;
-    border-radius: 9999px;
-    animation: binder-refresh-dot 0.8s ease-in-out infinite;
-    background-color: currentColor;
-    opacity: 0.5;
-  }
-
-  @keyframes binder-refresh-dot {
-    0%,
-    100% {
-      opacity: 0.2;
-      transform: scale(0.8);
-    }
-    50% {
-      opacity: 0.8;
-      transform: scale(1);
-    }
   }
 </style>

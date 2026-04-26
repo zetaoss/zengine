@@ -1,17 +1,19 @@
-/* page-cats.css */
 .page-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
   padding: 0;
   font-size: 0.8rem;
 
   li {
-    display: inline-block;
+    display: inline;
   }
 
   a {
+    display: inline-block;
     text-decoration: none;
     border-radius: 0.4rem;
     padding: 0.2rem 0.4rem;
-    margin-right: 0.5rem;
     background-color: var(--z-link-bg);
 
     &:hover {
