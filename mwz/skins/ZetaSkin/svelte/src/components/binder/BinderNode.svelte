@@ -142,7 +142,7 @@
   }
 
   .row-split:hover {
-    background-color: var(--x-gray-50);
+    background-color: var(--x-gray-100);
   }
 
   .row-unified:hover {
@@ -150,7 +150,7 @@
   }
 
   .binder-link:hover {
-    background-color: var(--x-gray-100);
+    background-color: var(--x-gray-200);
     text-decoration: none;
   }
 

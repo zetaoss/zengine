@@ -21,19 +21,24 @@
     return Array.isArray(value) ? value.filter(isBinder) : []
   }
 
-  const { wgArticleId, binders } = getRLCONF()
+  const { wgArticleId, wgUserId, binders } = getRLCONF()
 
   let bindersRef: Binder[] = toBinders(binders)
   let isCollapsed = false
   let isDrawer = false
   let refreshingId: number | null = null
   let root: HTMLElement | null = null
+  let scrollEl: HTMLElement | null = null
+  let isScrolledToBottom = true
+
+  const isLoggedIn = wgUserId > 0
 
   const updateMedia = () => {
     const isMobile = window.matchMedia('(max-width: 768px)').matches
     if (isDrawer !== isMobile) {
       isDrawer = isMobile
       isCollapsed = isMobile
+      setTimeout(updateScrollState, 0)
     }
   }
 
@@ -50,6 +55,15 @@
     if (!root) return
     if (root.contains(e.target as Node)) return
     close()
+  }
+
+  const updateScrollState = () => {
+    if (!scrollEl) {
+      isScrolledToBottom = true
+      return
+    }
+
+    isScrolledToBottom = scrollEl.scrollTop + scrollEl.clientHeight >= scrollEl.scrollHeight - 1
   }
 
   async function refreshBinder() {
@@ -83,15 +97,18 @@
 
   onMount(() => {
     updateMedia()
+    updateScrollState()
     const media = window.matchMedia('(max-width: 768px)')
     const onChange = () => updateMedia()
     media.addEventListener('change', onChange)
     window.addEventListener('resize', updateMedia)
+    window.addEventListener('resize', updateScrollState)
     document.addEventListener('mousedown', onMouseDown)
 
     return () => {
       media.removeEventListener('change', onChange)
       window.removeEventListener('resize', updateMedia)
+      window.removeEventListener('resize', updateScrollState)
       document.removeEventListener('mousedown', onMouseDown)
     }
   })
@@ -100,7 +117,7 @@
 {#if bindersRef.length > 0}
   <div
     bind:this={root}
-    class={`flex-none shrink-0 z-30 transition-[width] bg-(--background-color-neutral-subtle) border-r ${isDrawer ? 'fixed' : 'sticky'}`}
+    class={`flex-none shrink-0 z-30 transition-[width] bg-(--x-gray-50) border-r ${isDrawer ? 'fixed' : 'sticky'}`}
     style={`width:${styleVars.width}; margin-top:${styleVars.marginTop}; top:${styleVars.top}; height:${styleVars.height};`}
   >
     {#if isDrawer}
@@ -120,26 +137,28 @@
         </ZButton>
       </div>
     {:else}
-      <div class="z-scrollbar h-full w-full overflow-y-auto">
+      <div bind:this={scrollEl} class="z-scrollbar h-full w-full overflow-y-auto" on:scroll={updateScrollState}>
         {#each bindersRef as binder (binder.id)}
           <div>
             <header
-              class={`book sticky top-0 z-10 grid min-h-9 ${isDrawer ? 'grid-cols-[minmax(0,1fr)_2.25rem]' : 'grid-cols-[minmax(0,1fr)_2.25rem_2.25rem]'} items-stretch overflow-hidden rounded bg-gray-200/80 dark:bg-gray-800/80 border-gray-400/60 dark:border-gray-600/60 font-bold`}
+              class="book sticky top-0 z-10 flex min-h-9 items-stretch overflow-hidden rounded bg-gray-200/80 dark:bg-gray-800/80 border-gray-400/60 dark:border-gray-600/60 font-bold"
             >
-              <a href={`/wiki/Binder:${binder.text}`} class="binder-title-link inline-flex min-w-0 items-center px-3 py-2">
-                <span>{binder.text}</span>
+              <a href={`/wiki/Binder:${binder.text}`} class="binder-title-link inline-flex min-w-0 flex-1 items-center px-3 py-2">
+                <span class="wrap-break-word">{binder.text}</span>
               </a>
-              <ZButton
-                color="ghost"
-                class="h-full! w-full! rounded-none! p-0!"
-                disabled={refreshingId !== null}
-                title="바인더 새로고침"
-                onclick={refreshBinder}
-              >
-                <ZIcon path={mdiRefresh} class={refreshingId === wgArticleId ? 'animate-spin' : ''} />
-              </ZButton>
+              {#if isLoggedIn}
+                <ZButton
+                  color="ghost"
+                  class="w-9! self-stretch rounded-none! p-0!"
+                  disabled={refreshingId !== null}
+                  title="바인더 새로고침"
+                  onclick={refreshBinder}
+                >
+                  <ZIcon path={mdiRefresh} class={refreshingId === wgArticleId ? 'animate-spin' : ''} />
+                </ZButton>
+              {/if}
               {#if !isDrawer}
-                <ZButton color="ghost" class="h-full! w-full! rounded-none! p-0!" title="바인더 접기" onclick={toggle}>
+                <ZButton color="ghost" class="w-9! self-stretch rounded-none! p-0!" title="바인더 접기" onclick={toggle}>
                   <ZIcon path={mdiChevronLeft} />
                 </ZButton>
               {/if}
@@ -153,7 +172,9 @@
           </div>
         {/each}
       </div>
-      <footer class="nav-blur"></footer>
+      {#if !isScrolledToBottom}
+        <footer class="nav-blur"></footer>
+      {/if}
     {/if}
   </div>
 {/if}
@@ -165,17 +186,12 @@
 
   .nav-blur {
     position: absolute;
+    right: 6px;
     bottom: 0;
     left: 0;
-    width: calc(100% - 6px);
-    height: 64px;
-    background-color: var(--bg-muted);
-    mask-image: linear-gradient(transparent, #000 64px);
+    height: 50px;
+    background: linear-gradient(to bottom, transparent, var(--x-gray-50) 55%);
     pointer-events: none;
-  }
-
-  .binder-menu-toggle:hover {
-    background-color: rgb(209 213 219);
   }
 
   .binder-title-link {
