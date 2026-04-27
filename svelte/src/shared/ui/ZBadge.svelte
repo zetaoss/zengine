@@ -7,8 +7,8 @@
     'inline-flex shrink-0 items-center justify-center border px-1 text-xs font-medium leading-none',
     pill ? 'rounded-full' : 'rounded',
     tone === 'destructive'
-      ? 'bg-[var(--background-color-destructive-subtle,#fee7e6)] text-[var(--color-destructive)]'
-      : 'bg-[var(--background-color-interactive-subtle)] text-[var(--color-subtle)]',
+      ? 'bg-[var(--background-color-destructive-subtle,#fee7e6)] text-(--color-destructive)'
+      : 'bg-(--background-color-interactive-subtle) text-(--color-subtle)',
     typeof $$props.class === 'string' ? $$props.class : '',
   ]
     .filter(Boolean)

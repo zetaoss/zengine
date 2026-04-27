@@ -7,16 +7,16 @@ const sizeClasses: Record<ZButtonSize, string> = {
 }
 
 const baseClass =
-  'text-[var(--z-text)] inline-flex cursor-pointer items-center justify-center rounded transition ring-1 hover:no-underline hover:shadow-[inset_0_0_0_9999px_#8884] leading-none'
+  'text-(--z-text) inline-flex cursor-pointer items-center justify-center rounded transition ring-1 hover:no-underline hover:shadow-[inset_0_0_0_9999px_#8884] leading-none'
 
 const colorClasses: Record<ZButtonColor, string> = {
-  default: 'bg-[var(--z-btn-bg)] ring-[var(--z-btn-hover)]',
-  danger: 'bg-[var(--z-danger-bg)] ring-[var(--z-danger-hover)]',
+  default: 'bg-(--z-btn-bg) ring-(--z-btn-hover)',
+  danger: 'bg-(--z-danger-bg) ring-(--z-danger-hover)',
   ghost: 'bg-transparent ring-transparent',
-  primary: 'bg-[var(--z-primary-bg)] ring-[var(--z-primary-hover)]',
+  primary: 'bg-(--z-primary-bg) ring-(--z-primary-hover)',
 }
 
-const disabledClass = 'opacity-50 brightness-[.9] cursor-not-allowed pointer-events-none text-[var(--z-btn-text-disabled)]'
+const disabledClass = 'opacity-50 brightness-[.9] cursor-not-allowed pointer-events-none text-(--z-btn-text-disabled)'
 
 export function getZButtonClasses(opts: { size: ZButtonSize; color: ZButtonColor; isDisabled: boolean; className?: string }): string {
   return [baseClass, sizeClasses[opts.size], colorClasses[opts.color], opts.isDisabled ? disabledClass : '', opts.className ?? '']
