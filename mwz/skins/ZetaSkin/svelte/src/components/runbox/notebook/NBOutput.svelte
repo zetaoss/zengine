@@ -37,9 +37,7 @@
   $: textJson = out.data?.['application/json']?.join('') ?? ''
 </script>
 
-<div
-  class={`bg-[var(--console-bg)] px-4 py-2 text-sm font-mono rounded-lg ${out.output_type === 'error' ? 'bg-[var(--nbout-error)]' : ''}`}
->
+<div class={`bg-(--console-bg) px-4 py-2 text-sm font-mono rounded-lg ${out.output_type === 'error' ? 'bg-(--nbout-error)' : ''}`}>
   {#if out.output_type === 'display_data'}
     {#if out.data?.['image/png']}
       <img src={`data:image/png;base64,${out.data['image/png']}`} alt="" class="bg-white my-2 rounded max-h-[30rem] max-w-[75vw]" />
