@@ -20,10 +20,38 @@ class LLMService
         $this->timeoutSeconds = config('services.llm.timeout_seconds');
     }
 
-    public function chat(string $system, string $user): string
+    public function chat(array $messages): string
     {
         if (! $this->enabled) {
             throw new RuntimeException('LLM is disabled. Set LLM_ENABLED=true to enable.');
+        }
+
+        $normalized = [];
+        foreach ($messages as $message) {
+            if (! is_array($message)) {
+                continue;
+            }
+
+            $role = $message['role'] ?? null;
+            $content = $message['content'] ?? null;
+            if (! is_string($role) || ! is_string($content)) {
+                continue;
+            }
+
+            $role = trim($role);
+            $content = trim($content);
+            if ($role === '' || $content === '') {
+                continue;
+            }
+
+            $normalized[] = [
+                'role' => $role,
+                'content' => $content,
+            ];
+        }
+
+        if ($normalized === []) {
+            throw new RuntimeException('LLM messages are empty.');
         }
 
         $response = Http::acceptJson()
@@ -31,10 +59,7 @@ class LLMService
             ->timeout($this->timeoutSeconds)
             ->post($this->url(), [
                 'model' => $this->model,
-                'messages' => [
-                    ['role' => 'system', 'content' => $system],
-                    ['role' => 'user', 'content' => $user],
-                ],
+                'messages' => $normalized,
             ]);
 
         if (! $response->ok()) {

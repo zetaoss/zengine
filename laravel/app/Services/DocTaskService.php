@@ -407,6 +407,7 @@ class DocTaskService
             'user_id' => (int) $row->user_id,
             'user_name' => (string) $row->user_name,
             'title' => (string) $row->title,
+            'request_type' => 'create',
             'content' => '',
             'status' => self::STATUS_PENDING,
         ]);
@@ -417,12 +418,19 @@ class DocTaskService
         $promptTitle = $task->request_type === 'edit'
             ? self::EDIT_PROMPT_TITLE
             : self::CREATE_PROMPT_TITLE;
-        $prompt = $this->fetchWikiRawText($promptTitle);
-
-        return $this->llm->chat(
-            system: $prompt,
-            user: "문서 제목: {$task->title}",
+        $promptTemplate = $this->fetchWikiRawText($promptTitle);
+        $existingDoc = $task->request_type === 'edit'
+            ? $this->fetchWikiRawText($task->title)
+            : '';
+        $prompt = str_replace(
+            ['{제목}', '{기존문서}'],
+            [$task->title, $existingDoc],
+            $promptTemplate
         );
+
+        return $this->llm->chat([
+            ['role' => 'user', 'content' => $prompt],
+        ]);
     }
 
     private function fetchWikiRawText(string $title): string

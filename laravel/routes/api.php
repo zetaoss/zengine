@@ -32,8 +32,8 @@ Route::post('/doctasks/resume', [DocTaskController::class, 'resume'])->middlewar
 Route::post('/doctasks/run-now', [DocTaskController::class, 'runNow'])->middleware('sysop');
 Route::get('/doctasks/{docTask}', [DocTaskController::class, 'show']);
 Route::post('/doctasks/{docTask}/clone', [DocTaskController::class, 'clone'])->middleware('sysop');
-Route::post('/doctasks/from-write-request/{writeRequest}', [DocTaskController::class, 'storeFromWriteRequest'])->middleware('sysop');
-Route::post('/doctasks/from-page', [DocTaskController::class, 'storeFromPage'])->middleware('sysop');
+Route::post('/doctasks/from-write-request/{writeRequest}', [DocTaskController::class, 'storeFromWriteRequest'])->middleware('mwauth');
+Route::post('/doctasks/from-page', [DocTaskController::class, 'storeFromPage'])->middleware('mwauth');
 Route::delete('/doctasks/{docTask}', [DocTaskController::class, 'destroy'])->middleware('sysop');
 
 Route::get('/binders', [BinderController::class, 'index']);
