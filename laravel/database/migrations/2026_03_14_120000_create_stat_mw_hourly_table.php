@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('stat_mw_hourly')) {
+            return;
+        }
+
         Schema::create('stat_mw_hourly', function (Blueprint $table) {
             $table->id();
             $table->dateTime('timeslot')->comment('UTC hour');

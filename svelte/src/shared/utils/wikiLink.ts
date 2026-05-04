@@ -17,3 +17,7 @@ export function getWikiViewHref(title: string): string {
 export function getWikiHref(title: string, exists?: boolean): string {
   return exists === false ? `/w/index.php?title=${encodeWikiQueryTitle(title)}&action=edit&redlink=1` : getWikiViewHref(title)
 }
+
+export function getWikiEditHref(title: string): string {
+  return `/w/index.php?title=${encodeWikiQueryTitle(title)}&action=edit`
+}

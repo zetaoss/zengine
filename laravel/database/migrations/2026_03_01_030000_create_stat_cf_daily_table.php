@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('stat_cf_daily')) {
+            return;
+        }
+
         Schema::create('stat_cf_daily', function (Blueprint $table) {
             $table->id();
             $table->date('timeslot')->comment('UTC date');

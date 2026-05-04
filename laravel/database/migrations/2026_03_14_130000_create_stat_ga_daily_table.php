@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('stat_ga_daily')) {
+            return;
+        }
+
         Schema::create('stat_ga_daily', function (Blueprint $table) {
             $table->id();
             $table->date('timeslot')->comment('GA property date');

@@ -4,6 +4,7 @@
   import { onMount } from 'svelte'
 
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
+  import ZTabs from '$shared/ui/ZTabs.svelte'
   import ZToggle from '$shared/ui/ZToggle.svelte'
   import httpy from '$shared/utils/httpy'
 
@@ -201,6 +202,13 @@
     gscData = normalizeGscResp(gscResp)
     mwData = normalizeMwResp(mwResp)
     loading = false
+  }
+
+  function setRange(nextRange: string) {
+    const value = nextRange as typeof range
+    if (range === value) return
+    range = value
+    void fetchData()
   }
 
   function normalizeResp(input: AnalyticsResp | null): AnalyticsResp {
@@ -614,28 +622,7 @@
   <h2 class="m-0 text-2xl font-bold">통계</h2>
 
   <div class="mb-4 mt-3 flex flex-wrap items-center justify-between gap-3">
-    <div class="border-b border-gray-200 dark:border-gray-700">
-      <div class="flex items-end">
-        {#each rangeTabs as tab (tab.value)}
-          <button
-            type="button"
-            class={`relative -mb-px cursor-pointer border-b-2 px-3 py-2 text-sm transition ${
-              range === tab.value
-                ? 'border-slate-900 font-semibold text-slate-900 dark:border-slate-100 dark:text-slate-100'
-                : 'border-transparent text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200'
-            }`}
-            onclick={() => {
-              if (range !== tab.value) {
-                range = tab.value
-                void fetchData()
-              }
-            }}
-          >
-            {tab.label}
-          </button>
-        {/each}
-      </div>
-    </div>
+    <ZTabs tabs={rangeTabs} selected={range} onChange={setRange} />
 
     <p class="text-sm text-gray-500 dark:text-gray-400">
       {md(visibleTimeslots[0])} - {md(visibleTimeslots[visibleTimeslots.length - 1])}

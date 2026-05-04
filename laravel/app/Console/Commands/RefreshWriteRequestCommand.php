@@ -135,7 +135,7 @@ class RefreshWriteRequestCommand extends Command
 
     private function fetchTitleExistsMap(array $titles): array
     {
-        $apiServer = (string) getenv('API_SERVER');
+        $apiServer = (string) config('services.mediawiki.api_server');
 
         $map = [];
 
