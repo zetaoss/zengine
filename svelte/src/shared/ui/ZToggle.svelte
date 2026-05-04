@@ -24,7 +24,6 @@
   aria-label={label}
   class="z-toggle relative inline-flex h-5 w-9 items-center rounded-full border-2 bg-transparent transition"
   class:cursor-not-allowed={disabled}
-  class:cursor-pointer={!disabled}
   class:opacity-40={!checked}
   class:opacity-60={disabled && checked}
   onclick={toggle}

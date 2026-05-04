@@ -1,10 +1,9 @@
 <?php
 
-// laravel/routes/api.php
-
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BinderController;
 use App\Http\Controllers\CommonReportController;
+use App\Http\Controllers\DocTaskController;
 use App\Http\Controllers\InternalProfileController;
 use App\Http\Controllers\OnelineController;
 use App\Http\Controllers\PageCommentController;
@@ -26,6 +25,16 @@ Route::get('/comments/{pageID}', [PageCommentController::class, 'list']);
 Route::post('/comments', [PageCommentController::class, 'store'])->middleware('mwauth');
 Route::put('/comments/{comment}', [PageCommentController::class, 'update'])->middleware('mwauth');
 Route::delete('/comments/{comment}', [PageCommentController::class, 'destroy'])->middleware('mwauth');
+
+Route::get('/doctasks', [DocTaskController::class, 'index']);
+Route::get('/doctasks/status', [DocTaskController::class, 'status']);
+Route::post('/doctasks/resume', [DocTaskController::class, 'resume'])->middleware('mwauth');
+Route::post('/doctasks/run-now', [DocTaskController::class, 'runNow'])->middleware('mwauth');
+Route::get('/doctasks/{docTask}', [DocTaskController::class, 'show']);
+Route::post('/doctasks/{docTask}/clone', [DocTaskController::class, 'clone'])->middleware('mwauth');
+Route::post('/doctasks/from-write-request/{writeRequest}', [DocTaskController::class, 'storeFromWriteRequest'])->middleware('mwauth');
+Route::post('/doctasks/from-page', [DocTaskController::class, 'storeFromPage'])->middleware('mwauth');
+Route::delete('/doctasks/{docTask}', [DocTaskController::class, 'destroy'])->middleware('mwauth');
 
 Route::get('/binders', [BinderController::class, 'index']);
 Route::put('/binders/{binderId}', [BinderController::class, 'update'])->middleware('mwauth');
