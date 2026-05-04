@@ -65,11 +65,7 @@ class CollectMwDailyService
 
     private function fetchPayload(): array
     {
-        $apiServer = rtrim((string) env('API_SERVER', ''), '/');
-        if ($apiServer === '') {
-            throw new RuntimeException('Missing API_SERVER environment variable.');
-        }
-
+        $apiServer = config('services.mediawiki.api_server');
         $response = Http::acceptJson()
             ->timeout(20)
             ->get($apiServer.'/w/api.php', [

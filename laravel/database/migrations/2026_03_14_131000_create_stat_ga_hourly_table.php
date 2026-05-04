@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('stat_ga_hourly')) {
+            return;
+        }
+
         Schema::create('stat_ga_hourly', function (Blueprint $table) {
             $table->id();
             $table->dateTime('timeslot')->comment('UTC hour derived from GA property timezone');

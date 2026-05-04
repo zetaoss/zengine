@@ -1,7 +1,7 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-  import { mdiDelete } from '@mdi/js'
+  import { mdiCreation, mdiDelete } from '@mdi/js'
   import { get } from 'svelte/store'
 
   import { goto } from '$app/navigation'
@@ -13,10 +13,10 @@
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'
-  import ZBadge from '$shared/ui/ZBadge.svelte'
   import ZButton from '$shared/ui/ZButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
+  import ZTabs from '$shared/ui/ZTabs.svelte'
   import httpy from '$shared/utils/httpy'
 
   import WriteRequestNew from './WriteRequestNew.svelte'
@@ -51,6 +51,7 @@
   const auth = useAuthStore()
   const canWrite = auth.canWrite
   const canDelete = auth.canDelete
+  const userInfo = auth.userInfo
 
   let mode = $state<Mode>('todo')
   let respData = $state<RespData>({ current_page: 1, data: [], last_page: 1 })
@@ -59,6 +60,7 @@
   let showModal = $state(false)
   let count = $state<Count>({ done: 0, todo: 0 })
   let loading = $state(true)
+  let addingDocTaskId = $state<number | null>(null)
 
   let observedRoutePage = 0
 
@@ -66,6 +68,13 @@
     const p = Number(page.url.searchParams.get('page'))
     return Number.isFinite(p) && p > 0 ? p : 1
   })
+
+  let isSysop = $derived(($userInfo?.groups ?? []).includes('sysop'))
+  let modeTabs = $derived([
+    { value: 'todo', label: '요청', badge: count.todo },
+    { value: 'todo-top', label: '추천' },
+    { value: 'done', label: '완료', badge: count.done },
+  ])
 
   $effect(() => {
     if (routePage !== observedRoutePage) {
@@ -119,7 +128,6 @@
 
     if (
       await showConfirm(`${actionMsg}하려면 로그인이 필요합니다. 로그인하시겠습니까?`, {
-        okColor: 'primary',
         okText: '로그인',
       })
     ) {
@@ -153,7 +161,7 @@
   }
 
   async function del(row: Row) {
-    const ok = await showConfirm(`'${row.title}' 작성요청을 삭제하시겠습니까 ? `)
+    const ok = await showConfirm(`'${row.title}' 건을 삭제하시겠습니까 ? `, { okColor: 'danger' })
     if (!ok) return
 
     const [, err] = await httpy.delete(`/api/write-request/${row.id}`)
@@ -165,6 +173,24 @@
 
     await fetchData()
     showToast('삭제 완료')
+  }
+
+  async function addDocTask(row: Row) {
+    if (!(await requireAuthConfirm('문서공장에 추가'))) return
+    if (addingDocTaskId !== null) return
+    if (!(await showConfirm(`'${row.title}' 건을 문서공장에 등록하시겠습니까?`, { okText: '등록' }))) return
+
+    addingDocTaskId = row.id
+    const [data, err] = await httpy.post<{ ok: boolean; id: number; created: boolean }>(`/api/doctasks/from-write-request/${row.id}`)
+    addingDocTaskId = null
+
+    if (err) {
+      console.error(err)
+      showToast(err.message || '문서공장 추가 실패')
+      return
+    }
+
+    showToast(data.created ? '문서공장에 추가했습니다.' : '이미 문서공장에 있습니다.')
   }
 
   async function recommend(row: Row) {
@@ -210,29 +236,7 @@
   <h2 class="my-5 text-2xl font-bold">작성 요청</h2>
   <WriteRequestNew show={showModal} on:close={closeModal} />
 
-  <div class="inline-flex pb-3">
-    <ZButton
-      cooldown={0}
-      class={`rounded-r-none p-3 ring-gray-300 dark:ring-slate-700 ${mode === 'todo' ? 'bg-slate-100 dark:bg-slate-700' : 'bg-white dark:bg-slate-900'}`}
-      onclick={() => setMode('todo')}
-    >
-      요청 <ZBadge class="ml-1" text={String(count.todo)} />
-    </ZButton>
-    <ZButton
-      cooldown={0}
-      class={`rounded-none p-3 dark:ring-slate-700 ${mode === 'todo-top' ? 'bg-slate-100 dark:bg-slate-700' : 'bg-white dark:bg-slate-900'}`}
-      onclick={() => setMode('todo-top')}
-    >
-      추천
-    </ZButton>
-    <ZButton
-      cooldown={0}
-      class={`rounded-l-none p-3 dark:ring-slate-700 ${mode === 'done' ? 'bg-slate-100 dark:bg-slate-700' : 'bg-white dark:bg-slate-900'}`}
-      onclick={() => setMode('done')}
-    >
-      완료 <ZBadge class="ml-1" text={String(count.done)} />
-    </ZButton>
-  </div>
+  <ZTabs tabs={modeTabs} selected={mode} onChange={(value) => setMode(value as Mode)} />
 
   <table class="mytable z-card w-full">
     <thead class="z-base3">
@@ -246,8 +250,8 @@
           <th>요청</th>
           <th>작성</th>
         {:else}
-          <th>요청일</th>
           <th>요청자</th>
+          <th>요청일</th>
         {/if}
       </tr>
     </thead>
@@ -275,11 +279,25 @@
           <td class="px-2 text-center">{row.id}</td>
           <td class="w-[35%]">
             <a href={getTitleHref(row)} rel="external" class={mode === 'done' ? '' : 'new'}>{row.title}</a>
-            {#if $canDelete(row.user_id)}
-              <ZButton color="ghost" class="py-1 align-middle leading-none text-(--color-subtle)" onclick={() => del(row)}>
-                <ZIcon path={mdiDelete} />
-              </ZButton>
-            {/if}
+            <span class="inline-flex align-middle">
+              {#if $canDelete(row.user_id)}
+                <ZButton color="ghost" size="small" class="leading-none text-(--color-subtle)" onclick={() => del(row)}>
+                  <ZIcon path={mdiDelete} />
+                </ZButton>
+              {/if}
+              {#if mode !== 'done' && isSysop}
+                <ZButton
+                  color="ghost"
+                  size="small"
+                  class="leading-none text-(--color-subtle)"
+                  disabled={addingDocTaskId === row.id}
+                  title="문서공장에 추가"
+                  onclick={() => addDocTask(row)}
+                >
+                  <ZIcon path={mdiCreation} />
+                </ZButton>
+              {/if}
+            </span>
           </td>
           <td class="text-center">
             {#if mode === 'done'}
@@ -306,10 +324,10 @@
               </div>
             </td>
           {:else}
-            <td class="text-center">{getDateText(row)}</td>
             <td class="user">
               <AvatarUser user={getRequestUser(row)} />
             </td>
+            <td class="text-center">{getDateText(row)}</td>
           {/if}
         </tr>
       {/each}

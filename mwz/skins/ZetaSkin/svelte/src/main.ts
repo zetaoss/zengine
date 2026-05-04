@@ -9,6 +9,8 @@ import './components/UserMenu.svelte'
 import './components/binder/BinderApex.svelte'
 import './components/toc/TocApex.svelte'
 import '$shared/components/CAdsenseSlot.svelte'
+import '$shared/ui/confirm/ConfirmHost.svelte'
+import '$shared/ui/toast/ToastHost.svelte'
 
 import shortcutForPageButtons from '$lib/utils/shortcutForPageButtons'
 import { setTrackingGate } from '$shared/stores/trackingStore'
@@ -21,3 +23,10 @@ setTrackingGate(() => window.RLCONF?.wgAction === 'view' && (window.RLCONF?.wgUs
 runVisibleHeightsUpdater()
 mountRunbox()
 shortcutForPageButtons()
+
+if (!document.querySelector('confirm-host')) {
+  document.body.appendChild(document.createElement('confirm-host'))
+}
+if (!document.querySelector('toast-host')) {
+  document.body.appendChild(document.createElement('toast-host'))
+}

@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('page_reactions')) {
+            return;
+        }
+
         Schema::create('page_reactions', function (Blueprint $table) {
             $table->unsignedInteger('page_id');
             $table->unsignedInteger('cnt');

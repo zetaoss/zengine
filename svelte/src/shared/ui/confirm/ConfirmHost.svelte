@@ -1,3 +1,5 @@
+<svelte:options customElement={{ tag: 'confirm-host', shadow: 'none' }} />
+
 <script lang="ts">
   import ZButton from '$shared/ui/ZButton.svelte'
 

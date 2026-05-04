@@ -1,3 +1,5 @@
+<svelte:options customElement={{ tag: 'toast-host', shadow: 'none' }} />
+
 <script lang="ts">
   import { fly } from 'svelte/transition'
 
