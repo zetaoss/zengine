@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\InternalApiAuth;
 use App\Http\Middleware\MwAuth;
+use App\Http\Middleware\Sysop;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -17,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'internal' => InternalApiAuth::class,
             'mwauth' => MwAuth::class,
+            'sysop' => Sysop::class,
         ]);
 
         $middleware->validateCsrfTokens(except: [

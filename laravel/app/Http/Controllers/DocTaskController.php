@@ -7,7 +7,6 @@ use App\Models\WriteRequest;
 use App\Services\DocTaskService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 
 class DocTaskController extends Controller
 {
@@ -26,15 +25,11 @@ class DocTaskController extends Controller
 
     public function resume(DocTaskService $service)
     {
-        Gate::authorize('sysop');
-
         return $service->resumeProcessing();
     }
 
     public function runNow(DocTaskService $service)
     {
-        Gate::authorize('sysop');
-
         return $service->runNow();
     }
 
@@ -45,8 +40,6 @@ class DocTaskController extends Controller
 
     public function clone(DocTask $docTask)
     {
-        Gate::authorize('sysop');
-
         $clone = DocTask::create([
             'user_id' => auth()->id(),
             'user_name' => auth()->user()->name,
@@ -65,8 +58,6 @@ class DocTaskController extends Controller
 
     public function storeFromWriteRequest(WriteRequest $writeRequest)
     {
-        Gate::authorize('sysop');
-
         $existingTask = DocTask::query()
             ->where('title', $writeRequest->title)
             ->where('status', '!=', DocTaskService::STATUS_COMPLETED)
@@ -99,8 +90,6 @@ class DocTaskController extends Controller
 
     public function storeFromPage(Request $request)
     {
-        Gate::authorize('sysop');
-
         $validated = $request->validate([
             'page_id' => 'required|integer|min:1',
             'request_type' => 'required|string|in:create,edit',
@@ -132,8 +121,6 @@ class DocTaskController extends Controller
 
     public function destroy(DocTask $docTask)
     {
-        Gate::authorize('sysop');
-
         $docTask->delete();
 
         return ['ok' => true];
