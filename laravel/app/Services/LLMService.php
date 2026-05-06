@@ -9,18 +9,21 @@ class LLMService
 {
     private readonly bool $enabled;
     private readonly string $endpoint;
-    private readonly string $model;
-    private readonly int $timeoutSeconds;
+    private readonly int $timeout;
 
     public function __construct()
     {
         $this->enabled = config('services.llm.enabled');
         $this->endpoint = config('services.llm.endpoint');
-        $this->model = config('services.llm.model');
-        $this->timeoutSeconds = config('services.llm.timeout_seconds');
+        $this->timeout = config('services.llm.timeout');
     }
 
     public function chat(array $messages): string
+    {
+        return $this->chatCompletion($messages)['content'];
+    }
+
+    public function chatCompletion(array $messages): array
     {
         if (! $this->enabled) {
             throw new RuntimeException('LLM is disabled. Set LLM_ENABLED=true to enable.');
@@ -56,9 +59,8 @@ class LLMService
 
         $response = Http::acceptJson()
             ->asJson()
-            ->timeout($this->timeoutSeconds)
+            ->timeout($this->timeout)
             ->post($this->url(), [
-                'model' => $this->model,
                 'messages' => $normalized,
             ]);
 
@@ -79,7 +81,15 @@ class LLMService
             throw new RuntimeException('LLM response is missing generated content.');
         }
 
-        return trim($content);
+        $model = data_get($body, 'model');
+        if (! is_string($model) || trim($model) === '') {
+            throw new RuntimeException('LLM response is missing model.');
+        }
+
+        return [
+            'content' => trim($content),
+            'model' => trim($model),
+        ];
     }
 
     private function url(): string

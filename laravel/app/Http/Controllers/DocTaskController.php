@@ -13,10 +13,14 @@ class DocTaskController extends Controller
 {
     public function index()
     {
-        return DocTask::query()
-            ->select(['id', 'user_id', 'user_name', 'title', 'request_type', 'status', 'created_at', 'updated_at'])
+        $result = DocTask::query()
+            ->select(['id', 'user_id', 'user_name', 'title', 'request_type', 'phase', 'created_at', 'updated_at'])
             ->orderByDesc('id')
             ->paginate(25);
+
+        $result->getCollection()->transform(fn (DocTask $task) => $this->serializeTask($task));
+
+        return $result;
     }
 
     public function status(DocTaskService $service)
@@ -36,7 +40,7 @@ class DocTaskController extends Controller
 
     public function show(DocTask $docTask)
     {
-        return $docTask;
+        return $this->serializeTask($docTask);
     }
 
     public function clone(DocTask $docTask)
@@ -47,21 +51,21 @@ class DocTaskController extends Controller
             'title' => $docTask->title,
             'request_type' => $docTask->request_type ?: 'create',
             'content' => $docTask->content,
-            'status' => DocTaskService::STATUS_PENDING,
+            'phase' => DocTaskService::TASK_PHASE_PENDING,
             'attempts' => 0,
             'error_count' => 0,
             'skip_count' => 0,
             'last_error' => null,
         ]);
 
-        return $clone;
+        return $this->serializeTask($clone);
     }
 
     public function storeFromWriteRequest(WriteRequest $writeRequest)
     {
         $existingTask = DocTask::query()
             ->where('title', $writeRequest->title)
-            ->where('status', '!=', DocTaskService::STATUS_COMPLETED)
+            ->whereNotIn('phase', [DocTaskService::TASK_PHASE_SUCCEEDED, DocTaskService::TASK_PHASE_FAILED])
             ->orderByDesc('id')
             ->first();
 
@@ -79,7 +83,7 @@ class DocTaskController extends Controller
             'title' => $writeRequest->title,
             'request_type' => 'create',
             'content' => '',
-            'status' => DocTaskService::STATUS_PENDING,
+            'phase' => DocTaskService::TASK_PHASE_PENDING,
         ]);
 
         return [
@@ -107,7 +111,7 @@ class DocTaskController extends Controller
             'title' => $title,
             'request_type' => (string) $validated['request_type'],
             'content' => '',
-            'status' => DocTaskService::STATUS_PENDING,
+            'phase' => DocTaskService::TASK_PHASE_PENDING,
         ]);
 
         return [
@@ -157,5 +161,25 @@ class DocTaskController extends Controller
         }
 
         return str_replace('_', ' ', trim($pageTitle));
+    }
+
+    private function serializeTask(DocTask $task): array
+    {
+        return [
+            'id' => $task->id,
+            'user_id' => $task->user_id,
+            'user_name' => $task->user_name,
+            'title' => $task->title,
+            'request_type' => $task->request_type,
+            'phase' => $task->phase,
+            'content' => $task->content,
+            'llm_model' => $task->llm_model,
+            'attempts' => $task->attempts,
+            'error_count' => $task->error_count,
+            'skip_count' => $task->skip_count,
+            'last_error' => $task->last_error,
+            'created_at' => $task->created_at,
+            'updated_at' => $task->updated_at,
+        ];
     }
 }

@@ -18,6 +18,7 @@ abstract class TestCase extends BaseTestCase
         putenv('QUEUE_CONNECTION=sync');
         putenv('SESSION_DRIVER=array');
         putenv('MAIL_MAILER=array');
+        putenv('API_SERVER=http://localhost');
 
         $_ENV['APP_ENV'] = 'testing';
         $_ENV['DB_CONNECTION'] = 'sqlite';
@@ -27,6 +28,7 @@ abstract class TestCase extends BaseTestCase
         $_ENV['QUEUE_CONNECTION'] = 'sync';
         $_ENV['SESSION_DRIVER'] = 'array';
         $_ENV['MAIL_MAILER'] = 'array';
+        $_ENV['API_SERVER'] = 'http://localhost';
 
         $_SERVER['APP_ENV'] = 'testing';
         $_SERVER['DB_CONNECTION'] = 'sqlite';
@@ -36,6 +38,7 @@ abstract class TestCase extends BaseTestCase
         $_SERVER['QUEUE_CONNECTION'] = 'sync';
         $_SERVER['SESSION_DRIVER'] = 'array';
         $_SERVER['MAIL_MAILER'] = 'array';
+        $_SERVER['API_SERVER'] = 'http://localhost';
 
         $app = require Application::inferBasePath().'/bootstrap/app.php';
         $app->make(Kernel::class)->bootstrap();

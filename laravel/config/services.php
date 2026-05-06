@@ -47,14 +47,14 @@ return [
         'secret_key' => env('INTERNAL_SECRET_KEY'),
     ],
     'docfac' => [
-        'interval_seconds' => (int) env('DOCFAC_INTERVAL_SECONDS'),
-        'retry_interval_seconds' => (int) env('DOCFAC_RETRY_INTERVAL_SECONDS'),
-        'auto_enqueue' => filter_var(env('DOCFAC_AUTO_ENQUEUE', false), FILTER_VALIDATE_BOOL),
+        'autoenqueue_interval' => (int) env('DOCFAC_AUTOENQUEUE_INTERVAL'),
+        'process_interval' => (int) env('DOCFAC_PROCESS_INTERVAL'),
+        'retry_interval' => (int) env('DOCFAC_RETRY_INTERVAL'),
+        'max_retries' => 3,
     ],
     'llm' => [
         'enabled' => filter_var(env('LLM_ENABLED', false), FILTER_VALIDATE_BOOL),
         'endpoint' => env('LLM_ENDPOINT'),
-        'model' => env('LLM_MODEL'),
-        'timeout_seconds' => (int) env('LLM_TIMEOUT_SECONDS'),
+        'timeout' => (int) env('LLM_TIMEOUT'),
     ],
 ];
