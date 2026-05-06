@@ -228,7 +228,6 @@
       statusPollTimer = null
     }
 
-    console.debug(statusPollDelayMs)
     statusPollTimer = setTimeout(async () => {
       await fetchQueueStatus()
       statusPollDelayMs = Math.ceil(statusPollDelayMs * STATUS_POLL_FACTOR)

@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Jobs\DocTaskProcessJob;
 use App\Models\DocTask;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -241,7 +240,7 @@ class DocTaskService
             ]);
         }
 
-        DocTaskProcessJob::dispatchSync();
+        DocTaskProcessJob::dispatch();
 
         return $this->getStatus();
     }
@@ -610,11 +609,6 @@ class DocTaskService
             return null;
         }
 
-        $baseTime = isset($state['state_changed_at']) && is_string($state['state_changed_at'])
-            ? $state['state_changed_at']
-            : null;
-        $base = $baseTime ? Carbon::parse($baseTime) : now();
-
-        return $base->addSeconds($nextRunAfterSeconds)->toIso8601String();
+        return now()->addSeconds($nextRunAfterSeconds)->toIso8601String();
     }
 }
