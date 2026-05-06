@@ -22,15 +22,16 @@ return new class extends Migration
             $table->string('title');
             $table->string('request_type');
             $table->longText('content')->nullable();
-            $table->string('status');
+            $table->string('llm_model')->nullable();
+            $table->string('phase');
             $table->unsignedInteger('attempts')->default(0);
             $table->unsignedInteger('error_count')->default(0);
             $table->unsignedInteger('skip_count')->default(0);
             $table->text('last_error')->nullable();
             $table->timestamps();
 
-            $table->index(['status', 'id']);
-            $table->index(['request_type', 'status', 'id']);
+            $table->index(['phase', 'id']);
+            $table->index(['request_type', 'phase', 'id']);
         });
     }
 

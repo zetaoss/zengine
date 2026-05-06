@@ -1,7 +1,7 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-  import { mdiAutoFix, mdiCreation, mdiDelete, mdiPencil, mdiReplay } from '@mdi/js'
+  import { mdiContentCopy, mdiDelete, mdiPencil } from '@mdi/js'
   import { onDestroy } from 'svelte'
 
   import { resolve } from '$app/paths'
@@ -13,9 +13,11 @@
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'
+  import ZBadge from '$shared/ui/ZBadge.svelte'
   import ZButton from '$shared/ui/ZButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
+  import ZStatusText from '$shared/ui/ZStatusText.svelte'
   import ZTabs from '$shared/ui/ZTabs.svelte'
   import httpy from '$shared/utils/httpy'
   import { getWikiEditHref } from '$shared/utils/wikiLink'
@@ -26,7 +28,7 @@
     user_name: string
     title: string
     request_type: string
-    status: string
+    phase: string
     created_at: string
     updated_at: string
   }
@@ -41,17 +43,16 @@
     interval: string
     retry_interval: string
     retry_backoff: number
-    phase: 'running' | 'sleeping' | 'retry_wait'
+    status: 'Running' | 'Waiting' | 'Backoff'
     next_run_at: string | null
     task_id: number | null
-    retry_count: number
     last_error: string | null
     message: string
     next_run_after_seconds: number
     head: {
       id: number
       title: string
-      status: string
+      phase: string
       attempts: number
       error_count: number
       skip_count: number
@@ -111,6 +112,11 @@
   let runningNow = $state(false)
   let nowMs = $state(Date.now())
   let statusTimer: ReturnType<typeof setInterval> | null = null
+  let statusPollTimer: ReturnType<typeof setTimeout> | null = null
+  let statusPollDelayMs = 1000
+  let statusPollingStarted = false
+  let statusPollingInFlight = false
+  let listRefreshingInFlight = false
   let prompts = $state<PromptDoc[]>(
     Object.values(promptDefs).map((doc) => ({
       ...doc,
@@ -120,6 +126,7 @@
     })),
   )
   let promptsFetched = false
+  const STATUS_POLL_FACTOR = 1.1
 
   const auth = useAuthStore()
   const userInfo = auth.userInfo
@@ -141,7 +148,7 @@
     if (routePage !== observedRoutePage) {
       observedRoutePage = routePage
       void fetchData()
-      void fetchQueueStatus()
+      void startStatusPolling()
     }
   })
 
@@ -162,6 +169,10 @@
     if (statusTimer) {
       clearInterval(statusTimer)
       statusTimer = null
+    }
+    if (statusPollTimer) {
+      clearTimeout(statusPollTimer)
+      statusPollTimer = null
     }
   })
 
@@ -193,13 +204,43 @@
   }
 
   async function fetchQueueStatus() {
+    if (statusPollingInFlight) return
+    statusPollingInFlight = true
     const [data, err] = await httpy.get<QueueStatus>('/api/doctasks/status')
+    statusPollingInFlight = false
     if (err) {
       console.error(err)
       return
     }
 
     queueStatus = data
+
+    if (tab === 'list' && !listRefreshingInFlight) {
+      listRefreshingInFlight = true
+      await fetchData()
+      listRefreshingInFlight = false
+    }
+  }
+
+  function scheduleNextStatusPoll() {
+    if (statusPollTimer) {
+      clearTimeout(statusPollTimer)
+      statusPollTimer = null
+    }
+
+    statusPollTimer = setTimeout(async () => {
+      await fetchQueueStatus()
+      statusPollDelayMs = Math.ceil(statusPollDelayMs * STATUS_POLL_FACTOR)
+      scheduleNextStatusPoll()
+    }, statusPollDelayMs)
+  }
+
+  async function startStatusPolling() {
+    if (statusPollingStarted) return
+    statusPollingStarted = true
+    statusPollDelayMs = 1000
+    await fetchQueueStatus()
+    scheduleNextStatusPoll()
   }
 
   function getUser(row: DocTask) {
@@ -208,14 +249,14 @@
 
   function getRequestTypeLabel(requestType: string) {
     if (requestType === 'create') return '생성'
-    if (requestType === 'edit') return '개선'
+    if (requestType === 'edit') return '편집'
     return requestType || '-'
   }
 
-  function getRequestTypeIcon(requestType: string) {
-    if (requestType === 'create') return mdiCreation
-    if (requestType === 'edit') return mdiAutoFix
-    return null
+  function getRequestTypeClass(requestType: string) {
+    if (requestType === 'create') return 'text-emerald-600 dark:text-emerald-300'
+    if (requestType === 'edit') return 'text-amber-600 dark:text-amber-300'
+    return ''
   }
 
   function asArray<T>(value: T[] | Record<string, T> | undefined): T[] {
@@ -275,7 +316,8 @@
   }
 
   async function clone(row: DocTask) {
-    const ok = await showConfirm(`'${row.title}' 건을 새 작업으로 등록하시겠습니까?`)
+    const requestTypeLabel = getRequestTypeLabel(row.request_type)
+    const ok = await showConfirm(`'${row.title}' 건을 새 ${requestTypeLabel} 작업으로 등록하시겠습니까?`)
     if (!ok) return
 
     cloningId = row.id
@@ -308,13 +350,15 @@
 
     queueStatus = data
     nowMs = Date.now()
+    statusPollDelayMs = 1000
+    scheduleNextStatusPoll()
     showToast('지금 실행되도록 설정했습니다.')
   }
 
   function getQueueStatusClass(status: QueueStatus) {
-    if (status.phase === 'retry_wait')
+    if (status.status === 'Backoff')
       return 'border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100'
-    if (status.phase === 'running')
+    if (status.status === 'Running')
       return 'border-blue-300 bg-blue-50 text-blue-900 dark:border-blue-700 dark:bg-blue-950 dark:text-blue-100'
     if (status.next_run_at) return 'border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200'
     if (status.head)
@@ -343,13 +387,14 @@
     const d = String(date.getDate()).padStart(2, '0')
     const hh = String(date.getHours()).padStart(2, '0')
     const mm = String(date.getMinutes()).padStart(2, '0')
-    return `${y}-${m}-${d} ${hh}:${mm}`
+    const ss = String(date.getSeconds()).padStart(2, '0')
+    return `${y}-${m}-${d} ${hh}:${mm}:${ss}`
   }
 
-  function getPhaseText(phase: QueueStatus['phase']) {
-    if (phase === 'running') return 'running'
-    if (phase === 'retry_wait') return 'retry_wait'
-    return 'sleeping'
+  function getStatusText(status: QueueStatus['status']) {
+    if (status === 'Running') return 'Running'
+    if (status === 'Backoff') return 'Backoff'
+    return 'Waiting'
   }
 </script>
 
@@ -358,18 +403,23 @@
 
   <ZTabs {tabs} selected={tab} onChange={(value) => (tab = value as Tab)} />
 
-  {#if queueStatus}
+  {#if tab === 'list' && queueStatus}
     <div class={`mb-4 rounded border p-3 text-sm ${getQueueStatusClass(queueStatus)}`}>
-      <div class="font-semibold">{getPhaseText(queueStatus.phase)}</div>
-      <div class="mt-1">{queueStatus.message}</div>
-      {#if isSysop}
-        <div class="mt-2">
+      <div class="flex items-center gap-2">
+        <ZStatusText
+          class="font-semibold"
+          text={getStatusText(queueStatus.status)}
+          animated={queueStatus.status === 'Running'}
+          mode="shimmer"
+        />
+        {#if isSysop}
           <ZButton color="primary" size="small" disabled={runningNow} onclick={runNowQueue}>지금 실행</ZButton>
-        </div>
-      {/if}
+        {/if}
+      </div>
+      <div class="mt-1">{queueStatus.message}</div>
       {#if queueStatus.head}
         <div class="mt-1">
-          작업 예정:
+          예정 작업:
           <a href={resolve(`/tool/docfac/${queueStatus.head.id}`)}>#{queueStatus.head.id} {queueStatus.head.title}</a>
           · 시도 {queueStatus.head.attempts}
           · 실패 {queueStatus.head.error_count}
@@ -378,12 +428,13 @@
       {/if}
       {#if queueStatus.next_run_at}
         <div class="mt-1 flex items-center gap-2">
-          다음 실행 예정: {formatNextRunAt(queueStatus.next_run_at)}
+          공장 재개: {formatNextRunAt(queueStatus.next_run_at)}
           <span class="ml-1">({formatCooldown(nextRunRemainingSeconds)} 남음)</span>
         </div>
+      {:else if queueStatus.head && queueStatus.status === 'Waiting'}
+        <div class="mt-1">공장 재개: &lt;1m</div>
       {/if}
-      {#if queueStatus.phase === 'retry_wait'}
-        <div class="mt-1">재시도 {queueStatus.retry_count}</div>
+      {#if queueStatus.status === 'Backoff'}
         {#if queueStatus.last_error}
           <div class="mt-1 whitespace-pre-wrap text-xs opacity-80">{queueStatus.last_error}</div>
         {/if}
@@ -397,7 +448,6 @@
         <tr>
           <th>번호</th>
           <th>제목</th>
-          <th>유형</th>
           <th>상태</th>
           <th>등록자</th>
           <th>등록일</th>
@@ -406,7 +456,7 @@
       <tbody>
         {#if loading && rows.length === 0}
           <tr>
-            <td colspan="6">
+            <td colspan="5">
               <div class="flex h-32 items-center justify-center">
                 <ZSpinner />
               </div>
@@ -414,13 +464,14 @@
           </tr>
         {:else if rows.length === 0}
           <tr>
-            <td colspan="6" class="text-center text-(--color-subtle)">문서공장 큐가 비어 있습니다.</td>
+            <td colspan="5" class="text-center text-(--color-subtle)">문서공장 큐가 비어 있습니다.</td>
           </tr>
         {:else}
           {#each rows as row (row.id)}
             <tr class="border-b border-(--border-color-subtle)">
               <td class="px-2 text-center">{row.id}</td>
               <td>
+                <ZBadge text={getRequestTypeLabel(row.request_type)} class={`mr-2 ${getRequestTypeClass(row.request_type)}`} />
                 <a href={resolve(`/tool/docfac/${row.id}`)}>{row.title}</a>
                 {#if isSysop}
                   <ZButton
@@ -436,16 +487,8 @@
               </td>
               <td>
                 <div class="flex items-center justify-center gap-1">
-                  {#if getRequestTypeIcon(row.request_type)}
-                    <ZIcon path={getRequestTypeIcon(row.request_type) || ''} />
-                  {/if}
-                  <span>{getRequestTypeLabel(row.request_type)}</span>
-                </div>
-              </td>
-              <td>
-                <div class="flex items-center justify-center gap-1">
-                  <span>{row.status}</span>
-                  {#if isSysop && (row.status === 'completed' || row.status === 'retry_wait')}
+                  <ZStatusText text={row.phase} animated={row.phase === 'Running'} mode="shimmer" />
+                  {#if isSysop && (row.phase === 'Succeeded' || row.phase === 'Failed')}
                     <ZButton
                       color="ghost"
                       size="small"
@@ -453,7 +496,7 @@
                       disabled={cloningId === row.id}
                       onclick={() => clone(row)}
                     >
-                      <ZIcon path={mdiReplay} />
+                      <ZIcon path={mdiContentCopy} />
                     </ZButton>
                   {/if}
                 </div>

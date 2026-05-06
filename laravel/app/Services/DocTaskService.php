@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Jobs\DocTaskProcessJob;
 use App\Models\DocTask;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -13,54 +12,56 @@ use Throwable;
 
 class DocTaskService
 {
-    public const STATUS_PENDING = 'pending';
+    public const TASK_PHASE_PENDING = 'Pending';
 
-    public const STATUS_PROCESSING = 'processing';
+    public const TASK_PHASE_RUNNING = 'Running';
 
-    public const STATUS_RETRY_WAIT = 'retry_wait';
+    public const TASK_PHASE_BACKOFF = 'Backoff';
 
-    public const STATUS_COMPLETED = 'completed';
+    public const TASK_PHASE_FAILED = 'Failed';
 
-    public const PHASE_RUNNING = 'running';
+    public const TASK_PHASE_SUCCEEDED = 'Succeeded';
 
-    public const PHASE_SLEEPING = 'sleeping';
+    public const STATUS_RUNNING = 'Running';
 
-    public const PHASE_RETRY_WAIT = 'retry_wait';
+    public const STATUS_WAITING = 'Waiting';
 
-    private const STATE_CACHE_KEY = 'docfac:state';
+    public const STATUS_BACKOFF = 'Backoff';
 
-    private const RETRY_AFTER_CACHE_KEY = 'docfac:retry_after';
+    private const PHASE_CACHE_KEY = 'docfac:phase';
 
-    private const CREATE_PROMPT_TITLE = '틀:문서공장 생성 프롬프트';
+    private const CREATE_PROMPT_TEMPLATE_TITLE = '틀:문서공장 생성 프롬프트';
 
-    private const EDIT_PROMPT_TITLE = '틀:문서공장 편집 프롬프트';
+    private const EDIT_PROMPT_TEMPLATE_TITLE = '틀:문서공장 편집 프롬프트';
 
-    private const RETRY_BACKOFF = 1.1;
+    private const RETRY_BACKOFF_MULTIPLIER = 1.1;
 
-    private const PROCESSING_TIMEOUT_SECONDS = 300;
+    private const TASK_RUNNING_TIMEOUT_SECONDS = 300;
 
     private const PROCESS_LOCK_KEY = 'docfac:process-lock';
 
-    private const PROCESS_LOCK_SECONDS = 120;
+    private const PROCESS_LOCK_TTL_SECONDS = 120;
 
-    private readonly int $intervalSeconds;
+    private readonly int $autoEnqueueIntervalSeconds;
+    private readonly int $processIntervalSeconds;
     private readonly int $retryIntervalSeconds;
-    private readonly bool $autoEnqueue;
+    private readonly int $maxRetries;
     private readonly string $mediaWikiApiServer;
     private readonly LLMService $llm;
 
     public function __construct(LLMService $llm)
     {
-        $this->intervalSeconds = config('services.docfac.interval_seconds');
-        $this->retryIntervalSeconds = config('services.docfac.retry_interval_seconds');
-        $this->autoEnqueue = config('services.docfac.auto_enqueue');
+        $this->autoEnqueueIntervalSeconds = config('services.docfac.autoenqueue_interval');
+        $this->processIntervalSeconds = config('services.docfac.process_interval');
+        $this->retryIntervalSeconds = config('services.docfac.retry_interval');
+        $this->maxRetries = config('services.docfac.max_retries');
         $this->mediaWikiApiServer = config('services.mediawiki.api_server');
         $this->llm = $llm;
     }
 
     public function processTask(): ?DocTask
     {
-        $lock = Cache::store('redis')->lock(self::PROCESS_LOCK_KEY, self::PROCESS_LOCK_SECONDS);
+        $lock = Cache::store('redis')->lock(self::PROCESS_LOCK_KEY, self::PROCESS_LOCK_TTL_SECONDS);
         if (! $lock->get()) {
             return null;
         }
@@ -74,20 +75,29 @@ class DocTaskService
 
     private function processTaskCore(): ?DocTask
     {
-        if (! $this->isDueToRun()) {
+        $state = $this->factoryState();
+        $head = $this->headTask();
+
+        // One scheduler call is one tick. Accumulate ticks while waiting/backoff.
+        if (in_array($state['status'], [self::STATUS_WAITING, self::STATUS_BACKOFF], true)) {
+            $state['tick_count'] += 1;
+            $this->saveFactoryState($state);
+        }
+
+        if (! $this->isDueToRun($state, $head)) {
             return null;
         }
 
         $task = $this->reserveHeadTask();
         if (! $task) {
-            $created = $this->autoEnqueue ? $this->enqueueRecommendedWriteRequest() : null;
+            $created = $this->shouldAutoEnqueue() ? $this->enqueueRecommendedWriteRequest() : null;
             if ($created) {
                 $this->saveFactoryState([
-                    'phase' => self::PHASE_SLEEPING,
-                    'next_run_at' => null,
+                    'status' => self::STATUS_WAITING,
                     'task_id' => null,
                     'retry_count' => 0,
                     'last_error' => null,
+                    'tick_count' => 0,
                 ]);
 
                 $task = $this->reserveHeadTask();
@@ -96,48 +106,67 @@ class DocTaskService
 
         if (! $task) {
             $this->saveFactoryState([
-                'phase' => self::PHASE_SLEEPING,
-                'next_run_at' => now()->addSeconds($this->intervalSeconds)->toIso8601String(),
+                'status' => self::STATUS_WAITING,
                 'task_id' => null,
                 'retry_count' => 0,
                 'last_error' => null,
+                'tick_count' => 0,
             ]);
 
             return null;
         }
 
         try {
-            $content = $this->generateContent($task);
+            $result = $this->generateContent($task);
             $task->forceFill([
-                'content' => $content,
-                'status' => self::STATUS_COMPLETED,
+                'content' => $result['content'],
+                'llm_model' => $result['model'],
+                'phase' => self::TASK_PHASE_SUCCEEDED,
                 'skip_count' => 0,
                 'last_error' => null,
             ])->save();
 
             $this->saveFactoryState([
-                'phase' => self::PHASE_SLEEPING,
-                'next_run_at' => now()->addSeconds($this->intervalSeconds)->toIso8601String(),
+                'status' => self::STATUS_WAITING,
                 'task_id' => null,
                 'retry_count' => 0,
                 'last_error' => null,
+                'tick_count' => 0,
             ]);
         } catch (Throwable $e) {
             $message = mb_substr($e->getMessage(), 0, 2000, 'UTF-8');
             $retryCount = $this->nextRetryCount($task);
 
+            if ($retryCount >= $this->maxRetries) {
+                $task->forceFill([
+                    'phase' => self::TASK_PHASE_FAILED,
+                    'error_count' => (int) $task->error_count + 1,
+                    'last_error' => $message,
+                ])->save();
+
+                $this->saveFactoryState([
+                    'status' => self::STATUS_WAITING,
+                    'task_id' => null,
+                    'retry_count' => 0,
+                    'last_error' => null,
+                    'tick_count' => 0,
+                ]);
+
+                return $task;
+            }
+
             $task->forceFill([
-                'status' => self::STATUS_RETRY_WAIT,
+                'phase' => self::TASK_PHASE_BACKOFF,
                 'error_count' => (int) $task->error_count + 1,
                 'last_error' => $message,
             ])->save();
 
             $this->saveFactoryState([
-                'phase' => self::PHASE_RETRY_WAIT,
-                'next_run_at' => now()->addSeconds($this->retryDelaySeconds($retryCount))->toIso8601String(),
+                'status' => self::STATUS_BACKOFF,
                 'task_id' => $task->id,
                 'retry_count' => $retryCount,
                 'last_error' => $message,
+                'tick_count' => 0,
             ]);
 
             throw $e;
@@ -150,33 +179,35 @@ class DocTaskService
     {
         $head = $this->headTask();
         $state = $this->factoryState();
+        $nextRunAfterSeconds = $this->nextRunAfterSeconds($state, $head);
 
         return [
             ...$this->factoryConfig(),
-            ...$state,
+            'status' => $state['status'],
             'message' => $this->factoryMessage($state, $head),
-            'next_run_after_seconds' => $this->secondsUntil($state['next_run_at']),
+            'next_run_after_seconds' => $nextRunAfterSeconds,
+            'next_run_at' => $this->nextRunAt($state, $nextRunAfterSeconds),
+            'task_id' => $state['task_id'],
+            'last_error' => $state['last_error'],
             'head' => $head ? $this->headTaskPayload($head) : null,
         ];
     }
 
     public function resumeProcessing(): array
     {
-        Cache::store('redis')->forget(self::RETRY_AFTER_CACHE_KEY);
-
         $head = $this->headTask();
-        if ($head && $head->status === self::STATUS_RETRY_WAIT) {
+        if ($head && $head->phase === self::TASK_PHASE_BACKOFF) {
             $head->forceFill([
-                'status' => self::STATUS_PENDING,
+                'phase' => self::TASK_PHASE_PENDING,
             ])->save();
         }
 
         $this->saveFactoryState([
-            'phase' => self::PHASE_SLEEPING,
-            'next_run_at' => null,
+            'status' => self::STATUS_WAITING,
             'task_id' => null,
             'retry_count' => 0,
             'last_error' => null,
+            'tick_count' => 0,
         ]);
 
         return $this->getStatus();
@@ -184,21 +215,30 @@ class DocTaskService
 
     public function runNow(): array
     {
-        Cache::store('redis')->forget(self::RETRY_AFTER_CACHE_KEY);
         $state = $this->factoryState();
 
-        if ($state['phase'] === self::PHASE_RUNNING) {
+        if ($state['status'] === self::STATUS_RUNNING) {
             return $this->getStatus();
         }
 
-        $nextRunAt = now()->startOfSecond()->toIso8601String();
-        $this->saveFactoryState([
-            'phase' => self::PHASE_SLEEPING,
-            'next_run_at' => $nextRunAt,
-            'task_id' => null,
-            'retry_count' => 0,
-            'last_error' => null,
-        ]);
+        if ($state['status'] === self::STATUS_BACKOFF && $state['task_id']) {
+            // Keep retry chain context, but make it due immediately.
+            $this->saveFactoryState([
+                'status' => self::STATUS_BACKOFF,
+                'task_id' => $state['task_id'],
+                'retry_count' => $state['retry_count'],
+                'last_error' => $state['last_error'],
+                'tick_count' => $this->retryIntervalTicks(max(1, $state['retry_count'])),
+            ]);
+        } else {
+            $this->saveFactoryState([
+                'status' => self::STATUS_WAITING,
+                'task_id' => null,
+                'retry_count' => 0,
+                'last_error' => null,
+                'tick_count' => $this->processIntervalTicks(),
+            ]);
+        }
 
         DocTaskProcessJob::dispatch();
 
@@ -219,21 +259,21 @@ class DocTaskService
 
             $now = now();
 
-            if ($task->status === self::STATUS_PROCESSING && $task->updated_at && $task->updated_at->gt($now->copy()->subSeconds(self::PROCESSING_TIMEOUT_SECONDS))) {
+            if ($task->phase === self::TASK_PHASE_RUNNING && $task->updated_at && $task->updated_at->gt($now->copy()->subSeconds(self::TASK_RUNNING_TIMEOUT_SECONDS))) {
                 return null;
             }
 
             $task->forceFill([
-                'status' => self::STATUS_PROCESSING,
+                'phase' => self::TASK_PHASE_RUNNING,
                 'attempts' => (int) $task->attempts + 1,
             ])->save();
 
             $this->saveFactoryState([
-                'phase' => self::PHASE_RUNNING,
-                'next_run_at' => null,
+                'status' => self::STATUS_RUNNING,
                 'task_id' => $task->id,
                 'retry_count' => $state['task_id'] === $task->id ? $state['retry_count'] : 0,
                 'last_error' => $state['task_id'] === $task->id ? $state['last_error'] : null,
+                'tick_count' => 0,
             ]);
 
             return $task;
@@ -248,7 +288,7 @@ class DocTaskService
     private function headTaskQuery()
     {
         return DocTask::query()
-            ->where('status', '!=', self::STATUS_COMPLETED)
+            ->whereNotIn('phase', [self::TASK_PHASE_SUCCEEDED, self::TASK_PHASE_FAILED])
             ->orderBy('id');
     }
 
@@ -257,7 +297,7 @@ class DocTaskService
         return [
             'id' => $task->id,
             'title' => $task->title,
-            'status' => $task->status,
+            'phase' => $task->phase,
             'attempts' => $task->attempts,
             'error_count' => $task->error_count,
             'skip_count' => $task->skip_count,
@@ -268,77 +308,87 @@ class DocTaskService
     private function taskToRunQuery(array $state)
     {
         $query = DocTask::query()
-            ->where('status', '!=', self::STATUS_COMPLETED);
+            ->whereNotIn('phase', [self::TASK_PHASE_SUCCEEDED, self::TASK_PHASE_FAILED]);
 
-        if ($state['phase'] === self::PHASE_RETRY_WAIT && $state['task_id']) {
+        if ($state['status'] === self::STATUS_BACKOFF && $state['task_id']) {
             return $query->whereKey($state['task_id']);
         }
 
         return $query->orderBy('id');
     }
 
-    private function isDueToRun(): bool
+    private function isDueToRun(array $state, ?DocTask $head): bool
     {
-        $state = $this->factoryState();
-
-        if ($state['phase'] === self::PHASE_RUNNING) {
+        if ($state['status'] === self::STATUS_RUNNING) {
             $task = $state['task_id'] ? DocTask::query()->find($state['task_id']) : null;
 
             return $task?->updated_at
-                ? $task->updated_at->lessThanOrEqualTo(now()->subSeconds(self::PROCESSING_TIMEOUT_SECONDS))
+                ? $task->updated_at->lessThanOrEqualTo(now()->subSeconds(self::TASK_RUNNING_TIMEOUT_SECONDS))
                 : true;
         }
 
-        if (! $state['next_run_at']) {
-            return true;
+        if ($state['status'] === self::STATUS_BACKOFF) {
+            return $state['tick_count'] >= $this->retryIntervalTicks($state['retry_count']);
         }
 
-        return now()->greaterThanOrEqualTo(Carbon::parse($state['next_run_at']));
+        // Waiting state
+        if ($head) {
+            return $state['tick_count'] >= $this->processIntervalTicks();
+        }
+
+        if ($this->shouldAutoEnqueue()) {
+            return $state['tick_count'] >= $this->autoenqueueIntervalTicks();
+        }
+
+        return false;
     }
 
     private function factoryConfig(): array
     {
         return [
-            'interval' => $this->formatDuration($this->intervalSeconds),
+            'process_interval' => $this->formatDuration($this->processIntervalSeconds),
+            'interval' => $this->formatDuration($this->processIntervalSeconds),
+            'autoenqueue_interval' => $this->formatOptionalDuration($this->autoEnqueueIntervalSeconds),
             'retry_interval' => $this->formatDuration($this->retryIntervalSeconds),
-            'retry_backoff' => self::RETRY_BACKOFF,
+            'retry_backoff' => self::RETRY_BACKOFF_MULTIPLIER,
         ];
     }
 
     private function factoryState(): array
     {
-        $state = Cache::store('redis')->get(self::STATE_CACHE_KEY);
+        $state = Cache::store('redis')->get(self::PHASE_CACHE_KEY);
         if (! is_array($state)) {
-            $retryAfter = (int) (Cache::store('redis')->get(self::RETRY_AFTER_CACHE_KEY) ?? 0);
-
             return [
-                'phase' => $retryAfter > now()->timestamp ? self::PHASE_RETRY_WAIT : self::PHASE_SLEEPING,
-                'next_run_at' => $retryAfter > now()->timestamp ? date('c', $retryAfter) : null,
-                'task_id' => $retryAfter > now()->timestamp ? $this->headTask()?->id : null,
+                'status' => self::STATUS_WAITING,
+                'task_id' => null,
                 'retry_count' => 0,
                 'last_error' => null,
+                'tick_count' => 0,
+                'state_changed_at' => now()->toIso8601String(),
             ];
         }
 
         return [
-            'phase' => in_array($state['phase'] ?? null, [self::PHASE_RUNNING, self::PHASE_SLEEPING, self::PHASE_RETRY_WAIT], true)
-                ? $state['phase']
-                : self::PHASE_SLEEPING,
-            'next_run_at' => $state['next_run_at'] ?? null,
+            'status' => $this->normalizeStatus($state['status'] ?? null),
             'task_id' => isset($state['task_id']) ? (int) $state['task_id'] : null,
             'retry_count' => isset($state['retry_count']) ? max(0, (int) $state['retry_count']) : 0,
             'last_error' => isset($state['last_error']) && is_string($state['last_error']) ? $state['last_error'] : null,
+            'tick_count' => isset($state['tick_count']) ? max(0, (int) $state['tick_count']) : 0,
+            'state_changed_at' => isset($state['state_changed_at']) && is_string($state['state_changed_at'])
+                ? $state['state_changed_at']
+                : now()->toIso8601String(),
         ];
     }
 
     private function saveFactoryState(array $state): void
     {
-        Cache::store('redis')->forever(self::STATE_CACHE_KEY, [
-            'phase' => $state['phase'],
-            'next_run_at' => $state['next_run_at'],
+        Cache::store('redis')->forever(self::PHASE_CACHE_KEY, [
+            'status' => $state['status'],
             'task_id' => $state['task_id'],
             'retry_count' => $state['retry_count'],
             'last_error' => $state['last_error'],
+            'tick_count' => $state['tick_count'] ?? 0,
+            'state_changed_at' => $state['state_changed_at'] ?? now()->toIso8601String(),
         ]);
     }
 
@@ -348,28 +398,19 @@ class DocTaskService
             return '대기 중인 작업이 없습니다.';
         }
 
-        if ($state['phase'] === self::PHASE_RUNNING) {
+        if ($state['status'] === self::STATUS_RUNNING) {
             return '작업을 처리 중입니다.';
         }
 
-        if ($state['phase'] === self::PHASE_RETRY_WAIT) {
-            return '오류 후 같은 작업의 재시도를 기다리는 중입니다.';
+        if ($state['status'] === self::STATUS_BACKOFF) {
+            return '오류 후 재시도를 기다리는 중입니다.';
         }
 
-        if ($state['next_run_at'] && now()->lessThan(Carbon::parse($state['next_run_at']))) {
+        if ($this->nextRunAfterSeconds($state, $head) > 0) {
             return '다음 작업 실행을 기다리는 중입니다.';
         }
 
-        return '다음 실행 때 선두 작업을 처리합니다.';
-    }
-
-    private function secondsUntil(?string $nextRunAt): int
-    {
-        if (! $nextRunAt) {
-            return 0;
-        }
-
-        return max(0, (int) now()->diffInSeconds(Carbon::parse($nextRunAt), false));
+        return '다음 실행 때 작업을 처리합니다.';
     }
 
     private function nextRetryCount(DocTask $task): int
@@ -380,12 +421,22 @@ class DocTaskService
             return $state['retry_count'] + 1;
         }
 
+        // Fallback to persisted task error history when runtime state was reset manually.
+        if ($task->phase === self::TASK_PHASE_BACKOFF && (int) $task->error_count > 0) {
+            return (int) $task->error_count + 1;
+        }
+
         return 1;
     }
 
     private function retryDelaySeconds(int $retryCount): int
     {
-        return (int) ceil($this->retryIntervalSeconds * (self::RETRY_BACKOFF ** max(0, $retryCount - 1)));
+        return (int) ceil($this->retryIntervalSeconds * (self::RETRY_BACKOFF_MULTIPLIER ** max(0, $retryCount - 1)));
+    }
+
+    private function shouldAutoEnqueue(): bool
+    {
+        return $this->autoEnqueueIntervalSeconds > 0;
     }
 
     private function enqueueRecommendedWriteRequest(): ?DocTask
@@ -409,15 +460,15 @@ class DocTaskService
             'title' => (string) $row->title,
             'request_type' => 'create',
             'content' => '',
-            'status' => self::STATUS_PENDING,
+            'phase' => self::TASK_PHASE_PENDING,
         ]);
     }
 
-    private function generateContent(DocTask $task): string
+    private function generateContent(DocTask $task): array
     {
         $promptTitle = $task->request_type === 'edit'
-            ? self::EDIT_PROMPT_TITLE
-            : self::CREATE_PROMPT_TITLE;
+            ? self::EDIT_PROMPT_TEMPLATE_TITLE
+            : self::CREATE_PROMPT_TEMPLATE_TITLE;
         $promptTemplate = $this->fetchWikiRawText($promptTitle);
         $existingDoc = $task->request_type === 'edit'
             ? $this->fetchWikiRawText($task->title)
@@ -428,7 +479,7 @@ class DocTaskService
             $promptTemplate
         );
 
-        return $this->llm->chat([
+        return $this->llm->chatCompletion([
             ['role' => 'user', 'content' => $prompt],
         ]);
     }
@@ -484,5 +535,80 @@ class DocTaskService
         }
 
         return $seconds.'s';
+    }
+
+    private function formatOptionalDuration(int $seconds): string
+    {
+        if ($seconds <= 0) {
+            return 'off';
+        }
+
+        return $this->formatDuration($seconds);
+    }
+
+    private function normalizeStatus(mixed $status): string
+    {
+        return match ($status) {
+            self::STATUS_RUNNING => self::STATUS_RUNNING,
+            self::STATUS_BACKOFF => self::STATUS_BACKOFF,
+            self::STATUS_WAITING => self::STATUS_WAITING,
+            default => self::STATUS_WAITING,
+        };
+    }
+
+    private function processIntervalTicks(): int
+    {
+        return max(1, (int) ceil($this->processIntervalSeconds / 60));
+    }
+
+    private function autoenqueueIntervalTicks(): int
+    {
+        if ($this->autoEnqueueIntervalSeconds <= 0) {
+            return 0;
+        }
+
+        return max(1, (int) ceil($this->autoEnqueueIntervalSeconds / 60));
+    }
+
+    private function retryIntervalTicks(int $retryCount): int
+    {
+        return max(1, (int) ceil($this->retryDelaySeconds(max(1, $retryCount)) / 60));
+    }
+
+    private function nextRunAfterSeconds(array $state, ?DocTask $head): int
+    {
+        if ($state['status'] === self::STATUS_RUNNING) {
+            return 0;
+        }
+
+        if ($state['status'] === self::STATUS_BACKOFF) {
+            $remainingTicks = max(0, $this->retryIntervalTicks($state['retry_count']) - $state['tick_count']);
+
+            return $remainingTicks * 60;
+        }
+
+        // Waiting
+        if ($head) {
+            $remainingTicks = max(0, $this->processIntervalTicks() - $state['tick_count']);
+
+            return $remainingTicks * 60;
+        }
+
+        if ($this->shouldAutoEnqueue()) {
+            $remainingTicks = max(0, $this->autoenqueueIntervalTicks() - $state['tick_count']);
+
+            return $remainingTicks * 60;
+        }
+
+        return 0;
+    }
+
+    private function nextRunAt(array $state, int $nextRunAfterSeconds): ?string
+    {
+        if ($nextRunAfterSeconds <= 0) {
+            return null;
+        }
+
+        return now()->addSeconds($nextRunAfterSeconds)->toIso8601String();
     }
 }
