@@ -2,16 +2,31 @@ package middleware
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
+	"fmt"
+	goredis "github.com/redis/go-redis/v9"
 	"github.com/zetaoss/zengine/goapp/app/config"
+	appredis "github.com/zetaoss/zengine/goapp/app/redis"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 )
 
 type contextKey string
 
 const mwUserKey contextKey = "mw_user"
+
+const (
+	mwUserCachePrefix = "zengine:mwauth:user:v1:"
+	mwUserCacheTTL    = 10 * time.Second
+)
+
+var (
+	mwAuthRedisOnce sync.Once
+	mwAuthRedis     *goredis.Client
+)
 
 type MWUser struct {
 	ID          int
@@ -100,6 +115,9 @@ func fetchMWUser(r *http.Request, cfg *config.Config) (MWUser, bool) {
 	if cookie == "" {
 		return MWUser{}, false
 	}
+	if cached, ok := loadMWUserCache(cfg, cookie); ok {
+		return cached, true
+	}
 
 	apiServer := strings.TrimRight(cfg.App.APIServer, "/")
 	if apiServer == "" {
@@ -148,7 +166,7 @@ func fetchMWUser(r *http.Request, cfg *config.Config) (MWUser, bool) {
 	if ui.Anon || ui.ID < 1 {
 		return MWUser{}, false
 	}
-	return MWUser{
+	user := MWUser{
 		ID:          ui.ID,
 		Name:        ui.Name,
 		Groups:      ui.Group,
@@ -156,11 +174,68 @@ func fetchMWUser(r *http.Request, cfg *config.Config) (MWUser, bool) {
 		BlockedByID: ui.BlockedByID,
 		BlockedBy:   ui.BlockedBy,
 		BlockExpiry: ui.BlockExpiry,
-	}, true
+	}
+	saveMWUserCache(cfg, cookie, user)
+	return user, true
 }
 
 func writeErrorJSON(w http.ResponseWriter, status int, message string) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(map[string]string{"message": message})
+}
+
+func loadMWUserCache(cfg *config.Config, cookie string) (MWUser, bool) {
+	client := mwAuthRedisClient(cfg)
+	if client == nil {
+		return MWUser{}, false
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 150*time.Millisecond)
+	defer cancel()
+
+	val, err := client.Get(ctx, mwUserCacheKey(cookie)).Result()
+	if err != nil || strings.TrimSpace(val) == "" {
+		return MWUser{}, false
+	}
+	var user MWUser
+	if err := json.Unmarshal([]byte(val), &user); err != nil {
+		return MWUser{}, false
+	}
+	if user.ID < 1 {
+		return MWUser{}, false
+	}
+	return user, true
+}
+
+func saveMWUserCache(cfg *config.Config, cookie string, user MWUser) {
+	client := mwAuthRedisClient(cfg)
+	if client == nil || user.ID < 1 {
+		return
+	}
+	raw, err := json.Marshal(user)
+	if err != nil {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 150*time.Millisecond)
+	defer cancel()
+	_ = client.Set(ctx, mwUserCacheKey(cookie), string(raw), mwUserCacheTTL).Err()
+}
+
+func mwAuthRedisClient(cfg *config.Config) *goredis.Client {
+	mwAuthRedisOnce.Do(func() {
+		if cfg == nil {
+			return
+		}
+		client, err := appredis.Open(cfg)
+		if err != nil {
+			return
+		}
+		mwAuthRedis = client
+	})
+	return mwAuthRedis
+}
+
+func mwUserCacheKey(cookie string) string {
+	sum := sha256.Sum256([]byte(cookie))
+	return fmt.Sprintf("%s%x", mwUserCachePrefix, sum[:])
 }

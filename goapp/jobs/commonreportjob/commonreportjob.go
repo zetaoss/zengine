@@ -110,7 +110,7 @@ func processReport(ctx context.Context, db *gorm.DB, endpoint string, report mod
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return err
 	}
-	result, _ := response["result"].(app.H)
+	result, _ := response["result"].(map[string]any)
 	engineRaw, _ := result["engines"].([]any)
 	valueRaw, _ := result["values"].([]any)
 	if len(engineRaw) == 0 {

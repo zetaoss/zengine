@@ -38,7 +38,7 @@ func buildMySQLDSN(cfg *config.Config) string {
 
 	addr := fmt.Sprintf("tcp(%s:%d)", host, port)
 	return fmt.Sprintf(
-		"%s:%s@%s/%s?parseTime=true&loc=UTC&allowNativePasswords=true&charset=utf8mb4&collation=utf8mb4_unicode_ci",
+		"%s:%s@%s/%s?parseTime=true&loc=UTC&charset=utf8mb4&collation=utf8mb4_unicode_ci",
 		user,
 		pass,
 		addr,

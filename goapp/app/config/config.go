@@ -82,13 +82,14 @@ type OAuthConfig struct {
 
 func Load() (*Config, error) {
 	overrides := map[string]string{}
-	envFilePath := "/app/.env"
-	if _, err := os.Stat(envFilePath); err == nil {
-		parsed, err := parseEnvFile(envFilePath)
-		if err != nil {
-			return nil, err
+	if envFilePath := os.Getenv("ENV_FILE"); envFilePath != "" {
+		if _, err := os.Stat(envFilePath); err == nil {
+			parsed, err := parseEnvFile(envFilePath)
+			if err != nil {
+				return nil, err
+			}
+			overrides = parsed
 		}
-		overrides = parsed
 	}
 
 	cfg := &Config{

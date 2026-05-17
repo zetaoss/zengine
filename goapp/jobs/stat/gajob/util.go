@@ -49,7 +49,7 @@ func runGAQuery(ctx context.Context, token, propertyID, startDate, endDate strin
 		return nil, fmt.Errorf("ga api failed: %d %s", resp.StatusCode, string(b))
 	}
 	var payload app.H
-	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+	if err := json.Unmarshal(b, &payload); err != nil {
 		return nil, err
 	}
 	return payload, nil

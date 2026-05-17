@@ -144,7 +144,8 @@ func listPage(c *serverctx.Context, mode string) {
 	const perPage = 25
 
 	base := c.DB.Table("write_requests as w").
-		Select("w.*, w.user_name as user_name, (SELECT COALESCE(n.hit, 0) FROM not_matches n WHERE n.title = w.title LIMIT 1) as hit")
+		Select("w.*, w.user_name as user_name, COALESCE(n.hit, 0) as hit").
+		Joins("LEFT JOIN not_matches n ON n.title = w.title")
 
 	countQ := c.DB.Table("write_requests as w")
 	switch mode {

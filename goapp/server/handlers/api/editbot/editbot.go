@@ -87,31 +87,37 @@ func StoreFromWriteRequest(c *serverctx.Context) {
 		c.JSONError(http.StatusUnprocessableEntity, "LLM 입력을 먼저 렌더링해 주세요.")
 		return
 	}
-	insert := app.H{
-		"user_id":      user.ID,
-		"user_name":    user.Name,
-		"title":        title,
-		"request_type": body.RequestType,
-		"llm_input":    body.LLMInput,
-		"phase":        models.EditBotPhasePending,
-		"created_at":   time.Now(),
-		"updated_at":   time.Now(),
+	insert := struct {
+		ID          int                 `gorm:"column:id"`
+		UserID      int                 `gorm:"column:user_id"`
+		UserName    string              `gorm:"column:user_name"`
+		Title       string              `gorm:"column:title"`
+		RequestType string              `gorm:"column:request_type"`
+		LLMInput    string              `gorm:"column:llm_input"`
+		Phase       models.EditBotPhase `gorm:"column:phase"`
+		CreatedAt   time.Time           `gorm:"column:created_at"`
+		UpdatedAt   time.Time           `gorm:"column:updated_at"`
+	}{
+		UserID:      user.ID,
+		UserName:    user.Name,
+		Title:       title,
+		RequestType: body.RequestType,
+		LLMInput:    body.LLMInput,
+		Phase:       models.EditBotPhasePending,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
-	if err := c.DB.Table("edit_tasks").Create(insert).Error; err != nil {
+	if err := c.DB.Table("edit_tasks").Create(&insert).Error; err != nil {
 		c.InternalError()
 		return
 	}
-	var out struct {
-		ID int `gorm:"column:id"`
-	}
-	_ = c.DB.Table("edit_tasks").Select("id").Order("id DESC").Take(&out).Error
-	if out.ID > 0 {
-		if _, err := editbotjob.Enqueue(c.R.Context(), c.AppContext, out.ID); err != nil {
+	if insert.ID > 0 {
+		if _, err := editbotjob.Enqueue(c.R.Context(), c.AppContext, insert.ID); err != nil {
 			c.InternalError()
 			return
 		}
 	}
-	c.JSON(app.H{"ok": true, "id": out.ID})
+	c.JSON(app.H{"ok": true, "id": insert.ID})
 }
 
 func StoreFromPage(c *serverctx.Context) {
@@ -158,32 +164,39 @@ func StoreFromPage(c *serverctx.Context) {
 			"분류":   "",
 		})
 	}
-	insert := app.H{
-		"user_id":      user.ID,
-		"user_name":    user.Name,
-		"title":        title,
-		"request_type": body.RequestType,
-		"llm_output":   "",
-		"llm_input":    llmInput,
-		"phase":        models.EditBotPhasePending,
-		"created_at":   time.Now(),
-		"updated_at":   time.Now(),
+	insert := struct {
+		ID          int                 `gorm:"column:id"`
+		UserID      int                 `gorm:"column:user_id"`
+		UserName    string              `gorm:"column:user_name"`
+		Title       string              `gorm:"column:title"`
+		RequestType string              `gorm:"column:request_type"`
+		LLMOutput   string              `gorm:"column:llm_output"`
+		LLMInput    string              `gorm:"column:llm_input"`
+		Phase       models.EditBotPhase `gorm:"column:phase"`
+		CreatedAt   time.Time           `gorm:"column:created_at"`
+		UpdatedAt   time.Time           `gorm:"column:updated_at"`
+	}{
+		UserID:      user.ID,
+		UserName:    user.Name,
+		Title:       title,
+		RequestType: body.RequestType,
+		LLMOutput:   "",
+		LLMInput:    llmInput,
+		Phase:       models.EditBotPhasePending,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
-	if err := c.DB.Table("edit_tasks").Create(insert).Error; err != nil {
+	if err := c.DB.Table("edit_tasks").Create(&insert).Error; err != nil {
 		c.InternalError()
 		return
 	}
-	var out struct {
-		ID int `gorm:"column:id"`
-	}
-	_ = c.DB.Table("edit_tasks").Select("id").Order("id DESC").Take(&out).Error
-	if out.ID > 0 {
-		if _, err := editbotjob.Enqueue(c.R.Context(), c.AppContext, out.ID); err != nil {
+	if insert.ID > 0 {
+		if _, err := editbotjob.Enqueue(c.R.Context(), c.AppContext, insert.ID); err != nil {
 			c.InternalError()
 			return
 		}
 	}
-	c.JSON(app.H{"ok": true, "id": out.ID, "created": true})
+	c.JSON(app.H{"ok": true, "id": insert.ID, "created": true})
 }
 
 func Destroy(c *serverctx.Context) {

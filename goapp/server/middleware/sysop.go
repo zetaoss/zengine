@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"net/http"
 	"github.com/zetaoss/zengine/goapp/app/config"
+	"net/http"
 )
 
 func RequireSysop(cfg *config.Config) Middleware {

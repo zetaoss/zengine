@@ -1,7 +1,7 @@
 package social
 
 import (
-	"bytes"
+	"context"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -20,6 +19,7 @@ import (
 
 	"github.com/zetaoss/zengine/goapp/app"
 	"github.com/zetaoss/zengine/goapp/app/config"
+	appredis "github.com/zetaoss/zengine/goapp/app/redis"
 	"github.com/zetaoss/zengine/goapp/server/handlers/auth/social/providers"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
 
@@ -525,79 +525,16 @@ func putToken(cfg *config.Config, prefix string, payload app.H, ttlSeconds int) 
 	if err != nil {
 		return "", err
 	}
-	if err := redisSetEX(cfg.Redis.Host, cfg.Redis.Port, key, ttlSeconds, string(raw)); err != nil {
+	client, err := appredis.Open(cfg)
+	if err != nil {
+		return "", err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	if err := client.Set(ctx, key, string(raw), time.Duration(ttlSeconds)*time.Second).Err(); err != nil {
 		return "", err
 	}
 	return token, nil
-}
-
-func redisSetEX(host string, port int, key string, ttl int, value string) error {
-	host = strings.TrimSpace(host)
-	if host == "" {
-		host = "127.0.0.1"
-	}
-	if port <= 0 {
-		port = 6379
-	}
-	addr := host
-	if !strings.Contains(addr, ":") {
-		addr = fmt.Sprintf("%s:%d", host, port)
-	}
-	conn, err := net.DialTimeout("tcp", addr, 3*time.Second)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		_ = conn.Close()
-	}()
-	_ = conn.SetDeadline(time.Now().Add(3 * time.Second))
-
-	cmd := respArray([]string{"SETEX", key, fmt.Sprintf("%d", ttl), value})
-	if _, err := conn.Write([]byte(cmd)); err != nil {
-		return err
-	}
-	line, err := readRedisLine(conn)
-	if err != nil {
-		return err
-	}
-	if strings.HasPrefix(line, "-") {
-		return fmt.Errorf("redis error: %s", line)
-	}
-	if !strings.HasPrefix(line, "+OK") {
-		return fmt.Errorf("unexpected redis response: %s", line)
-	}
-	return nil
-}
-
-func respArray(parts []string) string {
-	var b bytes.Buffer
-	b.WriteString("*")
-	_, _ = fmt.Fprintf(&b, "%d", len(parts))
-	b.WriteString("\r\n")
-	for _, p := range parts {
-		b.WriteString("$")
-		_, _ = fmt.Fprintf(&b, "%d", len(p))
-		b.WriteString("\r\n")
-		b.WriteString(p)
-		b.WriteString("\r\n")
-	}
-	return b.String()
-}
-
-func readRedisLine(r io.Reader) (string, error) {
-	buf := make([]byte, 0, 128)
-	tmp := make([]byte, 1)
-	for {
-		_, err := r.Read(tmp)
-		if err != nil {
-			return "", err
-		}
-		buf = append(buf, tmp[0])
-		n := len(buf)
-		if n >= 2 && buf[n-2] == '\r' && buf[n-1] == '\n' {
-			return string(buf[:n-2]), nil
-		}
-	}
 }
 
 func redirectLoginError(c *serverctx.Context, code string) {

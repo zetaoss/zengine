@@ -2,10 +2,9 @@ package database
 
 import (
 	"database/sql"
+	"embed"
 	"fmt"
 	"os"
-	"path/filepath"
-	"runtime"
 	"sort"
 	"strings"
 
@@ -17,6 +16,9 @@ type migrationFile struct {
 	Name    string
 	Path    string
 }
+
+//go:embed migrations/*.up.sql
+var migrationsFS embed.FS
 
 func RunMigrate(cfg *config.Config) error {
 	fmt.Fprintln(os.Stderr, "[worker:migrate] start")
@@ -54,7 +56,7 @@ func RunMigrate(cfg *config.Config) error {
 		if ok {
 			continue
 		}
-		raw, err := os.ReadFile(mf.Path)
+		raw, err := migrationsFS.ReadFile(mf.Path)
 		if err != nil {
 			return err
 		}
@@ -99,12 +101,7 @@ func isApplied(db *sql.DB, version string) (bool, error) {
 }
 
 func findUpMigrations() ([]migrationFile, error) {
-	_, thisFile, _, ok := runtime.Caller(0)
-	if !ok {
-		return nil, fmt.Errorf("unable to resolve migrate.go path")
-	}
-	base := filepath.Clean(filepath.Join(filepath.Dir(thisFile), "migrations"))
-	entries, err := os.ReadDir(base)
+	entries, err := migrationsFS.ReadDir("migrations")
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +118,7 @@ func findUpMigrations() ([]migrationFile, error) {
 		if len(parts) < 2 {
 			continue
 		}
-		out = append(out, migrationFile{Version: parts[0], Name: name, Path: filepath.Join(base, name)})
+		out = append(out, migrationFile{Version: parts[0], Name: name, Path: "migrations/" + name})
 	}
 	sort.Slice(out, func(i, j int) bool {
 		if out[i].Version == out[j].Version {
@@ -133,13 +130,108 @@ func findUpMigrations() ([]migrationFile, error) {
 }
 
 func splitSQLStatements(raw string) []string {
-	parts := strings.Split(raw, ";")
-	out := make([]string, 0, len(parts))
-	for _, p := range parts {
-		s := strings.TrimSpace(p)
-		if s == "" {
-			continue
+	const (
+		stateNormal = iota
+		stateSingleQuote
+		stateDoubleQuote
+		stateBacktick
+		stateLineComment
+		stateBlockComment
+	)
+
+	out := make([]string, 0, 16)
+	var b strings.Builder
+	state := stateNormal
+
+	for i := 0; i < len(raw); i++ {
+		ch := raw[i]
+		var next byte
+		if i+1 < len(raw) {
+			next = raw[i+1]
 		}
+
+		switch state {
+		case stateNormal:
+			if ch == '-' && next == '-' {
+				b.WriteByte(ch)
+				b.WriteByte(next)
+				i++
+				state = stateLineComment
+				continue
+			}
+			if ch == '/' && next == '*' {
+				b.WriteByte(ch)
+				b.WriteByte(next)
+				i++
+				state = stateBlockComment
+				continue
+			}
+			if ch == '\'' {
+				b.WriteByte(ch)
+				state = stateSingleQuote
+				continue
+			}
+			if ch == '"' {
+				b.WriteByte(ch)
+				state = stateDoubleQuote
+				continue
+			}
+			if ch == '`' {
+				b.WriteByte(ch)
+				state = stateBacktick
+				continue
+			}
+			if ch == ';' {
+				s := strings.TrimSpace(b.String())
+				if s != "" {
+					out = append(out, s)
+				}
+				b.Reset()
+				continue
+			}
+			b.WriteByte(ch)
+		case stateSingleQuote:
+			b.WriteByte(ch)
+			if ch == '\\' && next != 0 {
+				b.WriteByte(next)
+				i++
+				continue
+			}
+			if ch == '\'' {
+				state = stateNormal
+			}
+		case stateDoubleQuote:
+			b.WriteByte(ch)
+			if ch == '\\' && next != 0 {
+				b.WriteByte(next)
+				i++
+				continue
+			}
+			if ch == '"' {
+				state = stateNormal
+			}
+		case stateBacktick:
+			b.WriteByte(ch)
+			if ch == '`' {
+				state = stateNormal
+			}
+		case stateLineComment:
+			b.WriteByte(ch)
+			if ch == '\n' {
+				state = stateNormal
+			}
+		case stateBlockComment:
+			b.WriteByte(ch)
+			if ch == '*' && next == '/' {
+				b.WriteByte(next)
+				i++
+				state = stateNormal
+			}
+		}
+	}
+
+	s := strings.TrimSpace(b.String())
+	if s != "" {
 		out = append(out, s)
 	}
 	return out

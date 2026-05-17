@@ -104,7 +104,7 @@ func registerRoutes(mux *http.ServeMux, serverCtx *serverctx.Context) error {
 	r.POST("/api/write-request/{id}/recommend", writerequest.Recommend, middleware.RequireUnblocked(cfg))
 	r.DELETE("/api/write-request/{id}", writerequest.Destroy, middleware.RequireLoggedIn(cfg))
 
-	authThrottle := middleware.Throttle(30, time.Minute, "auth-social")
+	authThrottle := middleware.Throttle(cfg, 30, time.Minute, "auth-social")
 	r.GET("/auth/redirect/{provider}", social.Redirect, authThrottle)
 	r.GET("/auth/callback/{provider}", social.Callback, authThrottle)
 	r.POST("/auth/deauthorize/{provider}", social.Deauthorize, authThrottle)

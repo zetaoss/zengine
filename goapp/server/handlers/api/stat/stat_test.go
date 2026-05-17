@@ -1,9 +1,9 @@
 package stat
 
 import (
+	"github.com/zetaoss/zengine/goapp/models"
 	"testing"
 	"time"
-	"github.com/zetaoss/zengine/goapp/models"
 )
 
 func TestHourlyEndUTC(t *testing.T) {
