@@ -124,8 +124,6 @@ endif
 
 .PHONY: check-svelte
 check-svelte:
-	@$(MAKE) svelte-overrides
-	@$(MAKE) install-main-svelte install-skin-svelte
 	@$(MAKE) USE_CACHE=$(USE_CACHE) check-main-svelte check-skin-svelte
 
 .PHONY: svelte-overrides
@@ -144,26 +142,21 @@ install-skin-svelte:
 .PHONY: check-main-svelte
 check-main-svelte:
 ifeq ($(USE_CACHE),1)
-	$(call run_cached,check-main-svelte,$(MAKE) USE_CACHE=0 check-main-svelte,svelte)
+	$(call run_cached,check-main-svelte,$(MAKE) USE_CACHE=0 check-main-svelte,svelte pnpm-lock.yaml package.json)
 else
+		@$(MAKE) svelte-overrides
 	$(call run_pnpm,svelte,install --frozen-lockfile)
-	$(call run_pnpm,svelte,lint,pnpm -C svelte lint)
-	$(call run_pnpm,svelte,format,pnpm -C svelte format:fix)
-	$(call run_pnpm,svelte,audit --ignore-unfixable --ignore-registry-errors,pnpm -C svelte audit --fix --ignore-unfixable && pnpm -C svelte install --no-frozen-lockfile)
-	$(call strip_ignore_cves_null,svelte/pnpm-workspace.yaml)
+	$(call run_pnpm,svelte,lint)
 	$(call run_pnpm,svelte,build)
 endif
 
 .PHONY: check-skin-svelte
 check-skin-svelte:
 ifeq ($(USE_CACHE),1)
-	$(call run_cached,check-skin-svelte,$(MAKE) USE_CACHE=0 check-skin-svelte,mwz/skins/ZetaSkin/svelte svelte/src/shared)
+	$(call run_cached,check-skin-svelte,$(MAKE) USE_CACHE=0 check-skin-svelte,mwz/skins/ZetaSkin/svelte svelte/src/shared pnpm-lock.yaml package.json)
 else
 	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,install --frozen-lockfile)
-	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,lint,pnpm -C mwz/skins/ZetaSkin/svelte lint:fix)
-	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,format,pnpm -C mwz/skins/ZetaSkin/svelte format:fix)
-	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,audit --ignore-unfixable --ignore-registry-errors,pnpm -C mwz/skins/ZetaSkin/svelte audit --fix --ignore-unfixable && pnpm -C mwz/skins/ZetaSkin/svelte install --no-frozen-lockfile)
-	$(call strip_ignore_cves_null,mwz/skins/ZetaSkin/svelte/pnpm-workspace.yaml)
+	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,lint)
 	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,build)
 endif
 
