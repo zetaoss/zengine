@@ -7,7 +7,7 @@
   import { page } from '$app/state'
 
   interface NavItem {
-    to: '/tool/binder' | '/tool/stat' | '/tool/common-report' | '/tool/write-request' | '/tool/docfac' | '/tool/frontplay'
+    to: '/tool/binder' | '/tool/stat' | '/tool/common-report' | '/tool/write-request' | '/tool/editbot' | '/tool/frontplay'
     label: string
   }
 
@@ -16,7 +16,7 @@
     { to: '/tool/stat', label: '통계' },
     { to: '/tool/common-report', label: '통용' },
     { to: '/tool/write-request', label: '작성요청' },
-    { to: '/tool/docfac', label: '문서공장' },
+    { to: '/tool/editbot', label: '편집봇' },
     { to: '/tool/frontplay', label: 'FrontPlay' },
   ]
 

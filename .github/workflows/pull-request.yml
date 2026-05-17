@@ -13,14 +13,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      - run: corepack enable
-      - run: corepack prepare pnpm@10 --activate
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: 8.3
-      - name: Install Composer dependencies
-        run: composer install --working-dir=laravel --no-interaction --prefer-dist --no-progress
       - name: Restore make checks cache
         id: make-checks-cache-restore
         uses: actions/cache/restore@v4

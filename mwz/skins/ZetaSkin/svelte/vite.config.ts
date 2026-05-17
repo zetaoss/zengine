@@ -6,18 +6,6 @@ import tailwindcss from '@tailwindcss/vite'
 import { defineConfig, type Plugin } from 'vite'
 
 const outDir = '../dist'
-const customElementSveltePaths = [
-  'src/shared/components/navbar/CSearch.svelte',
-  'src/shared/components/CAdsenseSlot.svelte',
-  'src/shared/components/CSiteFooter.svelte',
-  'src/shared/components/CSiteRemocon.svelte',
-  'src/components/PageMeta.svelte',
-  'src/components/PageMenu.svelte',
-  'src/components/PageFooter.svelte',
-  'src/components/UserMenu.svelte',
-  'src/components/binder/BinderApex.svelte',
-  'src/components/toc/TocApex.svelte',
-]
 
 function devDist(): Plugin {
   let base = '/'
@@ -81,11 +69,7 @@ export default defineConfig(({ command }) => ({
   plugins: [
     svelte({
       compilerOptions: { customElement: true },
-      include: customElementSveltePaths,
-    }),
-    svelte({
-      include: ['**/*.svelte'],
-      exclude: customElementSveltePaths,
+      include: ['src/**/*.svelte'],
     }),
     tailwindcss(),
     devDist(),
@@ -95,5 +79,6 @@ export default defineConfig(({ command }) => ({
       $lib: '/src/lib',
       $shared: '/src/shared',
     },
+    preserveSymlinks: true,
   },
 }))

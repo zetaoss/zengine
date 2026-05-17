@@ -1,5 +1,17 @@
 .bootstrapped
 .pnpm-store
 node_modules
+vendor
 tmp
 w
+
+.env
+.env.backup
+.env.production
+
+goapp/ctl
+goapp/server/server
+goapp/worker/worker
+goapp/cmd/server/server
+goapp/cmd/worker/worker
+goapp/cmd/ctl/ctl

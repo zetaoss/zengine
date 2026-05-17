@@ -14,8 +14,35 @@ const pageId = getRLCONF().wgArticleId
 let delay = 1000
 
 interface JobStatus {
-  phase: Job['phase'] | 'none' | 'pending' | 'running' | 'succeeded' | 'error'
-  outs: unknown
+  phase: Job['phase'] | 'none' | 'Pending' | 'Running' | 'Succeeded' | 'error'
+  outs: string | null
+}
+
+function parseOuts(raw: string | null): unknown {
+  if (raw == null || raw.trim() === '') return null
+  try {
+    return JSON.parse(raw)
+  } catch {
+    return null
+  }
+}
+
+function normalizeLangOuts(parsed: unknown): { logs: string[]; images: string[] } {
+  const obj = parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : {}
+  const logsRaw = obj.logs
+  const imagesRaw = obj.images
+
+  const logs = Array.isArray(logsRaw) ? logsRaw.map((v) => String(v)) : []
+  const images = Array.isArray(imagesRaw) ? imagesRaw.map((v) => String(v)) : []
+  return { logs, images }
+}
+
+function normalizeNotebookOuts(parsed: unknown): Job['notebookOuts'] {
+  if (!Array.isArray(parsed)) {
+    return []
+  }
+
+  return parsed.map((cell) => (Array.isArray(cell) ? cell : [])) as Job['notebookOuts']
 }
 
 type JobStore = Writable<Job>
@@ -39,6 +66,7 @@ async function getJob(store: JobStore): Promise<void> {
   }
 
   const { phase, outs } = data
+  const parsedOuts = parseOuts(outs)
   updateJob(store, (j) => {
     j.phase = phase
   })
@@ -48,22 +76,34 @@ async function getJob(store: JobStore): Promise<void> {
     return
   }
 
-  if (phase === 'pending' || phase === 'running') {
-    console.log(`Job ${job.id}: Retrying in ${delay}ms`)
+  if (phase === 'Pending' || phase === 'Running') {
+    console.log(`Job ${job.id}: ${phase}, refresh in ${Math.round(delay)}ms`)
     delay *= 1.1
     setTimeout(() => enqueue((j) => getJob(j), store), delay)
     return
   }
 
-  if (phase === 'succeeded') {
+  if (phase === 'Failed') {
+    updateJob(store, (j) => {
+      if (j.type === JobType.Lang && j.langOuts == null) {
+        j.langOuts = { logs: ['2Runbox job failed.'], images: [] }
+      }
+      if (j.type === JobType.Notebook && (!Array.isArray(j.notebookOuts) || j.notebookOuts.length === 0)) {
+        j.notebookOuts = [[{ output_type: 'stream', text: ['Runbox job failed.'] }]]
+      }
+    })
+    return
+  }
+
+  if (phase === 'Succeeded') {
     const jobType = get(store).type
     if (jobType === JobType.Lang) {
       updateJob(store, (j) => {
-        j.langOuts = outs as typeof j.langOuts
+        j.langOuts = normalizeLangOuts(parsedOuts)
       })
     } else if (jobType === JobType.Notebook) {
       updateJob(store, (j) => {
-        j.notebookOuts = outs as typeof j.notebookOuts
+        j.notebookOuts = normalizeNotebookOuts(parsedOuts)
       })
     }
   }
@@ -87,7 +127,25 @@ async function postJob(store: JobStore): Promise<void> {
   }
 
   updateJob(store, (j) => {
-    j.phase = 'pending'
+    j.phase = 'Pending'
+  })
+  enqueue((j) => getJob(j), store)
+}
+
+export async function rerunJob(store: JobStore): Promise<void> {
+  const job = get(store)
+  const [, err] = await httpy.post(`/api/runbox/${job.hash}/rerun`, {})
+  if (err) {
+    console.error(err)
+    updateJob(store, (j) => {
+      j.phase = 'error'
+    })
+    return
+  }
+
+  delay = 1000
+  updateJob(store, (j) => {
+    j.phase = 'Pending'
   })
   enqueue((j) => getJob(j), store)
 }

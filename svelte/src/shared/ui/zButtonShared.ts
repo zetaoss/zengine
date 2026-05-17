@@ -7,13 +7,13 @@ const sizeClasses: Record<ZButtonSize, string> = {
 }
 
 const baseClass =
-  'text-(--z-text) inline-flex cursor-pointer items-center justify-center rounded transition ring-1 hover:no-underline hover:shadow-[inset_0_0_0_9999px_#8884] leading-none'
+  'text-(--z-text) inline-flex cursor-pointer items-center justify-center rounded transition hover:no-underline hover:shadow-[inset_0_0_0_99em_#4447] leading-none align-middle gap-2'
 
 const colorClasses: Record<ZButtonColor, string> = {
-  default: 'bg-(--z-btn-bg) ring-(--z-btn-hover)',
-  danger: 'bg-(--z-danger-bg) ring-(--z-danger-hover)',
-  ghost: 'bg-transparent ring-transparent',
-  primary: 'bg-(--z-primary-bg) ring-(--z-primary-hover)',
+  default: 'bg-(--z-btn-bg) border border-(--z-btn-hover)',
+  danger: 'bg-(--z-danger-bg) border border-(--z-danger-hover)',
+  ghost: 'bg-transparent border border-transparent text-(--color-subtle)',
+  primary: 'bg-(--z-primary-bg) border border-(--z-primary-hover)',
 }
 
 const disabledClass = 'opacity-50 brightness-[.9] cursor-not-allowed pointer-events-none text-(--z-btn-text-disabled)'

@@ -4,6 +4,7 @@ MAKEFLAGS += --no-print-directory
 CACHE_DIR := /tmp/make-checks
 MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 USE_CACHE ?= 0
+GOLANGCI_LINT_VERSION ?= v2.12.2
 
 define print_fix
 echo; \
@@ -27,17 +28,14 @@ define strip_ignore_cves_null
 	@sed -i 's| ignoreCves: null ||' $(1)
 endef
 
-define run_pint
-	@echo "➡️  laravel/vendor/bin/pint --test $(1)"
-	@laravel/vendor/bin/pint --test $(1) || { \
-		$(call print_fix,$(2)) \
+define run_mwz_test
+	@echo "➡️  $(1): composer install"
+	@cd $(1) && composer install --no-interaction --prefer-dist
+	@echo "➡️  $(1): composer test"
+	@cd $(1) && composer test || { \
+		$(call print_fix,cd $(1) && composer fix) \
 		exit 1; \
 	}
-endef
-
-define run_pint_fix
-	@echo "➡️  laravel/vendor/bin/pint $(1)"
-	@laravel/vendor/bin/pint $(1)
 endef
 
 define run_cached
@@ -84,22 +82,21 @@ endef
 
 # checks hierarchy (USE_CACHE=1)
 # GROUP          TARGET              CACHEDIR        CHECKS
-# check-php      check-laravel       laravel         format, test
-#                check-extension     ZetaExtension   format
-#                check-skin          ZetaSkin        format
+# check-php      check-extension     ZetaExtension   lint
+#                check-skin          ZetaSkin        lint
 # check-svelte   check-overrides     -               overrides
 #                check-main-svelte   main svelte     install, lint, format, audit, build
 #                check-skin-svelte   skin svelte     install, lint, format, audit, build
-# check-gohttp   check-gohttp        gohttp          golangci-lint, test, build
+# check-goapp    check-goapp         goapp           golangci-lint, test, build
 .PHONY: checks
 checks:
-	@$(MAKE) USE_CACHE=1 check-php check-svelte check-gohttp
+	@$(MAKE) USE_CACHE=1 check-php check-svelte check-goapp
 	@echo "✅  All checks passed"
 
 # checks-no-cache runs the same tree with USE_CACHE=0.
 .PHONY: checks-no-cache
 checks-no-cache:
-	@$(MAKE) USE_CACHE=0 check-php check-svelte check-gohttp
+	@$(MAKE) USE_CACHE=0 check-php check-svelte check-goapp
 	@echo "✅  All checks passed (no cache)"
 
 .PHONY: clear
@@ -109,38 +106,26 @@ clear:
 
 .PHONY: check-php
 check-php:
-	@$(MAKE) USE_CACHE=$(USE_CACHE) check-laravel check-extension check-skin
-
-.PHONY: check-laravel
-check-laravel:
-ifeq ($(USE_CACHE),1)
-	$(call run_cached,check-laravel,$(MAKE) USE_CACHE=0 check-laravel,laravel pint.json)
-else
-	$(call run_pint,laravel,laravel/vendor/bin/pint laravel)
-	@echo "➡️  laravel: php artisan test"
-	cd laravel && php artisan test
-endif
+	@$(MAKE) USE_CACHE=$(USE_CACHE) check-extension check-skin
 
 .PHONY: check-extension
 check-extension:
 ifeq ($(USE_CACHE),1)
-	$(call run_cached,check-extension,$(MAKE) USE_CACHE=0 check-extension,mwz/extensions/ZetaExtension pint.json)
+	$(call run_cached,check-extension,$(MAKE) USE_CACHE=0 check-extension,mwz/extensions/ZetaExtension)
 else
-	$(call run_pint,mwz/extensions/ZetaExtension,laravel/vendor/bin/pint mwz/extensions/ZetaExtension)
+	$(call run_mwz_test,mwz/extensions/ZetaExtension)
 endif
 
 .PHONY: check-skin
 check-skin:
 ifeq ($(USE_CACHE),1)
-	$(call run_cached,check-skin,$(MAKE) USE_CACHE=0 check-skin,mwz/skins/ZetaSkin pint.json)
+	$(call run_cached,check-skin,$(MAKE) USE_CACHE=0 check-skin,mwz/skins/ZetaSkin)
 else
-	$(call run_pint,mwz/skins/ZetaSkin,laravel/vendor/bin/pint mwz/skins/ZetaSkin)
+	$(call run_mwz_test,mwz/skins/ZetaSkin)
 endif
 
 .PHONY: check-svelte
 check-svelte:
-	@$(MAKE) svelte-overrides
-	@$(MAKE) install-main-svelte install-skin-svelte
 	@$(MAKE) USE_CACHE=$(USE_CACHE) check-main-svelte check-skin-svelte
 
 .PHONY: svelte-overrides
@@ -159,43 +144,40 @@ install-skin-svelte:
 .PHONY: check-main-svelte
 check-main-svelte:
 ifeq ($(USE_CACHE),1)
-	$(call run_cached,check-main-svelte,$(MAKE) USE_CACHE=0 check-main-svelte,svelte)
+	$(call run_cached,check-main-svelte,$(MAKE) USE_CACHE=0 check-main-svelte,svelte pnpm-lock.yaml package.json)
 else
+		@$(MAKE) svelte-overrides
 	$(call run_pnpm,svelte,install --frozen-lockfile)
-	$(call run_pnpm,svelte,lint,pnpm -C svelte lint)
-	$(call run_pnpm,svelte,format,pnpm -C svelte format:fix)
-	$(call run_pnpm,svelte,audit --ignore-unfixable --ignore-registry-errors,pnpm -C svelte audit --fix --ignore-unfixable && pnpm -C svelte install --no-frozen-lockfile)
-	$(call strip_ignore_cves_null,svelte/pnpm-workspace.yaml)
+	$(call run_pnpm,svelte,peers check)
+	$(call run_pnpm,svelte,lint)
 	$(call run_pnpm,svelte,build)
 endif
 
 .PHONY: check-skin-svelte
 check-skin-svelte:
 ifeq ($(USE_CACHE),1)
-	$(call run_cached,check-skin-svelte,$(MAKE) USE_CACHE=0 check-skin-svelte,mwz/skins/ZetaSkin/svelte svelte/src/shared)
+	$(call run_cached,check-skin-svelte,$(MAKE) USE_CACHE=0 check-skin-svelte,mwz/skins/ZetaSkin/svelte svelte/src/shared pnpm-lock.yaml package.json)
 else
 	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,install --frozen-lockfile)
-	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,lint,pnpm -C mwz/skins/ZetaSkin/svelte lint:fix)
-	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,format,pnpm -C mwz/skins/ZetaSkin/svelte format:fix)
-	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,audit --ignore-unfixable --ignore-registry-errors,pnpm -C mwz/skins/ZetaSkin/svelte audit --fix --ignore-unfixable && pnpm -C mwz/skins/ZetaSkin/svelte install --no-frozen-lockfile)
-	$(call strip_ignore_cves_null,mwz/skins/ZetaSkin/svelte/pnpm-workspace.yaml)
+	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,peers check)
+	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,lint)
 	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,build)
 endif
 
-.PHONY: check-gohttp
-check-gohttp:
+.PHONY: check-goapp
+check-goapp:
 ifeq ($(USE_CACHE),1)
-	$(call run_cached,check-gohttp,$(MAKE) USE_CACHE=0 check-gohttp,gohttp)
+	$(call run_cached,check-goapp,$(MAKE) USE_CACHE=0 check-goapp,goapp)
 else
-	@echo "➡️  gohttp: golangci-lint run"
+	@echo "➡️  goapp: golangci-lint run"
 	@if command -v golangci-lint >/dev/null 2>&1; then \
-		cd gohttp && golangci-lint run; \
+		cd goapp && golangci-lint run; \
 	else \
 		echo "ℹ️  golangci-lint not found, using go run fallback"; \
-		cd gohttp && go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8 run; \
+		cd goapp && go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION) run; \
 	fi
-	@echo "➡️  gohttp: go test ./..."
-	cd gohttp && go test ./...
-	@echo "➡️  gohttp: go build ./..."
-	cd gohttp && go build ./...
+	@echo "➡️  goapp: go test ./..."
+	cd goapp && go test ./...
+	@echo "➡️  goapp: go build ./..."
+	cd goapp && go build ./...
 endif

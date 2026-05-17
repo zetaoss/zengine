@@ -119,7 +119,7 @@
           <span class="text-sm font-bold tracking-wide text-neutral-700 dark:text-neutral-200">zetawiki.com</span>
         </div>
         <div class="z-scrollbar flex-1 overflow-y-auto pr-1">
-          <h2 class="mb-2 text-lg font-semibold">Cookie Consent</h2>
+          <div role="heading" aria-level="2" class="mb-2 text-lg font-semibold leading-tight">Cookie Consent</div>
           <p class="mb-4 text-sm text-neutral-600 dark:text-neutral-300">
             When you visit any of our websites, it may store or retrieve information on your browser, mostly in the form of cookies. This
             information might be about you, your preferences, or your device and is mostly used to make the site work as you expect it to.
@@ -128,7 +128,9 @@
             more and manage your preferences. Please note, blocking some types of cookies may impact your experience of the site and the
             services we are able to offer.
           </p>
-          <h3 class="mb-3 text-sm font-bold tracking-wide text-neutral-700 dark:text-neutral-200">Manage Consent Preferences</h3>
+          <div role="heading" aria-level="3" class="mb-3 text-sm font-bold tracking-wide text-neutral-700 dark:text-neutral-200">
+            Manage Consent Preferences
+          </div>
 
           <div class="space-y-3">
             <div class="rounded border border-neutral-200 dark:border-slate-600">

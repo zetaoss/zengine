@@ -176,7 +176,7 @@
     await fetchData()
 
     const phase = row?.phase
-    if (phase === 'pending' || phase === 'running') {
+    if (phase === 'Pending' || phase === 'Running') {
       clearRetryTimer()
       retryTimer = setTimeout(() => {
         void fetchDataWithRetry(Math.min(retryDelay * 2, 30000))
@@ -226,16 +226,16 @@
       <div class="my-5 flex items-center gap-3 text-2xl font-bold">
         <h2 class="m-0">통용 보고서 #{currentId}</h2>
         <div class="flex items-center gap-1 text-base text-gray-600">
-          {#if row.phase === 'pending'}
+          {#if row.phase === 'Pending'}
             <span>⏳</span>
-          {:else if row.phase === 'running'}
+          {:else if row.phase === 'Running'}
             <span class="spin">⏳</span>
-          {:else if row.phase === 'failed'}
+          {:else if row.phase === 'Failed'}
             <span>❌</span>
-          {:else if row.phase === 'succeeded'}
+          {:else if row.phase === 'Succeeded'}
             <span>✅</span>
           {/if}
-          {#if row.phase !== 'succeeded'}
+          {#if row.phase !== 'Succeeded'}
             <span>{row.phase}</span>
           {/if}
         </div>
@@ -385,7 +385,7 @@
       {#if $canDelete(row.user_id)}
         <ZButton onclick={() => del(row)}>삭제</ZButton>
       {/if}
-      {#if $canDelete(row.user_id) && row.phase === 'failed'}
+      {#if $canDelete(row.user_id) && row.phase === 'Failed'}
         <ZButton onclick={() => rerun(row)}>재실행</ZButton>
       {/if}
       <div class="flex-1 text-right">

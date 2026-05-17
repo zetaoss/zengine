@@ -8,6 +8,7 @@
   import getRLCONF from '$lib/utils/rlconf'
   import ZButton from '$shared/ui/ZButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
+  import { isMdOrLargerStore } from '$shared/utils/screen'
 
   import BinderNode from './BinderNode.svelte'
 
@@ -32,15 +33,6 @@
   let isScrolledToBottom = true
 
   const isLoggedIn = wgUserId > 0
-
-  const updateMedia = () => {
-    const isMobile = window.matchMedia('(max-width: 768px)').matches
-    if (isDrawer !== isMobile) {
-      isDrawer = isMobile
-      isCollapsed = isMobile
-      setTimeout(updateScrollState, 0)
-    }
-  }
 
   const toggle = () => {
     isCollapsed = !isCollapsed
@@ -81,6 +73,13 @@
     }
   }
 
+  $: isMobile = !$isMdOrLargerStore
+  $: if (isDrawer !== isMobile) {
+    isDrawer = isMobile
+    isCollapsed = isMobile
+    setTimeout(updateScrollState, 0)
+  }
+
   $: styleVars = (() => {
     const marginY = 0
     const top = `calc(var(--navbar-visible-height) + ${marginY}px)`
@@ -96,18 +95,11 @@
   })()
 
   onMount(() => {
-    updateMedia()
     updateScrollState()
-    const media = window.matchMedia('(max-width: 768px)')
-    const onChange = () => updateMedia()
-    media.addEventListener('change', onChange)
-    window.addEventListener('resize', updateMedia)
     window.addEventListener('resize', updateScrollState)
     document.addEventListener('mousedown', onMouseDown)
 
     return () => {
-      media.removeEventListener('change', onChange)
-      window.removeEventListener('resize', updateMedia)
       window.removeEventListener('resize', updateScrollState)
       document.removeEventListener('mousedown', onMouseDown)
     }

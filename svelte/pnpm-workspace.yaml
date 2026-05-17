@@ -1,4 +1,5 @@
-auditConfig: {}
+allowBuilds:
+  esbuild: true
 
 ignoredBuiltDependencies:
   - esbuild

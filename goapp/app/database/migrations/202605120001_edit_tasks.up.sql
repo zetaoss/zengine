@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS edit_tasks (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  user_name VARCHAR(255) NOT NULL DEFAULT '',
+  title VARCHAR(255) NOT NULL,
+  request_type VARCHAR(32) NOT NULL DEFAULT 'create',
+  phase VARCHAR(64) NOT NULL DEFAULT 'Pending',
+  llm_input LONGTEXT NOT NULL,
+  llm_output LONGTEXT NULL,
+  llm_model VARCHAR(128) NULL,
+  attempts INT UNSIGNED NOT NULL DEFAULT 0,
+  error_count INT UNSIGNED NOT NULL DEFAULT 0,
+  skip_count INT UNSIGNED NOT NULL DEFAULT 0,
+  revid BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  last_error TEXT NULL,
+  created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_edit_tasks_phase_id (phase, id),
+  KEY idx_edit_tasks_title_phase (title, phase)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

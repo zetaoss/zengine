@@ -21,6 +21,14 @@
     localStorage.setItem('theme', isDark ? 'dark' : 'light')
   }
 
+  const flyUp = () => {
+    scrollToTop()
+  }
+
+  const diveDive = () => {
+    scrollToBottom()
+  }
+
   onMount(() => {
     const stored = localStorage.getItem('theme')
     const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false
@@ -34,10 +42,10 @@
     <ZButton class="bg-[#8888]! p-1.5! text-white! dark:text-yellow-500!" onclick={toggleDark}>
       <ZIcon path={mdiWeatherNight} size={24} />
     </ZButton>
-    <ZButton class="bg-[#8888]! p-1.5! text-white!" onclick={scrollToTop}>
+    <ZButton class="bg-[#8888]! p-1.5! text-white!" onclick={flyUp}>
       <ZIcon path={mdiChevronUp} size={24} />
     </ZButton>
-    <ZButton class="bg-[#8888]! p-1.5! text-white!" onclick={scrollToBottom}>
+    <ZButton class="bg-[#8888]! p-1.5! text-white!" onclick={diveDive}>
       <ZIcon path={mdiChevronDown} size={24} />
     </ZButton>
   </div>

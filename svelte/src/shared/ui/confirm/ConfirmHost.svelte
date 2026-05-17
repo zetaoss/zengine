@@ -10,7 +10,7 @@
   <div class="fixed inset-0 z-50 flex items-center justify-center">
     <button class="absolute inset-0 bg-black/40" aria-label="Close" on:click={() => $confirmState.closable && handleConfirmCancel()}
     ></button>
-    <div class="relative w-full max-w-md rounded-lg bg-(--background-color-base) p-6 shadow-lg">
+    <div class="relative w-full max-w-md rounded-lg bg-(--background-color-base) p-6 shadow-lg border">
       <div class="text-sm text-slate-700 dark:text-slate-200">{$confirmState.message}</div>
       <div class="mt-6 flex justify-end gap-2">
         <ZButton color="ghost" class="px-4 py-2" onclick={handleConfirmCancel}>
