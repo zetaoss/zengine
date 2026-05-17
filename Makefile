@@ -146,6 +146,7 @@ ifeq ($(USE_CACHE),1)
 else
 		@$(MAKE) svelte-overrides
 	$(call run_pnpm,svelte,install --frozen-lockfile)
+	$(call run_pnpm,svelte,peers check)
 	$(call run_pnpm,svelte,lint)
 	$(call run_pnpm,svelte,build)
 endif
@@ -156,6 +157,7 @@ ifeq ($(USE_CACHE),1)
 	$(call run_cached,check-skin-svelte,$(MAKE) USE_CACHE=0 check-skin-svelte,mwz/skins/ZetaSkin/svelte svelte/src/shared pnpm-lock.yaml package.json)
 else
 	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,install --frozen-lockfile)
+	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,peers check)
 	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,lint)
 	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,build)
 endif

@@ -59,8 +59,8 @@ const extraneous = Object.keys(overrides)
 
 console.log(gray("[svelte-overrides]"));
 console.log(`root: ${ROOT_PKG}`);
-console.log(`A   : ${PKG_A}`);
-console.log(`B   : ${PKG_B}`);
+console.log(`main: ${PKG_A}`);
+console.log(`skin: ${PKG_B}`);
 console.log("");
 
 if (!isFix) {
@@ -85,7 +85,9 @@ if (!isFix) {
   if (missing.length > 0) {
     console.error(red(`Missing in overrides: ${missing.length}`));
     for (const name of missing) {
-      console.error(`- ${name}  (A: ${depsA[name]})  (B: ${depsB[name]})`);
+      console.error(
+        `- ${name}  (main: ${depsA[name]})  (skin: ${depsB[name]})`,
+      );
     }
     console.error("");
   }
@@ -102,10 +104,14 @@ if (!isFix) {
 
   if (versionMismatches.length > 0) {
     console.error(
-      red(`Version mismatches between A and B: ${versionMismatches.length}`),
+      red(
+        `Version mismatches between main and skin: ${versionMismatches.length}`,
+      ),
     );
     for (const name of versionMismatches) {
-      console.error(`- ${name}  (A: ${depsA[name]})  (B: ${depsB[name]})`);
+      console.error(
+        `- ${name}  (main: ${depsA[name]})  (skin: ${depsB[name]})`,
+      );
     }
     console.error("");
   }
@@ -129,7 +135,7 @@ if (versionMismatches.length > 0) {
     ),
   );
   for (const name of versionMismatches) {
-    console.log(`- ${name}  (A: ${depsA[name]})  (B: ${depsB[name]})`);
+    console.log(`- ${name}  (main: ${depsA[name]})  (skin: ${depsB[name]})`);
   }
   console.log("");
 }
