@@ -13,8 +13,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      - run: corepack enable
-      - run: corepack prepare pnpm@10 --activate
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
