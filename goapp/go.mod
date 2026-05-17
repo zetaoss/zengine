@@ -1,6 +1,6 @@
 module github.com/zetaoss/zengine/goapp
 
-go 1.26
+go 1.25.0
 
 require (
 	github.com/redis/go-redis/v9 v9.19.0

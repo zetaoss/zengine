@@ -270,8 +270,8 @@ func (q *RedisQueue) StartDirectRun(jobName string) (uint64, error) {
 		Attempt:     1,
 		MaxRetries:  0,
 		RequestedAt: now,
-		RunAt:       &now,
-		LockedAt:    &now,
+		RunAt:       new(now),
+		LockedAt:    new(now),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -535,6 +535,10 @@ func parseMillisPtr(s string) *time.Time {
 	if t.IsZero() {
 		return nil
 	}
+	return &t
+}
+
+func new(t time.Time) *time.Time {
 	return &t
 }
 

@@ -16,7 +16,7 @@ RUN APP_VERSION_NORMALIZED="${APP_VERSION#v}" \
     && sed -i "s/\"version\": \".*\"/\"version\": \"${APP_VERSION_NORMALIZED}\"/" /app/mwz/extensions/ZetaExtension/extension.json \
     && echo ok
 
-FROM --platform=$BUILDPLATFORM golang:1.26-trixie AS gobuild
+FROM --platform=$BUILDPLATFORM golang:1.25-trixie AS gobuild
 
 ARG TARGETOS
 ARG TARGETARCH
