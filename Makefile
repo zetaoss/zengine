@@ -29,6 +29,8 @@ define strip_ignore_cves_null
 endef
 
 define run_mwz_test
+	@echo "➡️  $(1): composer install"
+	@cd $(1) && composer install --no-interaction --prefer-dist
 	@echo "➡️  $(1): composer test"
 	@cd $(1) && composer test || { \
 		$(call print_fix,cd $(1) && composer fix) \
