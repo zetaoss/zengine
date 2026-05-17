@@ -2,7 +2,7 @@ FROM node:24-trixie-slim AS nodebuild
 
 ARG APP_VERSION=v0.0.0
 
-RUN corepack enable && corepack prepare pnpm@10 --activate
+RUN corepack enable && corepack prepare pnpm@11 --activate
 
 WORKDIR /app
 COPY . .
