@@ -1,8 +1,9 @@
 <!-- BoxApex.svelte -->
 <script lang="ts">
-  import { mdiCheck, mdiContentCopy } from '@mdi/js'
+  import { mdiCheck, mdiContentCopy, mdiReplay } from '@mdi/js'
   import type { Writable } from 'svelte/store'
 
+  import getRLCONF from '$lib/utils/rlconf'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import { colorizeCss, colorizeHtml } from '$shared/utils/colorize'
 
@@ -10,6 +11,7 @@
   import BoxLang from './BoxLang.svelte'
   import BoxNotebook from './BoxNotebook.svelte'
   import BoxZero from './BoxZero.svelte'
+  import { rerunJob } from './runbox'
   import type { Job } from './types'
 
   export let job: Writable<Job>
@@ -30,6 +32,8 @@
 
   $: box = (jobValue.boxes?.[seq] as SimpleBox | undefined) ?? { lang: '', text: '' }
   $: rendered = box.lang === 'css' ? colorizeCss(content) : box.lang === 'html' ? colorizeHtml(content) : content
+  $: isMain = seq === jobValue.main
+  const isSysop = (getRLCONF().wgUserGroups || []).includes('sysop')
 
   let copied = false
   let copyTimer: number | null = null
@@ -55,7 +59,16 @@
       <svelte:component this={CurrentComponent} {job} {seq}>
         <div class="pt-1 px-4">
           <div class="sticky top-0 z-10 h-0">
-            <div class="flex justify-end">
+            <div class="flex justify-end items-center space-x-1">
+              {#if isSysop && isMain && (jobValue.phase === 'Pending' || jobValue.phase === 'Failed' || jobValue.phase === 'Succeeded')}
+                <button
+                  class="p-1 rounded text-xs z-text3 inline-flex items-center space-x-1 cursor-pointer"
+                  on:click={() => rerunJob(job)}
+                >
+                  <ZIcon size={14} path={mdiReplay} />
+                  <span>Rerun</span>
+                </button>
+              {/if}
               <button class="p-1 rounded text-xs z-text3 inline-flex items-center space-x-1 cursor-pointer" on:click={onCopy}>
                 {#if !copied}
                   <ZIcon size={14} path={mdiContentCopy} />

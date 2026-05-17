@@ -6,13 +6,11 @@
 
   import getLinks from '$lib/utils/getLinks'
   import getRLCONF from '$lib/utils/rlconf'
-  import { showConfirm } from '$shared/ui/confirm/confirm'
-  import { showToast } from '$shared/ui/toast/toast'
+  import EditBotModal from '$shared/components/editbot/EditBotModal.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
-  import httpy from '$shared/utils/httpy'
 
   let root: HTMLDetailsElement | null = null
-  let creatingEditTask = false
+  let showEditBotModal = $state(false)
 
   const { wgArticleId, wgUserGroups } = getRLCONF()
   const isSysop = (wgUserGroups || []).includes('sysop')
@@ -54,31 +52,28 @@
     return path.split('/').filter(Boolean).pop()?.replaceAll('_', ' ') || '현재'
   }
 
-  async function requestEditTask() {
-    if (!isSysop || creatingEditTask) return
-
-    const title = getCurrentTitle()
-    const ok = await showConfirm(`'${title}' 문서를 개선 요청하시겠습니까?`, {
-      okColor: 'primary',
-      okText: '등록',
-      cancelText: '취소',
-    })
-    if (!ok) return
-
-    creatingEditTask = true
-    const [, err] = await httpy.post('/api/doctasks/from-page', {
-      page_id: wgArticleId,
-      request_type: 'edit',
-    })
-    creatingEditTask = false
-
-    if (err) {
-      showToast(err.message || '개선 요청 등록에 실패했습니다.')
-      return
-    }
-
+  function requestEditTask() {
+    if (!isSysop || wgArticleId < 1) return
+    showEditBotModal = true
     close()
-    showToast('개선 요청을 등록했습니다.')
+  }
+
+  function closeEditBotModal() {
+    showEditBotModal = false
+  }
+
+  let editBotTarget = $derived.by(() => {
+    if (!showEditBotModal || wgArticleId < 1) return null
+    return {
+      title: getCurrentTitle(),
+      storeUrl: '/api/editbot/from-page',
+      requestType: 'edit' as const,
+      pageId: wgArticleId,
+    }
+  })
+
+  function onEditBotCreated() {
+    showEditBotModal = false
   }
 
   onMount(() => {
@@ -106,12 +101,14 @@
       {/each}
       {#if isSysop}
         <li>
-          <button type="button" disabled={creatingEditTask} on:click={requestEditTask}> 개선 요청 </button>
+          <button type="button" onclick={requestEditTask}> 편집 요청 </button>
         </li>
       {/if}
     </ul>
   </div>
 </details>
+
+<EditBotModal show={showEditBotModal} target={editBotTarget} onClose={closeEditBotModal} onCreated={onEditBotCreated} />
 
 <style>
   .page-menu summary {

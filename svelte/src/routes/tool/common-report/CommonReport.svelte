@@ -80,7 +80,7 @@
       path: '/tool/common-report',
     }
 
-    if (data.data.some((row) => ['pending', 'running'].includes(row.phase))) {
+    if (data.data.some((row) => ['Pending', 'Running'].includes(row.phase))) {
       retrier.schedule()
     } else {
       retrier.clear()
@@ -189,11 +189,11 @@
               </td>
               <td>
                 {#if idx === 0}
-                  {#if row.phase === 'pending'}
+                  {#if row.phase === 'Pending'}
                     <span>⏳ Pending</span>
-                  {:else if row.phase === 'running'}
+                  {:else if row.phase === 'Running'}
                     <span class="inline-flex items-center gap-1"><span class="spin">⏳</span> Running</span>
-                  {:else if row.phase === 'failed'}
+                  {:else if row.phase === 'Failed'}
                     <span>❌ Error</span>
                   {:else}
                     <TheStar n={getScore(row)} />

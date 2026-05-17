@@ -15,7 +15,7 @@
 
 <slot />
 
-{#if loaded && jobValue.phase === 'succeeded' && nbouts.length}
+{#if loaded && (jobValue.phase === 'Succeeded' || jobValue.phase === 'Failed') && nbouts.length}
   {#each nbouts as nbout, i (i)}
     <NBOutput out={nbout} />
   {/each}
