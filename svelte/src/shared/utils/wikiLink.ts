@@ -21,3 +21,10 @@ export function getWikiHref(title: string, exists?: boolean): string {
 export function getWikiEditHref(title: string): string {
   return `/w/index.php?title=${encodeWikiQueryTitle(title)}&action=edit`
 }
+
+export function getWikiDiffHref(title: string, revid?: number): string {
+  if (revid && revid > 0) {
+    return `/w/index.php?title=${encodeWikiQueryTitle(title)}&diff=${revid}&oldid=prev`
+  }
+  return `/w/index.php?title=${encodeWikiQueryTitle(title)}&diff=cur&oldid=prev`
+}

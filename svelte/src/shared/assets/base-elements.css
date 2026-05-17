@@ -51,6 +51,10 @@
     font-size: 1rem;
   }
 
+  hr {
+    margin: 0.5rem 0;
+  }
+
   a {
     color: var(--z-link);
     word-break: break-all;

@@ -44,17 +44,17 @@ class Hooks
 
     public static function onPostLoginRedirect($returnTo, $returnToQuery, $type)
     {
-        return self::__returnTo();
+        return self::returnTo();
     }
 
     public static function onUserLogoutComplete($user, $inject_html, $old_name)
     {
-        return self::__returnTo();
+        return self::returnTo();
     }
 
-    private static function __returnTo()
+    private static function returnTo()
     {
-        $target = (string) ($_GET['returnto'] ?? '');
+        $target = (string) (\RequestContext::getMain()->getRequest()->getVal('returnto', ''));
         if (str_starts_with($target, ':/') && ! str_starts_with($target, '://')) {
             header('Location: '.substr($target, 1));
             exit;

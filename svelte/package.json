@@ -4,8 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:restart0": "fuser -k 5173/tcp || true && vite",
-    "dev:restart": "fuser -k 5173/tcp || true && rm -rf .svelte-kit && vite",
+    "dev:restart": "fuser -k 5173/tcp || true && vite",
     "build": "svelte-kit sync && vite build",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --compiler-warnings \"options_missing_custom_element:ignore\"",

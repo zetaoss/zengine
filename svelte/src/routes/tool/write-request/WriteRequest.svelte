@@ -1,7 +1,7 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-  import { mdiCreation, mdiDelete } from '@mdi/js'
+  import { mdiAutoFix, mdiCreation, mdiDelete } from '@mdi/js'
   import { get } from 'svelte/store'
 
   import { goto } from '$app/navigation'
@@ -11,6 +11,7 @@
   import type { PaginateData } from '$lib/components/pagination/types'
   import useAuthStore from '$lib/stores/auth'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
+  import EditBotModal from '$shared/components/editbot/EditBotModal.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'
   import ZButton from '$shared/ui/ZButton.svelte'
@@ -46,6 +47,12 @@
     todo: number
   }
 
+  interface EditBotTarget {
+    title: string
+    storeUrl: string
+    requestType: 'create' | 'edit'
+  }
+
   type Mode = 'todo' | 'todo-top' | 'done'
 
   const auth = useAuthStore()
@@ -58,9 +65,10 @@
   let paginateData = $state<PaginateData | null>(null)
   let currentPage = $state(1)
   let showModal = $state(false)
+  let showEditBotModal = $state(false)
+  let editBotRow = $state<Row | null>(null)
   let count = $state<Count>({ done: 0, todo: 0 })
   let loading = $state(true)
-  let addingDocTaskId = $state<number | null>(null)
 
   let observedRoutePage = 0
 
@@ -176,21 +184,14 @@
   }
 
   async function addDocTask(row: Row) {
-    if (!(await requireAuthConfirm('문서공장에 추가'))) return
-    if (addingDocTaskId !== null) return
-    if (!(await showConfirm(`'${row.title}' 건을 문서공장에 등록하시겠습니까?`, { okText: '등록' }))) return
+    if (!(await requireAuthConfirm('편집봇에 등록'))) return
+    editBotRow = row
+    showEditBotModal = true
+  }
 
-    addingDocTaskId = row.id
-    const [data, err] = await httpy.post<{ ok: boolean; id: number; created: boolean }>(`/api/doctasks/from-write-request/${row.id}`)
-    addingDocTaskId = null
-
-    if (err) {
-      console.error(err)
-      showToast(err.message || '문서공장 추가 실패')
-      return
-    }
-
-    showToast(data.created ? '문서공장에 추가했습니다.' : '이미 문서공장에 있습니다.')
+  function closeEditBotModal() {
+    showEditBotModal = false
+    editBotRow = null
   }
 
   async function recommend(row: Row) {
@@ -230,16 +231,30 @@
       name: row.writer_name || (row.writer_id === 0 ? 'Unknown' : ''),
     }
   }
+
+  let editBotTarget = $derived.by<EditBotTarget | null>(() => {
+    if (!editBotRow) return null
+    return {
+      title: editBotRow.title,
+      storeUrl: `/api/editbot/from-write-request/id/${editBotRow.id}`,
+      requestType: mode === 'done' ? 'edit' : 'create',
+    }
+  })
 </script>
 
 <div class="p-5">
   <h2 class="my-5 text-2xl font-bold">작성 요청</h2>
   <WriteRequestNew show={showModal} on:close={closeModal} />
+  <EditBotModal show={showEditBotModal} target={editBotTarget} onClose={closeEditBotModal} />
 
   <ZTabs tabs={modeTabs} selected={mode} onChange={(value) => setMode(value as Mode)} />
 
-  <table class="mytable z-card w-full">
-    <thead class="z-base3">
+  <div class="flex justify-end py-3">
+    <ZButton onclick={openModal}>등록</ZButton>
+  </div>
+
+  <table class="z-table">
+    <thead>
       <tr>
         <th>번호</th>
         <th>제목</th>
@@ -253,13 +268,13 @@
           <th>요청자</th>
           <th>요청일</th>
         {/if}
+        <th></th>
       </tr>
     </thead>
-
     {#if loading}
       <thead>
         <tr>
-          <th colspan={7} class="p-0!">
+          <th colspan={8} class="p-0!">
             <div class="progress-wrap">
               <div class="progress-bar"></div>
             </div>
@@ -275,29 +290,10 @@
 
     <tbody>
       {#each respData.data as row (row.id)}
-        <tr class="align-top border-b border-(--border-color-subtle)">
-          <td class="px-2 text-center">{row.id}</td>
+        <tr>
+          <td class="text-center">{row.id}</td>
           <td class="w-[35%]">
             <a href={getTitleHref(row)} rel="external" class={mode === 'done' ? '' : 'new'}>{row.title}</a>
-            <span class="inline-flex align-middle">
-              {#if $canDelete(row.user_id)}
-                <ZButton color="ghost" size="small" class="leading-none text-(--color-subtle)" onclick={() => del(row)}>
-                  <ZIcon path={mdiDelete} />
-                </ZButton>
-              {/if}
-              {#if mode !== 'done' && isSysop}
-                <ZButton
-                  color="ghost"
-                  size="small"
-                  class="leading-none text-(--color-subtle)"
-                  disabled={addingDocTaskId === row.id}
-                  title="문서공장에 추가"
-                  onclick={() => addDocTask(row)}
-                >
-                  <ZIcon path={mdiCreation} />
-                </ZButton>
-              {/if}
-            </span>
           </td>
           <td class="text-center">
             {#if mode === 'done'}
@@ -324,11 +320,25 @@
               </div>
             </td>
           {:else}
-            <td class="user">
+            <td>
               <AvatarUser user={getRequestUser(row)} />
             </td>
             <td class="text-center">{getDateText(row)}</td>
           {/if}
+          <td class="text-center">
+            <div class="flex items-center justify-center gap-1">
+              {#if isSysop}
+                <ZButton color="default" size="small" title="편집봇에 추가" onclick={() => addDocTask(row)}>
+                  <ZIcon path={mode === 'done' ? mdiAutoFix : mdiCreation} />
+                </ZButton>
+              {/if}
+              {#if $canDelete(row.user_id)}
+                <ZButton color="default" size="small" onclick={() => del(row)}>
+                  <ZIcon path={mdiDelete} />
+                </ZButton>
+              {/if}
+            </div>
+          </td>
         </tr>
       {/each}
     </tbody>
@@ -346,11 +356,6 @@
 </div>
 
 <style>
-  th,
-  td {
-    padding: 0.5rem 1rem;
-  }
-
   .progress-wrap {
     overflow: hidden;
     width: 100%;

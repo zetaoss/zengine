@@ -1,13 +1,17 @@
 <script lang="ts">
+  import { mdiCheckCircle, mdiCloseCircle, mdiProgressClock } from '@mdi/js'
+  import { onDestroy } from 'svelte'
   import { tick } from 'svelte'
   import { createEventDispatcher } from 'svelte'
 
   import titleExist from '$lib/utils/mediawiki'
   import { showToast } from '$shared/ui/toast/toast'
+  import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZModal from '$shared/ui/ZModal.svelte'
   import httpy from '$shared/utils/httpy'
 
   type State = 'idle' | 'checking' | 'available' | 'exists'
+  const AUTO_CHECK_DELAY_MS = 700
 
   export let show = false
 
@@ -17,9 +21,52 @@
   let state: State = 'idle'
   let isSubmitting = false
   let inputEl: HTMLInputElement | null = null
+  let checkedTitle = ''
+  let autoCheckTimer: ReturnType<typeof setTimeout> | undefined
+  let checkSeq = 0
   $: trimmedTitle = title.trim()
-  $: canCheck = trimmedTitle.length > 0 && state !== 'checking'
+  $: canCheck = trimmedTitle.length > 0 && state !== 'checking' && checkedTitle !== trimmedTitle
   $: canSubmit = state === 'available' && !isSubmitting
+  $: status = (() => {
+    if (!trimmedTitle) {
+      return {
+        icon: undefined,
+        label: '대기중',
+        text: '',
+        className: '',
+      }
+    }
+    if (state === 'checking') {
+      return {
+        icon: mdiProgressClock,
+        label: '확인중',
+        text: '중복확인',
+        className: 'text-blue-600 dark:text-blue-400',
+      }
+    }
+    if (state === 'available') {
+      return {
+        icon: mdiCheckCircle,
+        label: '확인완료',
+        text: '중복확인',
+        className: 'text-green-600 dark:text-green-400',
+      }
+    }
+    if (state === 'exists') {
+      return {
+        icon: mdiCloseCircle,
+        label: '중복',
+        text: '중복확인',
+        className: 'text-red-600 dark:text-red-400',
+      }
+    }
+    return {
+      icon: undefined,
+      label: '대기중',
+      text: '',
+      className: '',
+    }
+  })()
 
   $: if (show) {
     reset()
@@ -29,28 +76,57 @@
   }
 
   function reset() {
+    clearAutoCheck()
     title = ''
     state = 'idle'
     isSubmitting = false
+    checkedTitle = ''
+    checkSeq += 1
+  }
+
+  function clearAutoCheck() {
+    if (!autoCheckTimer) return
+    clearTimeout(autoCheckTimer)
+    autoCheckTimer = undefined
+  }
+
+  function scheduleAutoCheck() {
+    clearAutoCheck()
+
+    const titleToCheck = title.trim()
+    if (!titleToCheck || state === 'checking' || checkedTitle === titleToCheck) return
+
+    autoCheckTimer = setTimeout(() => {
+      void check()
+    }, AUTO_CHECK_DELAY_MS)
   }
 
   async function check() {
-    if (!trimmedTitle) return
+    clearAutoCheck()
+
+    const titleToCheck = trimmedTitle
+    if (!titleToCheck || checkedTitle === titleToCheck) return
 
     state = 'checking'
+    const seq = ++checkSeq
+
     try {
-      const exists = await titleExist(trimmedTitle)
+      const exists = await titleExist(titleToCheck)
+      if (seq !== checkSeq || trimmedTitle !== titleToCheck) return
+      checkedTitle = titleToCheck
       state = exists ? 'exists' : 'available'
     } catch {
+      if (seq !== checkSeq || trimmedTitle !== titleToCheck) return
       state = 'idle'
     }
   }
 
   function onInput(event: Event) {
     title = (event.target as HTMLInputElement).value
-    if (state !== 'idle' && state !== 'checking') {
-      state = 'idle'
-    }
+    checkedTitle = ''
+    checkSeq += 1
+    state = 'idle'
+    scheduleAutoCheck()
   }
 
   function onInputKeydown(event: KeyboardEvent) {
@@ -91,73 +167,37 @@
     dispatch('close')
     reset()
   }
+
+  onDestroy(clearAutoCheck)
 </script>
 
-<ZModal {show} okDisabled={!canSubmit} okColor="primary" on:ok={ok} on:cancel={cancel}>
+<ZModal {show} title="새 작성 요청 등록하기" okDisabled={!canSubmit} okColor="primary" on:ok={ok} on:cancel={cancel}>
   <div class="w-full">
-    <h5 class="mb-3 font-semibold">새 작성 요청 등록하기</h5>
     <div class="flex items-center gap-2">
       <input
         bind:this={inputEl}
         value={title}
         type="text"
-        class="flex-1 rounded border p-1 px-2"
+        class="min-w-0 flex-1 rounded border p-1 px-2"
         placeholder="제목 입력"
         on:input={onInput}
         on:keydown={onInputKeydown}
       />
-      <button
-        type="button"
-        class="relative flex items-center gap-1 rounded border px-3 py-1 text-sm disabled:opacity-40"
-        disabled={!canCheck}
-        on:click={check}
+      <div
+        class={`flex w-24 shrink-0 items-center justify-start gap-1 text-sm ${status.className}`}
+        aria-label={`중복확인 (${status.label})`}
+        aria-live="polite"
       >
-        중복확인
-      </button>
-    </div>
-    <div class="mt-2 min-h-1.5">
-      {#if state === 'checking'}
-        <div class="progress-wrap h-1">
-          <div class="progress-bar"></div>
-        </div>
-      {:else if state === 'available'}
-        <div class="h-1 w-full rounded bg-green-500"></div>
-      {:else if state === 'exists'}
-        <div class="h-1 w-full rounded bg-red-500"></div>
-      {/if}
+        {#if status.text}
+          <span>{status.text}</span>
+        {/if}
+        {#if status.icon}
+          <ZIcon path={status.icon} class={state === 'checking' ? 'animate-spin' : ''} />
+        {/if}
+      </div>
     </div>
     {#if state === 'exists'}
       <div class="mt-2 text-sm text-red-500">'{trimmedTitle}' 문서는 이미 있습니다.</div>
     {/if}
   </div>
 </ZModal>
-
-<style>
-  .progress-wrap {
-    overflow: hidden;
-    width: 100%;
-    background: rgba(5, 114, 206, 0.05);
-  }
-
-  .progress-bar {
-    width: 100%;
-    height: 100%;
-    animation: indeterminateAnimation 1s infinite linear;
-    background: rgb(5, 114, 206);
-    transform-origin: 0% 50%;
-  }
-
-  @keyframes indeterminateAnimation {
-    0% {
-      transform: translateX(0) scaleX(0);
-    }
-
-    40% {
-      transform: translateX(0) scaleX(0.4);
-    }
-
-    100% {
-      transform: translateX(100%) scaleX(0.5);
-    }
-  }
-</style>

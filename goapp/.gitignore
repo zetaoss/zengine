@@ -1,0 +1,10 @@
+.bootstrapped
+.pnpm-store
+node_modules
+vendor
+tmp
+w
+
+.env
+.env.backup
+.env.production
