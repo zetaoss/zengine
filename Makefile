@@ -50,6 +50,9 @@ define run_cached
 	hash_cmd() { \
 		if command -v sha256sum >/dev/null 2>&1; then sha256sum "$$@"; else shasum -a 256 "$$@"; fi; \
 	}; \
+	hash_files0() { \
+		if command -v sha256sum >/dev/null 2>&1; then xargs -0 -r sha256sum; else xargs -0 -r shasum -a 256; fi; \
+	}; \
 	tmp_hash="$$(mktemp)"; \
 	{ \
 		echo "cmd=$$cmd"; \
@@ -60,16 +63,9 @@ define run_cached
 		if [ -f "$(MAKEFILE_PATH)" ]; then hash_cmd "$(MAKEFILE_PATH)"; fi; \
 		for p in $$paths; do \
 			if [ -d "$$p" ]; then \
-				find "$$p" -type f \
-					-not -path "*/node_modules/*" \
-					-not -path "*/dist/*" \
-					-not -path "*/.svelte-kit/*" \
-					-not -path "*/vendor/*" \
-					-not -path "*/tmp/*" \
-					-not -path "*/bin/*" \
-					-not -path "*/.git/*" \
-					-not -name "*.md" \
-					-print | sort | while IFS= read -r f; do hash_cmd "$$f"; done; \
+				find "$$p" \
+					\( -type d \( -name node_modules -o -name dist -o -name .svelte-kit -o -name vendor -o -name tmp -o -name bin -o -name .git \) -prune \) \
+					-o -type f -not -name "*.md" -print0 | sort -z | hash_files0; \
 			elif [ -f "$$p" ]; then \
 				hash_cmd "$$p"; \
 			fi; \
