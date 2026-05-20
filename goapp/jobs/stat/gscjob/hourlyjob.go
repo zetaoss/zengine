@@ -58,8 +58,8 @@ func (j *HourlyJob) Run(ctx context.Context, jobCtx job.JobContext, _ any) job.R
 	body := app.H{
 		"startDate":  since.Format("2006-01-02"),
 		"endDate":    until.Add(-time.Hour).Format("2006-01-02"),
-		"dimensions": []string{"HOUR"},
-		"dataState":  "HOURLY_ALL",
+		"dimensions": []string{"hour"},
+		"dataState":  "hourly_all",
 		"rowLimit":   25000,
 	}
 	payload, err := RunGSCQuery(ctx, token, siteURL, body)
@@ -93,7 +93,6 @@ func (j *HourlyJob) Run(ctx context.Context, jobCtx job.JobContext, _ any) job.R
 			Position:    round4(asFloat(m["position"])),
 		})
 	}
-
 
 	if len(rows) > 0 {
 		if err := db.Table("stat_gsc_hourly").Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "timeslot"}}, DoUpdates: clause.AssignmentColumns([]string{"clicks", "impressions", "ctr", "position"})}).Create(&rows).Error; err != nil {
