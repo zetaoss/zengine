@@ -3,6 +3,7 @@ package gscjob
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/zetaoss/zengine/goapp/app"
@@ -42,6 +43,7 @@ func (j *DailyJob) Run(ctx context.Context, jobCtx job.JobContext, _ any) job.Re
 	if siteURL == "" {
 		return job.Error(fmt.Errorf("missing GSC site url"))
 	}
+	slog.Debug("gsc daily site url", "url", siteURL)
 
 	token, err := FetchGoogleAccessToken(ctx, sa, "https://www.googleapis.com/auth/webmasters.readonly")
 	if err != nil {
@@ -60,7 +62,10 @@ func (j *DailyJob) Run(ctx context.Context, jobCtx job.JobContext, _ any) job.Re
 	rowsRaw, _ := payload["rows"].([]any)
 	rows := make([]models.GSC, 0, len(rowsRaw))
 	for _, item := range rowsRaw {
-		m, _ := item.(app.H)
+		m, ok := item.(app.H)
+		if !ok {
+			continue
+		}
 		keys, _ := m["keys"].([]any)
 		if len(keys) < 1 {
 			continue
@@ -69,7 +74,13 @@ func (j *DailyJob) Run(ctx context.Context, jobCtx job.JobContext, _ any) job.Re
 		if len(d) != 10 {
 			continue
 		}
-		rows = append(rows, models.GSC{Timeslot: d, Clicks: asInt(m["clicks"]), Impressions: asInt(m["impressions"]), Ctr: round4(asFloat(m["ctr"]) * 100), Position: round4(asFloat(m["position"]))})
+		rows = append(rows, models.GSC{
+			Timeslot:    d,
+			Clicks:      asInt(m["clicks"]),
+			Impressions: asInt(m["impressions"]),
+			Ctr:         round4(asFloat(m["ctr"]) * 100),
+			Position:    round4(asFloat(m["position"])),
+		})
 	}
 
 	if len(rows) > 0 {

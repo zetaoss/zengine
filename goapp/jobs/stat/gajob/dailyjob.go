@@ -68,11 +68,11 @@ func (j *DailyJob) Run(ctx context.Context, jobCtx job.JobContext, _ any) job.Re
 		return job.Error(err)
 	}
 
-	rows := parseGARows(payload, "20060102", "2006-01-02")
+	rows := parseGARows(payload, "20060102", "2006-01-02", loc, false)
 	if len(rows) > 0 {
 		if err := db.Table("stat_ga_daily").Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "timeslot"}},
-			DoUpdates: clause.AssignmentColumns([]string{"sessions", "pageviews", "users", "active_users"}),
+			DoUpdates: clause.AssignmentColumns([]string{"sessions", "screen_page_views", "active_users"}),
 		}).Create(&rows).Error; err != nil {
 			return job.Error(err)
 		}

@@ -24,7 +24,7 @@ func parseDays(r *http.Request) (int, bool) {
 func CFHourly(c *serverctx.Context) {
 	to := hourlyEndUTC(time.Now().UTC(), 10)
 	from := to.Add(-47 * time.Hour)
-	rows, err := selectCFRows(c.DB, "stat_cf_hourly", from, to, false)
+	rows, err := selectCFRows(c.DB, []string{"stat_cf_hourly"}, from, to, false)
 	if err != nil {
 		http.Error(c.W, "internal server error", http.StatusInternalServerError)
 		return
@@ -40,7 +40,7 @@ func CFDaily(c *serverctx.Context) {
 	}
 	to := dailyEndUTC(time.Now().UTC())
 	from := to.AddDate(0, 0, -(days - 1))
-	rows, err := selectCFRows(c.DB, "stat_cf_daily", from, to, true)
+	rows, err := selectCFRows(c.DB, []string{"stat_cf_daily"}, from, to, true)
 	if err != nil {
 		http.Error(c.W, "internal server error", http.StatusInternalServerError)
 		return
@@ -51,7 +51,7 @@ func CFDaily(c *serverctx.Context) {
 func GAHourly(c *serverctx.Context) {
 	to := hourlyEndUTC(time.Now().UTC(), 10)
 	from := to.Add(-47 * time.Hour)
-	rows, err := selectGAMergedRows(c.DB, []string{"stat_hourly_ga", "stat_ga_hourly"}, from, to, false)
+	rows, err := selectNumericRows(c.DB, []string{"stat_hourly_ga", "stat_ga_hourly"}, []string{"active_users", "screen_page_views", "sessions"}, from, to, false)
 	if err != nil {
 		http.Error(c.W, "internal server error", http.StatusInternalServerError)
 		return
@@ -86,7 +86,7 @@ func GADaily(c *serverctx.Context) {
 	}
 	to := dailyEndInLocation(time.Now(), loc)
 	from := to.AddDate(0, 0, -(days - 1))
-	rows, err := selectGAMergedRows(c.DB, []string{"stat_daily_ga", "stat_ga_daily"}, from, to, true)
+	rows, err := selectNumericRows(c.DB, []string{"stat_daily_ga", "stat_ga_daily"}, []string{"active_users", "screen_page_views", "sessions"}, from, to, true)
 	if err != nil {
 		http.Error(c.W, "internal server error", http.StatusInternalServerError)
 		return
@@ -108,12 +108,7 @@ func GADaily(c *serverctx.Context) {
 func GSCHourly(c *serverctx.Context) {
 	to := hourlyEndUTC(time.Now().UTC(), 10)
 	from := to.Add(-47 * time.Hour)
-	rows := make([]models.StatNumeric, 0, 256)
-	err := c.DB.Table("stat_gsc_hourly").
-		Select("timeslot", "clicks", "impressions", "ctr", "position").
-		Where("timeslot BETWEEN ? AND ?", from.Format("2006-01-02 15:04:05"), to.Format("2006-01-02 15:04:05")).
-		Order("timeslot").
-		Find(&rows).Error
+	rows, err := selectNumericRows(c.DB, []string{"stat_hourly_gsc", "stat_gsc_hourly"}, []string{"clicks", "impressions", "ctr", "position"}, from, to, false)
 	if err != nil {
 		http.Error(c.W, "internal server error", http.StatusInternalServerError)
 		return
@@ -143,13 +138,7 @@ func GSCDaily(c *serverctx.Context) {
 	gscLoc, _ := time.LoadLocation("America/Los_Angeles")
 	to := dailyEndInLocation(time.Now(), gscLoc)
 	from := to.AddDate(0, 0, -(days - 1))
-	rows := make([]models.StatNumeric, 0, 256)
-	err := c.DB.Table("stat_gsc_daily").
-		Select("timeslot", "clicks", "impressions", "ctr", "position").
-		Where("DATE(timeslot) >= ?", from.Format("2006-01-02")).
-		Where("DATE(timeslot) <= ?", to.Format("2006-01-02")).
-		Order("timeslot").
-		Find(&rows).Error
+	rows, err := selectNumericRows(c.DB, []string{"stat_daily_gsc", "stat_gsc_daily"}, []string{"clicks", "impressions", "ctr", "position"}, from, to, true)
 	if err != nil {
 		http.Error(c.W, "internal server error", http.StatusInternalServerError)
 		return
@@ -173,12 +162,7 @@ func GSCDaily(c *serverctx.Context) {
 func MWHourly(c *serverctx.Context) {
 	to := hourlyEndUTC(time.Now().UTC(), 10)
 	from := to.Add(-47 * time.Hour)
-	rows := make([]models.StatNumeric, 0, 256)
-	err := c.DB.Table("stat_mw_hourly").
-		Select("timeslot", "pages", "articles", "edits", "images", "users", "activeusers", "admins", "jobs").
-		Where("timeslot BETWEEN ? AND ?", from.Format("2006-01-02 15:04:05"), to.Format("2006-01-02 15:04:05")).
-		Order("timeslot").
-		Find(&rows).Error
+	rows, err := selectNumericRows(c.DB, []string{"stat_hourly_mw", "stat_mw_hourly"}, []string{"pages", "articles", "edits", "images", "users", "activeusers", "admins", "jobs"}, from, to, false)
 	if err != nil {
 		http.Error(c.W, "internal server error", http.StatusInternalServerError)
 		return
@@ -215,13 +199,7 @@ func MWDaily(c *serverctx.Context) {
 	}
 	to := dailyEndUTC(time.Now().UTC())
 	from := to.AddDate(0, 0, -(days - 1))
-	rows := make([]models.StatNumeric, 0, 256)
-	err := c.DB.Table("stat_mw_daily").
-		Select("timeslot", "pages", "articles", "edits", "images", "users", "activeusers", "admins", "jobs").
-		Where("DATE(timeslot) >= ?", from.Format("2006-01-02")).
-		Where("DATE(timeslot) <= ?", to.Format("2006-01-02")).
-		Order("timeslot").
-		Find(&rows).Error
+	rows, err := selectNumericRows(c.DB, []string{"stat_daily_mw", "stat_mw_daily"}, []string{"pages", "articles", "edits", "images", "users", "activeusers", "admins", "jobs"}, from, to, true)
 	if err != nil {
 		http.Error(c.W, "internal server error", http.StatusInternalServerError)
 		return
@@ -250,31 +228,42 @@ func MWDaily(c *serverctx.Context) {
 	}))
 }
 
-func selectCFRows(db *gorm.DB, table string, from time.Time, to time.Time, dateOnly bool) ([]models.StatCF, error) {
-	rows := make([]models.StatCF, 0, 512)
-	q := db.Table(table).Select("timeslot", "name", "value").Where("name IN ?", models.StatCFMetricNames)
-	if dateOnly {
-		q = q.Where("DATE(timeslot) >= ?", from.Format("2006-01-02")).Where("DATE(timeslot) <= ?", to.Format("2006-01-02"))
-	} else {
-		q = q.Where("timeslot BETWEEN ? AND ?", from.Format("2006-01-02 15:04:05"), to.Format("2006-01-02 15:04:05"))
+func selectCFRows(db *gorm.DB, tables []string, from time.Time, to time.Time, dateOnly bool) ([]models.StatCF, error) {
+	merged := map[string]models.StatCF{}
+	for _, table := range tables {
+		if !db.Migrator().HasTable(table) {
+			continue
+		}
+		rows := make([]models.StatCF, 0, 512)
+		q := db.Table(table).Select("timeslot", "name", "value").Where("name IN ?", models.StatCFMetricNames)
+		if dateOnly {
+			q = q.Where("DATE(timeslot) >= ?", from.Format("2006-01-02")).Where("DATE(timeslot) <= ?", to.Format("2006-01-02"))
+		} else {
+			q = q.Where("timeslot BETWEEN ? AND ?", from.Format("2006-01-02 15:04:05"), to.Format("2006-01-02 15:04:05"))
+		}
+		if err := q.Find(&rows).Error; err != nil {
+			return nil, err
+		}
+		for _, row := range rows {
+			merged[row.Timeslot.Format("2006-01-02 15:04:05")+"-"+row.Name] = row
+		}
 	}
-	err := q.Find(&rows).Error
-	if err != nil {
-		return nil, err
+	out := make([]models.StatCF, 0, len(merged))
+	for _, row := range merged {
+		out = append(out, row)
 	}
-	return rows, nil
+	return out, nil
 }
 
-func selectGAMergedRows(db *gorm.DB, tables []string, from time.Time, to time.Time, dateOnly bool) ([]models.StatNumeric, error) {
+func selectNumericRows(db *gorm.DB, tables []string, columns []string, from time.Time, to time.Time, dateOnly bool) ([]models.StatNumeric, error) {
 	merged := map[string]models.StatNumeric{}
+	selectCols := append([]string{"timeslot"}, columns...)
 	for _, table := range tables {
 		if !db.Migrator().HasTable(table) {
 			continue
 		}
 		rows := make([]models.StatNumeric, 0, 256)
-		q := db.Table(table).
-			Select("timeslot", "active_users", "screen_page_views", "sessions").
-			Order("timeslot")
+		q := db.Table(table).Select(selectCols).Order("timeslot")
 		if dateOnly {
 			q = q.Where("DATE(timeslot) >= ?", from.Format("2006-01-02")).Where("DATE(timeslot) <= ?", to.Format("2006-01-02"))
 		} else {

@@ -2,6 +2,7 @@ package pagereaction
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -106,7 +107,7 @@ func Store(c *serverctx.Context) {
 		PageID int `gorm:"column:page_id"`
 	}
 	err := c.DB.Table("page_reactions").Select("page_id").Where("page_id = ?", body.PageID).Take(&pr).Error
-	if err == gorm.ErrRecordNotFound {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		_ = c.DB.Table("page_reactions").Create(upsert).Error
 	} else {
 		_ = c.DB.Table("page_reactions").Where("page_id = ?", body.PageID).Updates(upsert).Error

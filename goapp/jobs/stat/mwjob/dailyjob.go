@@ -8,6 +8,8 @@ import (
 	"github.com/zetaoss/zengine/goapp/app/job"
 	"github.com/zetaoss/zengine/goapp/jobs/stat/timeutil"
 	"github.com/zetaoss/zengine/goapp/models"
+
+	"gorm.io/gorm/clause"
 )
 
 type DailyJob struct{}
@@ -45,7 +47,9 @@ func (j *DailyJob) Run(ctx context.Context, jobCtx job.JobContext, _ any) job.Re
 		Admins:      ToInt(stats["admins"]),
 	}
 
-	if err := db.Table("stat_mw_daily").Save(&row).Error; err != nil {
+	if err := db.Table("stat_mw_daily").Clauses(clause.OnConflict{
+		UpdateAll: true,
+	}).Create(&row).Error; err != nil {
 		return job.Error(err)
 	}
 

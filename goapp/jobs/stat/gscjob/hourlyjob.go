@@ -3,6 +3,7 @@ package gscjob
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -43,6 +44,7 @@ func (j *HourlyJob) Run(ctx context.Context, jobCtx job.JobContext, _ any) job.R
 	if siteURL == "" {
 		return job.Error(fmt.Errorf("missing GSC site url"))
 	}
+	slog.Debug("gsc hourly site url", "url", siteURL)
 
 	token, err := FetchGoogleAccessToken(ctx, sa, "https://www.googleapis.com/auth/webmasters.readonly")
 	if err != nil {
@@ -53,7 +55,13 @@ func (j *HourlyJob) Run(ctx context.Context, jobCtx job.JobContext, _ any) job.R
 	until := timeutil.HourlyEndInLocation(time.Now(), loc).Add(time.Hour)
 	since := until.Add(-48 * time.Hour)
 
-	body := app.H{"startDate": since.Format("2006-01-02"), "endDate": until.Format("2006-01-02"), "dimensions": []string{"date", "hour"}, "rowLimit": 25000}
+	body := app.H{
+		"startDate":  since.Format("2006-01-02"),
+		"endDate":    until.Add(-time.Hour).Format("2006-01-02"),
+		"dimensions": []string{"hour"},
+		"dataState":  "hourly_all",
+		"rowLimit":   25000,
+	}
 	payload, err := RunGSCQuery(ctx, token, siteURL, body)
 	if err != nil {
 		return job.Error(err)
@@ -61,22 +69,29 @@ func (j *HourlyJob) Run(ctx context.Context, jobCtx job.JobContext, _ any) job.R
 	rowsRaw, _ := payload["rows"].([]any)
 	rows := make([]models.GSC, 0, len(rowsRaw))
 	for _, item := range rowsRaw {
-		m, _ := item.(app.H)
-		keys, _ := m["keys"].([]any)
-		if len(keys) < 2 {
+		m, ok := item.(app.H)
+		if !ok {
 			continue
 		}
-		dateRaw, _ := keys[0].(string)
-		hourRaw, _ := keys[1].(string)
-		raw := dateRaw + " " + hourRaw
-		tm, ok := parseGSCHour(raw, loc)
+		keys, _ := m["keys"].([]any)
+		if len(keys) < 1 {
+			continue
+		}
+		dateHourRaw, _ := keys[0].(string)
+		tm, ok := parseGSCHour(dateHourRaw, loc)
 		if !ok {
 			continue
 		}
 		if tm.Before(since) || !tm.Before(until) {
 			continue
 		}
-		rows = append(rows, models.GSC{Timeslot: tm.UTC().Format("2006-01-02 15:04:05"), Clicks: asInt(m["clicks"]), Impressions: asInt(m["impressions"]), Ctr: round4(asFloat(m["ctr"]) * 100), Position: round4(asFloat(m["position"]))})
+		rows = append(rows, models.GSC{
+			Timeslot:    tm.UTC().Format("2006-01-02 15:04:05"),
+			Clicks:      asInt(m["clicks"]),
+			Impressions: asInt(m["impressions"]),
+			Ctr:         round4(asFloat(m["ctr"]) * 100),
+			Position:    round4(asFloat(m["position"])),
+		})
 	}
 
 	if len(rows) > 0 {
