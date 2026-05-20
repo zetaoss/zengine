@@ -5,8 +5,7 @@ Monorepo for ZetaWiki services.
 ## Components
 
 - `svelte/`: main frontend application
-- `goapp/`: primary HTTP server for `/`, `/api/*`, `/auth/*`
-- `laravel/`: legacy services and scheduled jobs
+- `goapp/`: primary HTTP server for `/`, `/api/*`, `/auth/*`, background jobs, and scheduled tasks
 - `w/`: MediaWiki core
 - `mwz/extensions/ZetaExtension/`: custom MediaWiki extension
 - `mwz/skins/ZetaSkin/`: custom MediaWiki skin
