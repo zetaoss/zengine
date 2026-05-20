@@ -56,6 +56,7 @@ define run_cached
 		echo "node=$$(node -v 2>/dev/null || true)"; \
 		echo "pnpm=$$(pnpm -v 2>/dev/null || true)"; \
 		echo "php=$$(php -v 2>/dev/null | head -n 1 || true)"; \
+		echo "go=$$(go version 2>/dev/null || true)"; \
 		if [ -f "$(MAKEFILE_PATH)" ]; then hash_cmd "$(MAKEFILE_PATH)"; fi; \
 		for p in $$paths; do \
 			if [ -d "$$p" ]; then \
@@ -64,6 +65,10 @@ define run_cached
 					-not -path "*/dist/*" \
 					-not -path "*/.svelte-kit/*" \
 					-not -path "*/vendor/*" \
+					-not -path "*/tmp/*" \
+					-not -path "*/bin/*" \
+					-not -path "*/.git/*" \
+					-not -name "*.md" \
 					-print | sort | while IFS= read -r f; do hash_cmd "$$f"; done; \
 			elif [ -f "$$p" ]; then \
 				hash_cmd "$$p"; \

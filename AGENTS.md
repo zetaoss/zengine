@@ -2,6 +2,14 @@
 
 This guide helps coding agents quickly understand the monorepo and choose where to work.
 
+## Core Mandates
+
+- **Contextual Precedence**: This file and directory-level `AGENTS.md` files contain the source of truth for repository workflows and standards.
+- **Engineering Standards**:
+  - **Go Backend**: Follow clean architecture (handlers -> services/jobs -> models). Use GORM for DB operations.
+  - **Svelte Frontend**: Maintain mobile-first responsive design using Tailwind CSS. Use reactive stores for shared state.
+  - **Shared Code**: `svelte/src/shared/` is the source for utilities used by both main and skin Svelte. Never edit the symlink in `mwz/`.
+
 ## Scope
 
 - Use `README.md` for a short project overview.
@@ -21,6 +29,14 @@ This guide helps coding agents quickly understand the monorepo and choose where 
 - `svelte/`: **main svelte** (Frontend routes and UI for the main application)
 - `w/`: MediaWiki core (Git-ignored)
 
+## Key Subsystems
+
+- **Common-Report**: Aggregated search results and statistics reporting.
+- **EditBot**: AI-powered wiki editing agent.
+- **Forum**: Community discussion board for posts and replies.
+- **LLM Service**: Unified interface for LLM integrations.
+- **Write-Request**: User-driven requests for wiki content creation.
+
 ## First Checks By Task
 
 - API behavior:
@@ -29,7 +45,6 @@ This guide helps coding agents quickly understand the monorepo and choose where 
 - Auth/permission issues:
   - Go middleware: `goapp/server/middleware/**`
   - Social auth handler: `goapp/server/handlers/auth/social/social.go`
-  - Laravel policy provider: `laravel/app/Providers/AuthServiceProvider.php`
 - Frontend route wiring:
   - `svelte/src/routes/**`
 - MediaWiki hook side effects:
