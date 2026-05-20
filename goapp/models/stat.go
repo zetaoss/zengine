@@ -54,8 +54,8 @@ var WorkerCFMetricNames = []string{
 }
 
 type StatCF struct {
-	Timeslot time.Time `gorm:"column:timeslot"`
-	Name     string    `gorm:"column:name"`
+	Timeslot time.Time `gorm:"column:timeslot;primaryKey"`
+	Name     string    `gorm:"column:name;primaryKey"`
 	Value    string    `gorm:"column:value"`
 }
 
@@ -79,8 +79,8 @@ type StatNumeric struct {
 }
 
 type CFKV struct {
-	Timeslot string `gorm:"column:timeslot"`
-	Name     string `gorm:"column:name"`
+	Timeslot string `gorm:"column:timeslot;primaryKey"`
+	Name     string `gorm:"column:name;primaryKey"`
 	Value    string `gorm:"column:value"`
 }
 
@@ -92,7 +92,7 @@ type GA struct {
 }
 
 type GSC struct {
-	Timeslot    string  `gorm:"column:timeslot"`
+	Timeslot    string  `gorm:"column:timeslot;primaryKey"`
 	Clicks      int     `gorm:"column:clicks"`
 	Impressions int     `gorm:"column:impressions"`
 	Ctr         float64 `gorm:"column:ctr"`

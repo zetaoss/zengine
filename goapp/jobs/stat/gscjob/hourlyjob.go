@@ -69,7 +69,10 @@ func (j *HourlyJob) Run(ctx context.Context, jobCtx job.JobContext, _ any) job.R
 	rowsRaw, _ := payload["rows"].([]any)
 	rows := make([]models.GSC, 0, len(rowsRaw))
 	for _, item := range rowsRaw {
-		m, _ := item.(app.H)
+		m, ok := item.(app.H)
+		if !ok {
+			continue
+		}
 		keys, _ := m["keys"].([]any)
 		if len(keys) < 1 {
 			continue

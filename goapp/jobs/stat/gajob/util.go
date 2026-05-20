@@ -59,7 +59,10 @@ func parseGARows(payload app.H, layout, outLayout string, loc *time.Location, us
 	rowsRaw, _ := payload["rows"].([]any)
 	rows := make([]models.GA, 0, len(rowsRaw))
 	for _, item := range rowsRaw {
-		m, _ := item.(app.H)
+		m, ok := item.(app.H)
+		if !ok {
+			continue
+		}
 		dimValues, _ := m["dimensionValues"].([]any)
 		metricValues, _ := m["metricValues"].([]any)
 		if len(dimValues) < 1 || len(metricValues) < 4 {
@@ -68,8 +71,7 @@ func parseGARows(payload app.H, layout, outLayout string, loc *time.Location, us
 
 		timeslotRaw := ""
 		for i, dv := range dimValues {
-			d, _ := dv.(app.H)
-			val, _ := d["value"].(string)
+			val, _ := valueFromH(dv, "value").(string)
 			if i > 0 {
 				timeslotRaw += " "
 			}
@@ -88,12 +90,20 @@ func parseGARows(payload app.H, layout, outLayout string, loc *time.Location, us
 
 		rows = append(rows, models.GA{
 			Timeslot:        timeslot,
-			Sessions:        asInt(metricValues[0].(app.H)["value"]),
-			ScreenPageViews: asInt(metricValues[1].(app.H)["value"]),
-			ActiveUsers:     asInt(metricValues[3].(app.H)["value"]),
+			Sessions:        asInt(valueFromH(metricValues[0], "value")),
+			ScreenPageViews: asInt(valueFromH(metricValues[1], "value")),
+			ActiveUsers:     asInt(valueFromH(metricValues[3], "value")),
 		})
 	}
 	return rows
+}
+
+func valueFromH(v any, key string) any {
+	m, ok := v.(app.H)
+	if !ok {
+		return nil
+	}
+	return m[key]
 }
 
 func asInt(v any) int {

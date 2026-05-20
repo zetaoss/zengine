@@ -84,22 +84,26 @@ func CFMetricsFromGroup(group app.H) map[string]string {
 	uniq, _ := group["uniq"].(app.H)
 
 	metrics := map[string]string{}
-	metrics["uniq_uniques"] = toTextValue(uniq["uniques"])
-	metrics["sum_requests"] = toTextValue(sum["requests"])
-	metrics["sum_pageViews"] = toTextValue(sum["pageViews"])
-	metrics["sum_bytes"] = toTextValue(sum["bytes"])
-	metrics["sum_cachedBytes"] = toTextValue(sum["cachedBytes"])
-	metrics["sum_cachedRequests"] = toTextValue(sum["cachedRequests"])
-	metrics["sum_encryptedBytes"] = toTextValue(sum["encryptedBytes"])
-	metrics["sum_encryptedRequests"] = toTextValue(sum["encryptedRequests"])
-	metrics["sum_threats"] = toTextValue(sum["threats"])
-	metrics["sum_browserMap"] = toTextValue(sum["browserMap"])
-	metrics["sum_contentTypeMap"] = toTextValue(sum["contentTypeMap"])
-	metrics["sum_clientSSLMap"] = toTextValue(sum["clientSSLMap"])
-	metrics["sum_countryMap"] = toTextValue(sum["countryMap"])
-	metrics["sum_ipClassMap"] = toTextValue(sum["ipClassMap"])
-	metrics["sum_responseStatusMap"] = toTextValue(sum["responseStatusMap"])
-	metrics["sum_threatPathingMap"] = toTextValue(sum["threatPathingMap"])
+	if uniq != nil {
+		metrics["uniq_uniques"] = toTextValue(uniq["uniques"])
+	}
+	if sum != nil {
+		metrics["sum_requests"] = toTextValue(sum["requests"])
+		metrics["sum_pageViews"] = toTextValue(sum["pageViews"])
+		metrics["sum_bytes"] = toTextValue(sum["bytes"])
+		metrics["sum_cachedBytes"] = toTextValue(sum["cachedBytes"])
+		metrics["sum_cachedRequests"] = toTextValue(sum["cachedRequests"])
+		metrics["sum_encryptedBytes"] = toTextValue(sum["encryptedBytes"])
+		metrics["sum_encryptedRequests"] = toTextValue(sum["encryptedRequests"])
+		metrics["sum_threats"] = toTextValue(sum["threats"])
+		metrics["sum_browserMap"] = toTextValue(sum["browserMap"])
+		metrics["sum_contentTypeMap"] = toTextValue(sum["contentTypeMap"])
+		metrics["sum_clientSSLMap"] = toTextValue(sum["clientSSLMap"])
+		metrics["sum_countryMap"] = toTextValue(sum["countryMap"])
+		metrics["sum_ipClassMap"] = toTextValue(sum["ipClassMap"])
+		metrics["sum_responseStatusMap"] = toTextValue(sum["responseStatusMap"])
+		metrics["sum_threatPathingMap"] = toTextValue(sum["threatPathingMap"])
+	}
 	return metrics
 }
 

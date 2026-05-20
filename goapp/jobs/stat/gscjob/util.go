@@ -143,7 +143,7 @@ func base64URLEncode(b []byte) string {
 }
 
 func RunGSCQuery(ctx context.Context, token, siteURL string, body app.H) (app.H, error) {
-	encoded := strings.ReplaceAll(url.PathEscape(siteURL), ":", "%3A")
+	encoded := url.PathEscape(siteURL)
 	endpoint := "https://searchconsole.googleapis.com/webmasters/v3/sites/" + encoded + "/searchAnalytics/query"
 	raw, _ := json.Marshal(body)
 	slog.Debug("gsc request", "url", endpoint, "body", string(raw))

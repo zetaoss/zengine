@@ -67,4 +67,29 @@ func TestParseGARows(t *testing.T) {
 			t.Errorf("expected timeslot %s, got %s", expected, rows[0].Timeslot)
 		}
 	})
+
+	t.Run("MalformedMetricValue", func(t *testing.T) {
+		payloadMalformed := app.H{
+			"rows": []any{
+				app.H{
+					"dimensionValues": []any{
+						app.H{"value": "20260521"},
+					},
+					"metricValues": []any{
+						nil,
+						"unexpected",
+						app.H{"value": "30"},
+						app.H{"value": "5"},
+					},
+				},
+			},
+		}
+		rows := parseGARows(payloadMalformed, "20060102", "2006-01-02", loc, false)
+		if len(rows) != 1 {
+			t.Fatalf("expected 1 row, got %d", len(rows))
+		}
+		if rows[0].Sessions != 0 || rows[0].ScreenPageViews != 0 || rows[0].ActiveUsers != 5 {
+			t.Errorf("unexpected metrics: %+v", rows[0])
+		}
+	})
 }
