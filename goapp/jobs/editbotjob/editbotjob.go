@@ -64,7 +64,7 @@ func (j *EditBotJob) Run(ctx context.Context, jobCtx job.JobContext, p editBotPa
 	}
 	task, err := findRunnableTaskByID(db, p.TaskID)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return job.Success(app.H{"status": "idle"})
 		}
 		return job.Error(err)

@@ -2,6 +2,7 @@ package oneline
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -79,7 +80,7 @@ func Destroy(c *serverctx.Context) {
 	}
 	var target row
 	if err := c.DB.Table("onelines").Where("id = ?", id).First(&target).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			http.NotFound(c.W, c.R)
 			return
 		}

@@ -1,6 +1,7 @@
 package post
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -53,7 +54,7 @@ func Show(c *serverctx.Context) {
 	}
 	var row models.ForumPost
 	if err := baseQuery(c.DB).Where("posts.id = ?", id).Take(&row).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.NotFound()
 			return
 		}
@@ -129,7 +130,7 @@ func Update(c *serverctx.Context) {
 		UserID int `gorm:"column:user_id"`
 	}
 	if err := c.DB.Table("posts").Select("user_id").Where("id = ?", id).Take(&target).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.NotFound()
 			return
 		}
@@ -181,7 +182,7 @@ func Destroy(c *serverctx.Context) {
 		UserID int `gorm:"column:user_id"`
 	}
 	if err := c.DB.Table("posts").Select("user_id").Where("id = ?", id).Take(&target).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.NotFound()
 			return
 		}

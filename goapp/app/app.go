@@ -1,3 +1,3 @@
 package app
 
-type H map[string]any
+type H = map[string]any

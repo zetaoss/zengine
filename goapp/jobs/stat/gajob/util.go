@@ -55,11 +55,14 @@ func runGAQuery(ctx context.Context, token, propertyID, startDate, endDate strin
 	return payload, nil
 }
 
-func parseGARows(payload app.H, layout, outLayout string) []models.GA {
+func parseGARows(payload app.H, layout, outLayout string, loc *time.Location, useUTC bool) []models.GA {
 	rowsRaw, _ := payload["rows"].([]any)
 	rows := make([]models.GA, 0, len(rowsRaw))
 	for _, item := range rowsRaw {
-		m, _ := item.(app.H)
+		m, ok := item.(app.H)
+		if !ok {
+			continue
+		}
 		dimValues, _ := m["dimensionValues"].([]any)
 		metricValues, _ := m["metricValues"].([]any)
 		if len(dimValues) < 1 || len(metricValues) < 4 {
@@ -68,27 +71,39 @@ func parseGARows(payload app.H, layout, outLayout string) []models.GA {
 
 		timeslotRaw := ""
 		for i, dv := range dimValues {
-			d, _ := dv.(app.H)
-			val, _ := d["value"].(string)
+			val, _ := valueFromH(dv, "value").(string)
 			if i > 0 {
 				timeslotRaw += " "
 			}
 			timeslotRaw += val
 		}
 
-		t, err := time.Parse(layout, timeslotRaw)
+		t, err := time.ParseInLocation(layout, timeslotRaw, loc)
 		if err != nil {
 			continue
 		}
 
+		timeslot := t.Format(outLayout)
+		if useUTC {
+			timeslot = t.UTC().Format(outLayout)
+		}
+
 		rows = append(rows, models.GA{
-			Timeslot:        t.Format(outLayout),
-			Sessions:        asInt(metricValues[0].(app.H)["value"]),
-			ScreenPageViews: asInt(metricValues[1].(app.H)["value"]),
-			ActiveUsers:     asInt(metricValues[3].(app.H)["value"]),
+			Timeslot:        timeslot,
+			Sessions:        asInt(valueFromH(metricValues[0], "value")),
+			ScreenPageViews: asInt(valueFromH(metricValues[1], "value")),
+			ActiveUsers:     asInt(valueFromH(metricValues[3], "value")),
 		})
 	}
 	return rows
+}
+
+func valueFromH(v any, key string) any {
+	m, ok := v.(app.H)
+	if !ok {
+		return nil
+	}
+	return m[key]
 }
 
 func asInt(v any) int {

@@ -3,6 +3,7 @@ package editbot
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -51,7 +52,7 @@ func Show(c *serverctx.Context) {
 	}
 	var row models.EditBot
 	if err := c.DB.Table("edit_tasks").Where("id = ?", id).Take(&row).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.NotFound()
 			return
 		}

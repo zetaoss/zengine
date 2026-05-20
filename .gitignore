@@ -10,8 +10,11 @@ w
 .env.production
 
 goapp/ctl
+goapp/bin/
 goapp/server/server
 goapp/worker/worker
 goapp/cmd/server/server
+goapp/cmd/server/goserver
 goapp/cmd/worker/worker
+goapp/cmd/worker/goworker
 goapp/cmd/ctl/ctl

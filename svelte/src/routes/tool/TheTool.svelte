@@ -13,10 +13,10 @@
 
   const navItems: NavItem[] = [
     { to: '/tool/binder', label: '바인더' },
-    { to: '/tool/stat', label: '통계' },
     { to: '/tool/common-report', label: '통용' },
     { to: '/tool/write-request', label: '작성요청' },
     { to: '/tool/editbot', label: '편집봇' },
+    { to: '/tool/stat', label: '통계' },
     { to: '/tool/frontplay', label: 'FrontPlay' },
   ]
 

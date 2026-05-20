@@ -2,6 +2,7 @@ package commonreport
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -42,7 +43,7 @@ func Show(c *serverctx.Context) {
 	}
 	var report models.CommonReport
 	if err := c.DB.Table("common_reports").Where("id = ?", id).Take(&report).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.NotFound()
 			return
 		}
@@ -111,7 +112,7 @@ func Clone(c *serverctx.Context) {
 
 	original, err := loadReportWithItems(c.DB, id)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.NotFound()
 			return
 		}
@@ -147,7 +148,7 @@ func Rerun(c *serverctx.Context) {
 	}
 	var report models.CommonReport
 	if err := c.DB.Table("common_reports").Where("id = ?", id).Take(&report).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.NotFound()
 			return
 		}
@@ -182,7 +183,7 @@ func Destroy(c *serverctx.Context) {
 	}
 	var report models.CommonReport
 	if err := c.DB.Table("common_reports").Where("id = ?", id).Take(&report).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSONError(http.StatusNotFound, "해당 리포트가 없습니다.")
 			return
 		}

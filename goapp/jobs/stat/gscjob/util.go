@@ -13,6 +13,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
@@ -145,6 +146,7 @@ func RunGSCQuery(ctx context.Context, token, siteURL string, body app.H) (app.H,
 	encoded := url.PathEscape(siteURL)
 	endpoint := "https://searchconsole.googleapis.com/webmasters/v3/sites/" + encoded + "/searchAnalytics/query"
 	raw, _ := json.Marshal(body)
+	slog.Debug("gsc request", "url", endpoint, "body", string(raw))
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(raw))
 	if err != nil {
 		return nil, err
@@ -167,6 +169,7 @@ func RunGSCQuery(ctx context.Context, token, siteURL string, body app.H) (app.H,
 	if err := json.Unmarshal(b, &payload); err != nil {
 		return nil, err
 	}
+	slog.Debug("gsc response", "payload", string(b))
 	return payload, nil
 }
 

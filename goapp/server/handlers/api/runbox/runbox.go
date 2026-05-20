@@ -3,6 +3,7 @@ package runbox
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -26,7 +27,7 @@ func Show(c *serverctx.Context) {
 		Select("hash, phase, user_id, page_id, type, outs, cpu, mem, time").
 		Where("hash = ?", hash).
 		Take(&row).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(map[string]string{"phase": "none"})
 			return
 		}
@@ -86,7 +87,7 @@ func Rerun(c *serverctx.Context) {
 		Hash string `gorm:"column:hash"`
 	}
 	if err := c.DB.Table("runboxes").Select("hash").Where("hash = ?", hash).Take(&row).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			http.NotFound(c.W, c.R)
 			return
 		}
