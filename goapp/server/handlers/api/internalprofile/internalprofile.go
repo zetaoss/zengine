@@ -1,6 +1,7 @@
 package internalprofile
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -28,7 +29,7 @@ func Show(c *serverctx.Context) {
 		Where("A.user_id = ?", userID).
 		Take(&row).Error
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSONError(http.StatusNotFound, "Not Found")
 			return
 		}

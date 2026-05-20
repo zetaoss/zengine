@@ -55,7 +55,7 @@ func runGAQuery(ctx context.Context, token, propertyID, startDate, endDate strin
 	return payload, nil
 }
 
-func parseGARows(payload app.H, layout, outLayout string) []models.GA {
+func parseGARows(payload app.H, layout, outLayout string, loc *time.Location, useUTC bool) []models.GA {
 	rowsRaw, _ := payload["rows"].([]any)
 	rows := make([]models.GA, 0, len(rowsRaw))
 	for _, item := range rowsRaw {
@@ -76,13 +76,18 @@ func parseGARows(payload app.H, layout, outLayout string) []models.GA {
 			timeslotRaw += val
 		}
 
-		t, err := time.Parse(layout, timeslotRaw)
+		t, err := time.ParseInLocation(layout, timeslotRaw, loc)
 		if err != nil {
 			continue
 		}
 
+		timeslot := t.Format(outLayout)
+		if useUTC {
+			timeslot = t.UTC().Format(outLayout)
+		}
+
 		rows = append(rows, models.GA{
-			Timeslot:        t.Format(outLayout),
+			Timeslot:        timeslot,
 			Sessions:        asInt(metricValues[0].(app.H)["value"]),
 			ScreenPageViews: asInt(metricValues[1].(app.H)["value"]),
 			ActiveUsers:     asInt(metricValues[3].(app.H)["value"]),

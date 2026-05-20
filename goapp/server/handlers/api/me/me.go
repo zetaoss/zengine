@@ -1,6 +1,7 @@
 package me
 
 import (
+	"errors"
 	"net/http"
 	"regexp"
 	"strings"
@@ -93,7 +94,7 @@ func UpdateAvatar(c *serverctx.Context) {
 		GHint  *string `gorm:"column:ghint"`
 	}
 	err := c.DB.Table("zetawiki.user_profiles").Where("user_id = ?", user.ID).Take(&current).Error
-	notFound := err == gorm.ErrRecordNotFound
+	notFound := errors.Is(err, gorm.ErrRecordNotFound)
 	if err != nil && !notFound {
 		c.InternalError()
 		return

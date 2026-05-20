@@ -1,6 +1,7 @@
 package comments
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -114,7 +115,7 @@ func Update(c *serverctx.Context) {
 		UserID int `gorm:"column:user_id"`
 	}
 	if err := c.DB.Table("zetawiki.page_comments").Select("user_id").Where("id = ?", id).Take(&target).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.NotFound()
 			return
 		}
@@ -158,7 +159,7 @@ func Destroy(c *serverctx.Context) {
 		UserID int `gorm:"column:user_id"`
 	}
 	if err := c.DB.Table("zetawiki.page_comments").Select("user_id").Where("id = ?", id).Take(&target).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.NotFound()
 			return
 		}

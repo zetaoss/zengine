@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -83,7 +84,7 @@ func (q *RedisQueue) Enqueue(ctx context.Context, req job.Request) (uint64, erro
 				return id, nil
 			}
 		}
-		if err != nil && err != goredis.Nil {
+		if err != nil && !errors.Is(err, goredis.Nil) {
 			return 0, err
 		}
 	}
@@ -144,7 +145,7 @@ return ''
 `)
 
 	idStr, err := claimScript.Run(ctx, q.rdb, []string{q.keyPending(queue)}, nowMs).Text()
-	if err == goredis.Nil || idStr == "" {
+	if errors.Is(err, goredis.Nil) || idStr == "" {
 		return nil, nil
 	}
 	if err != nil {

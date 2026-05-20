@@ -99,6 +99,7 @@
   let valueMode = $state<'compact' | 'exact'>('compact')
   let diffModeByKey = $state<Record<string, boolean>>({})
   let syncedHoverIndex = $state<number | null>(null)
+  let gscHoverIndex = $state<number | null>(null)
   let data = $state<AnalyticsResp>(EMPTY)
   let gaData = $state<GaResp>(EMPTY_GA)
   let gscData = $state<GscResp>(EMPTY_GSC)
@@ -117,6 +118,7 @@
   const gaRows = $derived.by<RowDef[]>(() => buildGaRows(gaData))
   const labelsGsc = $derived.by(() => (range === '48h' ? gscData.timeslots : gscData.timeslots.map((v) => normalizeDateKey(v))))
   const gscRows = $derived.by<RowDef[]>(() => buildGscRows(gscData))
+  const gscSharesTimeAxis = $derived.by(() => sameLabels(labelsGsc, labels))
   const labelsMw = $derived.by(() => (range === '48h' ? mwData.timeslots : mwData.timeslots.map((v) => normalizeDateKey(v))))
   const mwRows = $derived.by<RowDef[]>(() => buildMwRows(mwData))
   const visibleTimeslots = $derived.by(() => {
@@ -208,6 +210,8 @@
     const value = nextRange as typeof range
     if (range === value) return
     range = value
+    syncedHoverIndex = null
+    gscHoverIndex = null
     void fetchData()
   }
 
@@ -613,6 +617,14 @@
     return value.trim().slice(0, 10)
   }
 
+  function sameLabels(a: string[], b: string[]) {
+    if (a.length === 0 || b.length === 0 || a.length !== b.length) return false
+    for (let i = 0; i < a.length; i += 1) {
+      if (a[i] !== b[i]) return false
+    }
+    return true
+  }
+
   onMount(() => {
     void fetchData()
   })
@@ -710,9 +722,10 @@
             color={DEFAULT_LINE_COLOR}
             {valueMode}
             selectedLabelMode={range === '48h' ? 'hour' : 'date'}
-            hoveredIndex={syncedHoverIndex}
+            hoveredIndex={gscSharesTimeAxis ? syncedHoverIndex : gscHoverIndex}
             onHoverIndex={(index) => {
-              syncedHoverIndex = index
+              if (gscSharesTimeAxis) syncedHoverIndex = index
+              else gscHoverIndex = index
             }}
             series={row.series}
           />

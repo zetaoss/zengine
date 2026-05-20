@@ -2,6 +2,7 @@ package writerequest
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -97,7 +98,7 @@ func Recommend(c *serverctx.Context) {
 		Rate int `gorm:"column:rate"`
 	}
 	if err := c.DB.Table("write_requests").Select("rate").Where("id = ?", id).Take(&out).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			http.NotFound(c.W, c.R)
 			return
 		}
@@ -122,7 +123,7 @@ func Destroy(c *serverctx.Context) {
 		UserID int `gorm:"column:user_id"`
 	}
 	if err := c.DB.Table("write_requests").Select("user_id").Where("id = ?", id).Take(&target).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			http.NotFound(c.W, c.R)
 			return
 		}

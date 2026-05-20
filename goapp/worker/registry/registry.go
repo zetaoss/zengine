@@ -131,7 +131,7 @@ func (r *Registry) Run(ctx context.Context, appCtx *appctx.AppContext, req job.R
 
 	b, _ := json.Marshal(res)
 	if res.Status == job.StatusError {
-		return b, fmt.Errorf("%v", res.Error)
+		return b, fmt.Errorf("%w", res.Error)
 	}
 	return b, nil
 }

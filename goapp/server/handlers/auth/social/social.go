@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -271,7 +272,7 @@ func DeletionStatus(c *serverctx.Context) {
 	}
 	err := c.DB.Table("zetawiki.user_social").Select("id").Where("provider = ? AND deletion_code = ?", "facebook", code).Take(&row).Error
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			http.NotFound(c.W, c.R)
 			return
 		}
@@ -389,7 +390,7 @@ func findOrCreateUserSocial(db *gorm.DB, provider, socialID string) (userSocialR
 	if err == nil {
 		return row, nil
 	}
-	if err != gorm.ErrRecordNotFound {
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return userSocialRow{}, err
 	}
 

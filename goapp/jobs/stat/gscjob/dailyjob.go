@@ -3,6 +3,7 @@ package gscjob
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/zetaoss/zengine/goapp/app"
@@ -42,6 +43,7 @@ func (j *DailyJob) Run(ctx context.Context, jobCtx job.JobContext, _ any) job.Re
 	if siteURL == "" {
 		return job.Error(fmt.Errorf("missing GSC site url"))
 	}
+	slog.Debug("gsc daily site url", "url", siteURL)
 
 	token, err := FetchGoogleAccessToken(ctx, sa, "https://www.googleapis.com/auth/webmasters.readonly")
 	if err != nil {

@@ -2,6 +2,7 @@ package binder
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/zetaoss/zengine/goapp/app"
@@ -106,7 +107,7 @@ func Update(c *serverctx.Context) {
 
 func resolveRealBinderID(db *gorm.DB, binderID int) int {
 	currentID := binderID
-	for i := 0; i < redirectMaxHops; i++ {
+	for range redirectMaxHops {
 		var page struct {
 			PageID int `gorm:"column:page_id"`
 		}
@@ -122,7 +123,7 @@ func resolveRealBinderID(db *gorm.DB, binderID int) int {
 			Select("rd_namespace, rd_title").
 			Where("rd_from = ?", currentID).
 			Take(&rd).Error; err != nil {
-			if err == gorm.ErrRecordNotFound {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return currentID
 			}
 			return 0

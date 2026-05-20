@@ -2,6 +2,7 @@ package reply
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -92,7 +93,7 @@ func Update(c *serverctx.Context) {
 		UserID int `gorm:"column:user_id"`
 	}
 	if err := c.DB.Table("replies").Select("post_id, user_id").Where("id = ?", replyID).Take(&target).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			http.NotFound(c.W, c.R)
 			return
 		}
@@ -152,7 +153,7 @@ func Destroy(c *serverctx.Context) {
 		UserID int `gorm:"column:user_id"`
 	}
 	if err := c.DB.Table("replies").Select("post_id, user_id").Where("id = ?", replyID).Take(&target).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			http.NotFound(c.W, c.R)
 			return
 		}

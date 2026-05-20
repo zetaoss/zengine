@@ -68,11 +68,12 @@ func (j *HourlyJob) Run(ctx context.Context, jobCtx job.JobContext, _ any) job.R
 		return job.Error(err)
 	}
 
-	rows := parseGARows(payload, "20060102 15", "2006-01-02 15:04:05")
+	rows := parseGARows(payload, "20060102 15", "2006-01-02 15:04:05", loc, true)
+
 	if len(rows) > 0 {
 		if err := db.Table("stat_ga_hourly").Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "timeslot"}},
-			DoUpdates: clause.AssignmentColumns([]string{"sessions", "pageviews", "users", "active_users"}),
+			DoUpdates: clause.AssignmentColumns([]string{"sessions", "screen_page_views", "active_users"}),
 		}).Create(&rows).Error; err != nil {
 			return job.Error(err)
 		}

@@ -5,10 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/zetaoss/zengine/goapp/app"
 	"io"
+	"log/slog"
 	"net/http"
 	"time"
+
+	"github.com/zetaoss/zengine/goapp/app"
 )
 
 func RunCFGraphQL(ctx context.Context, token string, query string, variables app.H) (app.H, error) {
@@ -38,8 +40,9 @@ func RunCFGraphQL(ctx context.Context, token string, query string, variables app
 	if err := json.Unmarshal(raw, &payload); err != nil {
 		return nil, err
 	}
+	slog.Debug("cloudflare payload", "raw", string(raw))
 	if errs, ok := payload["errors"].([]any); ok && len(errs) > 0 {
-		return nil, fmt.Errorf("cloudflare graphql returned errors")
+		return nil, fmt.Errorf("cloudflare graphql returned errors: %+v", errs)
 	}
 	return payload, nil
 }
@@ -92,11 +95,11 @@ func CFMetricsFromGroup(group app.H) map[string]string {
 	metrics["sum_threats"] = toTextValue(sum["threats"])
 	metrics["sum_browserMap"] = toTextValue(sum["browserMap"])
 	metrics["sum_contentTypeMap"] = toTextValue(sum["contentTypeMap"])
-	metrics["sum_clientSSLMap"] = toTextValue(sum["clientSSLProtocol"])
+	metrics["sum_clientSSLMap"] = toTextValue(sum["clientSSLMap"])
 	metrics["sum_countryMap"] = toTextValue(sum["countryMap"])
 	metrics["sum_ipClassMap"] = toTextValue(sum["ipClassMap"])
-	metrics["sum_responseStatusMap"] = toTextValue(sum["edgeResponseStatus"])
-	metrics["sum_threatPathingMap"] = toTextValue(sum["threatPathingName"])
+	metrics["sum_responseStatusMap"] = toTextValue(sum["responseStatusMap"])
+	metrics["sum_threatPathingMap"] = toTextValue(sum["threatPathingMap"])
 	return metrics
 }
 

@@ -85,7 +85,7 @@ type CFKV struct {
 }
 
 type GA struct {
-	Timeslot        string `gorm:"column:timeslot"`
+	Timeslot        string `gorm:"column:timeslot;primaryKey"`
 	ActiveUsers     int    `gorm:"column:active_users"`
 	ScreenPageViews int    `gorm:"column:screen_page_views"`
 	Sessions        int    `gorm:"column:sessions"`
@@ -100,7 +100,7 @@ type GSC struct {
 }
 
 type MWDaily struct {
-	Timeslot    string `gorm:"column:timeslot"`
+	Timeslot    string `gorm:"column:timeslot;primaryKey"`
 	Pages       int    `gorm:"column:pages"`
 	Articles    int    `gorm:"column:articles"`
 	Edits       int    `gorm:"column:edits"`
@@ -112,7 +112,7 @@ type MWDaily struct {
 }
 
 type MWHourly struct {
-	Timeslot    string `gorm:"column:timeslot"`
+	Timeslot    string `gorm:"column:timeslot;primaryKey"`
 	Pages       int    `gorm:"column:pages"`
 	Articles    int    `gorm:"column:articles"`
 	Edits       int    `gorm:"column:edits"`
