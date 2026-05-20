@@ -15,7 +15,7 @@ Execution notes for agents working in the Go backend.
 
 ```bash
 cd /app/goapp
-go run ./cmd/server --dev=true
+go run ./cmd/server
 ```
 
 ```bash
@@ -43,11 +43,10 @@ go run ./cmd/worker
 - Routes: `/api/editbot*` in `server/routes.go`
 - Handler: `server/handlers/api/editbot/editbot.go`
 - Model: `models/editbot.go`
-- Job: `jobs/editbot/edit_bot_job.go`
+- Job: `jobs/editbotjob/editbotjob.go`
 
 ### Activity Feed Rule
 
-- `/api/editbot/activity` is removed.
 - The activity tab must call MediaWiki API directly from Svelte via `mwapi`.
 - MediaWiki contribution flags may come as array values (for example `"new"`, `"top"`) rather than object booleans.
 
@@ -68,9 +67,26 @@ go run ./cmd/worker
 - Routes: `/api/write-request/*` in `server/routes.go`
 - Handler: `server/handlers/api/writerequest/writerequest.go`
 
-Known behavior:
+## Common-Report Map
 
-- Write-request update exists in code but is not exposed as a route.
+- Frontend: `svelte/src/routes/tool/common-report/**`
+- Routes: `/api/common-report*` in `server/routes.go`
+- Handler: `server/handlers/api/commonreport/commonreport.go`
+- Model: `models/commonreport.go`
+- Job: `jobs/commonreportjob/commonreportjob.go`
+
+## Forum (Posts/Replies) Map
+
+- Frontend: `svelte/src/routes/forum/**`
+- Routes: `/api/posts*`, `/api/posts/{post}/replies*` in `server/routes.go`
+- Handlers: `server/handlers/api/post/post.go`, `server/handlers/api/reply/reply.go`
+- Models: `models/forum.go` (Note: ForumPost and ForumReply are defined here)
+
+## LLM Service Map
+
+- Service implementation: `services/llmsvc/llmsvc.go`
+- Client: `services/llmsvc/client/client.go`
+- Configuration: `app/config/config.go` (via `API.LLMEndpoint`)
 
 ## Operational Notes
 
