@@ -87,7 +87,7 @@ endef
 # GROUP          TARGET              CACHEDIR        CHECKS
 # check-php      check-extension     ZetaExtension   lint
 #                check-skin          ZetaSkin        lint
-# check-svelte   check-overrides     -               overrides
+# check-svelte   svelte-common-deps  -               shared dependency specs
 #                check-main-svelte   main svelte     install, lint, format, audit, build
 #                check-skin-svelte   skin svelte     install, lint, format, audit, build
 # check-goapp    check-goapp         goapp           golangci-lint, test, build
@@ -131,10 +131,10 @@ endif
 check-svelte:
 	@$(MAKE) USE_CACHE=$(USE_CACHE) check-main-svelte check-skin-svelte
 
-.PHONY: svelte-overrides
-svelte-overrides:
-	@echo "➡️  root: pnpm overrides"
-	pnpm overrides
+.PHONY: svelte-common-deps
+svelte-common-deps:
+	@echo "➡️  svelte: common dependency specs"
+	node hack/svelte-common-deps.mjs
 
 .PHONY: install-main-svelte
 install-main-svelte:
@@ -149,7 +149,7 @@ check-main-svelte:
 ifeq ($(USE_CACHE),1)
 	$(call run_cached,check-main-svelte,$(MAKE) USE_CACHE=0 check-main-svelte,svelte pnpm-lock.yaml package.json)
 else
-		@$(MAKE) svelte-overrides
+		@$(MAKE) svelte-common-deps
 	$(call run_pnpm,svelte,install --frozen-lockfile)
 	$(call run_pnpm,svelte,peers check)
 	$(call run_pnpm,svelte,lint)
