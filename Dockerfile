@@ -30,7 +30,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-$(go env GOARCH)}
 RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-$(go env GOARCH)} go build -trimpath -ldflags="-s -w" -o /out/ctl ./cmd/ctl
 
 # https://github.com/zetaoss/zbase/pkgs/container/zbase
-FROM ghcr.io/zetaoss/zbase:v0.43.800
+FROM ghcr.io/zetaoss/zbase:v0.43.804
 
 ARG APP_VERSION=v0.0.0
 ENV APP_VERSION=${APP_VERSION}
