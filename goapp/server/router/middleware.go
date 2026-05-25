@@ -126,7 +126,7 @@ func (r *Router) Owner(model models.Model, idKey ...string) Middleware {
 			}
 
 			var ownerID int
-			if err := r.serverCtx.DB.Table(model.TableName()).Select("user_id").Where("id = ?", idStr).Take(&ownerID).Error; err != nil {
+			if err := r.serverCtx.DB.WithContext(req.Context()).Table(model.TableName()).Select("user_id").Where("id = ?", idStr).Take(&ownerID).Error; err != nil {
 				if errors.Is(err, gorm.ErrRecordNotFound) {
 					r.serverCtx.JSONErrorStatus(w, http.StatusNotFound, "Resource not found")
 				} else {
@@ -175,7 +175,7 @@ func (r *Router) OwnerOrSysop(model models.Model, idKey ...string) Middleware {
 			}
 
 			var ownerID int
-			if err := r.serverCtx.DB.Table(model.TableName()).Select("user_id").Where("id = ?", idStr).Take(&ownerID).Error; err != nil {
+			if err := r.serverCtx.DB.WithContext(req.Context()).Table(model.TableName()).Select("user_id").Where("id = ?", idStr).Take(&ownerID).Error; err != nil {
 				if errors.Is(err, gorm.ErrRecordNotFound) {
 					r.serverCtx.JSONErrorStatus(w, http.StatusNotFound, "Resource not found")
 				} else {

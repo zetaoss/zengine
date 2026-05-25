@@ -235,6 +235,7 @@
       <ZSpinner />
     </div>
   {:else if row}
+    {@const currentRow = row}
     <section class="rounded-lg border border-(--border-color-subtle) bg-(--background-color-neutral-subtle) p-6">
       <div class="mb-4 flex flex-wrap items-center justify-between gap-4">
         <div class="flex flex-1 items-start gap-3">
@@ -242,7 +243,7 @@
             <ZValidator error={titleError} containerClass="flex-1">
               {#snippet left()}
                 <ZSelect
-                  bind:value={row!.request_type}
+                  bind:value={currentRow.request_type}
                   items={[
                     { value: 'create', label: '생성' },
                     { value: 'edit', label: '편집' },
@@ -253,7 +254,7 @@
               {#snippet children(hasError)}
                 <input
                   type="text"
-                  bind:value={row!.title}
+                  bind:value={currentRow.title}
                   class="z-input text-lg font-semibold {hasError ? 'border-red-500! focus:ring-red-500/20!' : ''}"
                   placeholder="프롬프트 제목"
                 />

@@ -22,8 +22,8 @@ const (
 )
 
 var (
-	mwAuthRedisOnce sync.Once
-	mwAuthRedis     *goredis.Client
+	mwAuthRedisMu sync.RWMutex
+	mwAuthRedis   *goredis.Client
 )
 
 func FetchUser(r *http.Request, cfg *config.Config) (models.MWUser, bool) {
@@ -128,9 +128,22 @@ func saveMWUserCache(cfg *config.Config, cookie string, user models.MWUser) {
 }
 
 func mwAuthRedisClient(cfg *config.Config) *goredis.Client {
-	mwAuthRedisOnce.Do(func() {
-		client, _ := appredis.Open(cfg)
+	mwAuthRedisMu.RLock()
+	if mwAuthRedis != nil {
+		client := mwAuthRedis
+		mwAuthRedisMu.RUnlock()
+		return client
+	}
+	mwAuthRedisMu.RUnlock()
+
+	mwAuthRedisMu.Lock()
+	defer mwAuthRedisMu.Unlock()
+	if mwAuthRedis != nil {
+		return mwAuthRedis
+	}
+	client, err := appredis.Open(cfg)
+	if err == nil {
 		mwAuthRedis = client
-	})
+	}
 	return mwAuthRedis
 }

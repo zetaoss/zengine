@@ -21,5 +21,5 @@ type CommonReport struct {
 }
 
 func (CommonReport) TableName() string {
-	return "zetawiki.common_report"
+	return "common_reports"
 }
