@@ -4,34 +4,32 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/zetaoss/zengine/goapp/app"
 	"github.com/zetaoss/zengine/goapp/models"
-	"github.com/zetaoss/zengine/goapp/server/middleware"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
 
 	"gorm.io/gorm"
 )
 
 func Index(c *serverctx.Context) {
-	postID, ok := parseID(c.R, "post")
+	postID, ok := c.PathInt("postId")
 	if !ok {
-		http.NotFound(c.W, c.R)
+		c.NotFound()
 		return
 	}
 	rows := make([]models.ForumReply, 0, 128)
 	if err := c.DB.Table("replies").Where("post_id = ?", postID).Order("created_at DESC").Find(&rows).Error; err != nil {
-		http.Error(c.W, "internal server error", http.StatusInternalServerError)
+		c.InternalError()
 		return
 	}
 	c.JSON(rows)
 }
 
 func Store(c *serverctx.Context) {
-	user, ok := middleware.UserFromRequest(c.R)
+	user, ok := c.User()
 	if !ok || user.ID < 1 {
 		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
 		return
@@ -40,9 +38,9 @@ func Store(c *serverctx.Context) {
 		c.JSONError(http.StatusForbidden, "Forbidden")
 		return
 	}
-	postID, ok := parseID(c.R, "post")
+	postID, ok := c.PathInt("postId")
 	if !ok {
-		http.NotFound(c.W, c.R)
+		c.NotFound()
 		return
 	}
 	var body struct {
@@ -65,26 +63,26 @@ func Store(c *serverctx.Context) {
 		CreatedAt: time.Now().Format("2006-01-02 15:04:05"),
 	}
 	if err := c.DB.Table("replies").Create(&row).Error; err != nil {
-		http.Error(c.W, "internal server error", http.StatusInternalServerError)
+		c.InternalError()
 		return
 	}
 	c.JSON(row)
 }
 
 func Update(c *serverctx.Context) {
-	user, ok := middleware.UserFromRequest(c.R)
+	user, ok := c.User()
 	if !ok || user.ID < 1 {
 		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
 		return
 	}
-	postID, ok := parseID(c.R, "post")
+	postID, ok := c.PathInt("postId")
 	if !ok {
-		http.NotFound(c.W, c.R)
+		c.NotFound()
 		return
 	}
-	replyID, ok := parseID(c.R, "reply")
+	replyID, ok := c.PathInt("id")
 	if !ok {
-		http.NotFound(c.W, c.R)
+		c.NotFound()
 		return
 	}
 
@@ -94,14 +92,14 @@ func Update(c *serverctx.Context) {
 	}
 	if err := c.DB.Table("replies").Select("post_id, user_id").Where("id = ?", replyID).Take(&target).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			http.NotFound(c.W, c.R)
+			c.NotFound()
 			return
 		}
-		http.Error(c.W, "internal server error", http.StatusInternalServerError)
+		c.InternalError()
 		return
 	}
 	if target.PostID != postID {
-		http.NotFound(c.W, c.R)
+		c.NotFound()
 		return
 	}
 	if target.UserID != user.ID {
@@ -126,26 +124,26 @@ func Update(c *serverctx.Context) {
 		"body":       body.Body,
 		"updated_at": time.Now(),
 	}).Error; err != nil {
-		http.Error(c.W, "internal server error", http.StatusInternalServerError)
+		c.InternalError()
 		return
 	}
 	c.JSON(map[string]bool{"ok": true})
 }
 
 func Destroy(c *serverctx.Context) {
-	user, ok := middleware.UserFromRequest(c.R)
+	user, ok := c.User()
 	if !ok || user.ID < 1 {
 		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
 		return
 	}
-	postID, ok := parseID(c.R, "post")
+	postID, ok := c.PathInt("postId")
 	if !ok {
-		http.NotFound(c.W, c.R)
+		c.NotFound()
 		return
 	}
-	replyID, ok := parseID(c.R, "reply")
+	replyID, ok := c.PathInt("id")
 	if !ok {
-		http.NotFound(c.W, c.R)
+		c.NotFound()
 		return
 	}
 	var target struct {
@@ -154,14 +152,14 @@ func Destroy(c *serverctx.Context) {
 	}
 	if err := c.DB.Table("replies").Select("post_id, user_id").Where("id = ?", replyID).Take(&target).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			http.NotFound(c.W, c.R)
+			c.NotFound()
 			return
 		}
-		http.Error(c.W, "internal server error", http.StatusInternalServerError)
+		c.InternalError()
 		return
 	}
 	if target.PostID != postID {
-		http.NotFound(c.W, c.R)
+		c.NotFound()
 		return
 	}
 	if target.UserID != user.ID && !user.IsSysop() {
@@ -169,16 +167,8 @@ func Destroy(c *serverctx.Context) {
 		return
 	}
 	if err := c.DB.Table("replies").Where("id = ?", replyID).Delete(nil).Error; err != nil {
-		http.Error(c.W, "internal server error", http.StatusInternalServerError)
+		c.InternalError()
 		return
 	}
 	c.JSON(map[string]bool{"ok": true})
-}
-
-func parseID(r *http.Request, key string) (int, bool) {
-	id, err := strconv.Atoi(r.PathValue(key))
-	if err != nil || id < 1 {
-		return 0, false
-	}
-	return id, true
 }

@@ -12,7 +12,7 @@ import (
 )
 
 func Show(c *serverctx.Context) {
-	userID, err := strconv.Atoi(c.R.PathValue("userId"))
+	userID, err := strconv.Atoi(c.R.PathValue("id"))
 	if err != nil || userID < 1 {
 		c.JSONError(http.StatusNotFound, "Not Found")
 		return

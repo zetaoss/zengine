@@ -10,7 +10,7 @@ import (
 	"github.com/zetaoss/zengine/goapp/app"
 	"github.com/zetaoss/zengine/goapp/app/job"
 	"github.com/zetaoss/zengine/goapp/jobs/stat/timeutil"
-	"github.com/zetaoss/zengine/goapp/models"
+	"github.com/zetaoss/zengine/goapp/models/stat"
 
 	"gorm.io/gorm/clause"
 )
@@ -67,7 +67,7 @@ func (j *HourlyJob) Run(ctx context.Context, jobCtx job.JobContext, _ any) job.R
 		return job.Error(err)
 	}
 	rowsRaw, _ := payload["rows"].([]any)
-	rows := make([]models.GSC, 0, len(rowsRaw))
+	rows := make([]statmodels.GSC, 0, len(rowsRaw))
 	for _, item := range rowsRaw {
 		m, ok := item.(app.H)
 		if !ok {
@@ -85,7 +85,7 @@ func (j *HourlyJob) Run(ctx context.Context, jobCtx job.JobContext, _ any) job.R
 		if tm.Before(since) || !tm.Before(until) {
 			continue
 		}
-		rows = append(rows, models.GSC{
+		rows = append(rows, statmodels.GSC{
 			Timeslot:    tm.UTC().Format("2006-01-02 15:04:05"),
 			Clicks:      asInt(m["clicks"]),
 			Impressions: asInt(m["impressions"]),

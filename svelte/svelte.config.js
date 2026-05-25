@@ -5,6 +5,9 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte'
 const config = {
   preprocess: vitePreprocess(),
   onwarn: (warning, defaultHandler) => {
+    if (warning.code === 'css_unused_selector') {
+      throw new Error(`[svelte:${warning.code}] ${warning.message}`)
+    }
     if (warning.code === 'options_missing_custom_element') return
     defaultHandler(warning)
   },

@@ -23,6 +23,7 @@
 
   export let modelValue = ''
   export let isError = false
+  export let placeholder = '내용을 입력하세요.'
   export let onModelValueChange: (value: string) => void = () => {}
 
   const lowlight = createLowlight()
@@ -71,7 +72,7 @@
         TableRow,
         TableHeader,
         TableCell,
-        Placeholder.configure({ placeholder: '내용' }),
+        Placeholder.configure({ placeholder }),
         Image.configure({ inline: true }),
         Iframe,
       ],
@@ -128,7 +129,7 @@
 </div>
 
 <style lang="postcss">
-  @reference 'tailwindcss';
+  @reference '$shared/assets/app.css';
 
   .editor {
     @apply border rounded bg-white dark:bg-black flex flex-col h-[60vh];
@@ -151,7 +152,7 @@
   }
 
   .editor__content :global(.tiptap pre) {
-    @apply my-3 rounded bg-zinc-900 text-zinc-100 overflow-x-auto;
+    @apply my-3 rounded overflow-x-auto;
     padding: 0.9rem 1rem;
   }
 

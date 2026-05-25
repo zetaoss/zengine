@@ -18,7 +18,6 @@ type MatcherJob struct{}
 const (
 	matcherJobName    = "request-matcher"
 	matcherJobTimeout = 5 * time.Minute
-	matcherJobQueue   = "default"
 )
 
 func NewMatcherJob() *MatcherJob {

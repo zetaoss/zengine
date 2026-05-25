@@ -7,7 +7,6 @@ import (
 
 	"github.com/zetaoss/zengine/goapp/app"
 	"github.com/zetaoss/zengine/goapp/models"
-	"github.com/zetaoss/zengine/goapp/server/middleware"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
 
 	"gorm.io/gorm"
@@ -33,7 +32,7 @@ func Index(c *serverctx.Context) {
 }
 
 func Update(c *serverctx.Context) {
-	user, ok := middleware.UserFromRequest(c.R)
+	user, ok := c.User()
 	if !ok || user.ID < 1 {
 		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
 		return

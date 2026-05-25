@@ -8,7 +8,7 @@ import (
 	"github.com/zetaoss/zengine/goapp/app"
 	"github.com/zetaoss/zengine/goapp/app/job"
 	"github.com/zetaoss/zengine/goapp/jobs/stat/timeutil"
-	"github.com/zetaoss/zengine/goapp/models"
+	"github.com/zetaoss/zengine/goapp/models/stat"
 
 	"gorm.io/gorm/clause"
 )
@@ -72,10 +72,10 @@ func (j *HourlyJob) Run(ctx context.Context, jobCtx job.JobContext, _ any) job.R
 		}
 	}
 
-	rows := make([]models.CFKV, 0, len(rowsByTimeslot)*len(models.WorkerCFMetricNames))
+	rows := make([]statmodels.CFKV, 0, len(rowsByTimeslot)*len(statmodels.WorkerCFMetricNames))
 	for timeslot, metrics := range rowsByTimeslot {
-		for _, name := range models.WorkerCFMetricNames {
-			rows = append(rows, models.CFKV{Timeslot: timeslot, Name: name, Value: metrics[name]})
+		for _, name := range statmodels.WorkerCFMetricNames {
+			rows = append(rows, statmodels.CFKV{Timeslot: timeslot, Name: name, Value: metrics[name]})
 		}
 	}
 

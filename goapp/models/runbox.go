@@ -22,3 +22,7 @@ type Runbox struct {
 	Created string      `json:"created_at" gorm:"column:created_at"`
 	Updated string      `json:"updated_at" gorm:"column:updated_at"`
 }
+
+func (Runbox) TableName() string {
+	return "runboxes"
+}

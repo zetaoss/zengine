@@ -1,6 +1,6 @@
 <script lang="ts">
   export let path: string
-  export let size = 16
+  export let size: number | string = 16
 </script>
 
 <svg

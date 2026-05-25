@@ -1,8 +1,11 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-  import { onMount } from 'svelte'
+  import { SvelteURL } from 'svelte/reactivity'
 
+  import { goto } from '$app/navigation'
+  import { resolve } from '$app/paths'
+  import { page } from '$app/state'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
   import ZTabs from '$shared/ui/ZTabs.svelte'
   import ZToggle from '$shared/ui/ZToggle.svelte'
@@ -95,7 +98,17 @@
 
   let loading = $state(true)
   let failed = $state<string | null>(null)
-  let range = $state<'48h' | '15d' | '90d'>('48h')
+
+  function parseRange(value: string | undefined) {
+    const r = value ?? ''
+    if (r === '15d' || r === '90d') return r
+    return '48h'
+  }
+
+  let range = $derived.by<'48h' | '15d' | '90d'>(() => parseRange(page.params.range))
+
+  let observedRouteRange: string | null = null
+
   let valueMode = $state<'compact' | 'exact'>('compact')
   let diffModeByKey = $state<Record<string, boolean>>({})
   let syncedHoverIndex = $state<number | null>(null)
@@ -106,11 +119,11 @@
   let mwData = $state<MwStatisticsResp>(EMPTY_MW)
   let fetchVersion = 0
 
-  const rangeTabs: Array<{ value: '48h' | '15d' | '90d'; label: string }> = [
-    { value: '48h', label: '48 Hours' },
-    { value: '15d', label: '15 Days' },
-    { value: '90d', label: '90 Days' },
-  ]
+  const rangeTabs = $derived.by(() => [
+    { value: '48h', label: '48 Hours', href: resolve('/tool/stat/48h') },
+    { value: '15d', label: '15 Days', href: resolve('/tool/stat/15d') },
+    { value: '90d', label: '90 Days', href: resolve('/tool/stat/90d') },
+  ])
 
   const labels = $derived.by(() => (range === '48h' ? data.timeslots : data.timeslots.map((v) => normalizeDateKey(v))))
   const labelsGa = $derived.by(() => (range === '48h' ? gaData.timeslots : gaData.timeslots.map((v) => normalizeDateKey(v))))
@@ -128,12 +141,12 @@
     return mwData.timeslots
   })
 
-  async function fetchData() {
+  async function fetchData(selectedRange: '48h' | '15d' | '90d') {
     const version = ++fetchVersion
     loading = true
     failed = null
 
-    if (range === '48h') {
+    if (selectedRange === '48h') {
       const [[cfResp, cfErr], [gaResp, gaErr], [gscResp, gscErr], [mwResp, mwErr]] = await Promise.all([
         httpy.get<AnalyticsResp>('/api/stat/cf-analytics/hourly'),
         httpy.get<GaResp>('/api/stat/ga/hourly'),
@@ -169,7 +182,7 @@
       return
     }
 
-    const days = range === '15d' ? 15 : 90
+    const days = selectedRange === '15d' ? 15 : 90
     const [[cfResp, cfErr], [gaResp, gaErr], [gscResp, gscErr], [mwResp, mwErr]] = await Promise.all([
       httpy.get<AnalyticsResp>(`/api/stat/cf-analytics/daily/${days}`),
       httpy.get<GaResp>(`/api/stat/ga/daily/${days}`),
@@ -207,12 +220,10 @@
   }
 
   function setRange(nextRange: string) {
-    const value = nextRange as typeof range
-    if (range === value) return
-    range = value
-    syncedHoverIndex = null
-    gscHoverIndex = null
-    void fetchData()
+    const p = `/tool/stat/${nextRange}`
+    const url = new SvelteURL(page.url)
+    url.pathname = p
+    void goto(resolve((url.pathname + url.search) as '/tool/stat'), { replaceState: true, noScroll: true })
   }
 
   function normalizeResp(input: AnalyticsResp | null): AnalyticsResp {
@@ -625,8 +636,14 @@
     return true
   }
 
-  onMount(() => {
-    void fetchData()
+  $effect(() => {
+    if (range !== observedRouteRange) {
+      const nextRange = range
+      observedRouteRange = range
+      syncedHoverIndex = null
+      gscHoverIndex = null
+      void fetchData(nextRange)
+    }
   })
 </script>
 

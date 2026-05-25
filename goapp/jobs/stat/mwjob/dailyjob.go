@@ -7,7 +7,7 @@ import (
 	"github.com/zetaoss/zengine/goapp/app"
 	"github.com/zetaoss/zengine/goapp/app/job"
 	"github.com/zetaoss/zengine/goapp/jobs/stat/timeutil"
-	"github.com/zetaoss/zengine/goapp/models"
+	"github.com/zetaoss/zengine/goapp/models/stat"
 
 	"gorm.io/gorm/clause"
 )
@@ -36,7 +36,7 @@ func (j *DailyJob) Run(ctx context.Context, jobCtx job.JobContext, _ any) job.Re
 		return job.Error(err)
 	}
 
-	row := models.MWDaily{
+	row := statmodels.MWDaily{
 		Timeslot:    timeutil.DailyEndUTC(time.Now().UTC()).Format("2006-01-02"),
 		Articles:    ToInt(stats["articles"]),
 		Pages:       ToInt(stats["pages"]),

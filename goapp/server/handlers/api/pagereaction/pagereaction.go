@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/zetaoss/zengine/goapp/app"
-	"github.com/zetaoss/zengine/goapp/server/middleware"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
 
 	"gorm.io/gorm"
@@ -32,7 +31,7 @@ func Show(c *serverctx.Context) {
 	}
 
 	userEmojis := []string{}
-	if user, ok := middleware.UserFromRequest(c.R); ok && user.ID > 0 {
+	if user, ok := c.User(); ok && user.ID > 0 {
 		rows := make([]struct {
 			EmojiCode int `gorm:"column:emoji_code"`
 		}, 0, 8)
@@ -48,7 +47,7 @@ func Show(c *serverctx.Context) {
 }
 
 func Store(c *serverctx.Context) {
-	user, ok := middleware.UserFromRequest(c.R)
+	user, ok := c.User()
 	if !ok || user.ID < 1 {
 		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
 		return

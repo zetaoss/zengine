@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zetaoss/zengine/goapp/models"
+	"github.com/zetaoss/zengine/goapp/models/stat"
 )
 
 func TestHourlyEndUTC(t *testing.T) {
@@ -26,7 +26,7 @@ func TestBuildHourlyPayload(t *testing.T) {
 
 	from := time.Date(2026, 3, 16, 0, 0, 0, 0, time.UTC)
 	to := from.Add(47 * time.Hour)
-	rows := []models.StatCF{
+	rows := []statmodels.StatCF{
 		{Timeslot: from.Add(2 * time.Hour), Name: "sum_requests", Value: "123"},
 		{Timeslot: from.Add(2 * time.Hour), Name: "sum_browserMap", Value: "{\"Chrome\":10}"},
 	}

@@ -1,15 +1,21 @@
 package serverctx
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
 
 	"github.com/zetaoss/zengine/goapp/app/appctx"
 	"github.com/zetaoss/zengine/goapp/app/config"
+	"github.com/zetaoss/zengine/goapp/models"
 
 	"gorm.io/gorm"
 )
+
+type contextKey string
+
+const MWUserKey contextKey = "mw_user"
 
 type Context struct {
 	*appctx.AppContext
@@ -41,15 +47,21 @@ func (c *Context) JSONStatus(status int, v any) {
 }
 
 func (c *Context) JSONError(status int, message string) {
-	c.JSONStatus(status, map[string]string{"message": message})
+	c.JSONErrorStatus(c.W, status, message)
+}
+
+func (c *Context) JSONErrorStatus(w http.ResponseWriter, status int, message string) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(map[string]string{"message": message})
 }
 
 func (c *Context) InternalError() {
-	http.Error(c.W, "internal server error", http.StatusInternalServerError)
+	c.JSONError(http.StatusInternalServerError, "Internal Server Error")
 }
 
 func (c *Context) NotFound() {
-	http.NotFound(c.W, c.R)
+	c.JSONError(http.StatusNotFound, "Not Found")
 }
 
 func (c *Context) PathInt(key string) (int, bool) {
@@ -66,4 +78,13 @@ func (c *Context) Decode(v any) bool {
 		return false
 	}
 	return true
+}
+
+func (c *Context) User() (models.MWUser, bool) {
+	u, ok := c.R.Context().Value(MWUserKey).(models.MWUser)
+	return u, ok
+}
+
+func (c *Context) SetUser(user models.MWUser) {
+	c.R = c.R.WithContext(context.WithValue(c.R.Context(), MWUserKey, user))
 }
