@@ -7,7 +7,14 @@ This guide helps coding agents quickly understand the monorepo and choose where 
 - **Contextual Precedence**: This file and directory-level `AGENTS.md` files contain the source of truth for repository workflows and standards.
 - **Engineering Standards**:
   - **Go Backend**: Follow clean architecture (handlers -> services/jobs -> models). Use GORM for DB operations.
-  - **Svelte Frontend**: Maintain mobile-first responsive design using Tailwind CSS. Use reactive stores for shared state.
+  - **Svelte Frontend**:
+    - Maintain mobile-first responsive design using Tailwind CSS.
+    - Use reactive stores for shared state.
+    - **Quality Standards**:
+      - **No `any`**: Strictly avoid `any` types. Define proper interfaces or types.
+      - **Import Sorting**: Always maintain sorted imports (use `eslint --fix`).
+      - **Verification**: Run `npm run check` and `eslint` before finalizing changes.
+      - **Svelte Warnings**: Treat `svelte-check` warnings as review items and resolve them (or document why they are intentionally kept).
   - **Shared Code**: `svelte/src/shared/` is the source for utilities used by both main and skin Svelte. Never edit the symlink in `mwz/`.
 
 ## Scope
@@ -61,8 +68,9 @@ This guide helps coding agents quickly understand the monorepo and choose where 
 
 ## Frontend Styling Rule
 
-- Prefer design tokens over hardcoded values.
-- Check `svelte/src/shared/assets/appcolor-mw.css` before introducing new colors.
+- Prefer Radix color tokens first (e.g. `--slate-11`, `--blue-9`) over MediaWiki color tokens when both are possible.
+- When using Radix color tokens, verify the required color scale import exists in `svelte/src/shared/assets/appcolor-radix.css`.
+- Use `svelte/src/shared/assets/appcolor-mw.css` for MediaWiki-specific semantic tokens.
 
 ## Frontend Shared Responsive Utilities
 

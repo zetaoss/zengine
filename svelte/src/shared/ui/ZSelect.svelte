@@ -1,0 +1,94 @@
+<svelte:options runes={true} />
+
+<script lang="ts">
+  import type { Snippet } from 'svelte'
+
+  import { useDismissable } from '$shared/composables/useDismissable'
+
+  interface SelectItem {
+    value: string
+    label: string
+  }
+
+  let {
+    value = $bindable(''),
+    items = [],
+    placeholder = '선택...',
+    class: className = '',
+    onchange,
+    item: itemSnippet,
+  }: {
+    value?: string
+    items: SelectItem[]
+    placeholder?: string
+    class?: string
+    onchange?: (value: string) => void
+    item?: Snippet<[SelectItem]>
+  } = $props()
+
+  let open = $state(false)
+  let rootEl = $state<HTMLElement | null>(null)
+
+  let selectedItem = $derived(items.find((i) => i.value === value))
+
+  function toggle() {
+    open = !open
+  }
+
+  function select(item: SelectItem) {
+    value = item.value
+    open = false
+    onchange?.(item.value)
+  }
+
+  useDismissable(() => rootEl, {
+    enabled: () => open,
+    onDismiss: () => (open = false),
+  })
+</script>
+
+<div bind:this={rootEl} class="relative {className}">
+  <button
+    type="button"
+    class="z-select flex w-full items-center justify-between gap-2 text-left"
+    onclick={toggle}
+  >
+    <div class="min-w-0 flex-1 truncate">
+      {#if selectedItem}
+        {#if itemSnippet}
+          {@render itemSnippet(selectedItem)}
+        {:else}
+          {selectedItem.label}
+        {/if}
+      {:else}
+        <span class="text-(--color-subtle)">{placeholder}</span>
+      {/if}
+    </div>
+  </button>
+
+  {#if open}
+    <div
+      class="z-base2 z-ring absolute left-0 right-0 top-full z-50 mt-1 max-h-64 overflow-y-auto rounded border border-(--border-color-subtle) py-1 shadow-lg"
+    >
+      {#each items as item (item.value)}
+        <button
+          type="button"
+          class="flex w-full items-center gap-2 px-3 py-2 text-left transition hover:bg-(--background-color-interactive-subtle) {value ===
+          item.value
+            ? 'bg-(--background-color-interactive-subtle) font-semibold'
+            : ''}"
+          onclick={() => select(item)}
+        >
+          {#if itemSnippet}
+            {@render itemSnippet(item)}
+          {:else}
+            {item.label}
+          {/if}
+        </button>
+      {/each}
+      {#if items.length === 0}
+        <div class="px-3 py-2 text-sm text-(--color-subtle)">항목이 없습니다.</div>
+      {/if}
+    </div>
+  {/if}
+</div>

@@ -25,6 +25,8 @@
   } from '@mdi/js'
   import type { Editor } from '@tiptap/core'
 
+  import ZSelect from '$shared/ui/ZSelect.svelte'
+
   import MenuItem from './MenuItem.svelte'
   import type { ItemData } from './types'
 
@@ -219,32 +221,24 @@
   <div class="divider"></div>
 
   <div class="code-lang">
-    <select
-      class="code-lang__select"
+    <ZSelect
       value={currentCodeLang}
-      disabled={!editor.isActive('codeBlock')}
-      on:change={(e) => setCodeBlockLanguage((e.target as HTMLSelectElement).value as CodeLang)}
-    >
-      {#each CODE_LANGS as l (l.value)}
-        <option value={l.value}>{l.label}</option>
-      {/each}
-    </select>
+      onchange={(val) => setCodeBlockLanguage(val as CodeLang)}
+      items={CODE_LANGS}
+      class="w-28"
+    />
   </div>
 </div>
 
 <style lang="postcss">
-  @reference 'tailwindcss';
+  @reference '$shared/assets/app.css';
 
   .menu-bar {
-    @apply border-b text-right items-center flex flex-wrap p-1 bg-slate-100 dark:bg-slate-900;
+    @apply border-b text-right items-center flex flex-wrap p-1 bg-(--background-color-neutral-subtle) dark:bg-slate-900;
   }
 
   .code-lang {
     @apply ml-auto flex items-center;
-  }
-
-  .code-lang__select {
-    @apply text-xs rounded border px-2 py-1 bg-white dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700;
   }
 
   .divider {

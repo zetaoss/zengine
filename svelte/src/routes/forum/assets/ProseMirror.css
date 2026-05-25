@@ -1,6 +1,6 @@
 /* ProseMirror.css */
 /* Tailwind @apply + CSS Nesting 버전 */
-@reference 'tailwindcss';
+@reference '$shared/assets/app.css';
 
 .ProseMirror {
   @apply outline-0;
@@ -55,7 +55,7 @@
   }
 
   & blockquote {
-    @apply border-l-4 pl-4 border-gray-200;
+    @apply border-l-4 pl-4 border-gray-200 dark:border-gray-700;
   }
 
   & ul[data-type='taskList'] {
@@ -123,14 +123,14 @@
 
   & p {
     line-height: 1.2rem;
+  }
 
-    & > .is-editor-empty:first-child::before {
-      color: #adb5bd;
-      content: attr(data-placeholder);
-      float: left;
-      height: 0;
-      pointer-events: none;
-    }
+  & p.is-empty:first-child::before {
+    color: var(--gray-9);
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
   }
 }
 

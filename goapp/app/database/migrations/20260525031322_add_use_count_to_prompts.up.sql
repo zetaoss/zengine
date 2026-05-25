@@ -1,0 +1,1 @@
+ALTER TABLE editbot_prompts ADD COLUMN use_count INT UNSIGNED NOT NULL DEFAULT 0 AFTER content;

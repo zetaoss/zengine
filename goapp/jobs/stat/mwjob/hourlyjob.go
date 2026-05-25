@@ -8,7 +8,7 @@ import (
 	"github.com/zetaoss/zengine/goapp/app"
 	"github.com/zetaoss/zengine/goapp/app/job"
 	"github.com/zetaoss/zengine/goapp/jobs/stat/timeutil"
-	"github.com/zetaoss/zengine/goapp/models"
+	"github.com/zetaoss/zengine/goapp/models/stat"
 
 	"gorm.io/gorm/clause"
 )
@@ -56,7 +56,7 @@ func (j *HourlyJob) Run(ctx context.Context, jobCtx job.JobContext, input Hourly
 		ts = timeutil.HourlyEndUTC(time.Now().UTC(), 0).Format("2006-01-02 15:04:05")
 	}
 
-	row := models.MWHourly{
+	row := statmodels.MWHourly{
 		Timeslot:    ts,
 		Articles:    ToInt(stats["articles"]),
 		Pages:       ToInt(stats["pages"]),

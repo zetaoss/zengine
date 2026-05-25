@@ -9,7 +9,7 @@ import (
 	"github.com/zetaoss/zengine/goapp/app/appctx"
 	"github.com/zetaoss/zengine/goapp/app/config"
 	"github.com/zetaoss/zengine/goapp/app/job"
-	"github.com/zetaoss/zengine/goapp/app/redis"
+	appredis "github.com/zetaoss/zengine/goapp/app/redis"
 	"github.com/zetaoss/zengine/goapp/worker/queue"
 	"github.com/zetaoss/zengine/goapp/worker/registry"
 	"github.com/zetaoss/zengine/goapp/worker/scheduler"
@@ -33,7 +33,7 @@ func New(cfg *config.Config) (*Worker, error) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 
-	redisClient, err := redis.Open(cfg)
+	redisClient, err := appredis.Open(cfg)
 	if err != nil {
 		cancel()
 		return nil, err

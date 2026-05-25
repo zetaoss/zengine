@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { mdiAutoFix, mdiCreation, mdiDelete } from '@mdi/js'
+  import { SvelteURL } from 'svelte/reactivity'
   import { get } from 'svelte/store'
 
   import { goto } from '$app/navigation'
@@ -60,7 +61,12 @@
   const canDelete = auth.canDelete
   const userInfo = auth.userInfo
 
-  let mode = $state<Mode>('todo')
+  let mode = $derived.by(() => {
+    const m = page.params.mode
+    if (m === 'todo-top' || m === 'done') return m
+    return 'todo'
+  })
+
   let respData = $state<RespData>({ current_page: 1, data: [], last_page: 1 })
   let paginateData = $state<PaginateData | null>(null)
   let currentPage = $state(1)
@@ -71,6 +77,7 @@
   let loading = $state(true)
 
   let observedRoutePage = 0
+  let observedRouteMode: string | null = null
 
   let routePage = $derived.by(() => {
     const p = Number(page.url.searchParams.get('page'))
@@ -79,14 +86,15 @@
 
   let isSysop = $derived(($userInfo?.groups ?? []).includes('sysop'))
   let modeTabs = $derived([
-    { value: 'todo', label: '요청', badge: count.todo },
-    { value: 'todo-top', label: '추천' },
-    { value: 'done', label: '완료', badge: count.done },
+    { value: 'todo', label: '요청', badge: count.todo, href: resolve('/tool/write-request') },
+    { value: 'todo-top', label: '추천', href: resolve('/tool/write-request/todo-top') },
+    { value: 'done', label: '완료', badge: count.done, href: resolve('/tool/write-request/done') },
   ])
 
   $effect(() => {
-    if (routePage !== observedRoutePage) {
+    if (routePage !== observedRoutePage || mode !== observedRouteMode) {
       observedRoutePage = routePage
+      observedRouteMode = mode
       currentPage = routePage
       void fetchData()
     }
@@ -164,8 +172,11 @@
   }
 
   function setMode(nextMode: Mode) {
-    mode = nextMode
-    void fetchData()
+    const p = `/tool/write-request/${nextMode}`
+    const url = new SvelteURL(page.url)
+    url.pathname = p
+    url.searchParams.delete('page')
+    void goto(resolve((url.pathname + url.search) as '/tool/write-request'), { replaceState: true, noScroll: true })
   }
 
   async function del(row: Row) {

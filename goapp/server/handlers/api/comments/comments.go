@@ -1,16 +1,12 @@
 package comments
 
 import (
-	"errors"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/zetaoss/zengine/goapp/app"
-	"github.com/zetaoss/zengine/goapp/server/middleware"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
-
-	"gorm.io/gorm"
 )
 
 type row struct {
@@ -67,7 +63,7 @@ func List(c *serverctx.Context) {
 }
 
 func Store(c *serverctx.Context) {
-	user, ok := middleware.UserFromRequest(c.R)
+	user, ok := c.User()
 	if !ok || user.ID < 1 {
 		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
 		return
@@ -101,29 +97,9 @@ func Store(c *serverctx.Context) {
 }
 
 func Update(c *serverctx.Context) {
-	user, ok := middleware.UserFromRequest(c.R)
-	if !ok || user.ID < 1 {
-		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
-		return
-	}
 	id, ok := c.PathInt("id")
 	if !ok {
 		c.NotFound()
-		return
-	}
-	var target struct {
-		UserID int `gorm:"column:user_id"`
-	}
-	if err := c.DB.Table("zetawiki.page_comments").Select("user_id").Where("id = ?", id).Take(&target).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.NotFound()
-			return
-		}
-		c.InternalError()
-		return
-	}
-	if user.ID != target.UserID {
-		c.JSONError(http.StatusForbidden, "Forbidden")
 		return
 	}
 	var body struct {
@@ -145,29 +121,9 @@ func Update(c *serverctx.Context) {
 }
 
 func Destroy(c *serverctx.Context) {
-	user, ok := middleware.UserFromRequest(c.R)
-	if !ok || user.ID < 1 {
-		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
-		return
-	}
 	id, ok := c.PathInt("id")
 	if !ok {
 		c.NotFound()
-		return
-	}
-	var target struct {
-		UserID int `gorm:"column:user_id"`
-	}
-	if err := c.DB.Table("zetawiki.page_comments").Select("user_id").Where("id = ?", id).Take(&target).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.NotFound()
-			return
-		}
-		c.InternalError()
-		return
-	}
-	if user.ID != target.UserID && !user.IsSysop() {
-		c.JSONError(http.StatusForbidden, "Forbidden")
 		return
 	}
 	if err := c.DB.Table("zetawiki.page_comments").Where("id = ?", id).Delete(nil).Error; err != nil {

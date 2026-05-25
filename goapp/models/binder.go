@@ -9,3 +9,7 @@ type Binder struct {
 	Enabled   bool   `json:"enabled" gorm:"column:enabled"`
 	CreatedAt string `json:"created_at" gorm:"column:created_at"`
 }
+
+func (Binder) TableName() string {
+	return "ldb.binders"
+}

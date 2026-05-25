@@ -69,11 +69,20 @@ func (j *EditBotJob) Run(ctx context.Context, jobCtx job.JobContext, p editBotPa
 		}
 		return job.Error(err)
 	}
-
 	slog.Info("[editbot] Job picked", "task_id", task.ID, "title", task.Title, "phase", task.Phase)
 
+	llmOutput := task.LLMOutput
+	var actualModel string
+	var llmInput string
+
+	// If we already have LLM output, we can skip the generation phase.
+	nextPhase := models.EditBotPhaseGenerating
+	if strings.TrimSpace(llmOutput) != "" {
+		nextPhase = models.EditBotPhasePublishing
+	}
+
 	updates := app.H{
-		"phase":      models.EditBotPhaseGenerating,
+		"phase":      nextPhase,
 		"attempts":   task.Attempts + 1,
 		"updated_at": now,
 	}
@@ -87,38 +96,40 @@ func (j *EditBotJob) Run(ctx context.Context, jobCtx job.JobContext, p editBotPa
 		return job.Error(fmt.Errorf("task #%d already claimed by another worker", task.ID))
 	}
 
-	slog.Info("[editbot] generating content", "task_id", task.ID)
-	llmOutput, actualModel, llmInput, genErr := j.generateContent(ctx, jobCtx, task)
-	if genErr != nil {
+	if nextPhase == models.EditBotPhaseGenerating {
+		slog.Info("[editbot] generating content", "task_id", task.ID)
+		var genErr error
+		llmOutput, actualModel, llmInput, genErr = j.generateContent(ctx, jobCtx, task)
+		if genErr != nil {
+			_ = db.WithContext(ctx).Table("edit_tasks").Where("id = ?", task.ID).Updates(app.H{
+				"phase":       models.EditBotPhaseRetrying,
+				"error_count": task.ErrorCount + 1,
+				"last_error":  genErr.Error(),
+				"llm_input":   llmInput,
+				"llm_model":   actualModel,
+				"updated_at":  time.Now(),
+			}).Error
+			return job.Error(genErr)
+		}
+
+		slog.Info("[editbot] LLM generation success, now publishing", "task_id", task.ID, "model", actualModel)
+
 		_ = db.WithContext(ctx).Table("edit_tasks").Where("id = ?", task.ID).Updates(app.H{
-			"phase":       models.EditBotPhaseRetryingGenerate,
-			"error_count": task.ErrorCount + 1,
-			"last_error":  genErr.Error(),
-			"llm_input":   llmInput,
-			"llm_model":   actualModel,
-			"updated_at":  time.Now(),
+			"phase":      models.EditBotPhasePublishing,
+			"llm_input":  llmInput,
+			"llm_model":  actualModel,
+			"llm_output": llmOutput,
+			"updated_at": time.Now(),
 		}).Error
-		return job.Error(genErr)
+	} else {
+		slog.Info("[editbot] using existing LLM output, skipping generation", "task_id", task.ID)
 	}
 
-	slog.Info("[editbot] LLM generation success", "task_id", task.ID, "model", actualModel)
-
-	_ = db.WithContext(ctx).Table("edit_tasks").Where("id = ?", task.ID).Updates(app.H{
-		"llm_input":  llmInput,
-		"llm_model":  actualModel,
-		"llm_output": llmOutput,
-		"updated_at": time.Now(),
-	}).Error
-
-	_ = db.WithContext(ctx).Table("edit_tasks").Where("id = ?", task.ID).Updates(app.H{
-		"phase":      models.EditBotPhasePublishing,
-		"updated_at": time.Now(),
-	}).Error
-
 	slog.Info("[editbot] publishing content", "task_id", task.ID)
+
 	pubRes, pubErr := editbotsvc.PublishContent(jobCtx.Config(), task.Title, strings.TrimSpace(task.RequestType), llmOutput, task.ID)
 	if pubErr != nil {
-		newPhase := models.EditBotPhaseRetryingPublish
+		newPhase := models.EditBotPhaseRetrying
 		var pErr *editbotsvc.PublishError
 		if errors.As(pubErr, &pErr) {
 			// Terminal errors that should not be retried
@@ -184,7 +195,7 @@ func callLLM(ctx context.Context, cfg *config.Config, prompt string) (string, st
 
 // CalculateRetryAt returns the next retry time for a task based on its error count.
 func CalculateRetryAt(task models.EditBot) *string {
-	if task.Phase != models.EditBotPhaseRetryingGenerate && task.Phase != models.EditBotPhaseRetryingPublish {
+	if task.Phase != models.EditBotPhaseRetrying {
 		return nil
 	}
 	t, err := time.Parse(time.RFC3339, task.UpdatedAt)

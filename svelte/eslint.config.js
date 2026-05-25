@@ -47,6 +47,7 @@ export default defineConfig(
     },
     rules: {
       'svelte/block-lang': ['error', { script: 'ts', style: [null, 'postcss'] }],
+      'svelte/no-navigation-without-resolve': 'off',
     },
   },
   {

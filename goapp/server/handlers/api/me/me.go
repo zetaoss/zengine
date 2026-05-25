@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/zetaoss/zengine/goapp/app"
-	"github.com/zetaoss/zengine/goapp/server/middleware"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
 
 	"gorm.io/gorm"
@@ -17,7 +16,7 @@ import (
 var ghashRE = regexp.MustCompile("^[0-9a-f]{64}$")
 
 func Me(c *serverctx.Context) {
-	user, ok := middleware.UserFromRequest(c.R)
+	user, ok := c.User()
 	if !ok || user.ID < 1 {
 		c.JSON(app.H{"me": nil})
 		return
@@ -32,7 +31,7 @@ func Me(c *serverctx.Context) {
 }
 
 func GetAvatar(c *serverctx.Context) {
-	user, ok := middleware.UserFromRequest(c.R)
+	user, ok := c.User()
 	if !ok || user.ID < 1 {
 		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
 		return
@@ -67,7 +66,7 @@ func VerifyGravatar(c *serverctx.Context) {
 }
 
 func UpdateAvatar(c *serverctx.Context) {
-	user, ok := middleware.UserFromRequest(c.R)
+	user, ok := c.User()
 	if !ok || user.ID < 1 {
 		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
 		return

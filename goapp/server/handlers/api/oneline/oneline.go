@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/zetaoss/zengine/goapp/server/middleware"
 	"github.com/zetaoss/zengine/goapp/server/paginator"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
 	"gorm.io/gorm"
@@ -42,7 +41,7 @@ func Index(c *serverctx.Context) {
 }
 
 func Store(c *serverctx.Context) {
-	user, ok := middleware.UserFromRequest(c.R)
+	user, ok := c.User()
 	if !ok {
 		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
 		return
@@ -68,7 +67,7 @@ func Store(c *serverctx.Context) {
 }
 
 func Destroy(c *serverctx.Context) {
-	user, ok := middleware.UserFromRequest(c.R)
+	user, ok := c.User()
 	if !ok {
 		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
 		return
