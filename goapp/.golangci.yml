@@ -20,6 +20,7 @@ linters:
     - goprintffuncname
     # - gosec
     - govet
+    - importas
     - intrange
     - ineffassign
     # - lll
@@ -34,3 +35,15 @@ linters:
     # - unparam
     - unused
     - whitespace
+
+linters-settings:
+  importas:
+    no-unaliased: false
+    no-extra-aliases: true
+    alias:
+      - pkg: github.com/redis/go-redis/v9
+        alias: goredis
+      - pkg: github.com/zetaoss/zengine/goapp/app/redis
+        alias: appredis
+      - pkg: github.com/zetaoss/zengine/goapp/models/stat
+        alias: statmodels

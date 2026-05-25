@@ -52,7 +52,7 @@
     return path.split('/').filter(Boolean).pop()?.replaceAll('_', ' ') || '현재'
   }
 
-  function requestEditTask() {
+  function callEditBot() {
     if (!isSysop || wgArticleId < 1) return
     showEditBotModal = true
     close()
@@ -101,7 +101,7 @@
       {/each}
       {#if isSysop}
         <li>
-          <button type="button" onclick={requestEditTask}> 편집 요청 </button>
+          <button type="button" onclick={callEditBot}>편집봇 호출</button>
         </li>
       {/if}
     </ul>

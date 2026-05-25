@@ -4,9 +4,6 @@ MAKEFLAGS += --no-print-directory
 CACHE_DIR := /tmp/make-checks
 MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 USE_CACHE ?= 0
-GOLANGCI_LINT_VERSION ?= v2.12.2
-GOAPP_BIN := $(CURDIR)/goapp/bin
-GOLANGCI_LINT := $(GOAPP_BIN)/golangci-lint
 
 define print_fix
 echo; \
@@ -169,25 +166,15 @@ endif
 
 .PHONY: install-goapp-tools
 install-goapp-tools:
-	@echo "➡️  goapp: install golangci-lint $(GOLANGCI_LINT_VERSION)"
-	@mkdir -p $(GOAPP_BIN)
-	cd goapp && GOBIN=$(GOAPP_BIN) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
+	@$(MAKE) -C goapp install-tools
 
 .PHONY: check-goapp
 check-goapp:
 ifeq ($(USE_CACHE),1)
 	$(call run_cached,check-goapp,$(MAKE) USE_CACHE=0 check-goapp,goapp .golangci.yml)
 else
-	@echo "➡️  goapp: golangci-lint run"
-	@if [ -x "$(GOLANGCI_LINT)" ]; then \
-		cd goapp && "$(GOLANGCI_LINT)" run; \
-	elif command -v golangci-lint >/dev/null 2>&1; then \
-		cd goapp && golangci-lint run; \
-	else \
-		echo "ℹ️  golangci-lint not found, installing to goapp/bin"; \
-		$(MAKE) install-goapp-tools; \
-		cd goapp && "$(GOLANGCI_LINT)" run; \
-	fi
+	@echo "➡️  goapp: lint"
+	@$(MAKE) -C goapp lint
 	@echo "➡️  goapp: go test ./..."
 	cd goapp && go test ./...
 	@echo "➡️  goapp: go build ./..."

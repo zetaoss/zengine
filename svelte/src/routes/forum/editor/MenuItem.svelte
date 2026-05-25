@@ -16,7 +16,7 @@
 </button>
 
 <style lang="postcss">
-  @reference 'tailwindcss';
+  @reference '$shared/assets/app.css';
 
   .menu-item {
     @apply ml-1 rounded cursor-pointer;
@@ -28,6 +28,6 @@
 
   .menu-item.is-active,
   .menu-item:hover {
-    @apply bg-zinc-200 dark:bg-zinc-800;
+    @apply bg-(--background-color-interactive-subtle) dark:bg-zinc-800;
   }
 </style>

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/zetaoss/zengine/goapp/app"
-	"github.com/zetaoss/zengine/goapp/models"
+	"github.com/zetaoss/zengine/goapp/models/stat"
 )
 
 func runGAQuery(ctx context.Context, token, propertyID, startDate, endDate string, dimensions []string) (app.H, error) {
@@ -55,9 +55,9 @@ func runGAQuery(ctx context.Context, token, propertyID, startDate, endDate strin
 	return payload, nil
 }
 
-func parseGARows(payload app.H, layout, outLayout string, loc *time.Location, useUTC bool) []models.GA {
+func parseGARows(payload app.H, layout, outLayout string, loc *time.Location, useUTC bool) []statmodels.GA {
 	rowsRaw, _ := payload["rows"].([]any)
-	rows := make([]models.GA, 0, len(rowsRaw))
+	rows := make([]statmodels.GA, 0, len(rowsRaw))
 	for _, item := range rowsRaw {
 		m, ok := item.(app.H)
 		if !ok {
@@ -88,7 +88,7 @@ func parseGARows(payload app.H, layout, outLayout string, loc *time.Location, us
 			timeslot = t.UTC().Format(outLayout)
 		}
 
-		rows = append(rows, models.GA{
+		rows = append(rows, statmodels.GA{
 			Timeslot:        timeslot,
 			Sessions:        asInt(valueFromH(metricValues[0], "value")),
 			ScreenPageViews: asInt(valueFromH(metricValues[1], "value")),

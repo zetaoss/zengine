@@ -18,11 +18,6 @@ cd /app/goapp
 go run ./cmd/server
 ```
 
-```bash
-cd /app/goapp
-go run ./cmd/server
-```
-
 Worker:
 
 ```bash
@@ -30,20 +25,31 @@ cd /app/goapp
 go run ./cmd/worker
 ```
 
+## 2. Middleware & Security Policy
+
+### Fluent Middleware Factories
+To keep `routes.go` clean and declarative, the `Router` struct provides concise middleware factory methods.
+
+*   **`r.WithUser()`**: Optional auth; populates user info into context if logged in.
+*   **`r.User()`**: Strictly requires a valid session.
+*   **`r.Unblocked()`**: Requires a non-blocked logged-in user. (Recommended for write operations)
+*   **`r.Sysop()`**: Strictly restricted to system administrators.
+*   **`r.Internal()`**: Restricted to internal system calls (signature required).
+*   **`r.Owner(model)`**: Strictly permits only the resource owner. Useful for update (PUT/POST) operations.
+*   **`r.OwnerOrSysop(model)`**: Permits sysops or the resource owner. Recommended for delete operations and moderation tasks. It automatically extracts the table name from the provided `model`.
+
+### Resource Access Guidelines
+*   **Edit (Update)**: Recommended to use **`r.Owner(models.SomeModel{})`** to ensure only the original author can modify content.
+*   **Delete**: Recommended to use **`r.OwnerOrSysop(models.SomeModel{})`** to allow both the owner and system administrators to manage content.
+
 ## EditBot Map
-
-### Frontend Integration
-
-- List page: `svelte/src/routes/tool/editbot/+page.svelte`
-- Detail page: `svelte/src/routes/tool/editbot/[id]/+page.svelte`
-- MediaWiki API client: `svelte/src/lib/utils/mwapi.ts`
-
-### Backend Integration
-
-- Routes: `/api/editbot*` in `server/routes.go`
-- Handler: `server/handlers/api/editbot/editbot.go`
-- Model: `models/editbot.go`
-- Job: `jobs/editbotjob/editbotjob.go`
+...
+### EditBot Prompts
+- Routes: `/api/editbot/prompts*` in `server/routes.go`
+- Permissions: 
+    - Create: `r.Unblocked()`
+    - Update: Only Author (via `r.Owner(models.EditbotPrompt{})`)
+    - Delete: Author or Sysop (via `r.OwnerOrSysop(models.EditbotPrompt{})`)
 
 ### Activity Feed Rule
 

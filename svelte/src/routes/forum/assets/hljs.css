@@ -1,3 +1,5 @@
+@reference '$shared/assets/app.css';
+
 pre code.hljs {
   display: block;
   overflow-x: auto;
@@ -100,7 +102,7 @@ code.hljs {
   background-color: #ffeef0;
 }
 
-.dark {
+:where(.dark, .dark *) {
   .hljs {
     color: #c9d1d9;
     background: #0d1117;

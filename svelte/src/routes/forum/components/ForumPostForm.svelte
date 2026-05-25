@@ -2,6 +2,7 @@
   import { onMount } from 'svelte'
 
   import ZButton from '$shared/ui/ZButton.svelte'
+  import ZSelect from '$shared/ui/ZSelect.svelte'
 
   import type { ForumPostFormValue } from './types'
 
@@ -38,16 +39,20 @@
 
 <div class="space-y-4">
   <div class="flex items-center">
-    <select
+    <ZSelect
       value={modelValue.cat}
-      on:change={(e) => update({ cat: (e.target as HTMLSelectElement).value })}
-      class="my-3 w-auto rounded border bg-white p-1 text-sm text-gray-900 dark:bg-black dark:text-gray-100"
-    >
-      <option value="질문">질문</option>
-      <option value="잡담">잡담</option>
-      <option value="인사">인사</option>
-      <option value="기타">기타</option>
-    </select>
+      onchange={(val) => {
+        modelValue.cat = val
+        update({ cat: val })
+      }}
+      items={[
+        { value: '질문', label: '질문' },
+        { value: '잡담', label: '잡담' },
+        { value: '인사', label: '인사' },
+        { value: '기타', label: '기타' },
+      ]}
+      class="my-3 w-32"
+    />
   </div>
 
   <div>
@@ -75,6 +80,7 @@
         <svelte:component
           this={EditorApex}
           modelValue={body}
+          placeholder="내용을 입력하세요."
           onModelValueChange={(value: string) => {
             body = value
             onClearBodyError()

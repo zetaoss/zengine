@@ -11,7 +11,6 @@ import (
 	"github.com/zetaoss/zengine/goapp/app"
 	"github.com/zetaoss/zengine/goapp/jobs/commonreportjob"
 	"github.com/zetaoss/zengine/goapp/models"
-	"github.com/zetaoss/zengine/goapp/server/middleware"
 	"github.com/zetaoss/zengine/goapp/server/paginator"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
 
@@ -61,7 +60,7 @@ func Show(c *serverctx.Context) {
 }
 
 func Store(c *serverctx.Context) {
-	user, ok := middleware.UserFromRequest(c.R)
+	user, ok := c.User()
 	if !ok || user.ID < 1 {
 		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
 		return
@@ -95,7 +94,7 @@ func Store(c *serverctx.Context) {
 }
 
 func Clone(c *serverctx.Context) {
-	user, ok := middleware.UserFromRequest(c.R)
+	user, ok := c.User()
 	if !ok || user.ID < 1 {
 		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
 		return
@@ -136,30 +135,11 @@ func Clone(c *serverctx.Context) {
 }
 
 func Rerun(c *serverctx.Context) {
-	user, ok := middleware.UserFromRequest(c.R)
-	if !ok || user.ID < 1 {
-		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
-		return
-	}
 	id, ok := c.PathInt("id")
 	if !ok {
 		c.NotFound()
 		return
 	}
-	var report models.CommonReport
-	if err := c.DB.Table("common_reports").Where("id = ?", id).Take(&report).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.NotFound()
-			return
-		}
-		c.InternalError()
-		return
-	}
-	if user.ID != report.UserID && !user.IsSysop() {
-		c.JSONError(http.StatusForbidden, "Forbidden")
-		return
-	}
-
 	if err := c.DB.Table("common_reports").Where("id = ?", id).Update("phase", models.CommonReportPhasePending).Error; err != nil {
 		c.InternalError()
 		return
@@ -171,30 +151,11 @@ func Rerun(c *serverctx.Context) {
 }
 
 func Destroy(c *serverctx.Context) {
-	user, ok := middleware.UserFromRequest(c.R)
-	if !ok || user.ID < 1 {
-		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
-		return
-	}
 	id, ok := c.PathInt("id")
 	if !ok {
 		c.NotFound()
 		return
 	}
-	var report models.CommonReport
-	if err := c.DB.Table("common_reports").Where("id = ?", id).Take(&report).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSONError(http.StatusNotFound, "해당 리포트가 없습니다.")
-			return
-		}
-		c.InternalError()
-		return
-	}
-	if user.ID != report.UserID && !user.IsSysop() {
-		c.JSONError(http.StatusForbidden, "Forbidden")
-		return
-	}
-
 	if err := c.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Table("common_report_items").Where("report_id = ?", id).Delete(nil).Error; err != nil {
 			return err

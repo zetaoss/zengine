@@ -1,5 +1,4 @@
 <script lang="ts">
-  /* eslint-disable svelte/no-navigation-without-resolve */
   import { onMount } from 'svelte'
 
   import httpy from '$shared/utils/httpy'

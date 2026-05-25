@@ -5,12 +5,17 @@ import (
 	"flag"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/zetaoss/zengine/goapp/app/config"
+	"github.com/zetaoss/zengine/goapp/app/database"
+	"github.com/zetaoss/zengine/goapp/server"
+	"github.com/zetaoss/zengine/goapp/server/runtime/common"
+	"github.com/zetaoss/zengine/goapp/server/serverctx"
 	"github.com/zetaoss/zengine/goapp/worker"
 	"github.com/zetaoss/zengine/goapp/worker/queue"
 	"github.com/zetaoss/zengine/goapp/worker/registry"
@@ -35,23 +40,27 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := run(wkr, os.Args[1:]); err != nil {
+	if err := run(cfg, wkr, os.Args[1:]); err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
 	}
 }
 
-func run(wkr *worker.Worker, args []string) error {
+func run(cfg *config.Config, wkr *worker.Worker, args []string) error {
 	if len(args) == 0 {
 		printUsage(wkr)
 		return nil
 	}
 
 	switch args[0] {
-	case "list":
-		return runList(wkr, args[1:])
+	case "migrate":
+		return database.RunMigrate(cfg)
+	case "jobs":
+		return runJobs(wkr, args[1:])
 	case "flush":
 		return runFlush(wkr, args[1:])
+	case "routes":
+		return runRoutes(cfg)
 	case "help", "-h", "--help":
 		printUsage(wkr)
 		return nil
@@ -60,8 +69,33 @@ func run(wkr *worker.Worker, args []string) error {
 	}
 }
 
-func runList(wkr *worker.Worker, args []string) error {
-	fs := flag.NewFlagSet("list", flag.ContinueOnError)
+func runRoutes(cfg *config.Config) error {
+	serverCtx, err := serverctx.New(cfg)
+	if err != nil {
+		return err
+	}
+	mux := http.NewServeMux()
+	components := &common.Components{RootHandler: http.NotFoundHandler()}
+	r, err := server.RegisterRoutes(mux, serverCtx, components)
+	if err != nil {
+		return err
+	}
+
+	routes := r.Routes()
+	tw := tablewriter.New(os.Stdout, "method", "path")
+	if err := tw.Header(); err != nil {
+		return err
+	}
+	for _, route := range routes {
+		if err := tw.Row(route.Method, route.Path); err != nil {
+			return err
+		}
+	}
+	return tw.Flush()
+}
+
+func runJobs(wkr *worker.Worker, args []string) error {
+	fs := flag.NewFlagSet("jobs", flag.ContinueOnError)
 	fs.SetOutput(os.Stdout)
 	watch := fs.Bool("watch", false, "watch and refresh")
 	watchShort := fs.Bool("w", false, "watch and refresh")
@@ -342,8 +376,10 @@ func printUsage(wkr *worker.Worker) {
 	_, _ = fmt.Println()
 
 	_, _ = fmt.Println("available commands:")
-	_, _ = fmt.Printf("  %-30s %s\n", "list [--watch|-w]", "show job specs and queue state")
+	_, _ = fmt.Printf("  %-30s %s\n", "migrate", "run database migrations")
+	_, _ = fmt.Printf("  %-30s %s\n", "jobs [--watch|-w]", "show job specs and queue state")
 	_, _ = fmt.Printf("  %-30s %s\n", "flush (all|running|pending)", "remove queued/running jobs from queue storage")
+	_, _ = fmt.Printf("  %-30s %s\n", "routes", "show api routes")
 	_, _ = fmt.Printf("  %-30s %s\n", "help", "show this help message")
 	_, _ = fmt.Printf("  %-30s %s\n", "<job> [json-input]", "run a job immediately (direct run)")
 	_, _ = fmt.Println()

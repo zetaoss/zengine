@@ -8,7 +8,6 @@ import (
 
 	"github.com/zetaoss/zengine/goapp/app"
 	"github.com/zetaoss/zengine/goapp/models"
-	"github.com/zetaoss/zengine/goapp/server/middleware"
 	"github.com/zetaoss/zengine/goapp/server/paginator"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
 
@@ -47,7 +46,7 @@ func Index(c *serverctx.Context) {
 }
 
 func Show(c *serverctx.Context) {
-	id, ok := c.PathInt("post")
+	id, ok := c.PathInt("id")
 	if !ok {
 		c.NotFound()
 		return
@@ -68,7 +67,7 @@ func Show(c *serverctx.Context) {
 }
 
 func Store(c *serverctx.Context) {
-	user, ok := middleware.UserFromRequest(c.R)
+	user, ok := c.User()
 	if !ok || user.ID < 1 {
 		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
 		return
@@ -116,12 +115,12 @@ func Store(c *serverctx.Context) {
 }
 
 func Update(c *serverctx.Context) {
-	user, ok := middleware.UserFromRequest(c.R)
+	user, ok := c.User()
 	if !ok || user.ID < 1 {
 		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
 		return
 	}
-	id, ok := c.PathInt("post")
+	id, ok := c.PathInt("id")
 	if !ok {
 		c.NotFound()
 		return
@@ -168,12 +167,12 @@ func Update(c *serverctx.Context) {
 }
 
 func Destroy(c *serverctx.Context) {
-	user, ok := middleware.UserFromRequest(c.R)
+	user, ok := c.User()
 	if !ok || user.ID < 1 {
 		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
 		return
 	}
-	id, ok := c.PathInt("post")
+	id, ok := c.PathInt("id")
 	if !ok {
 		c.NotFound()
 		return

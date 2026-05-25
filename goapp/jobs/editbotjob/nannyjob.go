@@ -38,8 +38,7 @@ func (j *NannyJob) Run(ctx context.Context, jobCtx job.JobContext, _ any) job.Re
 		models.EditBotPhasePending,
 		models.EditBotPhaseGenerating,
 		models.EditBotPhasePublishing,
-		models.EditBotPhaseRetryingGenerate,
-		models.EditBotPhaseRetryingPublish,
+		models.EditBotPhaseRetrying,
 	}
 	candidates := make([]models.EditBot, 0, batchSize)
 	if err := db.WithContext(ctx).Table("edit_tasks").
@@ -80,7 +79,7 @@ func isReadyToEnqueue(task models.EditBot, now time.Time) bool {
 	case models.EditBotPhasePending, models.EditBotPhaseGenerating, models.EditBotPhasePublishing:
 		// Task is considered stale and needs recovery after jobTimeout.
 		return now.After(updatedAt.Add(editBotJobTimeout + 1*time.Minute))
-	case models.EditBotPhaseRetryingGenerate, models.EditBotPhaseRetryingPublish:
+	case models.EditBotPhaseRetrying:
 		// Task is ready for its scheduled retry.
 		return now.After(updatedAt.Add(nannyJobRetryInterval))
 	}

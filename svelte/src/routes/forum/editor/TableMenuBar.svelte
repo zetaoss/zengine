@@ -114,10 +114,10 @@
 {/if}
 
 <style lang="postcss">
-  @reference 'tailwindcss';
+  @reference '$shared/assets/app.css';
 
   .table-menu-bar {
-    @apply border-b text-right items-center flex flex-wrap p-1 bg-slate-200 dark:bg-slate-800;
+    @apply border-b text-right items-center flex flex-wrap p-1 bg-(--background-color-neutral-subtle) dark:bg-slate-800;
   }
 
   .divider {

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/zetaoss/zengine/goapp/app"
-	"github.com/zetaoss/zengine/goapp/models"
+	"github.com/zetaoss/zengine/goapp/models/stat"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
 
 	"gorm.io/gorm"
@@ -56,7 +56,7 @@ func GAHourly(c *serverctx.Context) {
 		http.Error(c.W, "internal server error", http.StatusInternalServerError)
 		return
 	}
-	c.JSON(buildNumericHourlyPayload(from, to, rows, models.StatGAMetricNames, func(row models.StatNumeric, name string) *float64 {
+	c.JSON(buildNumericHourlyPayload(from, to, rows, statmodels.StatGAMetricNames, func(row statmodels.StatNumeric, name string) *float64 {
 		switch name {
 		case "active_users":
 			return row.ActiveUsers
@@ -91,7 +91,7 @@ func GADaily(c *serverctx.Context) {
 		http.Error(c.W, "internal server error", http.StatusInternalServerError)
 		return
 	}
-	c.JSON(buildNumericDailyPayload(from, to, rows, models.StatGAMetricNames, func(row models.StatNumeric, name string) *float64 {
+	c.JSON(buildNumericDailyPayload(from, to, rows, statmodels.StatGAMetricNames, func(row statmodels.StatNumeric, name string) *float64 {
 		switch name {
 		case "active_users":
 			return row.ActiveUsers
@@ -113,7 +113,7 @@ func GSCHourly(c *serverctx.Context) {
 		http.Error(c.W, "internal server error", http.StatusInternalServerError)
 		return
 	}
-	c.JSON(buildNumericHourlyPayload(from, to, rows, models.StatGSCMetricNames, func(row models.StatNumeric, name string) *float64 {
+	c.JSON(buildNumericHourlyPayload(from, to, rows, statmodels.StatGSCMetricNames, func(row statmodels.StatNumeric, name string) *float64 {
 		switch name {
 		case "clicks":
 			return row.Clicks
@@ -143,7 +143,7 @@ func GSCDaily(c *serverctx.Context) {
 		http.Error(c.W, "internal server error", http.StatusInternalServerError)
 		return
 	}
-	c.JSON(buildNumericDailyPayload(from, to, rows, models.StatGSCMetricNames, func(row models.StatNumeric, name string) *float64 {
+	c.JSON(buildNumericDailyPayload(from, to, rows, statmodels.StatGSCMetricNames, func(row statmodels.StatNumeric, name string) *float64 {
 		switch name {
 		case "clicks":
 			return row.Clicks
@@ -167,7 +167,7 @@ func MWHourly(c *serverctx.Context) {
 		http.Error(c.W, "internal server error", http.StatusInternalServerError)
 		return
 	}
-	c.JSON(buildNumericHourlyPayload(from, to, rows, models.StatMWMetricNames, func(row models.StatNumeric, name string) *float64 {
+	c.JSON(buildNumericHourlyPayload(from, to, rows, statmodels.StatMWMetricNames, func(row statmodels.StatNumeric, name string) *float64 {
 		switch name {
 		case "pages":
 			return row.Pages
@@ -204,7 +204,7 @@ func MWDaily(c *serverctx.Context) {
 		http.Error(c.W, "internal server error", http.StatusInternalServerError)
 		return
 	}
-	c.JSON(buildNumericDailyPayload(from, to, rows, models.StatMWMetricNames, func(row models.StatNumeric, name string) *float64 {
+	c.JSON(buildNumericDailyPayload(from, to, rows, statmodels.StatMWMetricNames, func(row statmodels.StatNumeric, name string) *float64 {
 		switch name {
 		case "pages":
 			return row.Pages
@@ -228,14 +228,14 @@ func MWDaily(c *serverctx.Context) {
 	}))
 }
 
-func selectCFRows(db *gorm.DB, tables []string, from time.Time, to time.Time, dateOnly bool) ([]models.StatCF, error) {
-	merged := map[string]models.StatCF{}
+func selectCFRows(db *gorm.DB, tables []string, from time.Time, to time.Time, dateOnly bool) ([]statmodels.StatCF, error) {
+	merged := map[string]statmodels.StatCF{}
 	for _, table := range tables {
 		if !db.Migrator().HasTable(table) {
 			continue
 		}
-		rows := make([]models.StatCF, 0, 512)
-		q := db.Table(table).Select("timeslot", "name", "value").Where("name IN ?", models.StatCFMetricNames)
+		rows := make([]statmodels.StatCF, 0, 512)
+		q := db.Table(table).Select("timeslot", "name", "value").Where("name IN ?", statmodels.StatCFMetricNames)
 		if dateOnly {
 			q = q.Where("DATE(timeslot) >= ?", from.Format("2006-01-02")).Where("DATE(timeslot) <= ?", to.Format("2006-01-02"))
 		} else {
@@ -248,21 +248,21 @@ func selectCFRows(db *gorm.DB, tables []string, from time.Time, to time.Time, da
 			merged[row.Timeslot.Format("2006-01-02 15:04:05")+"-"+row.Name] = row
 		}
 	}
-	out := make([]models.StatCF, 0, len(merged))
+	out := make([]statmodels.StatCF, 0, len(merged))
 	for _, row := range merged {
 		out = append(out, row)
 	}
 	return out, nil
 }
 
-func selectNumericRows(db *gorm.DB, tables []string, columns []string, from time.Time, to time.Time, dateOnly bool) ([]models.StatNumeric, error) {
-	merged := map[string]models.StatNumeric{}
+func selectNumericRows(db *gorm.DB, tables []string, columns []string, from time.Time, to time.Time, dateOnly bool) ([]statmodels.StatNumeric, error) {
+	merged := map[string]statmodels.StatNumeric{}
 	selectCols := append([]string{"timeslot"}, columns...)
 	for _, table := range tables {
 		if !db.Migrator().HasTable(table) {
 			continue
 		}
-		rows := make([]models.StatNumeric, 0, 256)
+		rows := make([]statmodels.StatNumeric, 0, 256)
 		q := db.Table(table).Select(selectCols).Order("timeslot")
 		if dateOnly {
 			q = q.Where("DATE(timeslot) >= ?", from.Format("2006-01-02")).Where("DATE(timeslot) <= ?", to.Format("2006-01-02"))
@@ -276,14 +276,14 @@ func selectNumericRows(db *gorm.DB, tables []string, columns []string, from time
 			merged[row.Timeslot.Format("2006-01-02 15:04:05")] = row
 		}
 	}
-	out := make([]models.StatNumeric, 0, len(merged))
+	out := make([]statmodels.StatNumeric, 0, len(merged))
 	for _, row := range merged {
 		out = append(out, row)
 	}
 	return out, nil
 }
 
-func buildCFHourlyPayload(from time.Time, to time.Time, rows []models.StatCF) app.H {
+func buildCFHourlyPayload(from time.Time, to time.Time, rows []statmodels.StatCF) app.H {
 	timeslots := make([]string, 0, 48)
 	indexByTimeslot := map[string]int{}
 	for cursor := from; !cursor.After(to); cursor = cursor.Add(time.Hour) {
@@ -291,7 +291,7 @@ func buildCFHourlyPayload(from time.Time, to time.Time, rows []models.StatCF) ap
 		indexByTimeslot[k] = len(timeslots)
 		timeslots = append(timeslots, k)
 	}
-	series := emptySeriesByNames(models.StatCFMetricNames, len(timeslots))
+	series := emptySeriesByNames(statmodels.StatCFMetricNames, len(timeslots))
 	for _, row := range rows {
 		timeslot := row.Timeslot.UTC().Format(time.RFC3339)
 		idx, ok := indexByTimeslot[timeslot]
@@ -305,10 +305,10 @@ func buildCFHourlyPayload(from time.Time, to time.Time, rows []models.StatCF) ap
 		values[idx] = parseJSONValue(row.Value)
 		series[row.Name] = values
 	}
-	return mergePayload(timeslots, series, models.StatCFMetricNames)
+	return mergePayload(timeslots, series, statmodels.StatCFMetricNames)
 }
 
-func buildCFDailyPayload(from time.Time, to time.Time, rows []models.StatCF) app.H {
+func buildCFDailyPayload(from time.Time, to time.Time, rows []statmodels.StatCF) app.H {
 	timeslots := make([]string, 0, 90)
 	indexByDate := map[string]int{}
 	for cursor := from; !cursor.After(to); cursor = cursor.AddDate(0, 0, 1) {
@@ -316,7 +316,7 @@ func buildCFDailyPayload(from time.Time, to time.Time, rows []models.StatCF) app
 		indexByDate[k] = len(timeslots)
 		timeslots = append(timeslots, k)
 	}
-	series := emptySeriesByNames(models.StatCFMetricNames, len(timeslots))
+	series := emptySeriesByNames(statmodels.StatCFMetricNames, len(timeslots))
 	for _, row := range rows {
 		dateKey := row.Timeslot.Format("2006-01-02")
 		idx, ok := indexByDate[dateKey]
@@ -330,10 +330,10 @@ func buildCFDailyPayload(from time.Time, to time.Time, rows []models.StatCF) app
 		values[idx] = parseJSONValue(row.Value)
 		series[row.Name] = values
 	}
-	return mergePayload(timeslots, series, models.StatCFMetricNames)
+	return mergePayload(timeslots, series, statmodels.StatCFMetricNames)
 }
 
-func buildNumericHourlyPayload(from time.Time, to time.Time, rows []models.StatNumeric, names []string, pick func(models.StatNumeric, string) *float64) app.H {
+func buildNumericHourlyPayload(from time.Time, to time.Time, rows []statmodels.StatNumeric, names []string, pick func(statmodels.StatNumeric, string) *float64) app.H {
 	timeslots := make([]string, 0, 48)
 	indexByTimeslot := map[string]int{}
 	for cursor := from; !cursor.After(to); cursor = cursor.Add(time.Hour) {
@@ -357,7 +357,7 @@ func buildNumericHourlyPayload(from time.Time, to time.Time, rows []models.StatN
 	return mergePayload(timeslots, series, names)
 }
 
-func buildNumericDailyPayload(from time.Time, to time.Time, rows []models.StatNumeric, names []string, pick func(models.StatNumeric, string) *float64) app.H {
+func buildNumericDailyPayload(from time.Time, to time.Time, rows []statmodels.StatNumeric, names []string, pick func(statmodels.StatNumeric, string) *float64) app.H {
 	timeslots := make([]string, 0, 90)
 	indexByDate := map[string]int{}
 	for cursor := from; !cursor.After(to); cursor = cursor.AddDate(0, 0, 1) {

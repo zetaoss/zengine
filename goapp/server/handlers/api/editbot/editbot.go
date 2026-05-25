@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,7 +15,6 @@ import (
 	"github.com/zetaoss/zengine/goapp/app/config"
 	"github.com/zetaoss/zengine/goapp/jobs/editbotjob"
 	"github.com/zetaoss/zengine/goapp/models"
-	"github.com/zetaoss/zengine/goapp/server/middleware"
 	"github.com/zetaoss/zengine/goapp/server/paginator"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
 
@@ -25,6 +25,7 @@ const perPage = 25
 
 type writeRequestPromptPayload struct {
 	RequestType string `json:"request_type"`
+	PromptTitle string `json:"prompt_title"`
 	LLMInput    string `json:"llm_input"`
 }
 
@@ -45,7 +46,7 @@ func Index(c *serverctx.Context) {
 }
 
 func Show(c *serverctx.Context) {
-	id, ok := c.PathInt("task")
+	id, ok := c.PathInt("id")
 	if !ok {
 		c.NotFound()
 		return
@@ -64,7 +65,7 @@ func Show(c *serverctx.Context) {
 }
 
 func StoreFromWriteRequest(c *serverctx.Context) {
-	user, ok := middleware.UserFromRequest(c.R)
+	user, ok := c.User()
 	if !ok || user.ID < 1 {
 		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
 		return
@@ -113,16 +114,23 @@ func StoreFromWriteRequest(c *serverctx.Context) {
 		return
 	}
 	if insert.ID > 0 {
+		if promptTitle := strings.TrimSpace(body.PromptTitle); promptTitle != "" {
+			c.DB.Model(&models.EditbotPrompt{}).Where("title = ?", promptTitle).UpdateColumn("use_count", gorm.Expr("use_count + 1"))
+		}
 		if _, err := editbotjob.Enqueue(c.R.Context(), c.AppContext, insert.ID); err != nil {
 			c.InternalError()
 			return
 		}
 	}
+
+	// update write request status
+	_ = c.DB.Table("write_requests").Where("id = ?", writeRequestID).Update("status", "done")
+
 	c.JSON(app.H{"ok": true, "id": insert.ID})
 }
 
 func StoreFromPage(c *serverctx.Context) {
-	user, ok := middleware.UserFromRequest(c.R)
+	user, ok := c.User()
 	if !ok || user.ID < 1 {
 		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
 		return
@@ -130,6 +138,7 @@ func StoreFromPage(c *serverctx.Context) {
 	var body struct {
 		PageID      int    `json:"page_id"`
 		RequestType string `json:"request_type"`
+		PromptTitle string `json:"prompt_title"`
 		LLMInput    string `json:"llm_input"`
 	}
 	if !c.Decode(&body) {
@@ -192,6 +201,9 @@ func StoreFromPage(c *serverctx.Context) {
 		return
 	}
 	if insert.ID > 0 {
+		if promptTitle := strings.TrimSpace(body.PromptTitle); promptTitle != "" {
+			c.DB.Model(&models.EditbotPrompt{}).Where("title = ?", promptTitle).UpdateColumn("use_count", gorm.Expr("use_count + 1"))
+		}
 		if _, err := editbotjob.Enqueue(c.R.Context(), c.AppContext, insert.ID); err != nil {
 			c.InternalError()
 			return
@@ -201,7 +213,7 @@ func StoreFromPage(c *serverctx.Context) {
 }
 
 func Destroy(c *serverctx.Context) {
-	id, ok := c.PathInt("task")
+	id, ok := c.PathInt("id")
 	if !ok {
 		c.NotFound()
 		return
@@ -316,4 +328,212 @@ func resolvePageTitle(db *gorm.DB, cfg *config.Config, pageID int) string {
 		return ""
 	}
 	return strings.ReplaceAll(strings.TrimSpace(row.PageTitle), "_", " ")
+}
+
+func PromptIndex(c *serverctx.Context) {
+	user, _ := c.User()
+	var rows []models.EditbotPrompt
+
+	if err := c.DB.Order("id DESC").Find(&rows).Error; err != nil {
+		c.InternalError()
+		return
+	}
+
+	if user.ID < 1 {
+		c.JSON(rows)
+		return
+	}
+
+	// Fetch favorite prompt IDs for this user
+	var favIDs []int
+	c.DB.Table("editbot_prompt_favorites").Where("user_id = ?", user.ID).Pluck("prompt_id", &favIDs)
+	favMap := make(map[int]bool, len(favIDs))
+	for _, id := range favIDs {
+		favMap[id] = true
+	}
+
+	// Create response with is_favorite field
+	type promptResp struct {
+		models.EditbotPrompt
+		IsFavorite bool `json:"is_favorite"`
+	}
+	resp := make([]promptResp, len(rows))
+	for i, r := range rows {
+		resp[i] = promptResp{
+			EditbotPrompt: r,
+			IsFavorite:    favMap[r.ID],
+		}
+	}
+
+	c.JSON(resp)
+}
+
+func PromptToggleFavorite(c *serverctx.Context) {
+	id, ok := c.PathInt("id")
+	if !ok {
+		c.NotFound()
+		return
+	}
+	user, ok := c.User()
+	if !ok || user.ID < 1 {
+		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
+		return
+	}
+
+	var count int64
+	c.DB.Table("editbot_prompt_favorites").Where("user_id = ? AND prompt_id = ?", user.ID, id).Count(&count)
+
+	if count > 0 {
+		if err := c.DB.Table("editbot_prompt_favorites").Where("user_id = ? AND prompt_id = ?", user.ID, id).Delete(nil).Error; err != nil {
+			c.InternalError()
+			return
+		}
+		c.JSON(app.H{"is_favorite": false})
+	} else {
+		insert := map[string]any{
+			"user_id":    user.ID,
+			"prompt_id":   id,
+			"created_at": time.Now().Format("2006-01-02 15:04:05"),
+		}
+		if err := c.DB.Table("editbot_prompt_favorites").Create(&insert).Error; err != nil {
+			c.InternalError()
+			return
+		}
+		c.JSON(app.H{"is_favorite": true})
+	}
+}
+
+func PromptShow(c *serverctx.Context) {
+	id, ok := c.PathInt("id")
+	if !ok {
+		c.NotFound()
+		return
+	}
+	user, _ := c.User()
+	var row models.EditbotPrompt
+
+	if err := c.DB.Where("id = ?", id).Take(&row).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.NotFound()
+			return
+		}
+		c.InternalError()
+		return
+	}
+
+	isFavorite := false
+	if user.ID > 0 {
+		var count int64
+		c.DB.Table("editbot_prompt_favorites").Where("user_id = ? AND prompt_id = ?", user.ID, id).Count(&count)
+		isFavorite = count > 0
+	}
+
+	c.JSON(struct {
+		models.EditbotPrompt
+		IsFavorite bool `json:"is_favorite"`
+	}{
+		EditbotPrompt: row,
+		IsFavorite:    isFavorite,
+	})
+}
+
+func PromptExists(c *serverctx.Context) {
+	title := strings.TrimSpace(c.R.URL.Query().Get("title"))
+	excludeID, _ := strconv.Atoi(c.R.URL.Query().Get("exclude_id"))
+
+	if title == "" {
+		c.JSON(app.H{"exists": false})
+		return
+	}
+
+	var count int64
+	q := c.DB.Model(&models.EditbotPrompt{}).Where("title = ?", title)
+	if excludeID > 0 {
+		q = q.Where("id != ?", excludeID)
+	}
+	q.Count(&count)
+
+	c.JSON(app.H{"exists": count > 0})
+}
+
+func PromptStore(c *serverctx.Context) {
+	var body struct {
+		ID          int    `json:"id"`
+		Title       string `json:"title"`
+		RequestType string `json:"request_type"`
+		Content     string `json:"content"`
+	}
+	if !c.Decode(&body) {
+		return
+	}
+	body.Title = strings.TrimSpace(body.Title)
+	if body.Title == "" {
+		c.JSONError(http.StatusUnprocessableEntity, "제목은 필수입니다.")
+		return
+	}
+
+	user, _ := c.User()
+
+	now := time.Now().Format("2006-01-02 15:04:05")
+	row := models.EditbotPrompt{
+		ID:          body.ID,
+		Title:       body.Title,
+		RequestType: body.RequestType,
+		Content:     body.Content,
+		UpdatedAt:   now,
+	}
+
+	if row.ID > 0 {
+		var existing models.EditbotPrompt
+		if err := c.DB.Where("id = ?", row.ID).First(&existing).Error; err != nil {
+			c.InternalError()
+			return
+		}
+		if existing.UserID != user.ID {
+			c.JSONError(http.StatusForbidden, "본인만 편집할 수 있습니다.")
+			return
+		}
+
+		var count int64
+		c.DB.Model(&models.EditbotPrompt{}).Where("title = ? AND id != ?", row.Title, row.ID).Count(&count)
+		if count > 0 {
+			c.JSONError(http.StatusConflict, "이미 사용 중인 제목입니다.")
+			return
+		}
+
+		if err := c.DB.Model(&models.EditbotPrompt{}).Where("id = ?", row.ID).Select("title", "request_type", "content", "updated_at").Updates(&row).Error; err != nil {
+			c.InternalError()
+			return
+		}
+	} else {
+		row.UserID = user.ID
+		row.UserName = user.Name
+		row.CreatedAt = now
+
+		var count int64
+		c.DB.Model(&models.EditbotPrompt{}).Where("title = ?", row.Title).Count(&count)
+		if count > 0 {
+			c.JSONError(http.StatusConflict, "이미 사용 중인 제목입니다.")
+			return
+		}
+
+		if err := c.DB.Create(&row).Error; err != nil {
+			c.InternalError()
+			return
+		}
+	}
+	c.JSON(row)
+}
+
+func PromptDestroy(c *serverctx.Context) {
+	id, ok := c.PathInt("id")
+	if !ok {
+		c.NotFound()
+		return
+	}
+	if err := c.DB.Where("id = ?", id).Delete(&models.EditbotPrompt{}).Error; err != nil {
+		c.InternalError()
+		return
+	}
+	c.JSON(app.H{"ok": true})
 }
