@@ -179,25 +179,27 @@
       </div>
     </div>
 
-    <section class="mb-5">
-      <h3 class="mb-2 text-lg font-semibold">입력:</h3>
-      <textarea
-        class="z-input h-[260px] w-full resize-y font-mono text-sm"
-        readonly
-        value={row.llm_input || ''}
-        placeholder="저장된 입력 프롬프트가 없습니다."
-      ></textarea>
-    </section>
+    <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+      <section>
+        <h3 class="mb-2 text-lg font-semibold">입력:</h3>
+        <textarea
+          class="z-input h-[260px] w-full resize-y font-mono text-sm md:h-[600px]"
+          readonly
+          value={row.llm_input || ''}
+          placeholder="저장된 입력 프롬프트가 없습니다."
+        ></textarea>
+      </section>
 
-    <section>
-      <h3 class="mb-2 text-lg font-semibold">결과:</h3>
-      <textarea
-        class="z-input h-[400px] w-full resize-y font-mono text-sm"
-        readonly
-        value={row.llm_output || ''}
-        placeholder="내용이 없습니다."
-      ></textarea>
-    </section>
+      <section>
+        <h3 class="mb-2 text-lg font-semibold">결과:</h3>
+        <textarea
+          class="z-input h-[400px] w-full resize-y font-mono text-sm md:h-[600px]"
+          readonly
+          value={row.llm_output || ''}
+          placeholder="내용이 없습니다."
+        ></textarea>
+      </section>
+    </div>
   {:else}
     <div class="text-(--color-subtle)">편집봇 항목을 찾을 수 없습니다.</div>
   {/if}

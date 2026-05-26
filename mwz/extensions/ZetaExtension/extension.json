@@ -50,6 +50,11 @@
       "path": "/social/create",
       "method": "POST",
       "class": "ZetaExtension\\Auth\\RestSocialCreate"
+    },
+    {
+      "path": "/editbot/publish",
+      "method": "POST",
+      "class": "ZetaExtension\\EditBot\\RestPublish"
     }
   ],
   "ResourceFileModulePaths": {
