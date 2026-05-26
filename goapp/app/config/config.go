@@ -16,7 +16,6 @@ type Config struct {
 	Analytics  AnalyticsConfig
 	API        APIConfig
 	Cloudflare CloudflareConfig
-	EditBot    EditBotConfig
 	OAuth      OAuthConfig
 }
 
@@ -66,11 +65,6 @@ type CloudflareConfig struct {
 	ZoneID   string
 }
 
-type EditBotConfig struct {
-	Username string
-	Password string
-}
-
 type OAuthConfig struct {
 	FacebookClientID     string
 	FacebookClientSecret string
@@ -100,7 +94,6 @@ func Load() (*Config, error) {
 		Analytics:  AnalyticsConfig{},
 		API:        APIConfig{},
 		Cloudflare: CloudflareConfig{},
-		EditBot:    EditBotConfig{},
 		OAuth:      OAuthConfig{},
 	}
 
@@ -135,9 +128,6 @@ func Load() (*Config, error) {
 
 	cfg.Cloudflare.APIToken = lookup(overrides, "CLOUDFLARE_API_TOKEN")
 	cfg.Cloudflare.ZoneID = lookup(overrides, "CLOUDFLARE_ZONE_ID")
-
-	cfg.EditBot.Username = lookup(overrides, "EDITBOT_USERNAME")
-	cfg.EditBot.Password = lookup(overrides, "EDITBOT_PASSWORD")
 
 	cfg.OAuth.FacebookClientID = lookup(overrides, "FACEBOOK_CLIENT_ID")
 	cfg.OAuth.FacebookClientSecret = lookup(overrides, "FACEBOOK_CLIENT_SECRET")
