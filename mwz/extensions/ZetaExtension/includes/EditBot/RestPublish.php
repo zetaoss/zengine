@@ -78,10 +78,11 @@ class RestPublish extends SimpleHandler
             // Perform edit as the specified user using the modern PageUpdater
             $updater = $wikiPage->newPageUpdater($user);
             $updater->setContent('main', $contentObj);
-            $status = $updater->saveRevision(
+            $revision = $updater->saveRevision(
                 \CommentStoreComment::newUnsavedComment($summary),
                 $flags
             );
+            $status = \Status::wrap($updater->getStatus());
 
             if (! $status->isOK()) {
                 $errors = $status->getErrorsArray();
@@ -111,13 +112,7 @@ class RestPublish extends SimpleHandler
                 ], 500);
             }
 
-            $value = $status->getValue();
-            $revid = 0;
-            if (isset($value['revision-record'])) {
-                $revid = $value['revision-record']->getId();
-            } elseif (isset($value['revision'])) {
-                $revid = $value['revision']->getId();
-            }
+            $revid = $revision ? $revision->getId() : $wikiPage->getLatest();
 
             return $this->json([
                 'status' => 'success',
