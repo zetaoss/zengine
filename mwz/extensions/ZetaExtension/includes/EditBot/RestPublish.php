@@ -82,7 +82,7 @@ class RestPublish extends SimpleHandler
                 \CommentStoreComment::newUnsavedComment($summary),
                 $flags
             );
-            $status = $updater->getStatus();
+            $status = \Status::wrap($updater->getStatus());
 
             if (! $status->isOK()) {
                 $errors = $status->getErrorsArray();
@@ -107,7 +107,7 @@ class RestPublish extends SimpleHandler
                 return $this->json([
                     'status' => 'error',
                     'code' => $code,
-                    'message' => \Status::wrap($status)->getMessage()->text(),
+                    'message' => $status->getMessage()->text(),
                     'errors' => $errors,
                 ], 500);
             }
