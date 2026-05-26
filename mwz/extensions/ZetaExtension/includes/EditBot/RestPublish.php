@@ -86,14 +86,16 @@ class RestPublish extends SimpleHandler
             if (! $status->isOK()) {
                 $errors = $status->getErrorsArray();
                 $code = 'editfailed';
+                $message = 'edit failed';
                 if (! empty($errors) && isset($errors[0][0])) {
                     $code = $errors[0][0];
+                    $message = $code; // Use the error code as the message if no better text is available
                 }
 
                 return $this->json([
                     'status' => 'error',
                     'code' => $code,
-                    'message' => 'edit failed',
+                    'message' => $message,
                     'errors' => $errors,
                 ], 500);
             }
@@ -115,6 +117,7 @@ class RestPublish extends SimpleHandler
         } catch (\Throwable $e) {
             return $this->json([
                 'status' => 'error',
+                'code' => 'exception',
                 'message' => $e->getMessage(),
             ], 500);
         }
