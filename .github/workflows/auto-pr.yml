@@ -80,6 +80,19 @@ jobs:
               return;
             }
 
+            // Check if there are any commits between base and head
+            const comparison = await github.rest.repos.compareCommits({
+              owner,
+              repo,
+              base: baseBranch,
+              head: headBranch,
+            });
+
+            if (comparison.data.total_commits === 0) {
+              core.info(`Skip: No commits between ${baseBranch} and ${headBranch}`);
+              return;
+            }
+
             const prTitle = headCommitMessage
               .split('\n')[0]
               .trim();
