@@ -125,9 +125,9 @@ func (j *EditBotJob) Run(ctx context.Context, jobCtx job.JobContext, p editBotPa
 		slog.Info("[editbot] using existing LLM output, skipping generation", "task_id", task.ID)
 	}
 
-	slog.Info("[editbot] publishing content", "task_id", task.ID)
+	slog.Info("[editbot] publishing content", "task_id", task.ID, "user_id", task.UserID)
 
-	pubRes, pubErr := editbotsvc.PublishContent(jobCtx.Config(), task.Title, strings.TrimSpace(task.RequestType), llmOutput, task.ID)
+	pubRes, pubErr := editbotsvc.PublishContent(jobCtx.Config(), task.UserID, task.Title, strings.TrimSpace(task.RequestType), llmOutput, task.ID)
 	if pubErr != nil {
 		newPhase := models.EditBotPhaseRetrying
 		var pErr *editbotsvc.PublishError
