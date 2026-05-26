@@ -11,6 +11,10 @@ import (
 	"github.com/zetaoss/zengine/goapp/app/config"
 )
 
+var httpClient = &http.Client{
+	Timeout: 60 * time.Second,
+}
+
 type PublishResult struct {
 	OK     bool   `json:"ok"`
 	Title  string `json:"title"`
@@ -49,8 +53,7 @@ func PublishContent(cfg *config.Config, userID int, title string, requestType st
 		return nil, err
 	}
 
-	client := &http.Client{Timeout: 60 * time.Second}
-	resp, err := client.Post(restURL, "application/json", strings.NewReader(string(body)))
+	resp, err := httpClient.Post(restURL, "application/json", strings.NewReader(string(body)))
 	if err != nil {
 		return nil, err
 	}

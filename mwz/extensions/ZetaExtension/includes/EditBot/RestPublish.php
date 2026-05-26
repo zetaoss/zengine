@@ -2,10 +2,8 @@
 
 namespace ZetaExtension\EditBot;
 
-use ContentHandler;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Rest\SimpleHandler;
-use Title;
 use User;
 
 class RestPublish extends SimpleHandler
@@ -54,19 +52,21 @@ class RestPublish extends SimpleHandler
         }
 
         $services = MediaWikiServices::getInstance();
-        $user = User::newFromId($userId);
+        $user = $services->getUserFactory()->newFromId($userId);
         if (! $user || $user->isAnon()) {
             return $this->json(['status' => 'error', 'message' => "invalid user_id: {$userId}"], 400);
         }
 
-        $title = Title::newFromText($titleText);
+        $title = $services->getTitleFactory()->newFromText($titleText);
         if (! $title) {
             return $this->json(['status' => 'error', 'message' => 'invalid title'], 400);
         }
 
         try {
             $wikiPage = $services->getWikiPageFactory()->newFromTitle($title);
-            $contentObj = ContentHandler::makeContent($content, $title);
+            $contentObj = $services->getContentHandlerFactory()
+                ->getContentHandler($title->getContentModel())
+                ->unserializeContent($content);
 
             $flags = EDIT_INTERNAL;
             if ($requestType === 'create') {
@@ -75,11 +75,11 @@ class RestPublish extends SimpleHandler
                 $flags |= EDIT_UPDATE;
             }
 
-            // Perform edit as the specified user
-            $status = $wikiPage->doUserEditContent(
-                $contentObj,
-                $user,
-                $summary,
+            // Perform edit as the specified user using the modern PageUpdater
+            $updater = $wikiPage->newPageUpdater($user);
+            $updater->setContent('main', $contentObj);
+            $status = $updater->saveRevision(
+                \CommentStoreComment::newUnsavedComment($summary),
                 $flags
             );
 
@@ -88,6 +88,19 @@ class RestPublish extends SimpleHandler
                 $code = 'editfailed';
                 if (! empty($errors) && isset($errors[0][0])) {
                     $code = $errors[0][0];
+
+                    // Map internal MW message keys to legacy API codes expected by goapp
+                    $map = [
+                        'edit-already-exists' => 'articleexists',
+                        'edit-gone-missing' => 'nosuchpageid',
+                        'protectedpage' => 'protectedpage',
+                        'permissiondenied' => 'permissiondenied',
+                        'nocreate-missing' => 'nocreate-missing',
+                        'invalidtitle' => 'invalidtitle',
+                    ];
+                    if (isset($map[$code])) {
+                        $code = $map[$code];
+                    }
                 }
 
                 return $this->json([
