@@ -5,15 +5,15 @@
 }
 
 .navlink {
-  color: #fff;
+  color: var(--raw-white);
   @apply flex items-center no-underline px-3;
 
   &:hover {
-    background-color: #123;
+    background-color: var(--raw-slate-800);
     text-decoration-line: none;
   }
 
   &.current {
-    color: #eb0;
+    color: var(--raw-yellow-200);
   }
 }
