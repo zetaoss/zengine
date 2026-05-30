@@ -47,9 +47,9 @@
     {:else if textPlain}
       <pre class="whitespace-pre-wrap">{textPlain}</pre>
     {:else if textJson}
-      <pre class="bg-gray-100 dark:bg-gray-900 p-2 rounded overflow-auto">{textJson}</pre>
+      <pre class="bg-gray-100 p-2 rounded overflow-auto">{textJson}</pre>
     {:else if textLatex}
-      <div class="text-purple-700 dark:text-purple-300">\({textLatex}\)</div>
+      <div class="text-purple-700">\({textLatex}\)</div>
     {/if}
   {:else if out.output_type === 'execute_result'}
     {#if textHtml}
@@ -58,9 +58,9 @@
     {:else if textPlain}
       <pre class="whitespace-pre-wrap">{textPlain}</pre>
     {:else if textLatex}
-      <div class="text-purple-700 dark:text-purple-300">\({textLatex}\)</div>
+      <div class="text-purple-700">\({textLatex}\)</div>
     {:else if textJson}
-      <pre class="bg-gray-100 dark:bg-gray-900 p-2 rounded overflow-auto">{textJson}</pre>
+      <pre class="bg-gray-100 p-2 rounded overflow-auto">{textJson}</pre>
     {/if}
   {:else if out.output_type === 'stream'}
     <pre class="whitespace-pre-wrap">{out.text?.join('')}</pre>

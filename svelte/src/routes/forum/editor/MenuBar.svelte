@@ -234,7 +234,7 @@
   @reference '$shared/assets/app.css';
 
   .menu-bar {
-    @apply border-b text-right items-center flex flex-wrap p-1 bg-(--background-color-neutral-subtle) dark:bg-slate-900;
+    @apply border-b text-right items-center flex flex-wrap p-1 bg-(--background-color-neutral-subtle);
   }
 
   .code-lang {
@@ -242,6 +242,6 @@
   }
 
   .divider {
-    @apply ml-2 mr-1 h-4 w-px bg-gray-300 dark:bg-gray-700;
+    @apply ml-2 mr-1 h-4 w-px bg-gray-300;
   }
 </style>

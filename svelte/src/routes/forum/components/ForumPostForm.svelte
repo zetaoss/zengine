@@ -65,8 +65,8 @@
       }}
       type="text"
       placeholder="제목을 입력해 주세요"
-      class={`block w-full rounded border bg-white px-4 py-2 text-gray-900 outline-0 dark:bg-black dark:text-gray-300 ${
-        titleError ? 'border-red-300 dark:border-red-700' : ''
+      class={`block w-full rounded border bg-white px-4 py-2 text-gray-900 outline-0 ${
+        titleError ? 'border-red-300' : ''
       }`}
     />
     {#if titleError}
@@ -75,7 +75,7 @@
   </div>
 
   <div>
-    <div class={bodyError ? 'border border-red-300 dark:border-red-700' : ''}>
+    <div class={bodyError ? 'border border-red-300' : ''}>
       {#if EditorApex}
         <svelte:component
           this={EditorApex}

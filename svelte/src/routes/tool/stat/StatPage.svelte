@@ -653,7 +653,7 @@
   <div class="mb-4 mt-3 flex flex-wrap items-center justify-between gap-3">
     <ZTabs tabs={rangeTabs} selected={range} onChange={setRange} />
 
-    <p class="text-sm text-gray-500 dark:text-gray-400">
+    <p class="text-sm text-gray-500">
       {md(visibleTimeslots[0])} - {md(visibleTimeslots[visibleTimeslots.length - 1])}
     </p>
   </div>
@@ -689,7 +689,7 @@
           />
         </div>
         {#if idx < rows.length - 1}
-          <hr class="border-0 border-t border-gray-200 dark:border-gray-700" />
+          <hr class="border-0 border-t border-gray-200" />
         {/if}
       {/each}
     </section>
@@ -718,7 +718,7 @@
           />
         </div>
         {#if idx < gaRows.length - 1}
-          <hr class="border-0 border-t border-gray-200 dark:border-gray-700" />
+          <hr class="border-0 border-t border-gray-200" />
         {/if}
       {/each}
     </section>
@@ -748,7 +748,7 @@
           />
         </div>
         {#if idx < gscRows.length - 1}
-          <hr class="border-0 border-t border-gray-200 dark:border-gray-700" />
+          <hr class="border-0 border-t border-gray-200" />
         {/if}
       {/each}
     </section>
@@ -782,13 +782,13 @@
           />
         </div>
         {#if idx < mwRows.length - 1}
-          <hr class="border-0 border-t border-gray-200 dark:border-gray-700" />
+          <hr class="border-0 border-t border-gray-200" />
         {/if}
       {/each}
     </section>
 
     <div class="mt-8 flex justify-center">
-      <div class="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-500 dark:text-gray-400">
+      <div class="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-500">
         <div class="flex items-center gap-2">
           <span>exact</span>
           <ZToggle

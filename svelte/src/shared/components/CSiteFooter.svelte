@@ -17,18 +17,18 @@
   })
 </script>
 
-<footer id="footer" class="border-t bg-neutral-400 p-6 pb-9 text-center dark:bg-slate-900">
+<footer id="footer" class="bg-gray-400 p-6 pb-9 text-center text-[#fff]">
   <img alt="logo" class="mb-3 w-24" src="//storage.googleapis.com/zpub/logo.png" />
-  <p class="mb-3 text-white">CC-BY-SA 3.0 · Powered by MediaWiki</p>
+  <p class="mb-3">CC-BY-SA 3.0 · Powered by MediaWiki</p>
 
   <div class="mt-3">
-    <a class="text-white" href="/wiki/제타위키:개인정보처리방침" rel="external" data-sveltekit-reload>개인정보처리방침</a>
+    <a class="text-inherit" href="/wiki/제타위키:개인정보처리방침" rel="external" data-sveltekit-reload>개인정보처리방침</a>
     {#if showCookieSettings}
       ·
-      <button class="cursor-pointer text-white" type="button" on:click={() => (consentOpen = true)}>쿠키설정</button>
+      <button class="cursor-pointer" type="button" on:click={() => (consentOpen = true)}>쿠키설정</button>
     {/if}
     ·
-    <a class="text-white" href="/wiki/제타위키" rel="external" data-sveltekit-reload>ABOUT</a>
+    <a class="text-inherit" href="/wiki/제타위키" rel="external" data-sveltekit-reload>ABOUT</a>
   </div>
 
   {#if showCookieSettings}

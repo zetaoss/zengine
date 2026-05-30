@@ -1,7 +1,7 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-  import { mdiCompare, mdiDelete, mdiOpenInNew } from '@mdi/js'
+  import { mdiCompare, mdiDelete, mdiInformation } from '@mdi/js'
   import { onDestroy } from 'svelte'
 
   import { resolve } from '$app/paths'
@@ -199,8 +199,8 @@
   }
 
   function getRequestTypeClass(requestType: string) {
-    if (requestType === 'create') return 'text-emerald-600 dark:text-emerald-300'
-    if (requestType === 'edit') return 'text-amber-600 dark:text-amber-300'
+    if (requestType === 'create') return 'text-emerald-600'
+    if (requestType === 'edit') return 'text-amber-600'
     return ''
   }
 
@@ -248,21 +248,13 @@
   function isCompleted(row: DocTask) {
     return row.phase === 'Completed'
   }
+
+  function canViewDetail(row: DocTask) {
+    return isSysop || row.user_id === $userInfo?.id
+  }
 </script>
 
 <div class="p-5">
-  <div class="mb-3 flex justify-end">
-    <ZButtonLink
-      color="default"
-      size="small"
-      href="/wiki/특수:기여/Editbot"
-      rel="external noopener noreferrer"
-      target="_blank"
-      data-sveltekit-reload
-    >
-      위키에서 보기
-    </ZButtonLink>
-  </div>
   <table class="z-table">
     <thead>
       <tr>
@@ -290,28 +282,38 @@
         </tr>
       {:else}
         {#each rows as row (row.id)}
-          <tr class={isCurrentTask(row) ? 'bg-blue-50/70 dark:bg-blue-950/40' : ''}>
+          <tr class={isCurrentTask(row) ? 'bg-blue-50/70' : ''}>
             <td class="text-center">{row.id}</td>
             <td>
               <ZBadge text={getRequestTypeLabel(row.request_type)} class={`mr-2 ${getRequestTypeClass(row.request_type)}`} />
-              <a href={resolve(`/tool/editbot/tasks/${row.id}`)} class="font-medium text-(--color) hover:underline">{row.title}</a>
-              {#if isCompleted(row)}
-                <span class="ml-1 inline-flex items-center gap-1 align-middle">
-                  <ZButtonLink color="ghost" size="small" href={getTitleHref(row)} rel="external noopener noreferrer" target="_blank" title="문서 보기">
-                    <ZIcon path={mdiOpenInNew} />
-                  </ZButtonLink>
+              <a
+                href={getTitleHref(row)}
+                rel="external noopener noreferrer"
+                target="_blank"
+                class="font-medium hover:underline"
+                class:new={!isCompleted(row)}
+              >
+                {row.title}
+              </a>
+              <span class="ml-1 inline-flex items-center gap-1 align-middle">
+                {#if isCompleted(row)}
                   <ZButtonLink
                     color="ghost"
                     size="small"
                     href={getWikiDiffHref(row.title, row.revid)}
                     rel="external noopener noreferrer"
                     target="_blank"
-                    title="미디어위키에서 차이보기"
+                    title="차이보기"
                   >
                     <ZIcon path={mdiCompare} />
                   </ZButtonLink>
-                </span>
-              {/if}
+                {/if}
+                {#if canViewDetail(row)}
+                  <ZButtonLink color="ghost" size="small" href={resolve(`/tool/editbot/tasks/${row.id}`)} title="작업 상세 보기">
+                    <ZIcon path={mdiInformation} />
+                  </ZButtonLink>
+                {/if}
+              </span>
             </td>
             <td>
               <div class="flex items-center justify-center gap-1">
@@ -341,9 +343,9 @@
             </td>
           </tr>
           {#if isCurrentTask(row) && (row.error_count ?? 0) > 0}
-            <tr class="border-b border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/30">
+            <tr class="border-b border-blue-200 bg-blue-50/50">
               <td colspan="6" class="text-center text-sm">
-                <div class="text-blue-900 dark:text-blue-100">
+                <div class="text-blue-900">
                   실패 {row.error_count ?? 0}회
                   {#if row.last_error}
                     <small class="ml-1 opacity-80">{row.last_error}</small>
@@ -368,4 +370,9 @@
 </div>
 
 <style>
+  .z-table th,
+  .z-table td {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
 </style>

@@ -2,9 +2,8 @@
 @import 'tailwindcss';
 @custom-variant dark (&:where(.dark, .dark *));
 
-@import './appcolor-radix.css';
+@import './appcolor-dark.css';
 @import './appcolor-mw.css';
-@import './appcolor-x.css';
 @import './appcolor-z.css';
 @import './appemoji-console.css';
 @import './base-border.css';
