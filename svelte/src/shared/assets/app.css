@@ -2,7 +2,7 @@
 @import 'tailwindcss';
 @custom-variant dark (&:where(.dark, .dark *));
 
-@import './appa.css';
+@import './appcolor-raw.css';
 @import './appcolor-dark.css';
 @import './appcolor-mw.css';
 @import './appcolor-z.css';
