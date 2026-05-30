@@ -614,19 +614,19 @@
 
 <style>
   .inline-var {
-    color: var(--blue-9);
-    background-color: var(--blue-3);
+    color: var(--color-blue-500);
+    background-color: var(--color-sky-100);
     padding: 0 2px;
     border-radius: 4px;
-    border: 1px solid var(--blue-6);
+    border: 1px solid var(--color-blue-200);
     font-weight: 600;
   }
 
   .block-var {
-    color: var(--brown-9);
-    background-color: var(--brown-3);
+    color: var(--color-olive-500);
+    background-color: var(--color-taupe-100);
     padding: 0 2px;
-    border: 1px solid var(--brown-6);
+    border: 1px solid var(--color-taupe-300);
     border-radius: 4px;
     font-weight: 600;
   }
@@ -643,6 +643,6 @@
   }
 
   .code-block {
-    color: var(--slate-11);
+    color: var(--color-gray-500);
   }
 </style>

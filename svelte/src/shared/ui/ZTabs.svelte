@@ -36,8 +36,8 @@
       href={resolve(tab.href ?? '#')}
       class={`relative border-b-2 px-3 py-2 text-sm transition ${
         selected === tab.value
-          ? 'border-slate-900 font-semibold text-slate-900 dark:border-slate-100 dark:text-slate-100'
-          : 'border-transparent text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200'
+          ? 'border-slate-900 font-semibold text-slate-900'
+          : 'border-transparent text-gray-500 hover:text-gray-800'
       }`}
       onclick={(e) => select(e, tab.value)}
     >

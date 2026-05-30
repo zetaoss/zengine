@@ -7,7 +7,13 @@
   import { page } from '$app/state'
 
   interface NavItem {
-    to: '/tool/binder' | '/tool/stat' | '/tool/common-report' | '/tool/write-request' | '/tool/editbot' | '/tool/frontplay'
+    to:
+      | '/tool/binder'
+      | '/tool/stat'
+      | '/tool/common-report'
+      | '/tool/write-request'
+      | '/tool/editbot'
+      | '/tool/frontplay'
     label: string
   }
 
@@ -42,8 +48,8 @@
             <td>
               <a
                 href={resolve(item.to)}
-                class={`block w-full rounded px-3 py-2 text-left transition z-text hover:no-underline hover:bg-gray-200 dark:hover:bg-gray-800 ${
-                  isActive(pathname, item.to) ? 'bg-gray-200 font-semibold dark:bg-gray-800' : ''
+                class={`block w-full rounded px-3 py-2 text-left transition z-text hover:no-underline hover:bg-gray-200 ${
+                  isActive(pathname, item.to) ? 'bg-gray-200 font-semibold' : ''
                 }`}
               >
                 {item.label}

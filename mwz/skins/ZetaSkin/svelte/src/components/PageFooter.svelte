@@ -116,7 +116,7 @@
 
 {#if showModal}
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-    <div class="bg-white dark:bg-neutral-800 rounded shadow-lg w-[22rem] max-w-[90vw] p-4">
+    <div class="bg-white rounded shadow-lg w-[22rem] max-w-[90vw] p-4">
       <div class="text-sm pb-3">댓글을 삭제하시겠습니까?</div>
       <div class="flex justify-end gap-2">
         <button type="button" class="page-btn" on:click={() => (showModal = false)}> 취소 </button>
@@ -143,7 +143,7 @@
         <div class="grid grid-cols-[5fr_1fr] gap-2">
           <textarea
             id="page-comment-new"
-            class="w-full min-h-[4.5rem] p-2 border rounded bg-white dark:bg-neutral-900"
+            class="w-full min-h-[4.5rem] p-2 border rounded bg-white"
             placeholder="댓글을 쓸 수 있습니다..."
             bind:value={message}
           ></textarea>
@@ -200,10 +200,7 @@
               </div>
 
               <div class="py-2">
-                <textarea
-                  id="page-comment-edit"
-                  class="w-full min-h-[4.5rem] p-2 border rounded bg-white dark:bg-neutral-900"
-                  bind:value={editingRow.message}
+                <textarea id="page-comment-edit" class="w-full min-h-[4.5rem] p-2 border rounded bg-white" bind:value={editingRow.message}
                 ></textarea>
               </div>
 

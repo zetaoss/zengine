@@ -117,10 +117,10 @@
   @reference '$shared/assets/app.css';
 
   .table-menu-bar {
-    @apply border-b text-right items-center flex flex-wrap p-1 bg-(--background-color-neutral-subtle) dark:bg-slate-800;
+    @apply border-b text-right items-center flex flex-wrap p-1 bg-(--background-color-neutral-subtle);
   }
 
   .divider {
-    @apply ml-2 mr-1 h-4 w-px bg-gray-300 dark:bg-gray-700;
+    @apply ml-2 mr-1 h-4 w-px bg-gray-300;
   }
 </style>

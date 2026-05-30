@@ -13,15 +13,15 @@
   let isTool = $derived(path.startsWith('/tool'))
 </script>
 
-<nav id="navbar" class="bg-slate-700 text-sm text-white">
+<nav id="navbar" class="bg-[#345] text-sm text-[#fff]">
   <div class="mx-auto flex w-full max-w-8xl flex-wrap items-center">
     <div class="order-1 flex h-12 items-stretch">
       <a class="navlink" href={resolve('/')}>
         <img alt="zetawiki" src="/zeta.svg?1" class="h-6 w-6" />
       </a>
-      <a class={`navlink ${isWiki ? 'text-yellow-200!' : ''}`} href={resolve('/')}> 위키 </a>
-      <a class={`navlink ${isForum ? 'text-yellow-200!' : ''}`} href={resolve('/forum')}> 포럼 </a>
-      <a class={`navlink ${isTool ? 'text-yellow-200!' : ''}`} href={resolve('/tool/binder')}> 도구 </a>
+      <a class={`navlink ${isWiki ? 'current' : ''}`} href={resolve('/')}> 위키 </a>
+      <a class={`navlink ${isForum ? 'current' : ''}`} href={resolve('/forum')}> 포럼 </a>
+      <a class={`navlink ${isTool ? 'current' : ''}`} href={resolve('/tool/binder')}> 도구 </a>
     </div>
     <div class="order-2 contents md:ml-auto md:flex md:w-auto md:max-w-2xl md:flex-1 md:items-stretch">
       <div class="order-2 ml-auto contents md:group md:relative md:inline-block">

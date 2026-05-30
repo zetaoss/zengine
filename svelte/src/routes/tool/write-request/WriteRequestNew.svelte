@@ -41,7 +41,7 @@
         icon: mdiProgressClock,
         label: '확인중',
         text: '중복확인',
-        className: 'text-blue-600 dark:text-blue-400',
+        className: 'text-blue-600'
       }
     }
     if (state === 'available') {
@@ -49,7 +49,7 @@
         icon: mdiCheckCircle,
         label: '확인완료',
         text: '중복확인',
-        className: 'text-green-600 dark:text-green-400',
+        className: 'text-green-600'
       }
     }
     if (state === 'exists') {
@@ -57,7 +57,7 @@
         icon: mdiCloseCircle,
         label: '중복',
         text: '중복확인',
-        className: 'text-red-600 dark:text-red-400',
+        className: 'text-red-600'
       }
     }
     return {

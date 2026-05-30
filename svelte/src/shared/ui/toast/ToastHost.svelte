@@ -26,7 +26,7 @@
   {#each $toasts as toast (toast.id)}
     {#if toast.placement === 'center'}
       <div
-        class="pointer-events-auto w-full max-w-sm rounded border bg-white text-(--z-text) shadow-lg dark:bg-gray-900"
+        class="pointer-events-auto w-full max-w-sm rounded border bg-white text-(--z-text) shadow-lg"
         in:fly={{ y: 8, duration: 200 }}
         out:fly={{ y: 8, duration: 200 }}
       >
@@ -38,7 +38,7 @@
             </ZButtonLink>
           </div>
         {/if}
-        <hr class="toast-bar m-0 h-1 rounded border-0 bg-black/20 dark:bg-white/20" style={`animation-duration: ${toast.timeout}ms`} />
+        <hr class="toast-bar m-0 h-1 rounded border-0 bg-black/20" style={`animation-duration: ${toast.timeout}ms`} />
       </div>
     {/if}
   {/each}

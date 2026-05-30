@@ -47,7 +47,7 @@
 {#each rows as r (r.id)}
   <div class="py-2">
     <a href={`/wiki/${r.page_title}`} rel="external" data-sveltekit-reload>{r.page_title.replace(/_/g, ' ')}</a>
-    <span class="silver ml-3">
+    <span class="ml-3">
       <AvatarUser user={{ id: r.user_id, name: r.user_name }} />
     </span>
     <div class="line-clamp-3 wrap-break-word text-ellipsis">

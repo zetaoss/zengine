@@ -73,7 +73,7 @@
 
 <div class="text-sm">
   {#if title}
-    <div class="mb-2 font-bold text-gray-700 dark:text-gray-300">
+    <div class="mb-2 font-bold text-gray-700">
       {title}
     </div>
   {/if}
@@ -111,14 +111,14 @@
       {#each posts as p (p.id)}
         <a
           href={resolve(`/forum/${p.id}${pageNumber === 1 ? '' : `?page=${pageNumber}`}`)}
-          class={`z-text block border-b px-3 py-2 hover:bg-gray-50 hover:no-underline dark:hover:bg-gray-800 md:flex md:px-2 ${
-            currentPostId === p.id ? 'bg-slate-100 dark:bg-stone-900' : ''
+          class={`z-text block border-b px-3 py-2 hover:bg-gray-50 hover:no-underline md:flex md:px-2 ${
+            currentPostId === p.id ? 'bg-slate-100' : ''
           }`}
         >
           <div class="flex py-1 md:w-[65%]">
             <span class="hidden w-[10%] text-center md:inline">{p.id}</span>
             <span class="w-full truncate pr-2 md:w-[90%]">
-              <span class="rounded-lg bg-[#6668] px-1.5 text-xs text-white dark:text-gray-200">
+              <span class="rounded-lg bg-[#6668] px-1.5 text-xs text-white">
                 {p.cat}
               </span>
               {p.title}

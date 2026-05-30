@@ -105,22 +105,22 @@
     on:keydown={(e) => (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') && closeConsent()}
   >
     <div
-      class="relative w-full max-w-xl rounded border border-neutral-200/70 bg-white p-5 text-left text-neutral-900 shadow-xl dark:border-zinc-700/60 dark:bg-zinc-900 dark:text-neutral-100"
+      class="relative w-full max-w-xl rounded border border-neutral-200/70 bg-white p-5 text-left text-neutral-900 shadow-xl"
     >
       <button
         aria-label="Close consent dialog"
-        class="absolute right-4 top-4 cursor-pointer text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
+        class="absolute right-4 top-4 cursor-pointer text-neutral-500 hover:text-neutral-700"
         type="button"
         on:click={closeConsent}>✕</button
       >
       <div class="flex max-h-[calc(100vh-5rem)] flex-col">
-        <div class="mb-3 flex items-center gap-2 border-b border-neutral-200 pb-2 dark:border-slate-600">
+        <div class="mb-3 flex items-center gap-2 border-b border-neutral-200 pb-2">
           <img alt="logo" class="h-7 w-7" src="/zeta.svg" />
-          <span class="text-sm font-bold tracking-wide text-neutral-700 dark:text-neutral-200">zetawiki.com</span>
+          <span class="text-sm font-bold tracking-wide text-neutral-700">zetawiki.com</span>
         </div>
         <div class="z-scrollbar flex-1 overflow-y-auto pr-1">
           <div role="heading" aria-level="2" class="mb-2 text-lg font-semibold leading-tight">Cookie Consent</div>
-          <p class="mb-4 text-sm text-neutral-600 dark:text-neutral-300">
+          <p class="mb-4 text-sm text-neutral-600">
             When you visit any of our websites, it may store or retrieve information on your browser, mostly in the form of cookies. This
             information might be about you, your preferences, or your device and is mostly used to make the site work as you expect it to.
             The information does not usually directly identify you, but it can give you a more personalized experience. Because we respect
@@ -128,50 +128,50 @@
             more and manage your preferences. Please note, blocking some types of cookies may impact your experience of the site and the
             services we are able to offer.
           </p>
-          <div role="heading" aria-level="3" class="mb-3 text-sm font-bold tracking-wide text-neutral-700 dark:text-neutral-200">
+          <div role="heading" aria-level="3" class="mb-3 text-sm font-bold tracking-wide text-neutral-700">
             Manage Consent Preferences
           </div>
 
           <div class="space-y-3">
-            <div class="rounded border border-neutral-200 dark:border-slate-600">
+            <div class="rounded border border-neutral-200">
               <div class="flex items-center gap-3 p-3">
                 <button
-                  class="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left font-semibold text-neutral-800 dark:text-neutral-100"
+                  class="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left font-semibold text-neutral-800"
                   type="button"
                   aria-expanded={necessaryExpanded}
                   aria-controls="necessary-desc"
                   on:click={toggleNecessary}
                 >
                   <span
-                    class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 text-neutral-600 dark:bg-slate-600 dark:text-neutral-200"
+                    class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 text-neutral-600"
                   >
                     <ZIcon path={mdiChevronDown} size={14} class={`transition-transform ${necessaryExpanded ? 'rotate-180' : ''}`} />
                   </span>
                   <span>Strictly necessary cookies</span>
                 </button>
-                <span class="text-sm font-bold text-neutral-700 dark:text-neutral-200">Always active</span>
+                <span class="text-sm font-bold text-neutral-700">Always active</span>
               </div>
               {#if necessaryExpanded}
                 <div
                   id="necessary-desc"
-                  class="border-t border-neutral-200 px-3 pb-3 pt-2 text-sm text-neutral-600 dark:border-slate-600 dark:text-neutral-300"
+                  class="border-t border-neutral-200 px-3 pb-3 pt-2 text-sm text-neutral-600"
                 >
                   Necessary cookies are required for basic features like secure login, session handling, and consent preference storage.
                 </div>
               {/if}
             </div>
 
-            <div class="rounded border border-neutral-200 dark:border-slate-600">
+            <div class="rounded border border-neutral-200">
               <div class="flex items-center gap-3 p-3">
                 <button
-                  class="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left font-semibold text-neutral-800 dark:text-neutral-100"
+                  class="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left font-semibold text-neutral-800"
                   type="button"
                   aria-expanded={analyticsExpanded}
                   aria-controls="analytics-desc"
                   on:click={toggleAnalytics}
                 >
                   <span
-                    class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 text-neutral-600 dark:bg-slate-600 dark:text-neutral-200"
+                    class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 text-neutral-600"
                   >
                     <ZIcon path={mdiChevronDown} size={14} class={`transition-transform ${analyticsExpanded ? 'rotate-180' : ''}`} />
                   </span>
@@ -182,24 +182,24 @@
               {#if analyticsExpanded}
                 <div
                   id="analytics-desc"
-                  class="border-t border-neutral-200 px-3 pb-3 pt-2 text-sm text-neutral-600 dark:border-slate-600 dark:text-neutral-300"
+                  class="border-t border-neutral-200 px-3 pb-3 pt-2 text-sm text-neutral-600"
                 >
                   Analytics cookies help us measure traffic and understand how the site is used so we can improve performance.
                 </div>
               {/if}
             </div>
 
-            <div class="rounded border border-neutral-200 dark:border-slate-600">
+            <div class="rounded border border-neutral-200">
               <div class="flex items-center gap-3 p-3">
                 <button
-                  class="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left font-semibold text-neutral-800 dark:text-neutral-100"
+                  class="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left font-semibold text-neutral-800"
                   type="button"
                   aria-expanded={marketingExpanded}
                   aria-controls="marketing-desc"
                   on:click={toggleMarketing}
                 >
                   <span
-                    class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 text-neutral-600 dark:bg-slate-600 dark:text-neutral-200"
+                    class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 text-neutral-600"
                   >
                     <ZIcon path={mdiChevronDown} size={14} class={`transition-transform ${marketingExpanded ? 'rotate-180' : ''}`} />
                   </span>
@@ -210,7 +210,7 @@
               {#if marketingExpanded}
                 <div
                   id="marketing-desc"
-                  class="border-t border-neutral-200 px-3 pb-3 pt-2 text-sm text-neutral-600 dark:border-slate-600 dark:text-neutral-300"
+                  class="border-t border-neutral-200 px-3 pb-3 pt-2 text-sm text-neutral-600"
                 >
                   Marketing cookies are used for ad personalization and campaign measurement across services.
                 </div>
@@ -219,19 +219,19 @@
           </div>
         </div>
 
-        <div class="mt-4 grid grid-cols-3 gap-2 border-t border-neutral-200 pt-3 dark:border-slate-600">
+        <div class="mt-4 grid grid-cols-3 gap-2 border-t border-neutral-200 pt-3">
           <button
-            class="w-full cursor-pointer rounded bg-neutral-700 px-3 py-2.5 text-center text-sm font-bold text-white hover:bg-neutral-800 dark:bg-slate-300 dark:text-zinc-900 dark:hover:bg-slate-200"
+            class="w-full cursor-pointer rounded bg-neutral-700 px-3 py-2.5 text-center text-sm font-bold text-white hover:bg-neutral-800"
             type="button"
             on:click={allowAllConsent}>Accept all cookies</button
           >
           <button
-            class="w-full cursor-pointer rounded bg-neutral-700 px-3 py-2.5 text-center text-sm font-bold text-white hover:bg-neutral-800 dark:bg-slate-300 dark:text-zinc-900 dark:hover:bg-slate-200"
+            class="w-full cursor-pointer rounded bg-neutral-700 px-3 py-2.5 text-center text-sm font-bold text-white hover:bg-neutral-800"
             type="button"
             on:click={allowNecessaryOnly}>Necessary cookies only</button
           >
           <button
-            class="w-full cursor-pointer rounded bg-neutral-700 px-3 py-2.5 text-center text-sm font-bold text-white hover:bg-neutral-800 dark:bg-slate-300 dark:text-zinc-900 dark:hover:bg-slate-200"
+            class="w-full cursor-pointer rounded bg-neutral-700 px-3 py-2.5 text-center text-sm font-bold text-white hover:bg-neutral-800"
             type="button"
             on:click={allowSelection}>Confirm my choices</button
           >

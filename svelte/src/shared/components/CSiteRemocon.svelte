@@ -37,15 +37,15 @@
   })
 </script>
 
-<div class="fixed bottom-0 right-0 z-40 print:hidden">
-  <div class="z-50 flex gap-1 opacity-80">
-    <ZButton class="bg-[#8888]! p-1.5! text-white! dark:text-yellow-500!" onclick={toggleDark}>
+<div class="fixed bottom-0 right-0 z-40 print:hidden p-2 text-[#fff]">
+  <div class="z-50 flex gap-1 opacity-60">
+    <ZButton class="bg-[#8888]! border-0 p-1 text-inherit dark:text-[#eb0]" onclick={toggleDark}>
       <ZIcon path={mdiWeatherNight} size={24} />
     </ZButton>
-    <ZButton class="bg-[#8888]! p-1.5! text-white!" onclick={flyUp}>
+    <ZButton class="bg-[#8888]! border-0 p-1 text-inherit" onclick={flyUp}>
       <ZIcon path={mdiChevronUp} size={24} />
     </ZButton>
-    <ZButton class="bg-[#8888]! p-1.5! text-white!" onclick={diveDive}>
+    <ZButton class="bg-[#8888]! border-0 p-1 text-inherit" onclick={diveDive}>
       <ZIcon path={mdiChevronDown} size={24} />
     </ZButton>
   </div>
