@@ -242,7 +242,7 @@
 <style>
   .focused {
     background-color: rgb(79 70 229 / 0.7);
-    color: #fff;
+    color: var(--raw-white);
     text-decoration: none;
   }
 </style>

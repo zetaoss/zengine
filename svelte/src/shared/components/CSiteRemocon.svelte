@@ -37,7 +37,7 @@
   })
 </script>
 
-<div class="fixed bottom-0 right-0 z-40 print:hidden p-2 text-[#fff]">
+<div class="fixed bottom-0 right-0 z-40 print:hidden p-2 text-(--raw-white)">
   <div class="z-50 flex gap-1 opacity-60">
     <ZButton class="bg-[#8888]! border-0 p-1 text-inherit dark:text-[#eb0]" onclick={toggleDark}>
       <ZIcon path={mdiWeatherNight} size={24} />
