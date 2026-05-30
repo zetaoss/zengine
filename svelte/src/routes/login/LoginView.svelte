@@ -163,7 +163,7 @@
       <button
         type="submit"
         disabled={loading || username === '' || password === ''}
-        class="my-1 h-10 w-full rounded bg-gray-800 text-white disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-700 hover:"
+        class="my-1 h-10 w-full rounded bg-gray-800 text-white disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-700"
       >
         {#if loading}
           로그인 중...

@@ -50,7 +50,7 @@ func RegisterRoutes(mux *http.ServeMux, serverCtx *serverctx.Context, components
 	r.DELETE("/api/common-report/{id}", commonreport.Destroy, r.OwnerOrSysop(models.CommonReport{}))
 
 	r.GET("/api/editbot", editbot.Index)
-	r.GET("/api/editbot/{id}", editbot.Show)
+	r.GET("/api/editbot/{id}", editbot.Show, r.OwnerOrSysop(models.EditBot{}))
 	r.POST("/api/editbot/from-page", editbot.StoreFromPage, r.User())
 	r.POST("/api/editbot/from-write-request/id/{writeRequest}", editbot.StoreFromWriteRequest, r.User())
 	r.DELETE("/api/editbot/{id}", editbot.Destroy, r.Sysop())

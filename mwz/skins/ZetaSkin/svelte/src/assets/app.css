@@ -1,5 +1,6 @@
 /* app.css */
 @import '../shared/assets/app.css';
+@source "../templates";
 @import './mw-apex-dark.css';
 
 @import './has-binders.css';
