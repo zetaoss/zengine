@@ -163,7 +163,7 @@
 
       <div class="pt-2">
         {#if isEditing(reply.id)}
-          <div class="rounded border-2 bg-white p-3 dark:bg-black">
+          <div class="rounded border-2 bg-white p-3">
             <div class="flex items-center justify-between">
               <span class="text-xs text-gray-400">수정 중</span>
               <span class="text-xs text-gray-400">{editBody.length} characters</span>

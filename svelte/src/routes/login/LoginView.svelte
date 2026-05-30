@@ -94,7 +94,7 @@
 </script>
 
 <div class="mx-auto w-[75%] max-w-xl pb-20 pt-10">
-  <div class="rounded border bg-white p-6 dark:bg-slate-900">
+  <div class="rounded border bg-white p-6">
     <div class="py-3">소셜 로그인</div>
 
     <div class="flex flex-col gap-2">
@@ -163,7 +163,7 @@
       <button
         type="submit"
         disabled={loading || username === '' || password === ''}
-        class="my-1 h-10 w-full rounded bg-gray-800 text-white disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-700 dark:bg-[#357] hover:dark:bg-[#246]"
+        class="my-1 h-10 w-full rounded bg-gray-800 text-white disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-700 hover:"
       >
         {#if loading}
           로그인 중...

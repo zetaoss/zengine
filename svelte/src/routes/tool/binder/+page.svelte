@@ -58,26 +58,26 @@
 
   function getRowClass(binder: Binder): string {
     if (!binder.enabled) {
-      return 'border-gray-200 opacity-75 hover:border-gray-300 dark:border-neutral-800 dark:hover:border-neutral-700'
+      return 'border-gray-200 opacity-75 hover:border-gray-300'
     }
 
-    return 'border-gray-300 hover:border-gray-400 dark:border-neutral-700 dark:hover:border-neutral-500'
+    return 'border-gray-300 hover:border-gray-400'
   }
 
   function getRowAccentClass(binder: Binder): string {
     if (!binder.enabled) {
-      return 'bg-(--background-color-interactive-subtle) dark:bg-(--background-color-neutral-subtle)'
+      return 'bg-(--background-color-interactive-subtle)'
     }
 
-    return 'bg-white dark:bg-neutral-900'
+    return 'bg-white'
   }
 
   function getTitleClass(binder: Binder): string {
     if (!binder.enabled) {
-      return 'text-gray-500 group-hover:text-gray-600 dark:text-neutral-500 dark:group-hover:text-neutral-400'
+      return 'text-gray-500 group-hover:text-gray-600'
     }
 
-    return 'text-gray-900 group-hover:text-sky-700 dark:text-white dark:group-hover:text-sky-300'
+    return 'text-gray-900 group-hover:text-sky-700'
   }
 
   function getBinderHref(binder: Binder): string {
@@ -163,19 +163,19 @@
     <div class="flex items-baseline gap-2">
       <h1 class="text-2xl font-bold tracking-tight">바인더</h1>
       {#if !loading && !error}
-        <p class="text-sm text-gray-500 dark:text-gray-400">{binders.length}</p>
+        <p class="text-sm text-gray-500">{binders.length}</p>
       {/if}
     </div>
 
     <div
-      class="inline-flex overflow-hidden rounded-xl border border-gray-300 bg-white shadow-sm dark:border-neutral-700 dark:bg-neutral-900"
+      class="inline-flex overflow-hidden rounded-xl border border-gray-300 bg-white shadow-sm"
     >
       <button
         type="button"
-        class={`grid h-10 w-10 cursor-pointer place-items-center border-r border-gray-300 transition dark:border-neutral-700 ${
+        class={`grid h-10 w-10 cursor-pointer place-items-center border-r border-gray-300 transition ${
           sortMode === 'title'
-            ? 'bg-gray-200 text-black dark:bg-neutral-800 dark:text-white'
-            : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-neutral-800'
+            ? 'bg-gray-200 text-black'
+            : 'text-gray-500 hover:bg-gray-100'
         }`}
         title="Title"
         aria-label="Title"
@@ -188,8 +188,8 @@
         type="button"
         class={`grid h-10 w-10 cursor-pointer place-items-center transition ${
           sortMode === 'docs'
-            ? 'bg-gray-200 text-black dark:bg-neutral-800 dark:text-white'
-            : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-neutral-800'
+            ? 'bg-gray-200 text-black'
+            : 'text-gray-500 hover:bg-gray-100'
         }`}
         title="Docs"
         aria-label="Docs"
@@ -211,8 +211,8 @@
         {#if section.binders.length > 0}
           <section>
             <div class="mb-3 flex items-baseline gap-2">
-              <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{section.title}</h2>
-              <p class="text-sm text-gray-500 dark:text-gray-400">{section.binders.length}</p>
+              <h2 class="text-lg font-semibold text-gray-900">{section.title}</h2>
+              <p class="text-sm text-gray-500">{section.binders.length}</p>
             </div>
 
             <div class="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
@@ -234,7 +234,7 @@
                     </div>
 
                     <div class="flex shrink-0 items-center gap-3 text-sm">
-                      <span class="inline-flex items-center gap-1 tabular-nums text-gray-500 dark:text-gray-400">
+                      <span class="inline-flex items-center gap-1 tabular-nums text-gray-500">
                         {binder.docs}<small>/ {binder.links}</small>
                       </span>
                       {#if isSysop}

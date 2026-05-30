@@ -42,7 +42,7 @@
     <div
       role="dialog"
       aria-modal="true"
-      class={`relative flex max-h-[calc(100dvh-2rem)] w-full min-h-0 flex-col overflow-hidden rounded-md border bg-white dark:bg-gray-900 ${panelClass}`}
+      class={`relative flex max-h-[calc(100dvh-2rem)] w-full min-h-0 flex-col overflow-hidden rounded-md border bg-white ${panelClass}`}
     >
       {#if title}
         <header class="flex min-h-12 items-stretch justify-between gap-2 border-b pl-5">

@@ -5,7 +5,7 @@
 
 <svg
   aria-hidden="true"
-  class={`mr-2 animate-spin text-gray-200 dark:text-gray-700 fill-blue-600 ${extraClass}`}
+  class={`mr-2 animate-spin text-gray-200 fill-blue-600 ${extraClass}`}
   viewBox="0 0 100 101"
   style={`width:${size}; height:${size}`}
   fill="none"

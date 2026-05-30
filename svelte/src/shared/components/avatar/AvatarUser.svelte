@@ -13,7 +13,7 @@
 <svelte:element
   this={showLink ? 'a' : 'span'}
   href={showLink ? `/user/${encodeURIComponent(user.name.replace(/ /g, '_'))}` : undefined}
-  class={`inline-flex items-center align-middle ${showLink ? 'rounded-lg text-gray-400 hover:no-underline hover:bg-gray-200 dark:hover:bg-gray-700' : ''}`}
+  class={`inline-flex items-center align-middle ${showLink ? 'rounded-lg text-gray-400 hover:no-underline hover:bg-gray-200' : ''}`}
 >
   <AvatarIcon {user} {size} {showBorder} />
   {#if showName}

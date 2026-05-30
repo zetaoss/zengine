@@ -142,20 +142,20 @@
   }
 
   .row-split:hover {
-    background-color: var(--x-gray-100);
+    background-color: var(--color-gray-100);
   }
 
   .row-unified:hover {
-    background-color: var(--x-gray-100);
+    background-color: var(--color-gray-100);
   }
 
   .binder-link:hover {
-    background-color: var(--x-gray-200);
+    background-color: var(--color-gray-200);
     text-decoration: none;
   }
 
   .binder-toggle:hover {
-    background-color: var(--x-gray-200);
+    background-color: var(--color-gray-200);
   }
 
   .binder-toggle-slot {
@@ -170,7 +170,7 @@
     width: 1.35rem;
     height: 1.35rem;
     flex: 0 0 auto;
-    color: var(--x-gray-500);
+    color: var(--color-gray-500);
     font-size: 0.95rem;
     font-weight: 700;
     line-height: 1;
@@ -180,6 +180,6 @@
   .binder-link:hover .binder-expander,
   .binder-toggle:hover .binder-expander,
   .row:hover .binder-expander {
-    color: var(--x-gray-700);
+    color: var(--color-gray-700);
   }
 </style>

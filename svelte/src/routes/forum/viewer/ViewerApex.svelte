@@ -77,7 +77,7 @@
     <div>
       {#if post}
         <div class="float-left mr-2">
-          <span class="rounded border p-1 text-xs text-gray-600 dark:text-gray-400">
+          <span class="rounded border p-1 text-xs text-gray-600">
             {post.cat}
           </span>
         </div>

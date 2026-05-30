@@ -28,6 +28,6 @@
 
   .menu-item.is-active,
   .menu-item:hover {
-    @apply bg-(--background-color-interactive-subtle) dark:bg-zinc-800;
+    @apply bg-(--background-color-interactive-subtle);
   }
 </style>

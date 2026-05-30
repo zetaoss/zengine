@@ -17,5 +17,3 @@
 
 @import './printfooter.css';
 @import './toc.css';
-
-@config "../../tailwind.config.js";

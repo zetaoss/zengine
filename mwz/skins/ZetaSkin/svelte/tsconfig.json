@@ -11,12 +11,11 @@
     "checkJs": false,
     "isolatedModules": true,
     "types": ["svelte", "vite/client"],
-    "baseUrl": ".",
     "paths": {
-      "$lib": ["src/lib"],
-      "$lib/*": ["src/lib/*"],
-      "$shared": ["src/shared"],
-      "$shared/*": ["src/shared/*"]
+      "$lib": ["./src/lib"],
+      "$lib/*": ["./src/lib/*"],
+      "$shared": ["./src/shared"],
+      "$shared/*": ["./src/shared/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.svelte", "vite.config.ts"],

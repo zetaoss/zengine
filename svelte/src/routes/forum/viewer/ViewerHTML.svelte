@@ -118,7 +118,7 @@
   }
 
   :global(.preview a) {
-    @apply px-3 text-sm text-gray-700 dark:text-gray-300;
+    @apply px-3 text-sm text-gray-700;
   }
 
   :global(.preview a:hover) {
