@@ -68,9 +68,10 @@ This guide helps coding agents quickly understand the monorepo and choose where 
 
 ## Frontend Styling Rule
 
-- Prefer Radix color tokens first (e.g. `--slate-11`, `--blue-9`) over MediaWiki color tokens when both are possible.
-- When using Radix color tokens, verify the required color scale import exists in `svelte/src/shared/assets/appcolor-radix.css`.
-- Use `svelte/src/shared/assets/appcolor-mw.css` for MediaWiki-specific semantic tokens.
+- Use standard Tailwind color utilities in markup (for example, `text-slate-700`, `bg-slate-800`).
+- Do not use `dark:` variants in classes.
+- Dark mode colors are applied automatically by the existing theme/token CSS.
+- `svelte/src/shared/assets/appcolor-mw.css` contains MediaWiki semantic tokens, but using those tokens directly is generally not recommended.
 
 ## Frontend Shared Responsive Utilities
 

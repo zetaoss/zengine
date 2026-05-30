@@ -9,11 +9,11 @@
   @apply flex items-center no-underline px-3;
 
   &:hover {
-    background-color: #123;
+    background-color: var(--a-slate-800);
     text-decoration-line: none;
   }
 
   &.current {
-    color: #eb0;
+    color: var(--a-yellow-200);
   }
 }
