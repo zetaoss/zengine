@@ -35,7 +35,7 @@ async function main() {
     };
 
     const oklchFullRegex =
-      /^\s*(--color-([a-z0-9]+)-([\d]+)):\s*oklch\(([\d.]+)%\s+([\d.]+)\s+([\d.]+)\);/;
+      /^\s*(--color-([a-z0-9-]+)-([\d]+)):\s*oklch\(([\d.]+)%\s+([\d.]+)\s+([\d.]+)\);/;
 
     for (const line of lines) {
       const matchFull = line.match(oklchFullRegex);
