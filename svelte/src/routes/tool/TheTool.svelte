@@ -9,10 +9,10 @@
   interface NavItem {
     to:
       | '/tool/binder'
-      | '/tool/stat'
       | '/tool/common-report'
       | '/tool/write-request'
       | '/tool/editbot'
+      | '/tool/stat'
       | '/tool/frontplay'
     label: string
   }
