@@ -44,7 +44,6 @@
     <div class="inline-flex items-center gap-1 whitespace-nowrap">
       <a
         href={getPageHref(block.blockStart - 1)}
-        rel="external"
         class={`${baseClass} ${block.hasPrevBlock ? '' : disabledClass}`}
         aria-label="Previous pages"
       >
@@ -54,7 +53,6 @@
       {#each block.pages as page (page)}
         <a
           href={getPageHref(page)}
-          rel="external"
           class={`${baseClass} ${page === paginateData.current_page ? activeClass : ''}`}
           aria-current={page === paginateData.current_page ? 'page' : undefined}
         >
@@ -64,7 +62,6 @@
 
       <a
         href={getPageHref(block.blockEnd + 1)}
-        rel="external"
         class={`${baseClass} ${block.hasNextBlock ? '' : disabledClass}`}
         aria-label="Next pages"
       >

@@ -2,6 +2,6 @@ import { redirect } from '@sveltejs/kit'
 
 import type { PageLoad } from './$types'
 
-export const load: PageLoad = () => {
-  throw redirect(302, '/tool/write-request/todo')
+export const load: PageLoad = ({ url }) => {
+  throw redirect(302, `/tool/write-request/todo${url.search}`)
 }

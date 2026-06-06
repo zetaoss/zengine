@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -18,7 +17,6 @@ import (
 	"github.com/zetaoss/zengine/goapp/models"
 	"github.com/zetaoss/zengine/goapp/server/paginator"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
-	"github.com/zetaoss/zengine/goapp/services/aieditsvc"
 
 	"gorm.io/gorm"
 )
@@ -26,12 +24,11 @@ import (
 const perPage = 25
 
 type storePayload struct {
-	PageID       int    `json:"page_id"`
-	Title        string `json:"title"`
-	RequestType  string `json:"request_type"`
-	PromptTitle  string `json:"prompt_title"`
-	LLMInput     string `json:"llm_input"`
-	EnableAiEdit bool   `json:"enable_ai_edit"`
+	PageID      int    `json:"page_id"`
+	Title       string `json:"title"`
+	RequestType string `json:"request_type"`
+	PromptTitle string `json:"prompt_title"`
+	LLMInput    string `json:"llm_input"`
 }
 
 func Index(c *serverctx.Context) {
@@ -141,11 +138,6 @@ func Store(c *serverctx.Context) {
 	if insert.ID > 0 {
 		if promptTitle := strings.TrimSpace(body.PromptTitle); promptTitle != "" {
 			c.DB.Model(&models.AIEditPrompt{}).Where("title = ?", promptTitle).UpdateColumn("use_count", gorm.Expr("use_count + 1"))
-		}
-		if body.EnableAiEdit {
-			if err := aieditsvc.SetAiEditAsMine(c.Cfg, user.ID, true); err != nil {
-				slog.Warn("[aiedit] failed to persist ai-edit-as-mine preference", "user_id", user.ID, "err", err)
-			}
 		}
 		if _, err := aieditjob.Enqueue(c.R.Context(), c.AppContext, insert.ID); err != nil {
 			c.InternalError()

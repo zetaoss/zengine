@@ -19,7 +19,6 @@ declare global {
     gtag?: (...args: unknown[]) => void
     jQuery?: (target: Window) => JQueryWindowHandle
     RLCONF?: {
-      aiEditAsMine?: boolean
       wgAction?: string
       wgArticleId?: number
       wgUserId?: number

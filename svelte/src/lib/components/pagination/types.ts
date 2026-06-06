@@ -1,4 +1,13 @@
-export type PaginatePath = '/forum' | '/onelines' | '/tool/common-report' | '/tool/ai-edit' | '/tool/ai-edit/tasks' | '/tool/write-request'
+export type PaginatePath =
+  | '/forum'
+  | '/onelines'
+  | '/tool/common-report'
+  | '/tool/ai-edit'
+  | '/tool/ai-edit/tasks'
+  | '/tool/write-request'
+  | '/tool/write-request/done'
+  | '/tool/write-request/todo'
+  | '/tool/write-request/todo-top'
 
 export interface PaginateData {
   current_page: number
