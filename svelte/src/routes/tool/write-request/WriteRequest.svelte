@@ -53,7 +53,7 @@
   const canWrite = auth.canWrite
   const canDelete = auth.canDelete
 
-  let mode = $derived.by(() => {
+  let mode = $derived.by((): Mode => {
     const m = page.params.mode
     if (m === 'todo-top' || m === 'done') return m
     return 'todo'
@@ -75,7 +75,7 @@
   })
 
   let modeTabs = $derived([
-    { value: 'todo', label: '요청', badge: count.todo, href: resolve('/tool/write-request') },
+    { value: 'todo', label: '요청', badge: count.todo, href: resolve('/tool/write-request/todo') },
     { value: 'todo-top', label: '추천', href: resolve('/tool/write-request/todo-top') },
     { value: 'done', label: '완료', badge: count.done, href: resolve('/tool/write-request/done') },
   ])
@@ -113,7 +113,7 @@
     paginateData = {
       current_page: data.current_page,
       last_page: data.last_page,
-      path: '/tool/write-request',
+      path: `/tool/write-request/${mode}`,
     }
 
     loading = false

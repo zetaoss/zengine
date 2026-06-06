@@ -27,8 +27,15 @@
     return pathname === to || pathname.startsWith(`${to}/`)
   }
 
+  let pendingKey = $state('')
   let pathname = $derived(page.url.pathname)
   let { children }: { children?: Snippet } = $props()
+
+  $effect(() => {
+    if (pendingKey && isActive(pathname, pendingKey)) {
+      pendingKey = ''
+    }
+  })
 </script>
 
 <div class="h-full grid md:grid-cols-[140px_1fr]">
@@ -46,10 +53,16 @@
               <a
                 href={item.href}
                 class={`block w-full rounded px-3 py-2 text-left transition z-text hover:no-underline hover:bg-gray-200 ${
-                  isActive(pathname, item.key) ? 'bg-gray-200 font-semibold' : ''
+                  isActive(pathname, item.key) || pendingKey === item.key ? 'bg-gray-200 font-semibold' : ''
                 }`}
                 rel={item.external ? 'external' : undefined}
                 data-sveltekit-reload={item.external ? true : undefined}
+                onpointerdown={(event) => {
+                  if (item.external) return
+                  if (event.button !== 0) return
+                  if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return
+                  pendingKey = item.key
+                }}
               >
                 {item.label}
               </a>

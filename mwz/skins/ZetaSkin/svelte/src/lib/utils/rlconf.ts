@@ -4,7 +4,6 @@ import type { DataToc } from '$lib/types/toc'
 import type { Menu } from '$shared/types/menu'
 
 type RLConfig = {
-  aiEditAsMine?: boolean
   binders: Binder[]
   contributors: Contributor[]
   dataToc: DataToc
