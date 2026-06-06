@@ -6,6 +6,7 @@ import './components/PageMeta.svelte'
 import './components/PageMenu.svelte'
 import './components/PageFooter.svelte'
 import './components/UserMenu.svelte'
+import './components/editbox/EditBox.svelte'
 import './components/binder/BinderApex.svelte'
 import './components/toc/TocApex.svelte'
 import '$shared/components/CAdsenseSlot.svelte'
@@ -29,4 +30,8 @@ if (!document.querySelector('confirm-host')) {
 }
 if (!document.querySelector('toast-host')) {
   document.body.appendChild(document.createElement('toast-host'))
+}
+
+if (!document.querySelector('edit-box')) {
+  document.body.appendChild(document.createElement('edit-box'))
 }

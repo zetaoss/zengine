@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS edit_tasks (
+CREATE TABLE IF NOT EXISTS aiedit_tasks (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   user_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
   user_name VARCHAR(255) NOT NULL DEFAULT '',
@@ -16,6 +16,6 @@ CREATE TABLE IF NOT EXISTS edit_tasks (
   created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  KEY idx_edit_tasks_phase_id (phase, id),
-  KEY idx_edit_tasks_title_phase (title, phase)
+  KEY idx_aiedit_tasks_phase_id (phase, id),
+  KEY idx_aiedit_tasks_title_phase (title, phase)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

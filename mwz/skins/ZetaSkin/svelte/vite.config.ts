@@ -39,6 +39,9 @@ export default defineConfig(({ command }) => ({
     host: true,
     port: 5174,
     strictPort: true,
+    watch: {
+      usePolling: true,
+    },
     fs: {
       allow: ['.', path.resolve(__dirname, '../../../../svelte')],
     },

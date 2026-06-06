@@ -48,11 +48,7 @@
 </script>
 
 <div bind:this={rootEl} class="relative {className}">
-  <button
-    type="button"
-    class="z-select flex w-full items-center justify-between gap-2 text-left"
-    onclick={toggle}
-  >
+  <button type="button" class="z-select flex w-full items-center justify-between gap-2 text-left" onclick={toggle}>
     <div class="min-w-0 flex-1 truncate">
       {#if selectedItem}
         {#if itemSnippet}
@@ -73,9 +69,8 @@
       {#each items as item (item.value)}
         <button
           type="button"
-          class="flex w-full items-center gap-2 px-3 py-2 text-left transition hover:bg-(--background-color-interactive-subtle) {value ===
-          item.value
-            ? 'bg-(--background-color-interactive-subtle) font-semibold'
+          class="flex w-full items-center gap-2 px-3 py-1 text-left transition hover:bg-gray-200 {value === item.value
+            ? 'bg-gray-100 font-semibold'
             : ''}"
           onclick={() => select(item)}
         >

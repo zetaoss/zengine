@@ -4,6 +4,7 @@ import type { DataToc } from '$lib/types/toc'
 import type { Menu } from '$shared/types/menu'
 
 type RLConfig = {
+  aiEditAsMine?: boolean
   binders: Binder[]
   contributors: Contributor[]
   dataToc: DataToc
@@ -11,6 +12,8 @@ type RLConfig = {
   menu: Menu
   wgAction: string
   wgArticleId: number
+  wgPageName?: string
+  wgTitle?: string
   wgUserGroups: string[]
   wgUserId: number
   wgUserName: string

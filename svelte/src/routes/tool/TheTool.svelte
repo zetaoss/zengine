@@ -7,23 +7,20 @@
   import { page } from '$app/state'
 
   interface NavItem {
-    to:
-      | '/tool/binder'
-      | '/tool/common-report'
-      | '/tool/write-request'
-      | '/tool/editbot'
-      | '/tool/stat'
-      | '/tool/frontplay'
+    href: string
+    key: string
     label: string
+    external?: boolean
   }
 
   const navItems: NavItem[] = [
-    { to: '/tool/binder', label: '바인더' },
-    { to: '/tool/common-report', label: '통용' },
-    { to: '/tool/write-request', label: '작성요청' },
-    { to: '/tool/editbot', label: '편집봇' },
-    { to: '/tool/stat', label: '통계' },
-    { to: '/tool/frontplay', label: 'FrontPlay' },
+    { key: '/tool/binder', href: resolve('/tool/binder'), label: '바인더' },
+    { key: '/tool/common-report', href: resolve('/tool/common-report'), label: '통용' },
+    { key: '/tool/article-tpl', href: resolve('/tool/article-tpl'), label: '템플릿' },
+    { key: '/tool/write-request', href: resolve('/tool/write-request'), label: '작성요청' },
+    { key: '/tool/ai-edit', href: resolve('/tool/ai-edit'), label: 'AI 편집' },
+    { key: '/tool/stat', href: resolve('/tool/stat'), label: '통계' },
+    { key: '/tool/frontplay', href: resolve('/tool/frontplay'), label: 'FrontPlay' },
   ]
 
   function isActive(pathname: string, to: string) {
@@ -43,14 +40,16 @@
         </tr>
       </thead>
       <tbody>
-        {#each navItems as item (item.to)}
+        {#each navItems as item (item.key)}
           <tr>
             <td>
               <a
-                href={resolve(item.to)}
+                href={item.href}
                 class={`block w-full rounded px-3 py-2 text-left transition z-text hover:no-underline hover:bg-gray-200 ${
-                  isActive(pathname, item.to) ? 'bg-gray-200 font-semibold' : ''
+                  isActive(pathname, item.key) ? 'bg-gray-200 font-semibold' : ''
                 }`}
+                rel={item.external ? 'external' : undefined}
+                data-sveltekit-reload={item.external ? true : undefined}
               >
                 {item.label}
               </a>
