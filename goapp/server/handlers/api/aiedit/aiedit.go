@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -17,16 +18,20 @@ import (
 	"github.com/zetaoss/zengine/goapp/models"
 	"github.com/zetaoss/zengine/goapp/server/paginator"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
+	"github.com/zetaoss/zengine/goapp/services/aieditsvc"
 
 	"gorm.io/gorm"
 )
 
 const perPage = 25
 
-type writeRequestPromptPayload struct {
-	RequestType string `json:"request_type"`
-	PromptTitle string `json:"prompt_title"`
-	LLMInput    string `json:"llm_input"`
+type storePayload struct {
+	PageID       int    `json:"page_id"`
+	Title        string `json:"title"`
+	RequestType  string `json:"request_type"`
+	PromptTitle  string `json:"prompt_title"`
+	LLMInput     string `json:"llm_input"`
+	EnableAiEdit bool   `json:"enable_ai_edit"`
 }
 
 func Index(c *serverctx.Context) {
@@ -64,84 +69,13 @@ func Show(c *serverctx.Context) {
 	c.JSON(row)
 }
 
-func StoreFromWriteRequest(c *serverctx.Context) {
-	user, ok := c.User()
-	if !ok || user.ID < 1 {
-		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
-		return
-	}
-	writeRequestID, ok := c.PathInt("writeRequest")
-	if !ok {
-		c.NotFound()
-		return
-	}
-	title, ok := findWriteRequestTitle(c.DB, writeRequestID)
-	if !ok {
-		c.NotFound()
-		return
-	}
-	var body writeRequestPromptPayload
-	if !c.Decode(&body) {
-		return
-	}
-	body.LLMInput = strings.TrimSpace(body.LLMInput)
-	if body.LLMInput == "" {
-		c.JSONError(http.StatusUnprocessableEntity, "LLM 입력을 먼저 렌더링해 주세요.")
-		return
-	}
-	insert := struct {
-		ID          int                `gorm:"column:id"`
-		UserID      int                `gorm:"column:user_id"`
-		UserName    string             `gorm:"column:user_name"`
-		Title       string             `gorm:"column:title"`
-		RequestType string             `gorm:"column:request_type"`
-		LLMInput    string             `gorm:"column:llm_input"`
-		Phase       models.AIEditPhase `gorm:"column:phase"`
-		CreatedAt   time.Time          `gorm:"column:created_at"`
-		UpdatedAt   time.Time          `gorm:"column:updated_at"`
-	}{
-		UserID:      user.ID,
-		UserName:    user.Name,
-		Title:       title,
-		RequestType: body.RequestType,
-		LLMInput:    body.LLMInput,
-		Phase:       models.AIEditPhasePending,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
-	}
-	if err := c.DB.Table("aiedit_tasks").Create(&insert).Error; err != nil {
-		c.InternalError()
-		return
-	}
-	if insert.ID > 0 {
-		if promptTitle := strings.TrimSpace(body.PromptTitle); promptTitle != "" {
-			c.DB.Model(&models.AIEditPrompt{}).Where("title = ?", promptTitle).UpdateColumn("use_count", gorm.Expr("use_count + 1"))
-		}
-		if _, err := aieditjob.Enqueue(c.R.Context(), c.AppContext, insert.ID); err != nil {
-			c.InternalError()
-			return
-		}
-	}
-
-	// update write request status
-	_ = c.DB.Table("write_requests").Where("id = ?", writeRequestID).Update("status", "done")
-
-	c.JSON(app.H{"ok": true, "id": insert.ID})
-}
-
 func Store(c *serverctx.Context) {
 	user, ok := c.User()
 	if !ok || user.ID < 1 {
 		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
 		return
 	}
-	var body struct {
-		PageID      int    `json:"page_id"`
-		Title       string `json:"title"`
-		RequestType string `json:"request_type"`
-		PromptTitle string `json:"prompt_title"`
-		LLMInput    string `json:"llm_input"`
-	}
+	var body storePayload
 	if !c.Decode(&body) {
 		return
 	}
@@ -208,6 +142,11 @@ func Store(c *serverctx.Context) {
 		if promptTitle := strings.TrimSpace(body.PromptTitle); promptTitle != "" {
 			c.DB.Model(&models.AIEditPrompt{}).Where("title = ?", promptTitle).UpdateColumn("use_count", gorm.Expr("use_count + 1"))
 		}
+		if body.EnableAiEdit {
+			if err := aieditsvc.SetAiEditAsMine(c.Cfg, user.ID, true); err != nil {
+				slog.Warn("[aiedit] failed to persist ai-edit-as-mine preference", "user_id", user.ID, "err", err)
+			}
+		}
 		if _, err := aieditjob.Enqueue(c.R.Context(), c.AppContext, insert.ID); err != nil {
 			c.InternalError()
 			return
@@ -227,16 +166,6 @@ func Destroy(c *serverctx.Context) {
 		return
 	}
 	c.JSON(map[string]bool{"ok": true})
-}
-
-func findWriteRequestTitle(db *gorm.DB, id int) (string, bool) {
-	var wr struct {
-		Title string `gorm:"column:title"`
-	}
-	if err := db.Table("write_requests").Select("title").Where("id = ?", id).Take(&wr).Error; err != nil {
-		return "", false
-	}
-	return wr.Title, strings.TrimSpace(wr.Title) != ""
 }
 
 func normalizePromptTitle(title string, requestType string) string {

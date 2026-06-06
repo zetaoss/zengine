@@ -1,7 +1,7 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-  import { mdiArrowLeft, mdiContentCopy, mdiDelete, mdiPencil, mdiStar, mdiStarOutline } from '@mdi/js'
+  import { mdiArrowLeft, mdiDelete, mdiPencil, mdiStar, mdiStarOutline } from '@mdi/js'
 
   import { goto } from '$app/navigation'
   import { resolve } from '$app/paths'
@@ -164,26 +164,6 @@
     await goto(resolve('/tool/ai-edit/prompts'))
   }
 
-  async function clonePrompt() {
-    if (!row) return
-    const ok = await showConfirm(`'${row.title}' 프롬프트를 복제하시겠습니까?`)
-    if (!ok) return
-
-    const [, postErr] = await httpy.post<PromptItem>('/api/ai-edit/prompts', {
-      title: `${row.title} (복제)`,
-      request_type: row.request_type,
-      content: row.content,
-    })
-
-    if (postErr) {
-      showToast(postErr.message || '복제 실패')
-      return
-    }
-
-    showToast('프롬프트가 복제되었습니다.')
-    await goto(resolve('/tool/ai-edit/prompts'))
-  }
-
   async function delPrompt() {
     if (!row || row.id < 1) return
     const ok = await showConfirm(`'${row.title}' 프롬프트를 삭제하시겠습니까?`)
@@ -279,10 +259,6 @@
           {:else}
             <ZButton color="ghost" size="small" title="즐겨찾기" onclick={() => void toggleFavorite()}>
               <ZIcon path={row.is_favorite ? mdiStar : mdiStarOutline} class={row.is_favorite ? 'text-amber-500' : ''} />
-            </ZButton>
-            <ZButton color="ghost" size="small" onclick={() => void clonePrompt()}>
-              <ZIcon path={mdiContentCopy} class="mr-1" />
-              복제
             </ZButton>
             {#if canEdit()}
               <ZButton color="default" size="small" onclick={startEdit}>
