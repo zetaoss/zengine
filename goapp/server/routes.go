@@ -56,7 +56,6 @@ func RegisterRoutes(mux *http.ServeMux, serverCtx *serverctx.Context, components
 	r.GET("/api/ai-edit", aiedit.Index)
 	r.GET("/api/ai-edit/{id}", aiedit.Show, r.OwnerOrSysop(models.AIEdit{}))
 	r.POST("/api/ai-edit", aiedit.Store, r.User())
-	r.POST("/api/ai-edit/from-write-request/id/{writeRequest}", aiedit.StoreFromWriteRequest, r.User())
 	r.DELETE("/api/ai-edit/{id}", aiedit.Destroy, r.Sysop())
 
 	r.GET("/api/ai-edit/prompts", aiedit.PromptIndex, r.WithUser())

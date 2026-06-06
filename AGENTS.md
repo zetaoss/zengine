@@ -94,6 +94,9 @@ This guide helps coding agents quickly understand the monorepo and choose where 
 - `dev2` must run Vite dev server mode (`pnpm run dev:restart`) to preserve HMR in MediaWiki edit/view integration tests.
 - Do not switch `dev2` to watch-build mode (`pnpm run watch`) for routine development.
 - For `mwz/skins/ZetaSkin/svelte` edits, do **not** assume manual `vite build` is required before verification.
+- In dev mode, `mwz/skins/ZetaSkin/svelte/vite.config.ts` serves `src/main.ts` through Vite; `dist/app.js` and `dist/app.css` exist mainly as compatibility stubs for MediaWiki asset injection, not as the live source of truth.
+- If browser behavior looks stale in dev, prefer checking the Vite dev server/HMR path and browser cache behavior before rebuilding `dist/`.
+- When debugging skin Svelte, remember that the page can reload through MediaWiki while the actual JS module still comes from the Vite dev server; `dist/` timestamps alone do not prove the runtime bundle in use.
 
 ## Runtime Routing (Nginx Front)
 
