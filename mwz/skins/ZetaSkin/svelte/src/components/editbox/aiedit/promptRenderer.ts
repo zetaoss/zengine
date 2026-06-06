@@ -275,7 +275,6 @@ export function renderFinalPrompt(args: {
   template: string
   displayTitle: string
   existingContent: string
-  templateVariables?: TemplateVariable[]
   customFieldValues: Record<string, string>
   notes?: string
 }) {

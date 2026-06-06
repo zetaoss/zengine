@@ -130,6 +130,7 @@
       last_page: data.last_page,
       path: '/tool/ai-edit/tasks',
     }
+    scheduleRefresh()
   }
 
   async function runFetchData(options: { silent?: boolean } = {}): Promise<boolean> {
@@ -164,7 +165,6 @@
     pollingActive = true
     refreshAfter = 1000
     void runFetchData()
-    scheduleRefresh()
   }
 
   function stopListPolling() {

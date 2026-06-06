@@ -69,8 +69,7 @@ func (j *NannyJob) Run(ctx context.Context, jobCtx job.JobContext, _ any) job.Re
 }
 
 func isReadyToEnqueue(task models.AIEdit, now time.Time) bool {
-	updatedAt, err := time.Parse(time.RFC3339, task.UpdatedAt)
-	if err != nil {
+	if task.UpdatedAt.IsZero() {
 		// If timestamp is invalid, probably best to try and recover it.
 		return true
 	}
@@ -78,10 +77,10 @@ func isReadyToEnqueue(task models.AIEdit, now time.Time) bool {
 	switch task.Phase {
 	case models.AIEditPhasePending, models.AIEditPhaseGenerating, models.AIEditPhasePublishing:
 		// Task is considered stale and needs recovery after jobTimeout.
-		return now.After(updatedAt.Add(aiEditJobTimeout + 1*time.Minute))
+		return now.After(task.UpdatedAt.Add(aiEditJobTimeout + 1*time.Minute))
 	case models.AIEditPhaseRetrying:
 		// Task is ready for its scheduled retry.
-		return now.After(updatedAt.Add(nannyJobRetryInterval))
+		return now.After(task.UpdatedAt.Add(nannyJobRetryInterval))
 	}
 	return false
 }

@@ -129,18 +129,6 @@
 
   let effectiveNotes = $derived(notesEnabled ? notes : '')
 
-  let renderedLlmInput = $derived(
-    renderFinalPrompt({
-      template: llmPromptTemplate,
-      displayTitle,
-      existingContent,
-      templateVariables: [],
-      customFieldValues: {},
-      notes: effectiveNotes,
-    }),
-  )
-
-  let canSubmit = $derived(Boolean(promptTitle && renderedLlmInput.trim() && !existingContentLoading) && !submitting)
   let templateVariables = $derived.by(() => {
     const vars = new SvelteMap<string, TemplateVariable>()
     const matches = llmPromptTemplate.matchAll(/\{(#+\s*)([^}]+)\}/g)
@@ -155,6 +143,18 @@
     }
     return Array.from(vars.values())
   })
+
+  let renderedLlmInput = $derived(
+    renderFinalPrompt({
+      template: llmPromptTemplate,
+      displayTitle,
+      existingContent,
+      customFieldValues,
+      notes: effectiveNotes,
+    }),
+  )
+
+  let canSubmit = $derived(Boolean(promptTitle && renderedLlmInput.trim() && !existingContentLoading) && !submitting)
   let previewParts = $derived<PreviewPart[]>(
     getPromptParts({
       template: llmPromptTemplate,

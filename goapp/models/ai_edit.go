@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 type AIEditPhase string
 
 const (
@@ -25,8 +27,8 @@ type AIEdit struct {
 	Attempts    int         `json:"attempts" gorm:"column:attempts"`
 	ErrorCount  int         `json:"error_count" gorm:"column:error_count"`
 	LastError   string      `json:"last_error" gorm:"column:last_error"`
-	CreatedAt   string      `json:"created_at" gorm:"column:created_at"`
-	UpdatedAt   string      `json:"updated_at" gorm:"column:updated_at"`
+	CreatedAt   time.Time   `json:"created_at" gorm:"column:created_at"`
+	UpdatedAt   time.Time   `json:"updated_at" gorm:"column:updated_at"`
 	RetryAt     *string     `json:"retry_at" gorm:"-"`
 }
 

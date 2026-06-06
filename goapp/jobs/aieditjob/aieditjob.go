@@ -198,11 +198,10 @@ func CalculateRetryAt(task models.AIEdit) *string {
 	if task.Phase != models.AIEditPhaseRetrying {
 		return nil
 	}
-	t, err := time.Parse(time.RFC3339, task.UpdatedAt)
-	if err != nil {
+	if task.UpdatedAt.IsZero() {
 		return nil
 	}
 	delay := time.Duration(float64(aiEditJobTimeout) * math.Pow(1.1, float64(max(0, task.ErrorCount-1))))
-	retryAt := t.Add(delay).Format(time.RFC3339)
+	retryAt := task.UpdatedAt.Add(delay).Format(time.RFC3339)
 	return &retryAt
 }
