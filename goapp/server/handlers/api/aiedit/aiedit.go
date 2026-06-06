@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -17,6 +18,7 @@ import (
 	"github.com/zetaoss/zengine/goapp/models"
 	"github.com/zetaoss/zengine/goapp/server/paginator"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
+	"github.com/zetaoss/zengine/goapp/services/aieditsvc"
 
 	"gorm.io/gorm"
 )
@@ -35,7 +37,7 @@ type storePayload struct {
 func Index(c *serverctx.Context) {
 	rows := make([]models.AIEdit, 0, perPage)
 	q := c.DB.Table("aiedit_tasks").
-		Select("id, user_id, user_name, title, request_type, phase, enable_ai_edit, llm_model, revid, error_count, last_error, created_at, updated_at").
+		Select("id, user_id, user_name, title, request_type, phase, llm_model, revid, error_count, last_error, created_at, updated_at").
 		Order("id DESC")
 	payload, err := paginator.Paginate(c.R, q, perPage, &rows)
 	if err != nil {
@@ -111,28 +113,26 @@ func Store(c *serverctx.Context) {
 		})
 	}
 	insert := struct {
-		ID           int                `gorm:"column:id"`
-		UserID       int                `gorm:"column:user_id"`
-		UserName     string             `gorm:"column:user_name"`
-		Title        string             `gorm:"column:title"`
-		RequestType  string             `gorm:"column:request_type"`
-		EnableAiEdit bool               `gorm:"column:enable_ai_edit"`
-		LLMOutput    string             `gorm:"column:llm_output"`
-		LLMInput     string             `gorm:"column:llm_input"`
-		Phase        models.AIEditPhase `gorm:"column:phase"`
-		CreatedAt    time.Time          `gorm:"column:created_at"`
-		UpdatedAt    time.Time          `gorm:"column:updated_at"`
+		ID          int                `gorm:"column:id"`
+		UserID      int                `gorm:"column:user_id"`
+		UserName    string             `gorm:"column:user_name"`
+		Title       string             `gorm:"column:title"`
+		RequestType string             `gorm:"column:request_type"`
+		LLMOutput   string             `gorm:"column:llm_output"`
+		LLMInput    string             `gorm:"column:llm_input"`
+		Phase       models.AIEditPhase `gorm:"column:phase"`
+		CreatedAt   time.Time          `gorm:"column:created_at"`
+		UpdatedAt   time.Time          `gorm:"column:updated_at"`
 	}{
-		UserID:       user.ID,
-		UserName:     user.Name,
-		Title:        title,
-		RequestType:  body.RequestType,
-		EnableAiEdit: body.EnableAiEdit,
-		LLMOutput:    "",
-		LLMInput:     llmInput,
-		Phase:        models.AIEditPhasePending,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
+		UserID:      user.ID,
+		UserName:    user.Name,
+		Title:       title,
+		RequestType: body.RequestType,
+		LLMOutput:   "",
+		LLMInput:    llmInput,
+		Phase:       models.AIEditPhasePending,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 	if err := c.DB.Table("aiedit_tasks").Create(&insert).Error; err != nil {
 		c.InternalError()
@@ -141,6 +141,11 @@ func Store(c *serverctx.Context) {
 	if insert.ID > 0 {
 		if promptTitle := strings.TrimSpace(body.PromptTitle); promptTitle != "" {
 			c.DB.Model(&models.AIEditPrompt{}).Where("title = ?", promptTitle).UpdateColumn("use_count", gorm.Expr("use_count + 1"))
+		}
+		if body.EnableAiEdit {
+			if err := aieditsvc.SetAiEditAsMine(c.Cfg, user.ID, true); err != nil {
+				slog.Warn("[aiedit] failed to persist ai-edit-as-mine preference", "user_id", user.ID, "err", err)
+			}
 		}
 		if _, err := aieditjob.Enqueue(c.R.Context(), c.AppContext, insert.ID); err != nil {
 			c.InternalError()

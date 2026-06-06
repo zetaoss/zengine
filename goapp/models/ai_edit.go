@@ -20,7 +20,6 @@ type AIEdit struct {
 	Title        string      `json:"title" gorm:"column:title"`
 	RequestType  string      `json:"request_type" gorm:"column:request_type"`
 	Phase        AIEditPhase `json:"phase" gorm:"column:phase"`
-	EnableAiEdit bool        `json:"enable_ai_edit" gorm:"column:enable_ai_edit"`
 	LLMInput     string      `json:"llm_input" gorm:"column:llm_input"`
 	LLMOutput    string      `json:"llm_output" gorm:"column:llm_output"`
 	LLMModel     string      `json:"llm_model" gorm:"column:llm_model"`

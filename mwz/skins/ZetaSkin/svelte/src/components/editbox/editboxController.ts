@@ -80,7 +80,7 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
     if (!wikiPreview) return
 
     if (!visible) {
-      if (!Object.hasOwn(wikiPreview.dataset, 'zetaPrevDisplay')) {
+      if (wikiPreview.dataset.zetaPrevDisplay === undefined) {
         wikiPreview.dataset.zetaPrevDisplay = wikiPreview.style.display
       }
       wikiPreview.style.display = 'none'

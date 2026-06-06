@@ -59,6 +59,11 @@
       "path": "/ai-edit/publish",
       "method": "POST",
       "class": "ZetaExtension\\AIEdit\\RestPublish"
+    },
+    {
+      "path": "/ai-edit/preference",
+      "method": "POST",
+      "class": "ZetaExtension\\AIEdit\\RestPreference"
     }
   ],
   "ResourceFileModulePaths": {
