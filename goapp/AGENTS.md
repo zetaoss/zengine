@@ -25,6 +25,22 @@ cd /app/goapp
 go run ./cmd/worker
 ```
 
+## Dev Runtime (Supervisor + Air)
+
+- Supervisor manages Go dev processes using `air`:
+  - `goserver`: `/root/go/bin/air -c /app/goapp/.air.server.toml`
+  - `goworker`: `/root/go/bin/air -c /app/goapp/.air.worker.toml`
+- Both programs must run with `directory=/app/goapp`.
+- Do not run `air` from `cmd/server` or `cmd/worker` directories for normal dev; doing so can miss file watches under `goapp/server/**`, `goapp/models/**`, etc.
+- Source-of-truth Air configs:
+  - `/app/goapp/.air.server.toml`
+  - `/app/goapp/.air.worker.toml`
+- Logs:
+  - `/app/tmp/goserver.log`
+  - `/app/tmp/goworker.log`
+- Route/debug helper:
+  - `cd /app/goapp && go run ./cmd/ctl routes | rg article-tpl`
+
 ## 2. Middleware & Security Policy
 
 ### Fluent Middleware Factories
@@ -42,14 +58,14 @@ To keep `routes.go` clean and declarative, the `Router` struct provides concise 
 *   **Edit (Update)**: Recommended to use **`r.Owner(models.SomeModel{})`** to ensure only the original author can modify content.
 *   **Delete**: Recommended to use **`r.OwnerOrSysop(models.SomeModel{})`** to allow both the owner and system administrators to manage content.
 
-## EditBot Map
+## AIEdit Map
 ...
-### EditBot Prompts
-- Routes: `/api/editbot/prompts*` in `server/routes.go`
+### AIEdit Prompts
+- Routes: `/api/ai-edit/prompts*` in `server/routes.go`
 - Permissions: 
     - Create: `r.Unblocked()`
-    - Update: Only Author (via `r.Owner(models.EditbotPrompt{})`)
-    - Delete: Author or Sysop (via `r.OwnerOrSysop(models.EditbotPrompt{})`)
+    - Update: Only Author (via `r.Owner(models.AIEditPrompt{})`)
+    - Delete: Author or Sysop (via `r.OwnerOrSysop(models.AIEditPrompt{})`)
 
 ### Activity Feed Rule
 

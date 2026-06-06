@@ -9,8 +9,8 @@ import (
 
 	"github.com/zetaoss/zengine/goapp/app/appctx"
 	"github.com/zetaoss/zengine/goapp/app/job"
+	"github.com/zetaoss/zengine/goapp/jobs/aieditjob"
 	"github.com/zetaoss/zengine/goapp/jobs/commonreportjob"
-	"github.com/zetaoss/zengine/goapp/jobs/editbotjob"
 	"github.com/zetaoss/zengine/goapp/jobs/inspirejob"
 	"github.com/zetaoss/zengine/goapp/jobs/pingdbjob"
 	"github.com/zetaoss/zengine/goapp/jobs/pingredisjob"
@@ -67,8 +67,8 @@ func New() *Registry {
 	register(r, mwjob.NewHourlyJob(), withSchedule(schedule.HourlyAt(5)))
 	register(r, commonreportjob.NewCommonReportJob())
 	register(r, commonreportjob.NewNannyJob(), withSchedule(schedule.HourlyAt(0)))
-	register(r, editbotjob.NewEditBotJob())
-	register(r, editbotjob.NewNannyJob(), withSchedule(schedule.HourlyAt(0)))
+	register(r, aieditjob.NewAIEditJob())
+	register(r, aieditjob.NewNannyJob(), withSchedule(schedule.HourlyAt(0)))
 	register(r, inspirejob.NewInspireJob())
 	register(r, pingdbjob.NewPingDBJob())
 	register(r, pingredisjob.NewPingRedisJob())

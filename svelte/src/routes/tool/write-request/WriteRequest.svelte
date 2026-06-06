@@ -1,7 +1,7 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-  import { mdiAutoFix, mdiCreation, mdiDelete } from '@mdi/js'
+  import { mdiDelete } from '@mdi/js'
   import { SvelteURL } from 'svelte/reactivity'
   import { get } from 'svelte/store'
 
@@ -12,7 +12,6 @@
   import type { PaginateData } from '$lib/components/pagination/types'
   import useAuthStore from '$lib/stores/auth'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
-  import EditBotModal from '$shared/components/editbot/EditBotModal.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'
   import ZButton from '$shared/ui/ZButton.svelte'
@@ -48,18 +47,11 @@
     todo: number
   }
 
-  interface EditBotTarget {
-    title: string
-    storeUrl: string
-    requestType: 'create' | 'edit'
-  }
-
   type Mode = 'todo' | 'todo-top' | 'done'
 
   const auth = useAuthStore()
   const canWrite = auth.canWrite
   const canDelete = auth.canDelete
-  const userInfo = auth.userInfo
 
   let mode = $derived.by(() => {
     const m = page.params.mode
@@ -71,8 +63,6 @@
   let paginateData = $state<PaginateData | null>(null)
   let currentPage = $state(1)
   let showModal = $state(false)
-  let showEditBotModal = $state(false)
-  let editBotRow = $state<Row | null>(null)
   let count = $state<Count>({ done: 0, todo: 0 })
   let loading = $state(true)
 
@@ -84,7 +74,6 @@
     return Number.isFinite(p) && p > 0 ? p : 1
   })
 
-  let isSysop = $derived(($userInfo?.groups ?? []).includes('sysop'))
   let modeTabs = $derived([
     { value: 'todo', label: '요청', badge: count.todo, href: resolve('/tool/write-request') },
     { value: 'todo-top', label: '추천', href: resolve('/tool/write-request/todo-top') },
@@ -194,17 +183,6 @@
     showToast('삭제 완료')
   }
 
-  async function addDocTask(row: Row) {
-    if (!(await requireAuthConfirm('편집봇에 등록'))) return
-    editBotRow = row
-    showEditBotModal = true
-  }
-
-  function closeEditBotModal() {
-    showEditBotModal = false
-    editBotRow = null
-  }
-
   async function recommend(row: Row) {
     if (!(await requireAuthConfirm('추천'))) return
 
@@ -243,20 +221,11 @@
     }
   }
 
-  let editBotTarget = $derived.by<EditBotTarget | null>(() => {
-    if (!editBotRow) return null
-    return {
-      title: editBotRow.title,
-      storeUrl: `/api/editbot/from-write-request/id/${editBotRow.id}`,
-      requestType: mode === 'done' ? 'edit' : 'create',
-    }
-  })
 </script>
 
 <div class="p-5">
   <h2 class="my-5 text-2xl font-bold">작성 요청</h2>
   <WriteRequestNew show={showModal} on:close={closeModal} />
-  <EditBotModal show={showEditBotModal} target={editBotTarget} onClose={closeEditBotModal} />
 
   <ZTabs tabs={modeTabs} selected={mode} onChange={(value) => setMode(value as Mode)} />
 
@@ -304,7 +273,14 @@
         <tr>
           <td class="text-center">{row.id}</td>
           <td class="w-[35%]">
-            <a href={getTitleHref(row)} rel="external" class={mode === 'done' ? '' : 'new'}>{row.title}</a>
+            <div class="flex items-center gap-2">
+              <a href={getTitleHref(row)} rel="external" class={mode === 'done' ? '' : 'new'}>{row.title}</a>
+              {#if $canDelete(row.user_id)}
+                <ZButton color="ghost" size="small" title="삭제" onclick={() => del(row)}>
+                  <ZIcon path={mdiDelete} />
+                </ZButton>
+              {/if}
+            </div>
           </td>
           <td class="text-center">
             {#if mode === 'done'}
@@ -336,20 +312,7 @@
             </td>
             <td class="text-center">{getDateText(row)}</td>
           {/if}
-          <td class="text-center">
-            <div class="flex items-center justify-center gap-1">
-              {#if isSysop}
-                <ZButton color="default" size="small" title="편집봇에 추가" onclick={() => addDocTask(row)}>
-                  <ZIcon path={mode === 'done' ? mdiAutoFix : mdiCreation} />
-                </ZButton>
-              {/if}
-              {#if $canDelete(row.user_id)}
-                <ZButton color="default" size="small" onclick={() => del(row)}>
-                  <ZIcon path={mdiDelete} />
-                </ZButton>
-              {/if}
-            </div>
-          </td>
+          <td></td>
         </tr>
       {/each}
     </tbody>

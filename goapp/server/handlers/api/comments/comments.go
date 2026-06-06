@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/zetaoss/zengine/goapp/app"
+	"github.com/zetaoss/zengine/goapp/models"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
 )
 
@@ -80,16 +81,14 @@ func Store(c *serverctx.Context) {
 		c.JSONError(http.StatusUnprocessableEntity, "Invalid payload")
 		return
 	}
-	insert := app.H{
-		"page_id":    body.PageID,
-		"message":    message,
-		"user_id":    user.ID,
-		"user_name":  user.Name,
-		"created":    time.Now(),
-		"created_at": time.Now(),
-		"updated_at": time.Now(),
+	insert := models.PageComment{
+		PageID:   body.PageID,
+		Message:  message,
+		UserID:   user.ID,
+		UserName: user.Name,
+		Created:  time.Now(),
 	}
-	if err := c.DB.Table("zetawiki.page_comments").Create(insert).Error; err != nil {
+	if err := c.DB.Table("zetawiki.page_comments").Create(&insert).Error; err != nil {
 		c.InternalError()
 		return
 	}
@@ -113,7 +112,7 @@ func Update(c *serverctx.Context) {
 		c.JSONError(http.StatusUnprocessableEntity, "Invalid payload")
 		return
 	}
-	if err := c.DB.Table("zetawiki.page_comments").Where("id = ?", id).Updates(app.H{"message": message, "updated_at": time.Now()}).Error; err != nil {
+	if err := c.DB.Table("zetawiki.page_comments").Where("id = ?", id).Updates(app.H{"message": message}).Error; err != nil {
 		c.InternalError()
 		return
 	}
