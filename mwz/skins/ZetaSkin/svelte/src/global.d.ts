@@ -14,6 +14,7 @@ declare global {
     dataLayer?: unknown[]
     gtag?: (...args: unknown[]) => void
     RLCONF?: {
+      aiEditAsMine?: boolean
       wgAction?: string
       wgArticleId?: number
       wgUserId?: number

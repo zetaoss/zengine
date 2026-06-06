@@ -24,7 +24,11 @@
   "ExtensionMessagesFiles": {
     "TagMagic": "magic/TagMagic.php"
   },
+  "MessagesDirs": {
+    "ZetaExtension": ["i18n"]
+  },
   "Hooks": {
+    "GetPreferences": "ZetaExtension\\AIEdit\\PreferencesHooks::onGetPreferences",
     "InternalParseBeforeLinks": "ZetaExtension\\Toc\\Toc::onInternalParseBeforeLinks",
     "PageSaveComplete": "ZetaExtension\\Binder\\BinderHooks::onPageSaveComplete",
     "PageDeleteComplete": "ZetaExtension\\Binder\\BinderHooks::onPageDeleteComplete",
@@ -52,9 +56,9 @@
       "class": "ZetaExtension\\Auth\\RestSocialCreate"
     },
     {
-      "path": "/editbot/publish",
+      "path": "/ai-edit/publish",
       "method": "POST",
-      "class": "ZetaExtension\\EditBot\\RestPublish"
+      "class": "ZetaExtension\\AIEdit\\RestPublish"
     }
   ],
   "ResourceFileModulePaths": {

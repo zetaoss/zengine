@@ -39,7 +39,7 @@ This guide helps coding agents quickly understand the monorepo and choose where 
 ## Key Subsystems
 
 - **Common-Report**: Aggregated search results and statistics reporting.
-- **EditBot**: AI-powered wiki editing agent.
+- **AIEdit**: AI-powered wiki editing agent.
 - **Forum**: Community discussion board for posts and replies.
 - **LLM Service**: Unified interface for LLM integrations.
 - **Write-Request**: User-driven requests for wiki content creation.
@@ -88,6 +88,13 @@ This guide helps coding agents quickly understand the monorepo and choose where 
   - Shared utils, components, and styles are maintained in **main svelte**'s `shared` folder.
   - Changes are automatically reflected in **skin svelte** via this symlink.
 
+## Frontend Dev Runtime
+
+- In local dev, `supervisor` program `dev2` automatically rebuilds/reloads skin Svelte changes.
+- `dev2` must run Vite dev server mode (`pnpm run dev:restart`) to preserve HMR in MediaWiki edit/view integration tests.
+- Do not switch `dev2` to watch-build mode (`pnpm run watch`) for routine development.
+- For `mwz/skins/ZetaSkin/svelte` edits, do **not** assume manual `vite build` is required before verification.
+
 ## Runtime Routing (Nginx Front)
 
 - Nginx listens on `:80` as the public entrypoint.
@@ -99,4 +106,16 @@ This guide helps coding agents quickly understand the monorepo and choose where 
 
 ## Subsystem Docs
 
-- Go backend details (including EditBot and write-request specifics): `goapp/AGENTS.md`
+- Go backend details (including AIEdit and write-request specifics): `goapp/AGENTS.md`
+
+## Dev Process Notes
+
+- Go server/worker in this environment are supervised by `supervisor` and run through `air`.
+- Canonical Air configs are in `goapp/` root:
+  - `.air.server.toml`
+  - `.air.worker.toml`
+- Avoid ad-hoc Air configs in `cmd/server` or `cmd/worker` for routine development; they can cause partial watch coverage and stale binaries.
+- If backend code edits appear unapplied, verify:
+  1. `supervisor` program commands point to `/app/goapp/.air.server.toml` and `/app/goapp/.air.worker.toml`.
+  2. `directory` is `/app/goapp`.
+  3. `/app/tmp/goserver.log` shows `watching server/...` and a fresh `building...` after file edits.

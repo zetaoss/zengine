@@ -5,10 +5,11 @@ import (
 	"time"
 
 	"github.com/zetaoss/zengine/goapp/models"
+	"github.com/zetaoss/zengine/goapp/server/handlers/api/aiedit"
+	"github.com/zetaoss/zengine/goapp/server/handlers/api/articletpl"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/binder"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/comments"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/commonreport"
-	"github.com/zetaoss/zengine/goapp/server/handlers/api/editbot"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/internalprofile"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/me"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/oneline"
@@ -41,6 +42,9 @@ func RegisterRoutes(mux *http.ServeMux, serverCtx *serverctx.Context, components
 
 	r.GET("/api/binders", binder.Index)
 	r.PUT("/api/binders/{binder}", binder.Update, r.Unblocked())
+	r.GET("/api/article-tpl", articletpl.GetArticleTpl)
+	r.GET("/api/article-tpl/enabled", articletpl.GetEnabledArticleTpl)
+	r.PUT("/api/article-tpl", articletpl.PutArticleTpl, r.Sysop())
 
 	r.GET("/api/common-report", commonreport.Index)
 	r.GET("/api/common-report/{id}", commonreport.Show)
@@ -49,18 +53,18 @@ func RegisterRoutes(mux *http.ServeMux, serverCtx *serverctx.Context, components
 	r.POST("/api/common-report/{id}/rerun", commonreport.Rerun, r.OwnerOrSysop(models.CommonReport{}))
 	r.DELETE("/api/common-report/{id}", commonreport.Destroy, r.OwnerOrSysop(models.CommonReport{}))
 
-	r.GET("/api/editbot", editbot.Index)
-	r.GET("/api/editbot/{id}", editbot.Show, r.OwnerOrSysop(models.EditBot{}))
-	r.POST("/api/editbot/from-page", editbot.StoreFromPage, r.User())
-	r.POST("/api/editbot/from-write-request/id/{writeRequest}", editbot.StoreFromWriteRequest, r.User())
-	r.DELETE("/api/editbot/{id}", editbot.Destroy, r.Sysop())
+	r.GET("/api/ai-edit", aiedit.Index)
+	r.GET("/api/ai-edit/{id}", aiedit.Show, r.OwnerOrSysop(models.AIEdit{}))
+	r.POST("/api/ai-edit", aiedit.Store, r.User())
+	r.POST("/api/ai-edit/from-write-request/id/{writeRequest}", aiedit.StoreFromWriteRequest, r.User())
+	r.DELETE("/api/ai-edit/{id}", aiedit.Destroy, r.Sysop())
 
-	r.GET("/api/editbot/prompts", editbot.PromptIndex, r.WithUser())
-	r.GET("/api/editbot/prompts/exists", editbot.PromptExists)
-	r.GET("/api/editbot/prompts/{id}", editbot.PromptShow, r.WithUser())
-	r.POST("/api/editbot/prompts", editbot.PromptStore, r.Unblocked())
-	r.POST("/api/editbot/prompts/{id}/favorite", editbot.PromptToggleFavorite, r.User())
-	r.DELETE("/api/editbot/prompts/{id}", editbot.PromptDestroy, r.OwnerOrSysop(models.EditbotPrompt{}))
+	r.GET("/api/ai-edit/prompts", aiedit.PromptIndex, r.WithUser())
+	r.GET("/api/ai-edit/prompts/exists", aiedit.PromptExists)
+	r.GET("/api/ai-edit/prompts/{id}", aiedit.PromptShow, r.WithUser())
+	r.POST("/api/ai-edit/prompts", aiedit.PromptStore, r.Unblocked())
+	r.POST("/api/ai-edit/prompts/{id}/favorite", aiedit.PromptToggleFavorite, r.User())
+	r.DELETE("/api/ai-edit/prompts/{id}", aiedit.PromptDestroy, r.OwnerOrSysop(models.AIEditPrompt{}))
 
 	r.GET("/api/internal/profiles/{id}", internalprofile.Show, r.Internal())
 

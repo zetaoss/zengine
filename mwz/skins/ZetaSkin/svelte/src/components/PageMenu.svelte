@@ -5,15 +5,9 @@
   import { onMount } from 'svelte'
 
   import getLinks from '$lib/utils/getLinks'
-  import getRLCONF from '$lib/utils/rlconf'
-  import EditBotModal from '$shared/components/editbot/EditBotModal.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
 
   let root: HTMLDetailsElement | null = null
-  let showEditBotModal = $state(false)
-
-  const { wgArticleId, wgUserGroups } = getRLCONF()
-  const isSysop = (wgUserGroups || []).includes('sysop')
 
   const links = getLinks(
     ['views.history', { accesskey: 'h' }],
@@ -44,38 +38,6 @@
     if (e.key === 'Escape') close()
   }
 
-  function getCurrentTitle() {
-    const heading = document.getElementById('firstHeading')?.textContent?.trim()
-    if (heading) return heading
-
-    const path = decodeURIComponent(window.location.pathname)
-    return path.split('/').filter(Boolean).pop()?.replaceAll('_', ' ') || '현재'
-  }
-
-  function callEditBot() {
-    if (!isSysop || wgArticleId < 1) return
-    showEditBotModal = true
-    close()
-  }
-
-  function closeEditBotModal() {
-    showEditBotModal = false
-  }
-
-  let editBotTarget = $derived.by(() => {
-    if (!showEditBotModal || wgArticleId < 1) return null
-    return {
-      title: getCurrentTitle(),
-      storeUrl: '/api/editbot/from-page',
-      requestType: 'edit' as const,
-      pageId: wgArticleId,
-    }
-  })
-
-  function onEditBotCreated() {
-    showEditBotModal = false
-  }
-
   onMount(() => {
     document.addEventListener('mousedown', onMouseDown)
     document.addEventListener('keydown', onKeyDown)
@@ -97,16 +59,9 @@
         <!-- svelte-ignore a11y_accesskey -->
         <li><a href={l.href} accesskey={l.accesskey} title={l.title}>{l.text}</a></li>
       {/each}
-      {#if isSysop}
-        <li>
-          <button type="button" onclick={callEditBot}>편집봇 호출</button>
-        </li>
-      {/if}
     </ul>
   </div>
 </details>
-
-<EditBotModal show={showEditBotModal} target={editBotTarget} onClose={closeEditBotModal} onCreated={onEditBotCreated} />
 
 <style>
   .page-menu summary {
@@ -132,8 +87,7 @@
     list-style: none;
   }
 
-  .page-menu-items a,
-  .page-menu-items button {
+  .page-menu-items a {
     display: block;
     width: 100%;
     padding: 0.25rem 1.5rem;
@@ -142,20 +96,7 @@
     white-space: nowrap;
   }
 
-  .page-menu-items button {
-    border: 0;
-    background: transparent;
-    cursor: pointer;
-    font: inherit;
-  }
-
-  .page-menu-items button:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-  }
-
-  .page-menu-items a:hover,
-  .page-menu-items button:hover {
+  .page-menu-items a:hover {
     background-color: #8883;
     text-decoration: none;
   }
