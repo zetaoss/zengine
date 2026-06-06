@@ -31,7 +31,7 @@ func (e *PublishError) Error() string {
 	return fmt.Sprintf("MediaWiki edit failed: %s (%s)", e.Info, e.Code)
 }
 
-func PublishContent(cfg *config.Config, userID int, title string, requestType string, content string, taskID int) (*PublishResult, error) {
+func PublishContent(cfg *config.Config, userID int, title string, requestType string, content string, taskID int, enableAiEdit bool) (*PublishResult, error) {
 	apiServer := strings.TrimRight(cfg.App.APIServer, "/")
 	secret := cfg.App.InternalSecretKey
 	if apiServer == "" || secret == "" {
@@ -40,12 +40,13 @@ func PublishContent(cfg *config.Config, userID int, title string, requestType st
 
 	restURL := apiServer + "/w/rest.php/ai-edit/publish"
 	payload := map[string]any{
-		"secret":       secret,
-		"user_id":      userID,
-		"title":        title,
-		"text":         content,
-		"summary":      fmt.Sprintf("AI Edit task #%d", taskID),
-		"request_type": requestType,
+		"secret":         secret,
+		"user_id":        userID,
+		"title":          title,
+		"text":           content,
+		"summary":        fmt.Sprintf("AI Edit task #%d", taskID),
+		"request_type":   requestType,
+		"enable_ai_edit": enableAiEdit,
 	}
 
 	body, err := json.Marshal(payload)

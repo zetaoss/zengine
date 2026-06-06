@@ -25,12 +25,7 @@ interface StartEditBoxOptions {
   templateBoxMountElement: HTMLDivElement
 }
 
-export function startEditBox({
-  aiEditPanelMountElement,
-  editAreaMountElement,
-  rootElement,
-  templateBoxMountElement,
-}: StartEditBoxOptions) {
+export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, rootElement, templateBoxMountElement }: StartEditBoxOptions) {
   let templateSelectInstance: object | null = null
   let templateSelectPromise: Promise<boolean> | null = null
   let aiEditPanelInstance: object | null = null
@@ -74,6 +69,30 @@ export function startEditBox({
 
   function findEditForm() {
     return document.querySelector<HTMLElement>('#editform')
+  }
+
+  function findWikiPreview() {
+    return document.querySelector<HTMLElement>('#wikiPreview')
+  }
+
+  function toggleWikiPreview(visible: boolean) {
+    const wikiPreview = findWikiPreview()
+    if (!wikiPreview) return
+
+    if (!visible) {
+      if (!Object.hasOwn(wikiPreview.dataset, 'zetaPrevDisplay')) {
+        wikiPreview.dataset.zetaPrevDisplay = wikiPreview.style.display
+      }
+      wikiPreview.style.display = 'none'
+      return
+    }
+
+    const prevDisplay = wikiPreview.dataset.zetaPrevDisplay
+    if (prevDisplay !== undefined) {
+      if (prevDisplay) wikiPreview.style.display = prevDisplay
+      else wikiPreview.style.removeProperty('display')
+      delete wikiPreview.dataset.zetaPrevDisplay
+    }
   }
 
   function placeRootBeforeEditForm() {
@@ -184,6 +203,7 @@ export function startEditBox({
     aiEditVisible = visible
     aiEditPanelMountElement.classList.toggle('hidden', !visible)
     editForm?.classList.toggle('hidden', visible && hideEditForm)
+    toggleWikiPreview(!visible)
     const hideSaveButton = visible && hideEditForm
     const saveWidget = findSaveWidget(saveButton)
     if (saveWidget) {
@@ -247,7 +267,6 @@ export function startEditBox({
       }
       applyAiEditVisible(aiEditPanel.editForm, saveButton, true, isCreateAction())
     }
-
     ;(window as typeof window & { __aiEditDebug?: Record<string, unknown> }).__aiEditDebug = {
       stage: 'inject:done',
       action: getRLCONF().wgAction,
@@ -296,6 +315,7 @@ export function startEditBox({
       }
     }
     editForm?.classList.remove('hidden')
+    toggleWikiPreview(true)
     if (templateSelectInstance) {
       unmount(templateSelectInstance)
       templateSelectInstance = null

@@ -127,7 +127,7 @@ func (j *AIEditJob) Run(ctx context.Context, jobCtx job.JobContext, p aiEditPayl
 
 	slog.Info("[aiedit] publishing content", "task_id", task.ID, "user_id", task.UserID)
 
-	pubRes, pubErr := aieditsvc.PublishContent(jobCtx.Config(), task.UserID, task.Title, strings.TrimSpace(task.RequestType), llmOutput, task.ID)
+	pubRes, pubErr := aieditsvc.PublishContent(jobCtx.Config(), task.UserID, task.Title, strings.TrimSpace(task.RequestType), llmOutput, task.ID, task.EnableAiEdit)
 	if pubErr != nil {
 		newPhase := models.AIEditPhaseRetrying
 		var pErr *aieditsvc.PublishError

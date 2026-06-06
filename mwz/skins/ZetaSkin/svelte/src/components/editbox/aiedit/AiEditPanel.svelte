@@ -71,18 +71,14 @@
     }
   }
 
-  interface MwTokenResp {
-    query?: {
-      tokens?: {
-        csrftoken?: string
-      }
-    }
-  }
-
   interface StoreResp {
     ok: boolean
     id: number
     created: boolean
+  }
+
+  interface SubmitOptions {
+    enableAiEdit: boolean
   }
 
   let {
@@ -260,11 +256,16 @@
     existingContent = getRevisionContent(pageData)
   }
 
-  async function submit() {
+  function releaseEditWarning() {
+    window.jQuery?.(window).off('beforeunload.editwarning')
+  }
+
+  async function submit(opts: SubmitOptions) {
     if (!canSubmit) return
 
     submitting = true
     const [data, err] = await httpy.post<StoreResp>('/api/ai-edit', {
+      enable_ai_edit: opts.enableAiEdit,
       page_id: pageId,
       title,
       prompt_title: promptTitle,
@@ -279,49 +280,18 @@
     }
     if (!data) return
 
+    if (opts.enableAiEdit) {
+      aiEditAsMine = true
+    }
+
+    releaseEditWarning()
     window.location.assign(`/tool/ai-edit/tasks/${data.id}`)
-  }
-
-  async function enableAiEditAsMine() {
-    const [tokenData, tokenErr] = await mwapi.get<MwTokenResp>({
-      action: 'query',
-      meta: 'tokens',
-      type: 'csrf',
-    })
-    if (tokenErr) {
-      console.error(tokenErr)
-      showToast(tokenErr.message || 'AI 편집 설정 저장 실패')
-      return false
-    }
-
-    const csrfToken = tokenData?.query?.tokens?.csrftoken
-    if (!csrfToken) {
-      showToast('AI 편집 설정 저장 실패')
-      return false
-    }
-
-    const [data, err] = await mwapi.post<{ success?: boolean }>({
-      action: 'options',
-      optionname: 'ai-edit-as-mine',
-      optionvalue: '1',
-      token: csrfToken,
-    })
-    if (err) {
-      console.error(err)
-      showToast(err.message || 'AI 편집 설정 저장 실패')
-      return false
-    }
-
-    if (!data) return false
-
-    aiEditAsMine = true
-    return true
   }
 
   async function handleSubmitClick() {
     if (!canSubmit) return
     if (aiEditAsMine) {
-      await submit()
+      await submit({ enableAiEdit: false })
       return
     }
     showRegisterModal = true
@@ -331,16 +301,9 @@
     showRegisterModal = false
   }
 
-  async function handleRegisterOnce() {
+  async function handleRegisterChoice(choice: 'once' | 'always') {
     showRegisterModal = false
-    await submit()
-  }
-
-  async function handleRegisterAlways() {
-    const saved = await enableAiEditAsMine()
-    if (!saved) return
-    showRegisterModal = false
-    await submit()
+    await submit({ enableAiEdit: choice === 'always' })
   }
 </script>
 
@@ -374,7 +337,7 @@
             <ZIcon path={mdiEye} />
           </ZButtonLink>
         {/if}
-        <ZButton color="default" size="small" title="새로고침" onclick={() => void refreshPromptList()}>
+        <ZButton type="button" color="default" size="small" title="새로고침" onclick={() => void refreshPromptList()}>
           <ZIcon path={mdiRefresh} />
         </ZButton>
       </div>
@@ -392,18 +355,18 @@
   </div>
 
   {#if templateVariables.length > 0}
-      {#each templateVariables as variable (variable.name)}
-        <div class="flex flex-col gap-1">
-          <div class="flex items-center justify-between gap-2 text-sm text-slate-700">
-            <label class="flex items-center gap-2 font-semibold" for={`ai-edit-panel-field-${variable.name}`}>
-              <span>{variable.name}</span>
-              {#if variable.mode === 'code'}
-                <span class="inline-flex items-center rounded border border-slate-200 px-1 py-0.5 text-[10px] font-medium leading-none text-slate-500 select-none">
-                  code
-                </span>
-              {/if}
-            </label>
-          </div>
+    {#each templateVariables as variable (variable.name)}
+      <div class="flex flex-col gap-1">
+        <div class="flex items-center justify-between gap-2 text-sm text-slate-700">
+          <label class="flex items-center gap-2 font-semibold" for={`ai-edit-panel-field-${variable.name}`}>
+            <span>{variable.name}</span>
+            {#if variable.mode === 'code'}
+              <span class="inline-flex items-center rounded border border-slate-200 px-1 py-0.5 text-[10px] font-medium leading-none text-slate-500 select-none">
+                code
+              </span>
+            {/if}
+          </label>
+        </div>
         <textarea
           id={`ai-edit-panel-field-${variable.name}`}
           class={`min-h-24 rounded border border-slate-300 px-2 py-1 text-sm ${variable.mode === 'code' ? 'font-mono' : ''}`}
@@ -480,7 +443,7 @@
   </div>
 
   <div class="flex justify-center">
-    <ZButton color="primary" disabled={!canSubmit} onclick={() => void handleSubmitClick()}>
+    <ZButton type="button" color="primary" disabled={!canSubmit} onclick={() => void handleSubmitClick()}>
       {submitting ? '등록 중' : 'AI 편집 등록'}
     </ZButton>
   </div>
@@ -507,9 +470,9 @@
           <p class="mt-2 text-xs text-slate-500">‘항상’을 선택한 경우, 특수:환경설정 &gt; 편집 &gt; AI 편집에서 해제할 수 있습니다.</p>
         </section>
         <footer class="flex flex-wrap justify-end gap-2 border-t px-4 py-3">
-          <ZButton color="default" onclick={handleRegisterNo}>아니요</ZButton>
-          <ZButton color="default" onclick={() => void handleRegisterOnce()}>이번만</ZButton>
-          <ZButton color="primary" onclick={() => void handleRegisterAlways()}>항상</ZButton>
+          <ZButton type="button" color="default" onclick={handleRegisterNo}>아니요</ZButton>
+          <ZButton type="button" color="default" onclick={() => void handleRegisterChoice('once')}>이번만</ZButton>
+          <ZButton type="button" color="primary" onclick={() => void handleRegisterChoice('always')}>항상</ZButton>
         </footer>
       </div>
     </div>

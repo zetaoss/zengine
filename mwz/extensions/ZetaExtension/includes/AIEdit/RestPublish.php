@@ -46,6 +46,7 @@ class RestPublish extends SimpleHandler
         $content = (string) ($data['text'] ?? '');
         $summary = (string) ($data['summary'] ?? '');
         $requestType = (string) ($data['request_type'] ?? '');
+        $enableAiEdit = (bool) ($data['enable_ai_edit'] ?? false);
 
         if ($userId <= 0 || $titleText === '') {
             return $this->json(['status' => 'error', 'message' => 'missing parameters'], 400);
@@ -113,6 +114,16 @@ class RestPublish extends SimpleHandler
             }
 
             $revid = $revision ? $revision->getId() : $wikiPage->getLatest();
+
+            if ($enableAiEdit) {
+                try {
+                    $userOptionsManager = $services->getUserOptionsManager();
+                    $userOptionsManager->setOption($user, 'ai-edit-as-mine', true);
+                    $userOptionsManager->saveOptions($user);
+                } catch (\Throwable $e) {
+                    // Preference persistence is best-effort. Publishing the edit succeeded already.
+                }
+            }
 
             return $this->json([
                 'status' => 'success',
