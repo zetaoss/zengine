@@ -9,7 +9,7 @@
   import { resolve } from '$app/paths'
   import { page } from '$app/state'
   import ThePagination from '$lib/components/pagination/ThePagination.svelte'
-  import type { PaginateData } from '$lib/components/pagination/types'
+  import type { PaginateData, PaginatePath } from '$lib/components/pagination/types'
   import useAuthStore from '$lib/stores/auth'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
@@ -75,7 +75,7 @@
   })
 
   let modeTabs = $derived([
-    { value: 'todo', label: '요청', badge: count.todo, href: resolve('/tool/write-request') },
+    { value: 'todo', label: '요청', badge: count.todo, href: resolve('/tool/write-request/todo') },
     { value: 'todo-top', label: '추천', href: resolve('/tool/write-request/todo-top') },
     { value: 'done', label: '완료', badge: count.done, href: resolve('/tool/write-request/done') },
   ])
@@ -113,7 +113,7 @@
     paginateData = {
       current_page: data.current_page,
       last_page: data.last_page,
-      path: '/tool/write-request',
+      path: resolve(`/tool/write-request/${mode}`) as PaginatePath,
     }
 
     loading = false

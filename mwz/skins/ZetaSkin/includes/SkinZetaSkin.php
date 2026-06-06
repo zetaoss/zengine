@@ -2,7 +2,6 @@
 
 namespace ZetaSkin;
 
-use MediaWiki\MediaWikiServices;
 use SkinMustache;
 
 class SkinZetaSkin extends SkinMustache
@@ -57,10 +56,7 @@ class SkinZetaSkin extends SkinMustache
 
     public static function onMakeGlobalVariablesScript(array &$vars, $out)
     {
-        $user = $out->getUser();
-        $userOptionsLookup = MediaWikiServices::getInstance()->getUserOptionsLookup();
         $vars['binders'] = self::$binders;
-        $vars['aiEditAsMine'] = (bool) $userOptionsLookup->getOption($user, 'ai-edit-as-mine', false);
         $vars['dataToc'] = self::$dataToc;
         $vars['contributors'] = self::$isArticleView ? PageDataProvider::fetchContributors(self::$pageId) : [];
         $vars['lastModified'] = self::$lastModified;

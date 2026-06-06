@@ -5,7 +5,6 @@
   import { SvelteMap } from 'svelte/reactivity'
 
   import mwapi from '$lib/utils/mwapi'
-  import getRLCONF from '$lib/utils/rlconf'
   import { showToast } from '$shared/ui/toast/toast'
   import ZButton from '$shared/ui/ZButton.svelte'
   import ZButtonLink from '$shared/ui/ZButtonLink.svelte'
@@ -77,10 +76,6 @@
     created: boolean
   }
 
-  interface SubmitOptions {
-    enableAiEdit: boolean
-  }
-
   let {
     requestType,
     pageId,
@@ -102,8 +97,6 @@
   let notes = $state('')
   let customFieldValues = $state<Record<string, string>>({})
   let lastPromptTitle = $state('')
-  let showRegisterModal = $state(false)
-  let aiEditAsMine = $state(getRLCONF().aiEditAsMine ?? false)
 
   let filteredPromptItems = $derived(
     promptItems
@@ -260,12 +253,11 @@
     window.jQuery?.(window).off('beforeunload.editwarning')
   }
 
-  async function submit(opts: SubmitOptions) {
+  async function submit() {
     if (!canSubmit) return
 
     submitting = true
     const [data, err] = await httpy.post<StoreResp>('/api/ai-edit', {
-      enable_ai_edit: opts.enableAiEdit,
       page_id: pageId,
       title,
       prompt_title: promptTitle,
@@ -280,30 +272,13 @@
     }
     if (!data) return
 
-    if (opts.enableAiEdit) {
-      aiEditAsMine = true
-    }
-
     releaseEditWarning()
     window.location.assign(`/tool/ai-edit/tasks/${data.id}`)
   }
 
   async function handleSubmitClick() {
     if (!canSubmit) return
-    if (aiEditAsMine) {
-      await submit({ enableAiEdit: false })
-      return
-    }
-    showRegisterModal = true
-  }
-
-  function handleRegisterNo() {
-    showRegisterModal = false
-  }
-
-  async function handleRegisterChoice(choice: 'once' | 'always') {
-    showRegisterModal = false
-    await submit({ enableAiEdit: choice === 'always' })
+    await submit()
   }
 </script>
 
@@ -447,34 +422,4 @@
       {submitting ? '등록 중' : 'AI 편집 등록'}
     </ZButton>
   </div>
-
-  {#if showRegisterModal}
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <button
-        type="button"
-        class="absolute inset-0 cursor-default bg-transparent"
-        aria-label="닫기"
-        onclick={handleRegisterNo}
-      ></button>
-
-      <div
-        role="dialog"
-        aria-modal="true"
-        class="relative flex w-full max-w-md flex-col overflow-hidden rounded-md border bg-white shadow-lg"
-      >
-        <header class="border-b px-5 py-4">
-          <div role="heading" aria-level="2" class="text-base font-semibold text-slate-900">AI 편집 등록</div>
-        </header>
-        <section class="px-5 py-4 text-sm text-slate-700">
-          <p>AI 편집을 내 편집으로 등록합니다.</p>
-          <p class="mt-2 text-xs text-slate-500">‘항상’을 선택한 경우, 특수:환경설정 &gt; 편집 &gt; AI 편집에서 해제할 수 있습니다.</p>
-        </section>
-        <footer class="flex flex-wrap justify-end gap-2 border-t px-4 py-3">
-          <ZButton type="button" color="default" onclick={handleRegisterNo}>아니요</ZButton>
-          <ZButton type="button" color="default" onclick={() => void handleRegisterChoice('once')}>이번만</ZButton>
-          <ZButton type="button" color="primary" onclick={() => void handleRegisterChoice('always')}>항상</ZButton>
-        </footer>
-      </div>
-    </div>
-  {/if}
 </div>
