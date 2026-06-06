@@ -9,7 +9,7 @@
   import { resolve } from '$app/paths'
   import { page } from '$app/state'
   import ThePagination from '$lib/components/pagination/ThePagination.svelte'
-  import type { PaginateData, PaginatePath } from '$lib/components/pagination/types'
+  import type { PaginateData } from '$lib/components/pagination/types'
   import useAuthStore from '$lib/stores/auth'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
@@ -53,7 +53,7 @@
   const canWrite = auth.canWrite
   const canDelete = auth.canDelete
 
-  let mode = $derived.by(() => {
+  let mode = $derived.by((): Mode => {
     const m = page.params.mode
     if (m === 'todo-top' || m === 'done') return m
     return 'todo'
@@ -113,7 +113,7 @@
     paginateData = {
       current_page: data.current_page,
       last_page: data.last_page,
-      path: resolve(`/tool/write-request/${mode}`) as PaginatePath,
+      path: `/tool/write-request/${mode}`,
     }
 
     loading = false
