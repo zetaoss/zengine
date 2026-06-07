@@ -171,7 +171,7 @@
   onDestroy(clearAutoCheck)
 </script>
 
-<ZModal {show} title="새 작성 요청 등록하기" okDisabled={!canSubmit} okColor="primary" on:ok={ok} on:cancel={cancel}>
+<ZModal {show} title="새 작성 요청 등록하기" okDisabled={!canSubmit} okVariant="default" on:ok={ok} on:cancel={cancel}>
   <div class="w-full">
     <div class="flex items-center gap-2">
       <input

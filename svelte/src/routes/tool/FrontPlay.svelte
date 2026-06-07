@@ -10,7 +10,7 @@
   import { onDestroy, onMount } from 'svelte'
 
   import buildHtml from '$shared/components/sandbox/buildHtml'
-  import ZButton from '$shared/ui/ZButton.svelte'
+  import Button from '$shared/ui/Button.svelte'
 
   import ConsoleLog from './frontplay/ConsoleLog.svelte'
   import type { LogLevel, SandboxLog } from './frontplay/types'
@@ -161,7 +161,7 @@ console.log("Hello HTML");
     <div class="flex items-center py-2">
       <b>Front Play</b>
       <span class="ml-2">
-        <ZButton onclick={run}>Run</ZButton>
+        <Button variant="outline" onclick={run}>Run</Button>
       </span>
     </div>
 

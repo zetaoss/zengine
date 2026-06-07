@@ -13,7 +13,7 @@
   import useAuthStore from '$lib/stores/auth'
   import { titlesExist } from '$lib/utils/mediawiki'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
-  import ZButton from '$shared/ui/ZButton.svelte'
+  import Button from '$shared/ui/Button.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
   import httpy from '$shared/utils/httpy'
   import { getWikiHref } from '$shared/utils/wikiLink'
@@ -162,7 +162,7 @@
             <tr>
               {#if idx === 0}
                 <td rowspan={row.items.length} class="text-center text-sm">
-                  <RouteLinkButton to={`/tool/common-report/${row.id}`}>
+                  <RouteLinkButton to={`/tool/common-report/${row.id}`} variant="outline">
                     <span>#{row.id} 상세보기</span>
                   </RouteLinkButton>
                   <div>{row.created_at.substring(0, 10)}</div>
@@ -208,7 +208,7 @@
   </table>
 
   <div class="flex justify-end py-2">
-    <ZButton disabled={!$canWrite} onclick={openModal}>등록</ZButton>
+    <Button variant="outline" disabled={!$canWrite} onclick={openModal}>등록</Button>
   </div>
 
   {#if paginateData}

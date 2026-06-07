@@ -9,9 +9,9 @@
   import useAuthStore from '$lib/stores/auth'
   import { titlesExist } from '$lib/utils/mediawiki'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
+  import Button from '$shared/ui/Button.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'
-  import ZButton from '$shared/ui/ZButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import httpy from '$shared/utils/httpy'
   import { getWikiHref } from '$shared/utils/wikiLink'
@@ -219,7 +219,7 @@
 {#if row && row.id}
   <div class="p-5">
     <div class="flex justify-end">
-      <RouteLinkButton to="/tool/common-report">목록</RouteLinkButton>
+      <RouteLinkButton to="/tool/common-report" variant="outline">목록</RouteLinkButton>
     </div>
 
     <div class="z-card my-2 rounded border p-5">
@@ -248,7 +248,7 @@
         </div>
         <div class="flex flex-wrap gap-2">
           {#each copyActions as action (action.key)}
-            <ZButton onclick={() => handleCopy(action)}>
+            <Button variant="outline" onclick={() => handleCopy(action)}>
               <span class="mr-2">{action.label}</span>
               {#if activeTooltip !== action.key}
                 <ZIcon path={mdiContentCopy} />
@@ -258,7 +258,7 @@
                   <span class="text-xs">Copied!</span>
                 </span>
               {/if}
-            </ZButton>
+            </Button>
           {/each}
         </div>
       </div>
@@ -383,13 +383,13 @@
 
     <div class="flex gap-2 py-4">
       {#if $canDelete(row.user_id)}
-        <ZButton onclick={() => del(row)}>삭제</ZButton>
+        <Button variant="destructive" onclick={() => del(row)}>삭제</Button>
       {/if}
       {#if $canDelete(row.user_id) && row.phase === 'Failed'}
-        <ZButton onclick={() => rerun(row)}>재실행</ZButton>
+        <Button variant="default" onclick={() => rerun(row)}>재실행</Button>
       {/if}
       <div class="flex-1 text-right">
-        <RouteLinkButton to="/tool/common-report">목록</RouteLinkButton>
+        <RouteLinkButton to="/tool/common-report" variant="outline">목록</RouteLinkButton>
       </div>
     </div>
   </div>

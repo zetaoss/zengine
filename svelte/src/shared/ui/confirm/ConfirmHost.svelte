@@ -1,7 +1,7 @@
 <svelte:options customElement={{ tag: 'confirm-host', shadow: 'none' }} />
 
 <script lang="ts">
-  import ZButton from '$shared/ui/ZButton.svelte'
+  import Button from '$shared/ui/Button.svelte'
 
   import { confirmState, handleConfirmCancel, handleConfirmOk } from './confirm'
 </script>
@@ -13,30 +13,34 @@
     <div class="relative w-full max-w-md rounded-lg bg-(--background-color-base) p-6 shadow-lg border">
       <div class="text-sm text-slate-700">{$confirmState.message}</div>
       <div class="mt-6 flex justify-end gap-2">
-        <ZButton color="ghost" class="px-4 py-2" onclick={handleConfirmCancel}>
+        <Button variant="ghost" class="px-4 py-2" onclick={handleConfirmCancel}>
           {$confirmState.cancelText}
-        </ZButton>
-        <ZButton color={$confirmState.okColor} class={`px-4 py-2 confirm-btn-${$confirmState.okColor}`} onclick={handleConfirmOk}>
+        </Button>
+        <Button
+          variant={$confirmState.okVariant}
+          class={`px-4 py-2 confirm-btn-${$confirmState.okVariant}`}
+          onclick={handleConfirmOk}
+        >
           {$confirmState.okText}
-        </ZButton>
+        </Button>
       </div>
     </div>
   </div>
 {/if}
 
 <style>
-  :global(.confirm-btn-default) {
+  :global(.confirm-btn-outline) {
     background-color: var(--background-color-interactive);
   }
-  :global(.confirm-btn-danger) {
-    background-color: var(--color-destructive);
+  :global(.confirm-btn-default) {
+    background-color: var(--color-progressive);
     color: white;
   }
   :global(.confirm-btn-ghost) {
     background-color: transparent;
   }
-  :global(.confirm-btn-primary) {
-    background-color: var(--color-progressive);
+  :global(.confirm-btn-destructive) {
+    background-color: var(--color-destructive);
     color: white;
   }
 </style>

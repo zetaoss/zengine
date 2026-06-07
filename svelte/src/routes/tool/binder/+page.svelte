@@ -3,8 +3,8 @@
   import { onMount } from 'svelte'
 
   import useAuthStore from '$lib/stores/auth'
+  import Badge from '$shared/ui/Badge.svelte'
   import { showToast } from '$shared/ui/toast/toast'
-  import ZBadge from '$shared/ui/ZBadge.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZToggle from '$shared/ui/ZToggle.svelte'
   import httpy from '$shared/utils/httpy'
@@ -229,7 +229,7 @@
                         {displayTitle(binder.title)}
                       </div>
                       {#if isNewBinder(binder.created_at)}
-                        <ZBadge text="N" />
+                        <Badge>N</Badge>
                       {/if}
                     </div>
 

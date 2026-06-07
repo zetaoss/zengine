@@ -7,8 +7,8 @@
   import RouteLinkButton from '$lib/components/RouteLinkButton.svelte'
   import useAuthStore from '$lib/stores/auth'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
-  import ZBadge from '$shared/ui/ZBadge.svelte'
-  import ZButtonLink from '$shared/ui/ZButtonLink.svelte'
+  import Badge from '$shared/ui/Badge.svelte'
+  import Button from '$shared/ui/Button.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
   import httpy from '$shared/utils/httpy'
@@ -173,7 +173,7 @@
 
 <div class="p-5">
   <div class="mb-4">
-    <RouteLinkButton to="/tool/ai-edit/tasks" color="ghost" size="small">
+    <RouteLinkButton to="/tool/ai-edit/tasks" variant="ghost" size="small">
       <ZIcon path={mdiArrowLeft} />
       작업목록
     </RouteLinkButton>
@@ -194,16 +194,16 @@
         >
           {row.title}
         </a>
-        <ZButtonLink
-          color="ghost"
-          size="small"
+        <Button
           href={getWikiDiffHref(row.title, row.revid)}
+          variant="ghost"
+          size="small"
           rel="external noopener noreferrer"
           target="_blank"
           title="차이보기"
         >
           <ZIcon path={mdiCompare} />
-        </ZButtonLink>
+        </Button>
       </div>
 
       <div class="mb-5 border-y border-(--border-color-subtle) py-4">
@@ -235,7 +235,7 @@
           <div class="mb-2 break-inside-avoid grid grid-cols-[7rem_1fr] items-start gap-2">
             <div class="text-sm text-(--color-subtle)">유형</div>
             <div>
-              <ZBadge text={getRequestTypeLabel(row.request_type)} class={getRequestTypeClass(row.request_type)} />
+              <Badge class={getRequestTypeClass(row.request_type)}>{getRequestTypeLabel(row.request_type)}</Badge>
             </div>
           </div>
           <div class="mb-2 break-inside-avoid grid grid-cols-[7rem_1fr] items-start gap-2">

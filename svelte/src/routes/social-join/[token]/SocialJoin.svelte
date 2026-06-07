@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { page } from '$app/state'
-  import ZButton from '$shared/ui/ZButton.svelte'
+  import Button from '$shared/ui/Button.svelte'
   import httpy, { type HttpyError } from '$shared/utils/httpy'
 
   const Status = {
@@ -183,9 +183,9 @@
       }}
     />
 
-    <ZButton class="whitespace-nowrap" type="button" disabled={busy || username.trim().length < 1} onclick={() => void checkUsername()}>
+    <Button variant="outline" class="whitespace-nowrap" type="button" disabled={busy || username.trim().length < 1} onclick={() => void checkUsername()}>
       중복 확인
-    </ZButton>
+    </Button>
   </div>
 
   {#if status === Status.Checking}
@@ -211,8 +211,8 @@
   {/if}
 
   <div class="mt-4 flex justify-center">
-    <ZButton type="button" disabled={busy || username.trim().length < 1 || status !== Status.Can} onclick={() => void submitJoin()}>
+    <Button variant="outline" type="button" disabled={busy || username.trim().length < 1 || status !== Status.Can} onclick={() => void submitJoin()}>
       가입
-    </ZButton>
+    </Button>
   </div>
 </div>

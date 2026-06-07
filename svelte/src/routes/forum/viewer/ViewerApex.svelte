@@ -4,7 +4,7 @@
   import RouteLinkButton from '$lib/components/RouteLinkButton.svelte'
   import useAuthStore from '$lib/stores/auth'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
-  import ZButton from '$shared/ui/ZButton.svelte'
+  import Button from '$shared/ui/Button.svelte'
   import ZModal from '$shared/ui/ZModal.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
   import httpy from '$shared/utils/httpy'
@@ -114,14 +114,14 @@
 </div>
 
 <div class="flex gap-3 py-4">
-  <RouteLinkButton to="/forum/new" disabled={!$canWrite}>글쓰기</RouteLinkButton>
+  <RouteLinkButton to="/forum/new" variant="outline" disabled={!$canWrite}>글쓰기</RouteLinkButton>
 
   {#if post}
     {#if $canEdit(post.user_id)}
-      <ZButton onclick={edit}>수정</ZButton>
+      <Button variant="outline" onclick={edit}>수정</Button>
     {/if}
     {#if $canDelete(post.user_id)}
-      <ZButton onclick={del}>삭제</ZButton>
+      <Button variant="outline" onclick={del}>삭제</Button>
     {/if}
   {/if}
 </div>

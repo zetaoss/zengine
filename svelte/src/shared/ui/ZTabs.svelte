@@ -1,5 +1,5 @@
 <script lang="ts">
-  import ZBadge from './ZBadge.svelte'
+  import Badge from './Badge.svelte'
 
   interface ZTabItem {
     value: string
@@ -64,11 +64,11 @@
       onpointerdown={(e) => beginSelect(e, tab.value)}
       onkeydown={(e) => beginKeyboardSelect(e, tab.value)}
       onclick={(e) => select(e, tab.value)}
-    >
+      >
       <span class="inline-flex items-center gap-1">
         {tab.label}
         {#if tab.badge !== undefined}
-          <ZBadge text={String(tab.badge)} />
+          <Badge variant="outline">{String(tab.badge)}</Badge>
         {/if}
       </span>
     </a>

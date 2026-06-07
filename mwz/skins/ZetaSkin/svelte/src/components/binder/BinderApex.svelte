@@ -6,7 +6,7 @@
 
   import type { Binder } from '$lib/types/binder'
   import getRLCONF from '$lib/utils/rlconf'
-  import ZButton from '$shared/ui/ZButton.svelte'
+  import Button from '$shared/ui/Button.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import { isMdOrLargerStore } from '$shared/utils/screen'
 
@@ -124,9 +124,9 @@
 
     {#if isCollapsed && !isDrawer}
       <div class="h-full w-full">
-        <ZButton color="ghost" class="h-full! w-full! rounded-none! p-0!" title="바인더 펼치기" onclick={toggle}>
+        <Button variant="ghost" class="h-full! w-full! rounded-none! p-0!" title="바인더 펼치기" onclick={toggle}>
           <ZIcon path={mdiChevronRight} />
-        </ZButton>
+        </Button>
       </div>
     {:else}
       <div bind:this={scrollEl} class="z-scrollbar h-full w-full overflow-y-auto" on:scroll={updateScrollState}>
@@ -139,20 +139,20 @@
                 <span class="wrap-break-word">{binder.text}</span>
               </a>
               {#if isLoggedIn}
-                <ZButton
-                  color="ghost"
+                <Button
+                  variant="ghost"
                   class="w-9! self-stretch rounded-none! p-0!"
                   disabled={refreshingId !== null}
                   title="바인더 새로고침"
                   onclick={refreshBinder}
                 >
                   <ZIcon path={mdiRefresh} class={refreshingId === wgArticleId ? 'animate-spin' : ''} />
-                </ZButton>
+                </Button>
               {/if}
               {#if !isDrawer}
-                <ZButton color="ghost" class="w-9! self-stretch rounded-none! p-0!" title="바인더 접기" onclick={toggle}>
+                <Button variant="ghost" class="w-9! self-stretch rounded-none! p-0!" title="바인더 접기" onclick={toggle}>
                   <ZIcon path={mdiChevronLeft} />
-                </ZButton>
+                </Button>
               {/if}
             </header>
 

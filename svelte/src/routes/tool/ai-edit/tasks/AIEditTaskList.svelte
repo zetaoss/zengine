@@ -10,11 +10,10 @@
   import type { PaginateData } from '$lib/components/pagination/types'
   import useAuthStore from '$lib/stores/auth'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
+  import Badge from '$shared/ui/Badge.svelte'
+  import Button from '$shared/ui/Button.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'
-  import ZBadge from '$shared/ui/ZBadge.svelte'
-  import ZButton from '$shared/ui/ZButton.svelte'
-  import ZButtonLink from '$shared/ui/ZButtonLink.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
   import ZStatusText from '$shared/ui/ZStatusText.svelte'
@@ -285,7 +284,7 @@
           <tr class={isCurrentTask(row) ? 'bg-blue-50/70' : ''}>
             <td class="text-center">{row.id}</td>
             <td>
-              <ZBadge text={getRequestTypeLabel(row.request_type)} class={`mr-2 ${getRequestTypeClass(row.request_type)}`} />
+              <Badge variant="outline" class={`mr-2 ${getRequestTypeClass(row.request_type)}`}>{getRequestTypeLabel(row.request_type)}</Badge>
               <a
                 href={getTitleHref(row)}
                 rel="noopener"
@@ -297,21 +296,21 @@
               </a>
               <span class="ml-1 inline-flex items-center gap-1 align-middle">
                 {#if isCompleted(row)}
-                  <ZButtonLink
-                    color="ghost"
-                    size="small"
+                  <Button
                     href={getWikiDiffHref(row.title, row.revid)}
+                    variant="ghost"
+                    size="small"
                     rel="external noopener noreferrer"
                     target="_blank"
                     title="차이보기"
                   >
                     <ZIcon path={mdiCompare} />
-                  </ZButtonLink>
+                  </Button>
                 {/if}
                 {#if canViewDetail(row)}
-                  <ZButtonLink color="ghost" size="small" href={resolve(`/tool/ai-edit/tasks/${row.id}`)} title="작업 상세 보기">
+                  <Button variant="ghost" size="small" href={resolve(`/tool/ai-edit/tasks/${row.id}`)} title="작업 상세 보기">
                     <ZIcon path={mdiInformation} />
-                  </ZButtonLink>
+                  </Button>
                 {/if}
               </span>
             </td>
@@ -335,9 +334,9 @@
             <td class="text-center">
               <div class="flex items-center justify-center gap-1">
                 {#if isSysop}
-                  <ZButton color="default" size="small" disabled={deletingId === row.id} onclick={() => del(row)}>
+                  <Button variant="outline" size="small" disabled={deletingId === row.id} onclick={() => del(row)}>
                     <ZIcon path={mdiDelete} />
-                  </ZButton>
+                  </Button>
                 {/if}
               </div>
             </td>

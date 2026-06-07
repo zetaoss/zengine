@@ -3,7 +3,7 @@
 <script lang="ts">
   import { fly } from 'svelte/transition'
 
-  import ZButtonLink from '../ZButtonLink.svelte'
+  import Button from '../Button.svelte'
   import { dismissToast, toasts } from './toast'
 </script>
 
@@ -33,9 +33,9 @@
         <div class="flex min-h-14 items-center justify-center px-5 py-4 text-center leading-tight">{toast.message}</div>
         {#if toast.action}
           <div class="flex justify-center px-5 pb-4">
-            <ZButtonLink href={toast.action.href} color="primary" onclick={() => dismissToast(toast.id)}>
+            <Button href={toast.action.href} variant="default" onclick={() => dismissToast(toast.id)}>
               {toast.action.label}
-            </ZButtonLink>
+            </Button>
           </div>
         {/if}
         <hr class="toast-bar m-0 h-1 rounded border-0 bg-black/20" style={`animation-duration: ${toast.timeout}ms`} />

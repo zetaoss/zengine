@@ -6,11 +6,10 @@
   import { resolve } from '$app/paths'
   import useAuthStore from '$lib/stores/auth'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
+  import Badge from '$shared/ui/Badge.svelte'
+  import Button from '$shared/ui/Button.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'
-  import ZBadge from '$shared/ui/ZBadge.svelte'
-  import ZButton from '$shared/ui/ZButton.svelte'
-  import ZButtonLink from '$shared/ui/ZButtonLink.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
   import httpy from '$shared/utils/httpy'
@@ -105,10 +104,10 @@
   <div class="mb-5 flex items-center justify-between">
     <div class="flex-1"></div>
     {#if isSysop}
-      <ZButtonLink color="primary" size="small" href={resolve('/tool/ai-edit/prompts/new')}>
+      <Button variant="outline" size="small" href={resolve('/tool/ai-edit/prompts/new')}>
         <ZIcon path={mdiPlus} class="mr-1" />
         새 프롬프트 작성
-      </ZButtonLink>
+      </Button>
     {/if}
   </div>
 
@@ -142,7 +141,7 @@
           <tr>
             <td class="text-center text-sm text-(--color-subtle)">{item.id}</td>
             <td>
-              <ZBadge text={getRequestTypeLabel(item.request_type)} class={`mr-2 ${getRequestTypeClass(item.request_type)}`} />
+              <Badge variant="outline" class={`mr-2 ${getRequestTypeClass(item.request_type)}`}>{getRequestTypeLabel(item.request_type)}</Badge>
               <a class="font-medium hover:underline" href={resolve(`/tool/ai-edit/prompts/${item.id}` as '/tool/ai-edit/prompts/[id]')}>{item.title}</a>
             </td>
             <td class="text-center text-sm text-(--color-subtle)">{item.use_count === 0 ? '-' : item.use_count}</td>
@@ -157,13 +156,13 @@
             </td>
             <td class="text-center">
               <div class="flex items-center justify-center gap-1">
-                <ZButton color="ghost" size="small" title="즐겨찾기" onclick={() => void toggleFavorite(item)}>
+                <Button variant="ghost" size="small" title="즐겨찾기" onclick={() => void toggleFavorite(item)}>
                   <ZIcon path={item.is_favorite ? mdiStar : mdiStarOutline} class={item.is_favorite ? 'text-amber-500' : ''} />
-                </ZButton>
+                </Button>
                 {#if isSysop}
-                  <ZButton color="ghost" size="small" disabled={deletingPromptId === item.id} onclick={() => void delPrompt(item)}>
+                  <Button variant="ghost" size="small" disabled={deletingPromptId === item.id} onclick={() => void delPrompt(item)}>
                     <ZIcon path={mdiDelete} />
-                  </ZButton>
+                  </Button>
                 {/if}
               </div>
             </td>

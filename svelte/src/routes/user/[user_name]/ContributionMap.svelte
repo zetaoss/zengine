@@ -3,7 +3,7 @@
 <script lang="ts">
   import { mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 
-  import ZButton from '$shared/ui/ZButton.svelte'
+  import Button from '$shared/ui/Button.svelte'
   import ZCard from '$shared/ui/ZCard.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
 
@@ -232,18 +232,18 @@
       <header class="flex items-center justify-between">
         <div>편집 달력</div>
         <div class="flex h-8 space-x-px">
-          <ZButton class="rounded-r-none" cooldown={0} onclick={goToMin} disabled={!canGoPrev}>
+          <Button variant="outline" class="rounded-r-none" cooldown={0} onclick={goToMin} disabled={!canGoPrev}>
             <ZIcon path={mdiChevronDoubleLeft} />
-          </ZButton>
-          <ZButton class="rounded-none" cooldown={0} onclick={goPrev} disabled={!canGoPrev}>
+          </Button>
+          <Button variant="outline" class="rounded-none" cooldown={0} onclick={goPrev} disabled={!canGoPrev}>
             <ZIcon path={mdiChevronLeft} />
-          </ZButton>
-          <ZButton class="rounded-none" cooldown={0} onclick={goNext} disabled={!canGoNext}>
+          </Button>
+          <Button variant="outline" class="rounded-none" cooldown={0} onclick={goNext} disabled={!canGoNext}>
             <ZIcon path={mdiChevronRight} />
-          </ZButton>
-          <ZButton class="rounded-l-none" cooldown={0} onclick={goToMax} disabled={!canGoNext}>
+          </Button>
+          <Button variant="outline" class="rounded-l-none" cooldown={0} onclick={goToMax} disabled={!canGoNext}>
             <ZIcon path={mdiChevronDoubleRight} />
-          </ZButton>
+          </Button>
         </div>
       </header>
     </svelte:fragment>

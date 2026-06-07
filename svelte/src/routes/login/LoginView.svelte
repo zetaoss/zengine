@@ -5,7 +5,7 @@
 
   import { page } from '$app/state'
   import useAuthStore from '$lib/stores/auth'
-  import ZButtonLink from '$shared/ui/ZButtonLink.svelte'
+  import Button from '$shared/ui/Button.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
 
   import doLogin from './login'
@@ -98,15 +98,15 @@
     <div class="py-3">소셜 로그인</div>
 
     <div class="flex flex-col gap-2">
-      <ZButtonLink class="w-full bg-white text-black" href={socialHref('google')} rel="external" data-sveltekit-reload>
-        <ZIcon path={mdiGoogle} size={18} />
+      <Button variant="outline" class="w-full" href={socialHref('google')} rel="external" data-sveltekit-reload>
+        <ZIcon path={mdiGoogle} />
         Login with Google
-      </ZButtonLink>
+      </Button>
 
-      <ZButtonLink class="w-full bg-black text-white" href={socialHref('github')} rel="external" data-sveltekit-reload>
-        <ZIcon path={mdiGithub} size={18} />
+      <Button variant="outline" class="w-full" href={socialHref('github')} rel="external" data-sveltekit-reload>
+        <ZIcon path={mdiGithub} />
         Log in with GitHub
-      </ZButtonLink>
+      </Button>
     </div>
 
     <div class="relative my-6 overflow-hidden text-center text-gray-400">

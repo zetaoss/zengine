@@ -9,10 +9,10 @@
   import RouteLinkButton from '$lib/components/RouteLinkButton.svelte'
   import useAuthStore from '$lib/stores/auth'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
+  import Badge from '$shared/ui/Badge.svelte'
+  import Button from '$shared/ui/Button.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'
-  import ZBadge from '$shared/ui/ZBadge.svelte'
-  import ZButton from '$shared/ui/ZButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZSelect from '$shared/ui/ZSelect.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
@@ -204,7 +204,7 @@
 
 <div class="p-5">
   <div class="mb-4">
-    <RouteLinkButton to="/tool/ai-edit/prompts" color="ghost" size="small">
+    <RouteLinkButton to="/tool/ai-edit/prompts" variant="ghost" size="small">
       <ZIcon path={mdiArrowLeft} />
       프롬프트 목록
     </RouteLinkButton>
@@ -242,7 +242,7 @@
             </ZValidator>
           {:else}
             <div class="flex items-center gap-3 py-1">
-              <ZBadge text={getRequestTypeLabel(row.request_type)} class={`text-base ${getRequestTypeClass(row.request_type)}`} />
+              <Badge class={`text-base ${getRequestTypeClass(row.request_type)}`}>{getRequestTypeLabel(row.request_type)}</Badge>
               <h2 class="text-2xl font-bold">{row.title}</h2>
             </div>
           {/if}
@@ -250,27 +250,27 @@
 
         <div class="flex shrink-0 items-center gap-2">
           {#if isEditing}
-            <ZButton color="primary" size="small" disabled={isSaving} onclick={() => void save()}>
+            <Button variant="default" size="small" disabled={isSaving} onclick={() => void save()}>
               {isSaving ? '저장 중...' : '저장'}
-            </ZButton>
-            <ZButton color="ghost" size="small" disabled={isSaving} onclick={() => (id === 0 ? void goto(resolve('/tool/ai-edit/prompts')) : void fetchPrompt())}>
+            </Button>
+            <Button variant="ghost" size="small" disabled={isSaving} onclick={() => (id === 0 ? void goto(resolve('/tool/ai-edit/prompts')) : void fetchPrompt())}>
               취소
-            </ZButton>
+            </Button>
           {:else}
-            <ZButton color="ghost" size="small" title="즐겨찾기" onclick={() => void toggleFavorite()}>
+            <Button variant="ghost" size="small" title="즐겨찾기" onclick={() => void toggleFavorite()}>
               <ZIcon path={row.is_favorite ? mdiStar : mdiStarOutline} class={row.is_favorite ? 'text-amber-500' : ''} />
-            </ZButton>
+            </Button>
             {#if canEdit()}
-              <ZButton color="default" size="small" onclick={startEdit}>
+              <Button variant="outline" size="small" onclick={startEdit}>
                 <ZIcon path={mdiPencil} class="mr-1" />
                 편집
-              </ZButton>
+              </Button>
             {/if}
             {#if isSysop && row.id > 0}
-              <ZButton color="ghost" size="small" disabled={deleting} onclick={() => void delPrompt()}>
+              <Button variant="ghost" size="small" disabled={deleting} onclick={() => void delPrompt()}>
                 <ZIcon path={mdiDelete} class="mr-1" />
                 삭제
-              </ZButton>
+              </Button>
             {/if}
           {/if}
         </div>

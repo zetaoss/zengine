@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
 
-  import ZButton from '$shared/ui/ZButton.svelte'
+  import Button from '$shared/ui/Button.svelte'
   import ZSelect from '$shared/ui/ZSelect.svelte'
 
   import type { ForumPostFormValue } from './types'
@@ -97,9 +97,9 @@
   </div>
 
   <div class="my-4 flex justify-center gap-3">
-    <ZButton color="primary" {disabled} onclick={onSubmit}>
+    <Button variant="default" {disabled} onclick={onSubmit}>
       {submitText}
-    </ZButton>
-    <ZButton onclick={onCancel}>취소</ZButton>
+    </Button>
+    <Button variant="outline" onclick={onCancel}>취소</Button>
   </div>
 </div>

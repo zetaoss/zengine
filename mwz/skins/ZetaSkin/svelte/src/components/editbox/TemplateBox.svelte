@@ -1,8 +1,7 @@
 <script lang="ts">
   import { mdiFileCogOutline } from '@mdi/js'
 
-  import ZButton from '$shared/ui/ZButton.svelte'
-  import ZButtonLink from '$shared/ui/ZButtonLink.svelte'
+  import Button from '$shared/ui/Button.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
 
   export let titles: string[] = []
@@ -47,30 +46,30 @@
           <option value={title}>{toBoilerplateLabel(title)}</option>
         {/each}
       </select>
-      <ZButtonLink
+      <Button
         href="/tool/article-tpl"
         target="_blank"
         rel="noopener noreferrer"
         size="small"
-        color="default"
+        variant="outline"
         class="inline-flex items-center"
         aria-label="템플릿 관리 바로가기"
         title="템플릿 관리"
       >
         <ZIcon path={mdiFileCogOutline} class="h-4 w-4" />
-      </ZButtonLink>
+      </Button>
     </div>
 
     <div class="flex items-center justify-end">
-      <ZButton
+      <Button
         id="zeta-ai-edit-button"
         size="small"
-        color="default"
+        variant="default"
         aria-label="AI 편집"
         onclick={onToggleAiEdit}
       >
         AI 편집
-      </ZButton>
+      </Button>
     </div>
   </div>
 </div>

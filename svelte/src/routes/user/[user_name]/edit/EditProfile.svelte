@@ -7,7 +7,7 @@
   import { page } from '$app/state'
   import useAuthStore from '$lib/stores/auth'
   import AvatarIcon from '$shared/components/avatar/AvatarIcon.svelte'
-  import ZButton from '$shared/ui/ZButton.svelte'
+  import Button from '$shared/ui/Button.svelte'
   import ZCard from '$shared/ui/ZCard.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
   import httpy from '$shared/utils/httpy'
@@ -333,12 +333,12 @@
 
                   {#if canEditGravatar}
                     {#if !isEditingGravatar}
-                      <ZButton onclick={startEditGravatar}>수정</ZButton>
+                      <Button variant="outline" onclick={startEditGravatar}>수정</Button>
                     {:else}
-                      <ZButton disabled={gravatarBusy || !gravatarChanged || !validateEmail(gravatarEmail)} onclick={confirmGravatar}>
+                      <Button variant="outline" disabled={gravatarBusy || !gravatarChanged || !validateEmail(gravatarEmail)} onclick={confirmGravatar}>
                         확인
-                      </ZButton>
-                      <ZButton disabled={gravatarBusy} onclick={cancelEditGravatar}>취소</ZButton>
+                      </Button>
+                      <Button variant="outline" disabled={gravatarBusy} onclick={cancelEditGravatar}>취소</Button>
                     {/if}
                   {/if}
 
@@ -353,7 +353,7 @@
           </ul>
 
           <div class="flex flex-col items-center gap-2 pt-4">
-            <ZButton color="primary" disabled={!canSave} onclick={save}>저장</ZButton>
+            <Button variant="default" disabled={!canSave} onclick={save}>저장</Button>
 
             {#if saving}
               <div class="z-muted2 text-sm">저장 중...</div>

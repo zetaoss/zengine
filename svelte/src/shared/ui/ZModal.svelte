@@ -3,7 +3,7 @@
   import { onMount } from 'svelte'
   import { createEventDispatcher } from 'svelte'
 
-  import ZButton from '$shared/ui/ZButton.svelte'
+  import Button, { type ButtonVariant } from '$shared/ui/Button.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
 
   export let show = false
@@ -11,7 +11,7 @@
   export let titleIconPath: string | undefined = undefined
   export let titleIconAtEnd = false
   export let okText = '확인'
-  export let okColor: 'ghost' | 'default' | 'danger' | 'primary' = 'danger'
+  export let okVariant: ButtonVariant = 'destructive'
   export let okDisabled = false
   export let cancelText = '취소'
   export let closable = true
@@ -56,16 +56,16 @@
             {/if}
           </div>
           {#if closable}
-            <ZButton color="ghost" class="self-stretch rounded-none px-4 py-0" onclick={() => dispatch('cancel')}>
+            <Button variant="ghost" class="self-stretch rounded-none px-4 py-0" onclick={() => dispatch('cancel')}>
               <ZIcon path={mdiClose} />
-            </ZButton>
+            </Button>
           {/if}
         </header>
       {:else if closable}
         <div class="flex justify-end border-b px-3 py-2">
-          <ZButton color="ghost" onclick={() => dispatch('cancel')}>
+          <Button variant="ghost" onclick={() => dispatch('cancel')}>
             <ZIcon path={mdiClose} />
-          </ZButton>
+          </Button>
         </div>
       {/if}
 
@@ -74,10 +74,10 @@
       </section>
 
       <footer class="flex justify-center gap-3 border-t px-4 py-3">
-        <ZButton color={okColor} disabled={okDisabled} onclick={() => !okDisabled && dispatch('ok')}>
+        <Button variant={okVariant} disabled={okDisabled} onclick={() => !okDisabled && dispatch('ok')}>
           {okText}
-        </ZButton>
-        <ZButton onclick={() => dispatch('cancel')}>{cancelText}</ZButton>
+        </Button>
+        <Button variant="outline" onclick={() => dispatch('cancel')}>{cancelText}</Button>
       </footer>
     </div>
   </div>
