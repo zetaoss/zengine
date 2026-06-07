@@ -11,6 +11,8 @@
 <script lang="ts" module>
   import type { Snippet } from 'svelte'
 
+  import { cn } from './utils'
+
   export type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline' | 'ghost' | 'link'
 
   const variantClasses: Record<BadgeVariant, string> = {
@@ -23,13 +25,11 @@
   }
 
   export function badgeVariants(opts: { variant?: BadgeVariant }): string {
-    return [
+    return cn(
       'cn-badge inline-flex w-fit shrink-0 items-center justify-center overflow-hidden whitespace-nowrap transition-colors focus-visible:ring-[3px] focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 aria-invalid:border-destructive group/badge [&>svg]:pointer-events-none',
       'rounded-full',
       variantClasses[opts.variant ?? 'default'],
-    ]
-      .filter(Boolean)
-      .join(' ')
+    )
   }
 
   export type BadgeProps = {
@@ -58,7 +58,7 @@
   bind:this={ref}
   data-slot="badge"
   {href}
-  class={classes + (className ? ` ${className}` : '')}
+  class={cn(classes, className)}
 >
 {#if children}
     {@render children?.()}

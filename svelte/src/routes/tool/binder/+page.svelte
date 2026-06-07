@@ -172,7 +172,7 @@
       <CButton
         variant="ghost"
         size="icon"
-        class={`grid ${sortMode === 'title' ? 'bg-gray-200 text-black hover:bg-gray-200' : 'text-gray-500 hover:bg-gray-100'}`}
+        class={`grid ${sortMode === 'title' ? 'bg-gray-200 text-black hover:bg-gray-200' : 'text-gray-500 hover:bg-gray-100'} border-r border-gray-300 rounded-r-none`}
         title="Title"
         aria-label="Title"
         aria-pressed={sortMode === 'title'}
@@ -183,7 +183,7 @@
       <CButton
         variant="ghost"
         size="icon"
-        class={`grid ${sortMode === 'docs' ? 'bg-gray-200 text-black hover:bg-gray-200' : 'text-gray-500 hover:bg-gray-100'}`}
+        class={`grid ${sortMode === 'docs' ? 'bg-gray-200 text-black hover:bg-gray-200' : 'text-gray-500 hover:bg-gray-100'} rounded-l-none`}
         title="Docs"
         aria-label="Docs"
         aria-pressed={sortMode === 'docs'}

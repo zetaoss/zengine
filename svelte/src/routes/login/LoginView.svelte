@@ -112,8 +112,8 @@
     <div class="relative my-6 overflow-hidden text-center text-gray-400">
       <span class="relative px-3">
         또는
-        <span class="absolute right-full top-2.5 w-250 border-t border-[#aaa8]"></span>
-        <span class="absolute left-full top-2.5 w-250 border-t border-[#aaa8]"></span>
+        <span class="absolute right-full top-2.5 w-250 border-t border-border"></span>
+        <span class="absolute left-full top-2.5 w-250 border-t border-border"></span>
       </span>
     </div>
 
@@ -160,7 +160,7 @@
         />
       </div>
 
-      <CButton type="submit" size="lg" class="py-5 w-full" disabled={loading || username === '' || password === ''}>
+      <CButton type="submit" size="lg" class="py-5 w-full h-auto" disabled={loading || username === '' || password === ''}>
         {#if loading}
           로그인 중...
         {:else}

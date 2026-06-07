@@ -28,6 +28,6 @@
 
   .menu-item.is-active,
   .menu-item:hover {
-    @apply bg-[#8883];
+    @apply bg-border;
   }
 </style>

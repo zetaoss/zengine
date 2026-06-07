@@ -19,9 +19,7 @@
 import type { Snippet } from "svelte"
 import type { HTMLAnchorAttributes, HTMLButtonAttributes } from "svelte/elements"
 
-  function cn(...classes: Array<string | false | null | undefined>): string {
-    return classes.filter(Boolean).join(" ")
-  }
+import { cn } from "./utils"
 
   export type ButtonVariant = "default" | "outline" | "secondary" | "ghost" | "destructive" | "link"
   export type ButtonSize =
@@ -89,6 +87,8 @@ import type { HTMLAnchorAttributes, HTMLButtonAttributes } from "svelte/elements
 </script>
 
 <script lang="ts">
+  import { onDestroy } from "svelte"
+
   let {
     class: className,
     variant = "outline",
@@ -105,6 +105,7 @@ import type { HTMLAnchorAttributes, HTMLButtonAttributes } from "svelte/elements
   }: ButtonProps = $props()
 
   let isCooling = $state(false)
+  let cooldownTimeout: ReturnType<typeof setTimeout> | undefined = undefined
 
   let isDisabled = $derived(disabled || isCooling)
   let isLink = $derived(href !== undefined)
@@ -122,11 +123,21 @@ import type { HTMLAnchorAttributes, HTMLButtonAttributes } from "svelte/elements
     // Keep native navigation intact for anchor buttons.
     if (!isLink && cooldown > 0) {
       isCooling = true
-      setTimeout(() => {
+      if (cooldownTimeout !== undefined) {
+        clearTimeout(cooldownTimeout)
+      }
+      cooldownTimeout = setTimeout(() => {
         isCooling = false
+        cooldownTimeout = undefined
       }, cooldown)
     }
   }
+
+  onDestroy(() => {
+    if (cooldownTimeout !== undefined) {
+      clearTimeout(cooldownTimeout)
+    }
+  })
 </script>
 
 {#if href}
@@ -136,7 +147,7 @@ import type { HTMLAnchorAttributes, HTMLButtonAttributes } from "svelte/elements
     {...(restProps as Omit<HTMLAnchorAttributes, "class" | "href" | "type">)}
     href={isDisabled ? undefined : href}
     aria-label={title}
-    class={cn(classes, className ?? "", isDisabled ? "pointer-events-none opacity-50" : "")}
+    class={cn(classes, className, isDisabled && "pointer-events-none opacity-50")}
     aria-disabled={isDisabled ? "true" : undefined}
     role={isDisabled ? "link" : undefined}
     tabindex={isDisabled ? -1 : undefined}
@@ -151,7 +162,7 @@ import type { HTMLAnchorAttributes, HTMLButtonAttributes } from "svelte/elements
     {...(restProps as Omit<HTMLButtonAttributes, "class" | "type">)}
     {type}
     aria-label={title}
-    class={cn(classes, className ?? "")}
+    class={cn(classes, className, isDisabled && "pointer-events-none opacity-50")}
     disabled={isDisabled}
     onclick={handleClick}
   >

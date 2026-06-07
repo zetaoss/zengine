@@ -8,12 +8,15 @@
   export let size: ButtonSize = 'medium'
   export let onclick: ((event: MouseEvent) => void) | undefined = undefined
 
+  let className = ''
+  export { className as class }
+
   const resolvePath = resolve as unknown as (path: string) => string
 </script>
 
 <CButton
   {...$$restProps}
-  class={typeof $$props.class === 'string' ? $$props.class : undefined}
+  class={className}
   href={resolvePath(to)}
   {disabled}
   {variant}
