@@ -40,16 +40,16 @@
 <div class={`bg-(--console-bg) px-4 py-2 text-sm font-mono rounded-lg ${out.output_type === 'error' ? 'bg-(--nbout-error)' : ''}`}>
   {#if out.output_type === 'display_data'}
     {#if out.data?.['image/png']}
-      <img src={`data:image/png;base64,${out.data['image/png']}`} alt="" class="bg-white my-2 rounded max-h-[30rem] max-w-[75vw]" />
+      <img src={`data:image/png;base64,${out.data['image/png']}`} alt="" class="bg-x-white my-2 rounded max-h-[30rem] max-w-[75vw]" />
     {:else if textHtml}
       <!-- eslint-disable-next-line svelte/no-at-html-tags -->
       {@html textHtml}
     {:else if textPlain}
       <pre class="whitespace-pre-wrap">{textPlain}</pre>
     {:else if textJson}
-      <pre class="bg-gray-100 p-2 rounded overflow-auto">{textJson}</pre>
+      <pre class="bg-x-gray-100 p-2 rounded overflow-auto">{textJson}</pre>
     {:else if textLatex}
-      <div class="text-purple-700">\({textLatex}\)</div>
+      <div class="text-x-purple-700">\({textLatex}\)</div>
     {/if}
   {:else if out.output_type === 'execute_result'}
     {#if textHtml}
@@ -58,9 +58,9 @@
     {:else if textPlain}
       <pre class="whitespace-pre-wrap">{textPlain}</pre>
     {:else if textLatex}
-      <div class="text-purple-700">\({textLatex}\)</div>
+      <div class="text-x-purple-700">\({textLatex}\)</div>
     {:else if textJson}
-      <pre class="bg-gray-100 p-2 rounded overflow-auto">{textJson}</pre>
+      <pre class="bg-x-gray-100 p-2 rounded overflow-auto">{textJson}</pre>
     {/if}
   {:else if out.output_type === 'stream'}
     <pre class="whitespace-pre-wrap">{out.text?.join('')}</pre>
@@ -68,6 +68,6 @@
     <!-- eslint-disable-next-line svelte/no-at-html-tags -->
     <pre>{@html ansi2html(out.traceback?.join('\n') ?? '')}</pre>
   {:else}
-    <pre class="text-red-500">[Unsupported output_type: {out.output_type}]</pre>
+    <pre class="text-x-red-500">[Unsupported output_type: {out.output_type}]</pre>
   {/if}
 </div>

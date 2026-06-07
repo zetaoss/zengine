@@ -33,7 +33,7 @@
 </script>
 
 {#if show}
-  <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
+  <div class="fixed inset-0 z-40 flex items-center justify-center bg-x-black/40">
     {#if backdropClosable}
       <button type="button" class="absolute inset-0 cursor-default bg-transparent" aria-label="닫기" onclick={() => dispatch('cancel')}
       ></button>
@@ -42,7 +42,7 @@
     <div
       role="dialog"
       aria-modal="true"
-      class={`relative flex max-h-[calc(100dvh-2rem)] w-full min-h-0 flex-col overflow-hidden rounded-md border bg-white ${panelClass}`}
+      class={`relative flex max-h-[calc(100dvh-2rem)] w-full min-h-0 flex-col overflow-hidden rounded-md border bg-x-white ${panelClass}`}
     >
       {#if title}
         <header class="flex min-h-12 items-stretch justify-between gap-2 border-b pl-5">

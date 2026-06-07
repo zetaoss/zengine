@@ -283,7 +283,7 @@
 
 <div class="flex h-full min-h-0 flex-col gap-3 border p-4">
   <div class="flex items-center gap-2">
-    <span class="w-20 shrink-0 text-right text-sm font-semibold text-slate-700">템플릿</span>
+    <span class="w-20 shrink-0 text-right text-sm font-semibold text-x-slate-700">템플릿</span>
     {#if promptListLoading}
       <ZSpinner />
     {:else}
@@ -319,23 +319,25 @@
   </div>
 
   <div class="flex flex-wrap items-center gap-2">
-    <span class="w-20 shrink-0 text-right text-sm font-semibold text-slate-700">제목</span>
+    <span class="w-20 shrink-0 text-right text-sm font-semibold text-x-slate-700">제목</span>
     <ZTooltip content="제목은 AI 편집에 전달되는 표시용 제목입니다. 원본 표제어와 다를 수 있습니다." ariaLabel="제목 도움말">
-      <ZIcon path={mdiHelpCircleOutline} class="h-5 w-5 text-slate-500" aria-hidden="true" />
+      <ZIcon path={mdiHelpCircleOutline} class="h-5 w-5 text-x-slate-500" aria-hidden="true" />
     </ZTooltip>
     <input type="text" class="min-w-0 flex-1 rounded border px-2 py-1 text-sm" bind:value={displayTitle} />
-    <span class="w-20 shrink-0 text-right text-sm font-semibold text-slate-700">표제어</span>
-    <input type="text" class="min-w-0 flex-1 rounded border bg-slate-100 px-2 py-1 text-sm text-slate-600" value={title} readonly />
+    <span class="w-20 shrink-0 text-right text-sm font-semibold text-x-slate-700">표제어</span>
+    <input type="text" class="min-w-0 flex-1 rounded border bg-x-slate-100 px-2 py-1 text-sm text-x-slate-600" value={title} readonly />
   </div>
 
   {#if templateVariables.length > 0}
     {#each templateVariables as variable (variable.name)}
       <div class="flex flex-col gap-1">
-        <div class="flex items-center justify-between gap-2 text-sm text-slate-700">
+        <div class="flex items-center justify-between gap-2 text-sm text-x-slate-700">
           <label class="flex items-center gap-2 font-semibold" for={`ai-edit-panel-field-${variable.name}`}>
             <span>{variable.name}</span>
             {#if variable.mode === 'code'}
-              <span class="inline-flex items-center rounded border border-slate-200 px-1 py-0.5 text-[10px] font-medium leading-none text-slate-500 select-none">
+              <span
+                class="inline-flex items-center rounded border border-x-slate-200 px-1 py-0.5 text-[10px] font-medium leading-none text-x-slate-500 select-none"
+              >
                 code
               </span>
             {/if}
@@ -343,7 +345,7 @@
         </div>
         <textarea
           id={`ai-edit-panel-field-${variable.name}`}
-          class={`min-h-24 rounded border border-slate-300 px-2 py-1 text-sm ${variable.mode === 'code' ? 'font-mono' : ''}`}
+          class={`min-h-24 rounded border border-x-slate-300 px-2 py-1 text-sm ${variable.mode === 'code' ? 'font-mono' : ''}`}
           value={customFieldValues[variable.name] ?? ''}
           oninput={(event) => updateFieldValue(variable.name, (event.currentTarget as HTMLTextAreaElement).value)}
           placeholder={`${variable.name} 내용을 입력하세요.`}
@@ -352,65 +354,61 @@
     {/each}
   {/if}
 
-  <div class="flex items-center gap-2 text-sm text-slate-700">
+  <div class="flex items-center gap-2 text-sm text-x-slate-700">
     <label for="ai-edit-panel-notes-enabled" class="font-semibold">비고</label>
-    <label class="flex items-center gap-1 text-xs text-slate-500" for="ai-edit-panel-notes-enabled">
-      <input id="ai-edit-panel-notes-enabled" type="checkbox" bind:checked={notesEnabled} class="h-3.5 w-3.5 rounded border-slate-300" />
+    <label class="flex items-center gap-1 text-xs text-x-slate-500" for="ai-edit-panel-notes-enabled">
+      <input id="ai-edit-panel-notes-enabled" type="checkbox" bind:checked={notesEnabled} class="h-3.5 w-3.5 rounded border-x-slate-300" />
       <span>사용</span>
     </label>
   </div>
   {#if notesEnabled}
     <textarea
       id="ai-edit-panel-additional-content"
-      class="min-h-24 rounded border border-slate-300 px-2 py-1 text-sm"
+      class="min-h-24 rounded border border-x-slate-300 px-2 py-1 text-sm"
       bind:value={notes}
       placeholder="프롬프트에 덧붙일 내용을 입력하세요."
     ></textarea>
   {/if}
 
-  <hr class="border-slate-200" />
+  <hr class="border-x-slate-200" />
 
   <div class="flex min-h-0 flex-1 flex-col gap-1">
-    <div class="flex items-center justify-between gap-2 text-sm text-slate-700">
+    <div class="flex items-center justify-between gap-2 text-sm text-x-slate-700">
       <label for="ai-edit-panel-prompt-preview" class="font-semibold">프롬프트</label>
     </div>
     <div
       id="ai-edit-panel-prompt-preview"
-      class="z-input min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap rounded border border-slate-300 bg-slate-50 p-2 font-mono text-xs text-slate-700"
+      class="z-input min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap rounded border border-x-slate-300 bg-x-slate-50 p-2 font-mono text-xs text-x-slate-700"
     >
       {#each previewParts as part, i (i)}
         {@const partType = part.type as PreviewPartType}
         {@const isEmptyPart = part.text === ''}
         {#if partType === 'text'}
           <div class="rounded border">{part.text}</div>
-        {:else}
-          {#if partType === 'plain'}
-            {part.text}
-          {:else if partType === 'inline'}
-            {#if isEmptyPart}
-              <span
-                class="inline-flex items-center justify-center rounded border border-dashed border-slate-300 px-2 text-slate-400 select-none"
-              >
-                {part.label ?? ''}
-              </span>
-            {:else}
-              <span class="inline-flex items-stretch overflow-hidden rounded border border-slate-300 bg-slate-100 text-slate-700">
-                <span class="px-1">{part.text}</span>
-              </span>
-            {/if}
-          {:else if isEmptyPart}
-            <div
-              class="flex w-full items-center justify-center rounded border border-dashed border-slate-300 px-2 text-slate-400 select-none"
+        {:else if partType === 'plain'}
+          {part.text}
+        {:else if partType === 'inline'}
+          {#if isEmptyPart}
+            <span
+              class="inline-flex items-center justify-center rounded border border-dashed border-x-slate-300 px-2 text-x-slate-400 select-none"
             >
               {part.label ?? ''}
-            </div>
+            </span>
           {:else}
-            <div
-              class="flex w-full min-h-2 items-stretch overflow-hidden rounded border border-slate-300 bg-slate-100 text-slate-700"
-            >
-              <span class="px-1 whitespace-pre-wrap">{part.text}</span>
-            </div>
+            <span class="inline-flex items-stretch overflow-hidden rounded border border-x-slate-300 bg-x-slate-100 text-x-slate-700">
+              <span class="px-1">{part.text}</span>
+            </span>
           {/if}
+        {:else if isEmptyPart}
+          <div
+            class="flex w-full items-center justify-center rounded border border-dashed border-x-slate-300 px-2 text-x-slate-400 select-none"
+          >
+            {part.label ?? ''}
+          </div>
+        {:else}
+          <div class="flex w-full min-h-2 items-stretch overflow-hidden rounded border border-x-slate-300 bg-x-slate-100 text-x-slate-700">
+            <span class="px-1 whitespace-pre-wrap">{part.text}</span>
+          </div>
         {/if}
       {/each}
     </div>

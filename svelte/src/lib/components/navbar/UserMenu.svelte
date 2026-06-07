@@ -74,7 +74,7 @@
 <div bind:this={root} class="md:group order-2 ml-auto contents md:relative md:inline-block">
   <button
     type="button"
-    class={`cursor-pointer order-2 ml-auto flex h-12 w-12 items-center justify-center text-always-white hover:bg-always-slate-800 md:w-auto md:px-3 ${open ? 'bg-always-slate-800' : ''}`}
+    class={`cursor-pointer order-2 ml-auto flex h-12 w-12 items-center justify-center text-white hover:bg-slate-800 md:w-auto md:px-3 ${open ? 'bg-slate-800' : ''}`}
     aria-expanded={open}
     onclick={toggle}
   >
@@ -86,7 +86,7 @@
   </button>
 
   <div
-    class={`order-3 z-40 bg-always-slate-800 md:absolute md:right-0 md:m-1 md:rounded md:border w-full md:w-auto ${open ? 'block' : 'hidden'}`}
+    class={`order-3 z-40 bg-slate-800 md:absolute md:right-0 md:m-1 md:rounded md:border w-full md:w-auto ${open ? 'block' : 'hidden'}`}
     role="menu"
     tabindex="-1"
     onclick={(e) => e.stopPropagation()}
@@ -96,7 +96,7 @@
       {#each links as l, i (i)}
         <!-- svelte-ignore a11y_accesskey -->
         <a
-          class="block p-2 px-8 text-xs text-always-white hover:bg-always-slate-700 hover:no-underline"
+          class="block p-2 px-8 text-xs text-white hover:bg-slate-700 hover:no-underline"
           href={l.href}
           title={l.title}
           accesskey={l.accesskey}

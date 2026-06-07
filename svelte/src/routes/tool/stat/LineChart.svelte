@@ -491,7 +491,7 @@
       class="pointer-events-none absolute z-15 min-w-[78px] whitespace-nowrap text-center text-[15px] font-semibold leading-[1.2]"
       style={`left:${valueLabelX}px; top:${valueLabelY}px;`}
     >
-      <span class="mr-1.5 font-medium text-gray-500">{selectedLabel}</span>
+      <span class="mr-1.5 font-medium text-x-gray-500">{selectedLabel}</span>
       {#if tooltipRows.length === 1}
         <span>{formatValue(tooltipRows[0]?.value ?? null)}</span>
       {:else}
@@ -501,7 +501,7 @@
   {/if}
 
   {#if !hasAnyData}
-    <div class="py-2 text-center text-sm text-gray-500">No Data</div>
+    <div class="py-2 text-center text-sm text-x-gray-500">No Data</div>
   {/if}
 </div>
 

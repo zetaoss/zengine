@@ -125,8 +125,8 @@
   }
 
   function getRequestTypeClass(requestType: string) {
-    if (requestType === 'create') return 'text-emerald-600'
-    if (requestType === 'edit') return 'text-amber-600'
+    if (requestType === 'create') return 'text-x-emerald-600'
+    if (requestType === 'edit') return 'text-x-amber-600'
     return ''
   }
 
@@ -235,7 +235,7 @@
                 <input
                   type="text"
                   bind:value={currentRow.title}
-                  class="z-input text-lg font-semibold {hasError ? 'border-red-500! focus:ring-red-500/20!' : ''}"
+                  class="z-input text-lg font-semibold {hasError ? 'border-x-red-500! focus:ring-x-red-500/20!' : ''}"
                   placeholder="프롬프트 제목"
                 />
               {/snippet}
@@ -253,12 +253,17 @@
             <CButton variant="default" size="small" disabled={isSaving} onclick={() => void save()}>
               {isSaving ? '저장 중...' : '저장'}
             </CButton>
-            <CButton variant="ghost" size="small" disabled={isSaving} onclick={() => (id === 0 ? void goto(resolve('/tool/ai-edit/prompts')) : void fetchPrompt())}>
+            <CButton
+              variant="ghost"
+              size="small"
+              disabled={isSaving}
+              onclick={() => (id === 0 ? void goto(resolve('/tool/ai-edit/prompts')) : void fetchPrompt())}
+            >
               취소
             </CButton>
           {:else}
             <CButton variant="ghost" size="small" title="즐겨찾기" onclick={() => void toggleFavorite()}>
-              <ZIcon path={row.is_favorite ? mdiStar : mdiStarOutline} class={row.is_favorite ? 'text-amber-500' : ''} />
+              <ZIcon path={row.is_favorite ? mdiStar : mdiStarOutline} class={row.is_favorite ? 'text-x-amber-500' : ''} />
             </CButton>
             {#if canEdit()}
               <CButton variant="outline" size="small" onclick={startEdit}>
@@ -287,7 +292,7 @@
         <textarea
           bind:value={row.content}
           class="z-input min-h-[500px] w-full font-mono text-sm leading-relaxed"
-          placeholder={"프롬프트 내용을 입력하세요. {제목}, {기존문서} 등의 변수를 사용할 수 있습니다."}
+          placeholder={'프롬프트 내용을 입력하세요. {제목}, {기존문서} 등의 변수를 사용할 수 있습니다.'}
         ></textarea>
       {:else}
         <div class="min-h-[300px] rounded border border-(--border-color-subtle) bg-(--background-color) p-4">

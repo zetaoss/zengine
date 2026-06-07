@@ -118,7 +118,7 @@
     </h2>
 
     {#if loading}
-      <div class="py-10 text-center text-gray-500">불러오는 중...</div>
+      <div class="py-10 text-center text-x-gray-500">불러오는 중...</div>
     {:else}
       <ForumPostForm
         bind:modelValue={form}

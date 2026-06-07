@@ -121,6 +121,6 @@
   }
 
   .divider {
-    @apply ml-2 mr-1 h-4 w-px bg-gray-300;
+    @apply ml-2 mr-1 h-4 w-px bg-x-gray-300;
   }
 </style>

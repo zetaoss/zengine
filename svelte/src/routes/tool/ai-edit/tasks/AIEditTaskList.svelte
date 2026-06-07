@@ -67,9 +67,7 @@
   })
 
   let isSysop = $derived(($userInfo?.groups ?? []).includes('sysop'))
-  let currentTask = $derived.by(
-    () => rows.find((row) => ['Generating', 'Publishing', 'Retrying'].includes(row.phase)) ?? null,
-  )
+  let currentTask = $derived.by(() => rows.find((row) => ['Generating', 'Publishing', 'Retrying'].includes(row.phase)) ?? null)
   let hasActiveRows = $derived.by(() => rows.some((row) => !['Completed', 'Rejected', 'Failed'].includes(row.phase)))
   let activeCount = $derived.by(() => rows.filter((row) => !['Completed', 'Rejected', 'Failed'].includes(row.phase)).length)
 
@@ -198,8 +196,8 @@
   }
 
   function getRequestTypeClass(requestType: string) {
-    if (requestType === 'create') return 'text-emerald-600'
-    if (requestType === 'edit') return 'text-amber-600'
+    if (requestType === 'create') return 'text-x-emerald-600'
+    if (requestType === 'edit') return 'text-x-amber-600'
     return ''
   }
 
@@ -281,17 +279,13 @@
         </tr>
       {:else}
         {#each rows as row (row.id)}
-          <tr class={isCurrentTask(row) ? 'bg-blue-50/70' : ''}>
+          <tr class={isCurrentTask(row) ? 'bg-x-blue-50/70' : ''}>
             <td class="text-center">{row.id}</td>
             <td>
-              <CBadge variant="outline" class={`mr-2 ${getRequestTypeClass(row.request_type)}`}>{getRequestTypeLabel(row.request_type)}</CBadge>
-              <a
-                href={getTitleHref(row)}
-                rel="noopener"
-                target="_blank"
-                class="font-medium hover:underline"
-                class:new={!isCompleted(row)}
+              <CBadge variant="outline" class={`mr-2 ${getRequestTypeClass(row.request_type)}`}
+                >{getRequestTypeLabel(row.request_type)}</CBadge
               >
+              <a href={getTitleHref(row)} rel="noopener" target="_blank" class="font-medium hover:underline" class:new={!isCompleted(row)}>
                 {row.title}
               </a>
               <span class="ml-1 inline-flex items-center gap-1 align-middle">
@@ -342,9 +336,9 @@
             </td>
           </tr>
           {#if isCurrentTask(row) && (row.error_count ?? 0) > 0}
-            <tr class="border-b border-blue-200 bg-blue-50/50">
+            <tr class="border-b border-x-blue-200 bg-x-blue-50/50">
               <td colspan="6" class="text-center text-sm">
-                <div class="text-blue-900">
+                <div class="text-x-blue-900">
                   실패 {row.error_count ?? 0}회
                   {#if row.last_error}
                     <small class="ml-1 opacity-80">{row.last_error}</small>

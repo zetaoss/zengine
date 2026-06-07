@@ -109,7 +109,7 @@
 {#if bindersRef.length > 0}
   <div
     bind:this={root}
-    class={`flex-none shrink-0 z-30 transition-[width] bg-gray-50 border-r ${isDrawer ? 'fixed' : 'sticky'}`}
+    class={`flex-none shrink-0 z-30 transition-[width] bg-x-gray-50 border-r ${isDrawer ? 'fixed' : 'sticky'}`}
     style={`width:${styleVars.width}; margin-top:${styleVars.marginTop}; top:${styleVars.top}; height:${styleVars.height};`}
   >
     {#if isDrawer}
@@ -133,7 +133,7 @@
         {#each bindersRef as binder (binder.id)}
           <div>
             <header
-              class="book sticky top-0 z-10 flex min-h-9 items-stretch overflow-hidden rounded bg-gray-200/80 border-gray-400/60 font-bold"
+              class="book sticky top-0 z-10 flex min-h-9 items-stretch overflow-hidden rounded bg-x-gray-200/80 border-x-gray-400/60 font-bold"
             >
               <a href={`/wiki/Binder:${binder.text}`} class="binder-title-link inline-flex min-w-0 flex-1 items-center px-3 py-2">
                 <span class="wrap-break-word">{binder.text}</span>

@@ -63,8 +63,8 @@
 <div bind:this={root} class="md:group order-2 ml-auto contents md:relative md:inline-block">
   <button
     type="button"
-    class="order-2 ml-auto flex h-12 cursor-pointer items-center px-3 hover:bg-gray-800"
-    class:bg-gray-800={open}
+    class="order-2 ml-auto flex h-12 cursor-pointer items-center px-3 hover:bg-x-gray-800"
+    class:bg-x-gray-800={open}
     aria-expanded={open}
     on:click={toggle}
   >
@@ -76,13 +76,13 @@
   </button>
 
   <div
-    class={`order-3 z-40 bg-gray-800 md:absolute md:right-0 md:m-1 md:rounded md:group-hover:block md:border w-full md:w-auto ${open ? 'block' : 'hidden'}`}
+    class={`order-3 z-40 bg-x-gray-800 md:absolute md:right-0 md:m-1 md:rounded md:group-hover:block md:border w-full md:w-auto ${open ? 'block' : 'hidden'}`}
   >
     <nav class="grid grid-cols-3 w-full py-1 md:w-fit md:block md:whitespace-nowrap">
       {#each links as l, i (i)}
         <!-- svelte-ignore a11y_accesskey -->
         <a
-          class="block p-2 px-8 text-xs text-white hover:bg-gray-700 hover:no-underline"
+          class="block p-2 px-8 text-xs text-x-white hover:bg-x-gray-700 hover:no-underline"
           href={l.href}
           title={l.title}
           accesskey={l.accesskey}

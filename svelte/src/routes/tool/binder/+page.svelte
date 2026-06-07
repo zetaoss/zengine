@@ -57,28 +57,12 @@
     sortMode = mode
   }
 
-  function getRowClass(binder: Binder): string {
-    if (!binder.enabled) {
-      return 'border-gray-200 opacity-75 hover:border-gray-300'
-    }
-
-    return 'border-gray-300 hover:border-gray-400'
-  }
-
-  function getRowAccentClass(binder: Binder): string {
-    if (!binder.enabled) {
-      return 'bg-(--background-color-interactive-subtle)'
-    }
-
-    return 'bg-white'
-  }
-
   function getTitleClass(binder: Binder): string {
     if (!binder.enabled) {
-      return 'text-gray-500 group-hover:text-gray-600'
+      return 'text-muted-foreground group-hover:text-foreground'
     }
 
-    return 'text-gray-900 group-hover:text-sky-700'
+    return 'text-foreground group-hover:text-primary'
   }
 
   function getBinderHref(binder: Binder): string {
@@ -164,15 +148,15 @@
     <div class="flex items-baseline gap-2">
       <h1 class="text-2xl font-bold tracking-tight">바인더</h1>
       {#if !loading && !error}
-        <p class="text-sm text-gray-500">{binders.length}</p>
+        <p class="text-sm text-muted-foreground">{binders.length}</p>
       {/if}
     </div>
 
-    <div class="inline-flex overflow-hidden rounded-xl border border-gray-300 bg-white shadow-sm">
+    <div class="inline-flex overflow-hidden rounded-xl border border-border bg-card shadow-sm">
       <CButton
         variant="ghost"
         size="icon"
-        class={`grid ${sortMode === 'title' ? 'bg-gray-200 text-black hover:bg-gray-200' : 'text-gray-500 hover:bg-gray-100'} border-r border-gray-300 rounded-r-none`}
+        class={`grid ${sortMode === 'title' ? 'bg-secondary text-secondary-foreground hover:bg-secondary' : 'text-muted-foreground hover:bg-muted'} border-r border-border rounded-r-none`}
         title="Title"
         aria-label="Title"
         aria-pressed={sortMode === 'title'}
@@ -183,7 +167,7 @@
       <CButton
         variant="ghost"
         size="icon"
-        class={`grid ${sortMode === 'docs' ? 'bg-gray-200 text-black hover:bg-gray-200' : 'text-gray-500 hover:bg-gray-100'} rounded-l-none`}
+        class={`grid ${sortMode === 'docs' ? 'bg-secondary text-secondary-foreground hover:bg-secondary' : 'text-muted-foreground hover:bg-muted'} rounded-l-none`}
         title="Docs"
         aria-label="Docs"
         aria-pressed={sortMode === 'docs'}
@@ -197,15 +181,15 @@
   {#if loading}
     <p>로딩 중...</p>
   {:else if error}
-    <p class="text-red-500">오류: {error}</p>
+    <p class="text-destructive">오류: {error}</p>
   {:else}
     <div class="space-y-8">
       {#each sections as section (section.key)}
         {#if section.binders.length > 0}
           <section>
             <div class="mb-3 flex items-baseline gap-2">
-              <h2 class="text-lg font-semibold text-gray-900">{section.title}</h2>
-              <p class="text-sm text-gray-500">{section.binders.length}</p>
+              <h2 class="text-lg font-semibold text-foreground">{section.title}</h2>
+              <p class="text-sm text-muted-foreground">{section.binders.length}</p>
             </div>
 
             <div class="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
@@ -214,7 +198,7 @@
                   href={getBinderHref(binder)}
                   rel="external"
                   data-sveltekit-reload
-                  class={`group relative block overflow-hidden rounded-2xl border no-underline shadow-sm transition duration-200 hover:no-underline hover:shadow-md ${getRowClass(binder)} ${getRowAccentClass(binder)}`}
+                  class={`group relative block overflow-hidden rounded-2xl border border-border no-underline shadow-sm transition duration-200 hover:border-ring hover:no-underline hover:shadow-md ${binder.enabled ? 'bg-card' : 'bg-muted opacity-75'}`}
                 >
                   <div class="relative flex items-center gap-4 px-4 py-3">
                     <div class="flex min-w-0 flex-1 items-baseline gap-2">
@@ -227,7 +211,7 @@
                     </div>
 
                     <div class="flex shrink-0 items-center gap-3 text-sm">
-                      <span class="inline-flex items-center gap-1 tabular-nums text-gray-500">
+                      <span class="inline-flex items-center gap-1 tabular-nums text-muted-foreground">
                         {binder.docs}<small>/ {binder.links}</small>
                       </span>
                       {#if isSysop}

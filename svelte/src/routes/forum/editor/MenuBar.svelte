@@ -221,12 +221,7 @@
   <div class="divider"></div>
 
   <div class="code-lang">
-    <ZSelect
-      value={currentCodeLang}
-      onchange={(val) => setCodeBlockLanguage(val as CodeLang)}
-      items={CODE_LANGS}
-      class="w-28"
-    />
+    <ZSelect value={currentCodeLang} onchange={(val) => setCodeBlockLanguage(val as CodeLang)} items={CODE_LANGS} class="w-28" />
   </div>
 </div>
 
@@ -242,6 +237,6 @@
   }
 
   .divider {
-    @apply ml-2 mr-1 h-4 w-px bg-gray-300;
+    @apply ml-2 mr-1 h-4 w-px bg-x-gray-300;
   }
 </style>

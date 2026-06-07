@@ -172,7 +172,7 @@
       <ZSpinner />
     </div>
   {:else if loadError}
-    <div class="mt-4 text-center text-sm text-red-500">
+    <div class="mt-4 text-center text-sm text-x-red-500">
       {loadError}
     </div>
   {:else}

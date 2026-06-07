@@ -238,7 +238,7 @@
       <ZSpinner />
     </div>
   {:else if loadError}
-    <div class="mt-4 text-center text-sm text-red-500">
+    <div class="mt-4 text-center text-sm text-x-red-500">
       {loadError}
     </div>
   {:else}
@@ -251,7 +251,7 @@
       </svelte:fragment>
 
       {#if !isMe}
-        <div class="text-sm text-red-500">본인만 프로필을 수정할 수 있습니다.</div>
+        <div class="text-sm text-x-red-500">본인만 프로필을 수정할 수 있습니다.</div>
       {:else}
         <div class="space-y-4">
           <div class="text-sm font-semibold">아바타 선택</div>
@@ -335,7 +335,11 @@
                     {#if !isEditingGravatar}
                       <CButton variant="outline" onclick={startEditGravatar}>수정</CButton>
                     {:else}
-                      <CButton variant="outline" disabled={gravatarBusy || !gravatarChanged || !validateEmail(gravatarEmail)} onclick={confirmGravatar}>
+                      <CButton
+                        variant="outline"
+                        disabled={gravatarBusy || !gravatarChanged || !validateEmail(gravatarEmail)}
+                        onclick={confirmGravatar}
+                      >
                         확인
                       </CButton>
                       <CButton variant="outline" disabled={gravatarBusy} onclick={cancelEditGravatar}>취소</CButton>
@@ -343,7 +347,7 @@
                   {/if}
 
                   {#if gravatarError}
-                    <div class="text-sm text-red-500">
+                    <div class="text-sm text-x-red-500">
                       {gravatarError}
                     </div>
                   {/if}
@@ -360,7 +364,7 @@
             {:else if saveOk}
               <div class="text-sm">✅ 저장됨</div>
             {:else if saveError}
-              <div class="text-sm text-red-500">
+              <div class="text-sm text-x-red-500">
                 {saveError}
               </div>
             {/if}

@@ -41,7 +41,7 @@
         icon: mdiProgressClock,
         label: '확인중',
         text: '중복확인',
-        className: 'text-blue-600'
+        className: 'text-x-blue-600'
       }
     }
     if (state === 'available') {
@@ -49,7 +49,7 @@
         icon: mdiCheckCircle,
         label: '확인완료',
         text: '중복확인',
-        className: 'text-green-600'
+        className: 'text-x-green-600'
       }
     }
     if (state === 'exists') {
@@ -57,7 +57,7 @@
         icon: mdiCloseCircle,
         label: '중복',
         text: '중복확인',
-        className: 'text-red-600'
+        className: 'text-x-red-600'
       }
     }
     return {
@@ -197,7 +197,7 @@
       </div>
     </div>
     {#if state === 'exists'}
-      <div class="mt-2 text-sm text-red-500">'{trimmedTitle}' 문서는 이미 있습니다.</div>
+      <div class="mt-2 text-sm text-x-red-500">'{trimmedTitle}' 문서는 이미 있습니다.</div>
     {/if}
   </div>
 </ZModal>

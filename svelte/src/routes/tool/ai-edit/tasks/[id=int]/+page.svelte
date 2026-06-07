@@ -121,8 +121,8 @@
   }
 
   function getRequestTypeClass(requestType: string) {
-    if (requestType === 'create') return 'text-emerald-600'
-    if (requestType === 'edit') return 'text-amber-600'
+    if (requestType === 'create') return 'text-x-emerald-600'
+    if (requestType === 'edit') return 'text-x-amber-600'
     return ''
   }
 
@@ -186,12 +186,7 @@
   {:else if row}
     {#if isAuthorized}
       <div class="mb-5 flex flex-wrap items-center gap-2">
-        <a
-          href={getWikiHref(row.title)}
-          rel="noopener"
-          target="_blank"
-          class="text-xl font-medium hover:underline"
-        >
+        <a href={getWikiHref(row.title)} rel="noopener" target="_blank" class="text-xl font-medium hover:underline">
           {row.title}
         </a>
         <CButton

@@ -24,11 +24,11 @@
 
   const statusClass = $derived(
     status === Status.Can
-      ? 'border-green-500'
+      ? 'border-x-green-500'
       : status === Status.Cannot
         ? 'border-[#f008]'
         : status === Status.Checking
-          ? 'border-gray-400'
+          ? 'border-x-gray-400'
           : '',
   )
 
@@ -183,35 +183,46 @@
       }}
     />
 
-    <CButton variant="outline" class="whitespace-nowrap" type="button" disabled={busy || username.trim().length < 1} onclick={() => void checkUsername()}>
+    <CButton
+      variant="outline"
+      class="whitespace-nowrap"
+      type="button"
+      disabled={busy || username.trim().length < 1}
+      onclick={() => void checkUsername()}
+    >
       중복 확인
     </CButton>
   </div>
 
   {#if status === Status.Checking}
-    <div class="text-sm text-gray-500">확인 중...</div>
+    <div class="text-sm text-x-gray-500">확인 중...</div>
   {:else if status === Status.Cannot}
     <div class="text-sm text-[#f008]">
       {errorMessage || '사용불가한 사용자명입니다.'}
     </div>
   {:else if status === Status.Can}
-    <div class="text-sm text-green-600">사용가능한 사용자명입니다.</div>
+    <div class="text-sm text-x-green-600">사용가능한 사용자명입니다.</div>
   {/if}
 
   {#if warningMessage}
-    <div class="my-2 rounded bg-yellow-100 p-2 px-4 text-sm text-yellow-800">
+    <div class="my-2 rounded bg-x-yellow-100 p-2 px-4 text-sm text-x-yellow-800">
       {warningMessage}
     </div>
   {/if}
 
   {#if errorMessage && status !== Status.Cannot}
-    <div class="my-2 rounded bg-red-400 p-2 px-4 text-sm">
+    <div class="my-2 rounded bg-x-red-400 p-2 px-4 text-sm">
       {errorMessage}
     </div>
   {/if}
 
   <div class="mt-4 flex justify-center">
-    <CButton variant="outline" type="button" disabled={busy || username.trim().length < 1 || status !== Status.Can} onclick={() => void submitJoin()}>
+    <CButton
+      variant="outline"
+      type="button"
+      disabled={busy || username.trim().length < 1 || status !== Status.Can}
+      onclick={() => void submitJoin()}
+    >
       가입
     </CButton>
   </div>

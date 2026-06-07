@@ -53,7 +53,7 @@
     <ZIcon path={mdiDotsVertical} />
   </summary>
 
-  <div class="page-menu-panel absolute z-30 right-0 border rounded bg-white shadow-md text-sm text-black">
+  <div class="page-menu-panel absolute z-30 right-0 border rounded bg-x-white shadow-md text-sm text-x-black">
     <ul class="page-menu-items">
       {#each links as l, i (i)}
         <!-- svelte-ignore a11y_accesskey -->

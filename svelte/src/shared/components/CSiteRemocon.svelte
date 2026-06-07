@@ -29,15 +29,15 @@
   })
 </script>
 
-<div class="fixed bottom-0 right-0 z-40 print:hidden p-2 text-always-white">
+<div class="fixed bottom-0 right-0 z-40 print:hidden p-2 text-white">
   <div class="z-50 flex gap-1 opacity-60">
-    <CButton size="icon-lg" class="bg-[#8888]! border-0! text-always-white! dark:text-[#eb0]!" onclick={toggleDark}>
+    <CButton size="icon-lg" class="bg-[#8888]! border-0! text-white! dark:text-[#eb0]!" onclick={toggleDark}>
       <ZIcon path={mdiWeatherNight} class="size-6" />
     </CButton>
-    <CButton size="icon-lg" class="bg-[#8888]! border-0! text-always-white!" onclick={scrollToTop}>
+    <CButton size="icon-lg" class="bg-[#8888]! border-0! text-white!" onclick={scrollToTop}>
       <ZIcon path={mdiChevronUp} class="size-6" />
     </CButton>
-    <CButton size="icon-lg" class="bg-[#8888]! border-0! text-always-white!" onclick={scrollToBottom}>
+    <CButton size="icon-lg" class="bg-[#8888]! border-0! text-white!" onclick={scrollToBottom}>
       <ZIcon path={mdiChevronDown} class="size-6" />
     </CButton>
   </div>

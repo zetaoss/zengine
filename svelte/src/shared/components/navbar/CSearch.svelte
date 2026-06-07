@@ -184,7 +184,7 @@
           on:focus={onFocus}
           on:keydown={onKeyDown}
         />
-        <button type="button" class="z-10 h-full w-12 flex-none bg-transparent focus:text-blue-700" on:click={onClick}>
+        <button type="button" class="z-10 h-full w-12 flex-none bg-transparent focus:text-x-blue-700" on:click={onClick}>
           <ZIcon path={mdiMagnify} size={24} />
         </button>
       </div>

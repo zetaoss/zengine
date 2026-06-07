@@ -61,8 +61,8 @@
   }
 
   function getRequestTypeClass(requestType: string) {
-    if (requestType === 'create') return 'text-emerald-600'
-    if (requestType === 'edit') return 'text-amber-600'
+    if (requestType === 'create') return 'text-x-emerald-600'
+    if (requestType === 'edit') return 'text-x-amber-600'
     return ''
   }
 
@@ -97,7 +97,6 @@
     item.is_favorite = data?.is_favorite ?? false
     showToast(item.is_favorite ? '즐겨찾기 지정' : '즐겨찾기 해제')
   }
-
 </script>
 
 <div class="p-5">
@@ -141,8 +140,12 @@
           <tr>
             <td class="text-center text-sm text-(--color-subtle)">{item.id}</td>
             <td>
-              <CBadge variant="outline" class={`mr-2 ${getRequestTypeClass(item.request_type)}`}>{getRequestTypeLabel(item.request_type)}</CBadge>
-              <a class="font-medium hover:underline" href={resolve(`/tool/ai-edit/prompts/${item.id}` as '/tool/ai-edit/prompts/[id]')}>{item.title}</a>
+              <CBadge variant="outline" class={`mr-2 ${getRequestTypeClass(item.request_type)}`}
+                >{getRequestTypeLabel(item.request_type)}</CBadge
+              >
+              <a class="font-medium hover:underline" href={resolve(`/tool/ai-edit/prompts/${item.id}` as '/tool/ai-edit/prompts/[id]')}
+                >{item.title}</a
+              >
             </td>
             <td class="text-center text-sm text-(--color-subtle)">{item.use_count === 0 ? '-' : item.use_count}</td>
             <td>
@@ -157,7 +160,7 @@
             <td class="text-center">
               <div class="flex items-center justify-center gap-1">
                 <CButton variant="ghost" size="small" title="즐겨찾기" onclick={() => void toggleFavorite(item)}>
-                  <ZIcon path={item.is_favorite ? mdiStar : mdiStarOutline} class={item.is_favorite ? 'text-amber-500' : ''} />
+                  <ZIcon path={item.is_favorite ? mdiStar : mdiStarOutline} class={item.is_favorite ? 'text-x-amber-500' : ''} />
                 </CButton>
                 {#if isSysop}
                   <CButton variant="ghost" size="small" disabled={deletingPromptId === item.id} onclick={() => void delPrompt(item)}>

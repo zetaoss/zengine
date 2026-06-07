@@ -73,7 +73,7 @@
 
 <div class="text-sm">
   {#if title}
-    <div class="mb-2 font-bold text-gray-700">
+    <div class="mb-2 font-bold text-x-gray-700">
       {title}
     </div>
   {/if}
@@ -98,27 +98,27 @@
     {/if}
 
     {#if isLoading}
-      <div class="flex items-center justify-center py-10 text-gray-500">
+      <div class="flex items-center justify-center py-10 text-x-gray-500">
         <ZSpinner />
       </div>
     {:else if loadError}
-      <div class="py-10 text-center text-red-500">
+      <div class="py-10 text-center text-x-red-500">
         {loadError}
       </div>
     {:else if posts.length === 0}
-      <div class="py-10 text-center text-gray-500">아직 등록된 글이 없습니다.</div>
+      <div class="py-10 text-center text-x-gray-500">아직 등록된 글이 없습니다.</div>
     {:else}
       {#each posts as p (p.id)}
         <a
           href={resolve(`/forum/${p.id}${pageNumber === 1 ? '' : `?page=${pageNumber}`}`)}
-          class={`z-text block border-b px-3 py-2 hover:bg-gray-50 hover:no-underline md:flex md:px-2 ${
-            currentPostId === p.id ? 'bg-slate-100' : ''
+          class={`z-text block border-b px-3 py-2 hover:bg-x-gray-50 hover:no-underline md:flex md:px-2 ${
+            currentPostId === p.id ? 'bg-x-slate-100' : ''
           }`}
         >
           <div class="flex py-1 md:w-[65%]">
             <span class="hidden w-[10%] text-center md:inline">{p.id}</span>
             <span class="w-full truncate pr-2 md:w-[90%]">
-              <span class="rounded-lg bg-[#6668] px-1.5 text-xs text-white">
+              <span class="rounded-lg bg-[#6668] px-1.5 text-xs text-x-white">
                 {p.cat}
               </span>
               {p.title}

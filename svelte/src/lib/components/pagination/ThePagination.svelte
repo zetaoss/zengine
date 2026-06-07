@@ -28,7 +28,7 @@
 
   const baseClass =
     'inline-flex items-center justify-center min-w-8 px-2 sm:px-3 py-2 rounded transition z-text ' +
-    'hover:no-underline hover:bg-zinc-100 whitespace-nowrap'
+    'hover:no-underline hover:bg-x-zinc-100 whitespace-nowrap'
   const activeClass = 'font-bold bg-[#8883]'
   const disabledClass = 'opacity-40 cursor-default pointer-events-none'
 
@@ -60,11 +60,7 @@
         </a>
       {/each}
 
-      <a
-        href={getPageHref(block.blockEnd + 1)}
-        class={`${baseClass} ${block.hasNextBlock ? '' : disabledClass}`}
-        aria-label="Next pages"
-      >
+      <a href={getPageHref(block.blockEnd + 1)} class={`${baseClass} ${block.hasNextBlock ? '' : disabledClass}`} aria-label="Next pages">
         <ZIcon path={mdiChevronRight} />
       </a>
     </div>

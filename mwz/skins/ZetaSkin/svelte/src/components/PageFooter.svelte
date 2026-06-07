@@ -115,12 +115,12 @@
 </script>
 
 {#if showModal}
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-    <div class="bg-white rounded shadow-lg w-[22rem] max-w-[90vw] p-4">
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-x-black/40">
+    <div class="bg-x-white rounded shadow-lg w-[22rem] max-w-[90vw] p-4">
       <div class="text-sm pb-3">댓글을 삭제하시겠습니까?</div>
       <div class="flex justify-end gap-2">
         <button type="button" class="page-btn" on:click={() => (showModal = false)}> 취소 </button>
-        <button type="button" class="page-btn bg-red-600 text-white" on:click={delOK}> 삭제 </button>
+        <button type="button" class="page-btn bg-x-red-600 text-x-white" on:click={delOK}> 삭제 </button>
       </div>
     </div>
   </div>
@@ -143,13 +143,13 @@
         <div class="grid grid-cols-[5fr_1fr] gap-2">
           <textarea
             id="page-comment-new"
-            class="w-full min-h-[4.5rem] p-2 border rounded bg-white"
+            class="w-full min-h-[4.5rem] p-2 border rounded bg-x-white"
             placeholder="댓글을 쓸 수 있습니다..."
             bind:value={message}
           ></textarea>
           <button
             type="button"
-            class="page-btn bg-blue-600 text-white disabled:opacity-50"
+            class="page-btn bg-x-blue-600 text-x-white disabled:opacity-50"
             disabled={message.trim().length === 0}
             on:click={postNew}
           >
@@ -194,13 +194,13 @@
                 <div class="float-left">
                   <AvatarIcon user={{ id: row.user_id, name: row.user_name }} size={32} />
                 </div>
-                <div class="float-right text-xs text-gray-400">
+                <div class="float-right text-xs text-x-gray-400">
                   {editingRow.message.length} characters
                 </div>
               </div>
 
               <div class="py-2">
-                <textarea id="page-comment-edit" class="w-full min-h-[4.5rem] p-2 border rounded bg-white" bind:value={editingRow.message}
+                <textarea id="page-comment-edit" class="w-full min-h-[4.5rem] p-2 border rounded bg-x-white" bind:value={editingRow.message}
                 ></textarea>
               </div>
 
@@ -209,7 +209,7 @@
                   <button type="button" class="page-btn text-xs" on:click={editCancel}> 취소 </button>
                   <button
                     type="button"
-                    class="page-btn text-xs bg-blue-600 text-white disabled:opacity-50"
+                    class="page-btn text-xs bg-x-blue-600 text-x-white disabled:opacity-50"
                     disabled={editingRow.message.trim().length === 0}
                     on:click={editOK}
                   >

@@ -3,11 +3,9 @@
 @import './appcn-globals.css';
 @import './appcn-style-nova.css';
 
-@import './appcolor-always.css';
-@import './appcolor-dark.css';
 @import './appcolor-mw.css';
+@import './appcolor-x.css';
 @import './appcolor-z.css';
-@import './appemoji-console.css';
 @import './base-border.css';
 @import './base-elements.css';
 

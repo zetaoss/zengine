@@ -32,12 +32,12 @@
   }
 </script>
 
-<div class="mb-2 rounded border border-gray-300 px-3 py-2">
+<div class="mb-2 rounded border border-x-gray-300 px-3 py-2">
   <div class="grid grid-cols-2 gap-3">
     <div class="flex items-center gap-2">
-      <span class="text-sm font-medium text-slate-700">템플릿:</span>
+      <span class="text-sm font-medium text-x-slate-700">템플릿:</span>
       <select
-        class="cursor-pointer rounded border px-2 py-0.5 text-sm scheme-light-dark hover:bg-slate-100"
+        class="cursor-pointer rounded border px-2 py-0.5 text-sm scheme-light-dark hover:bg-x-slate-100"
         bind:value={selected}
         onchange={handleChange}
       >
@@ -61,15 +61,7 @@
     </div>
 
     <div class="flex items-center justify-end">
-      <CButton
-        id="zeta-ai-edit-button"
-        size="small"
-        variant="default"
-        aria-label="AI 편집"
-        onclick={onToggleAiEdit}
-      >
-        AI 편집
-      </CButton>
+      <CButton id="zeta-ai-edit-button" size="small" variant="default" aria-label="AI 편집" onclick={onToggleAiEdit}>AI 편집</CButton>
     </div>
   </div>
 </div>
