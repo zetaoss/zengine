@@ -13,7 +13,7 @@
   import useAuthStore from '$lib/stores/auth'
   import { titlesExist } from '$lib/utils/mediawiki'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
-  import Button from '$shared/ui/Button.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
   import httpy from '$shared/utils/httpy'
   import { getWikiHref } from '$shared/utils/wikiLink'
@@ -208,7 +208,7 @@
   </table>
 
   <div class="flex justify-end py-2">
-    <Button variant="outline" disabled={!$canWrite} onclick={openModal}>등록</Button>
+    <CButton variant="outline" disabled={!$canWrite} onclick={openModal}>등록</CButton>
   </div>
 
   {#if paginateData}

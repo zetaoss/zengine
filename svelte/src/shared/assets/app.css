@@ -1,9 +1,9 @@
 /* app.css */
 
-@import './appcn-app.css';
-@import './appcn-nova.css';
+@import './appcn-globals.css';
+@import './appcn-style-nova.css';
 
-@import './appcolor-raw.css';
+@import './appcolor-always.css';
 @import './appcolor-dark.css';
 @import './appcolor-mw.css';
 @import './appcolor-z.css';

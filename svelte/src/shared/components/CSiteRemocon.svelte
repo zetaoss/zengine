@@ -4,7 +4,7 @@
   import { mdiChevronDown, mdiChevronUp, mdiWeatherNight } from '@mdi/js'
   import { onMount } from 'svelte'
 
-  import Button from '$shared/ui/Button.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import { scrollToBottom, scrollToTop } from '$shared/utils/scroll'
 
@@ -29,16 +29,16 @@
   })
 </script>
 
-<div class="fixed bottom-0 right-0 z-40 print:hidden p-2 text-(--raw-white)">
+<div class="fixed bottom-0 right-0 z-40 print:hidden p-2 text-always-white">
   <div class="z-50 flex gap-1 opacity-60">
-    <Button size="icon-lg" class="bg-[#8888]! border-0! text-(--raw-white)! dark:text-[#eb0]!" onclick={toggleDark}>
+    <CButton size="icon-lg" class="bg-[#8888]! border-0! text-always-white! dark:text-[#eb0]!" onclick={toggleDark}>
       <ZIcon path={mdiWeatherNight} class="size-6" />
-    </Button>
-    <Button size="icon-lg" class="bg-[#8888]! border-0! text-(--raw-white)!" onclick={scrollToTop}>
+    </CButton>
+    <CButton size="icon-lg" class="bg-[#8888]! border-0! text-always-white!" onclick={scrollToTop}>
       <ZIcon path={mdiChevronUp} class="size-6" />
-    </Button>
-    <Button size="icon-lg" class="bg-[#8888]! border-0! text-(--raw-white)!" onclick={scrollToBottom}>
+    </CButton>
+    <CButton size="icon-lg" class="bg-[#8888]! border-0! text-always-white!" onclick={scrollToBottom}>
       <ZIcon path={mdiChevronDown} class="size-6" />
-    </Button>
+    </CButton>
   </div>
 </div>

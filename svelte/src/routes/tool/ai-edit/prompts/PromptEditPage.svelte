@@ -9,8 +9,8 @@
   import RouteLinkButton from '$lib/components/RouteLinkButton.svelte'
   import useAuthStore from '$lib/stores/auth'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
-  import Badge from '$shared/ui/Badge.svelte'
-  import Button from '$shared/ui/Button.svelte'
+  import CBadge from '$shared/ui/CBadge.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'
   import ZIcon from '$shared/ui/ZIcon.svelte'
@@ -242,7 +242,7 @@
             </ZValidator>
           {:else}
             <div class="flex items-center gap-3 py-1">
-              <Badge class={`text-base ${getRequestTypeClass(row.request_type)}`}>{getRequestTypeLabel(row.request_type)}</Badge>
+              <CBadge class={`text-base ${getRequestTypeClass(row.request_type)}`}>{getRequestTypeLabel(row.request_type)}</CBadge>
               <h2 class="text-2xl font-bold">{row.title}</h2>
             </div>
           {/if}
@@ -250,27 +250,27 @@
 
         <div class="flex shrink-0 items-center gap-2">
           {#if isEditing}
-            <Button variant="default" size="small" disabled={isSaving} onclick={() => void save()}>
+            <CButton variant="default" size="small" disabled={isSaving} onclick={() => void save()}>
               {isSaving ? '저장 중...' : '저장'}
-            </Button>
-            <Button variant="ghost" size="small" disabled={isSaving} onclick={() => (id === 0 ? void goto(resolve('/tool/ai-edit/prompts')) : void fetchPrompt())}>
+            </CButton>
+            <CButton variant="ghost" size="small" disabled={isSaving} onclick={() => (id === 0 ? void goto(resolve('/tool/ai-edit/prompts')) : void fetchPrompt())}>
               취소
-            </Button>
+            </CButton>
           {:else}
-            <Button variant="ghost" size="small" title="즐겨찾기" onclick={() => void toggleFavorite()}>
+            <CButton variant="ghost" size="small" title="즐겨찾기" onclick={() => void toggleFavorite()}>
               <ZIcon path={row.is_favorite ? mdiStar : mdiStarOutline} class={row.is_favorite ? 'text-amber-500' : ''} />
-            </Button>
+            </CButton>
             {#if canEdit()}
-              <Button variant="outline" size="small" onclick={startEdit}>
+              <CButton variant="outline" size="small" onclick={startEdit}>
                 <ZIcon path={mdiPencil} class="mr-1" />
                 편집
-              </Button>
+              </CButton>
             {/if}
             {#if isSysop && row.id > 0}
-              <Button variant="ghost" size="small" disabled={deleting} onclick={() => void delPrompt()}>
+              <CButton variant="ghost" size="small" disabled={deleting} onclick={() => void delPrompt()}>
                 <ZIcon path={mdiDelete} class="mr-1" />
                 삭제
-              </Button>
+              </CButton>
             {/if}
           {/if}
         </div>

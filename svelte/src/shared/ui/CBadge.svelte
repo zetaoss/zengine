@@ -1,5 +1,15 @@
+<svelte:options
+  customElement={{
+    props: {
+      class: { type: "String" },
+      href: { type: "String" },
+      variant: { type: "String" },
+    },
+  }}
+/>
+
 <script lang="ts" module>
-  import type { HTMLAttributes } from 'svelte/elements'
+  import type { Snippet } from 'svelte'
 
   export type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline' | 'ghost' | 'link'
 
@@ -22,24 +32,23 @@
       .join(' ')
   }
 
-  export type BadgeProps = Omit<HTMLAttributes<HTMLElement>, 'class'> & {
+  export type BadgeProps = {
     class?: string
     ref?: HTMLElement | null
     href?: string
     variant?: BadgeVariant
-    children: () => unknown
+    children?: Snippet
   }
 </script>
 
 <script lang="ts">
   let {
-    class: className,
-    ref = $bindable(null),
-    href = undefined,
-    variant = 'default',
-    children,
-    ...restProps
-  }: BadgeProps = $props()
+  class: className,
+  ref = $bindable(null),
+  href = undefined,
+  variant = 'default',
+  children,
+}: BadgeProps = $props()
 
   let classes = $derived(badgeVariants({ variant }))
 </script>
@@ -48,11 +57,10 @@
   this={href ? 'a' : 'span'}
   bind:this={ref}
   data-slot="badge"
-  {...restProps}
   {href}
   class={classes + (className ? ` ${className}` : '')}
 >
-  {#if children}
-    {@render children()}
+{#if children}
+    {@render children?.()}
   {/if}
 </svelte:element>

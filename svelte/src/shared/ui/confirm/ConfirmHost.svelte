@@ -1,7 +1,7 @@
 <svelte:options customElement={{ tag: 'confirm-host', shadow: 'none' }} />
 
 <script lang="ts">
-  import Button from '$shared/ui/Button.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
 
   import { confirmState, handleConfirmCancel, handleConfirmOk } from './confirm'
 </script>
@@ -13,16 +13,16 @@
     <div class="relative w-full max-w-md rounded-lg bg-(--background-color-base) p-6 shadow-lg border">
       <div class="text-sm text-slate-700">{$confirmState.message}</div>
       <div class="mt-6 flex justify-end gap-2">
-        <Button variant="ghost" class="px-4 py-2" onclick={handleConfirmCancel}>
+        <CButton variant="ghost" class="px-4 py-2" onclick={handleConfirmCancel}>
           {$confirmState.cancelText}
-        </Button>
-        <Button
+        </CButton>
+        <CButton
           variant={$confirmState.okVariant}
           class={`px-4 py-2 confirm-btn-${$confirmState.okVariant}`}
           onclick={handleConfirmOk}
         >
           {$confirmState.okText}
-        </Button>
+        </CButton>
       </div>
     </div>
   </div>

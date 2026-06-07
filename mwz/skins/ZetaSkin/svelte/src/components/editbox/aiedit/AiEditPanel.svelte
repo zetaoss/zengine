@@ -5,7 +5,7 @@
   import { SvelteMap } from 'svelte/reactivity'
 
   import mwapi from '$lib/utils/mwapi'
-  import Button from '$shared/ui/Button.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
   import { showToast } from '$shared/ui/toast/toast'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZSelect from '$shared/ui/ZSelect.svelte'
@@ -301,7 +301,7 @@
       </ZSelect>
       <div class="flex shrink-0 items-center gap-1">
         {#if currentPromptItem}
-          <Button
+          <CButton
             href={`/tool/ai-edit/prompts/${currentPromptItem.id}`}
             target="_blank"
             title={`${promptTitle} 편집`}
@@ -309,11 +309,11 @@
             variant="outline"
           >
             <ZIcon path={mdiEye} />
-          </Button>
+          </CButton>
         {/if}
-        <Button type="button" variant="outline" size="small" title="새로고침" onclick={() => void refreshPromptList()}>
+        <CButton type="button" variant="outline" size="small" title="새로고침" onclick={() => void refreshPromptList()}>
           <ZIcon path={mdiRefresh} />
-        </Button>
+        </CButton>
       </div>
     {/if}
   </div>
@@ -417,8 +417,8 @@
   </div>
 
   <div class="flex justify-center">
-    <Button type="button" variant="default" disabled={!canSubmit} onclick={() => void handleSubmitClick()}>
+    <CButton type="button" variant="default" disabled={!canSubmit} onclick={() => void handleSubmitClick()}>
       {submitting ? '등록 중' : 'AI 편집 등록'}
-    </Button>
+    </CButton>
   </div>
 </div>

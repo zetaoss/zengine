@@ -5,7 +5,7 @@
 
   import { page } from '$app/state'
   import useAuthStore from '$lib/stores/auth'
-  import Button from '$shared/ui/Button.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
 
   import doLogin from './login'
@@ -98,15 +98,15 @@
     <div class="py-3">소셜 로그인</div>
 
     <div class="flex flex-col gap-2">
-      <Button variant="outline" class="w-full" href={socialHref('google')} rel="external" data-sveltekit-reload>
+      <CButton class="py-5 w-full" size="lg" href={socialHref('google')} rel="external" data-sveltekit-reload>
         <ZIcon path={mdiGoogle} />
         Login with Google
-      </Button>
+      </CButton>
 
-      <Button variant="outline" class="w-full" href={socialHref('github')} rel="external" data-sveltekit-reload>
+      <CButton class="py-5 w-full" size="lg" href={socialHref('github')} rel="external" data-sveltekit-reload>
         <ZIcon path={mdiGithub} />
         Log in with GitHub
-      </Button>
+      </CButton>
     </div>
 
     <div class="relative my-6 overflow-hidden text-center text-gray-400">
@@ -160,17 +160,13 @@
         />
       </div>
 
-      <button
-        type="submit"
-        disabled={loading || username === '' || password === ''}
-        class="my-1 h-10 w-full rounded bg-gray-800 text-white disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-700"
-      >
+      <CButton type="submit" size="lg" class="py-5 w-full" disabled={loading || username === '' || password === ''}>
         {#if loading}
           로그인 중...
         {:else}
           로그인
         {/if}
-      </button>
+      </CButton>
     </form>
 
     <div class="py-6">

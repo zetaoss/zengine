@@ -3,7 +3,8 @@
   import { onMount } from 'svelte'
 
   import useAuthStore from '$lib/stores/auth'
-  import Badge from '$shared/ui/Badge.svelte'
+  import CBadge from '$shared/ui/CBadge.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
   import { showToast } from '$shared/ui/toast/toast'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZToggle from '$shared/ui/ZToggle.svelte'
@@ -167,37 +168,29 @@
       {/if}
     </div>
 
-    <div
-      class="inline-flex overflow-hidden rounded-xl border border-gray-300 bg-white shadow-sm"
-    >
-      <button
-        type="button"
-        class={`grid h-10 w-10 cursor-pointer place-items-center border-r border-gray-300 transition ${
-          sortMode === 'title'
-            ? 'bg-gray-200 text-black'
-            : 'text-gray-500 hover:bg-gray-100'
-        }`}
+    <div class="inline-flex overflow-hidden rounded-xl border border-gray-300 bg-white shadow-sm">
+      <CButton
+        variant="ghost"
+        size="icon"
+        class={`grid ${sortMode === 'title' ? 'bg-gray-200 text-black hover:bg-gray-200' : 'text-gray-500 hover:bg-gray-100'}`}
         title="Title"
         aria-label="Title"
         aria-pressed={sortMode === 'title'}
-        on:click={() => setSortMode('title')}
+        onclick={() => setSortMode('title')}
       >
-        <ZIcon path={mdiAlphabeticalVariant} size={18} />
-      </button>
-      <button
-        type="button"
-        class={`grid h-10 w-10 cursor-pointer place-items-center transition ${
-          sortMode === 'docs'
-            ? 'bg-gray-200 text-black'
-            : 'text-gray-500 hover:bg-gray-100'
-        }`}
+        <ZIcon path={mdiAlphabeticalVariant} />
+      </CButton>
+      <CButton
+        variant="ghost"
+        size="icon"
+        class={`grid ${sortMode === 'docs' ? 'bg-gray-200 text-black hover:bg-gray-200' : 'text-gray-500 hover:bg-gray-100'}`}
         title="Docs"
         aria-label="Docs"
         aria-pressed={sortMode === 'docs'}
-        on:click={() => setSortMode('docs')}
+        onclick={() => setSortMode('docs')}
       >
-        <ZIcon path={mdiNumeric} size={18} />
-      </button>
+        <ZIcon path={mdiNumeric} />
+      </CButton>
     </div>
   </div>
 
@@ -229,7 +222,7 @@
                         {displayTitle(binder.title)}
                       </div>
                       {#if isNewBinder(binder.created_at)}
-                        <Badge>N</Badge>
+                        <CBadge>N</CBadge>
                       {/if}
                     </div>
 

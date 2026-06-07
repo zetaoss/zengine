@@ -3,7 +3,7 @@
 <script lang="ts">
   import { fly } from 'svelte/transition'
 
-  import Button from '../Button.svelte'
+  import CButton from '../CButton.svelte'
   import { dismissToast, toasts } from './toast'
 </script>
 
@@ -33,9 +33,9 @@
         <div class="flex min-h-14 items-center justify-center px-5 py-4 text-center leading-tight">{toast.message}</div>
         {#if toast.action}
           <div class="flex justify-center px-5 pb-4">
-            <Button href={toast.action.href} variant="default" onclick={() => dismissToast(toast.id)}>
+            <CButton href={toast.action.href} variant="default" onclick={() => dismissToast(toast.id)}>
               {toast.action.label}
-            </Button>
+            </CButton>
           </div>
         {/if}
         <hr class="toast-bar m-0 h-1 rounded border-0 bg-black/20" style={`animation-duration: ${toast.timeout}ms`} />

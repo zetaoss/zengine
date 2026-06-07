@@ -1,6 +1,22 @@
+<svelte:options
+  customElement={{
+    props: {
+      class: { type: "String" },
+      cooldown: { type: "Number" },
+      disabled: { type: "Boolean" },
+      href: { type: "String" },
+      size: { type: "String" },
+      title: { type: "String" },
+      type: { type: "String" },
+      variant: { type: "String" },
+    },
+  }}
+/>
+
 <script lang="ts" module>
 // https://github.com/huntabyte/shadcn-svelte/blob/main/docs/src/lib/registry/ui/button/button.svelte
 
+import type { Snippet } from "svelte"
 import type { HTMLAnchorAttributes, HTMLButtonAttributes } from "svelte/elements"
 
   function cn(...classes: Array<string | false | null | undefined>): string {
@@ -46,16 +62,30 @@ import type { HTMLAnchorAttributes, HTMLButtonAttributes } from "svelte/elements
     return cn("cn-button", variantClasses[opts.variant ?? "outline"], sizeClasses[opts.size ?? "medium"])
   }
 
-  export type ButtonProps = Omit<HTMLButtonAttributes, "class"> &
-    Omit<HTMLAnchorAttributes, "class"> & {
-      class?: string
-      ref?: HTMLAnchorElement | HTMLButtonElement | null
-      variant?: ButtonVariant
-      size?: ButtonSize
-      cooldown?: number
-      title?: string
-      onclick?: ((event: MouseEvent) => void) | undefined
+  type ButtonCommonProps = {
+    class?: string
+    ref?: HTMLAnchorElement | HTMLButtonElement | null
+    variant?: ButtonVariant
+    size?: ButtonSize
+    cooldown?: number
+    disabled?: boolean
+    title?: string
+    type?: HTMLButtonAttributes["type"]
+    onclick?: ((event: MouseEvent) => void) | undefined
+    children?: Snippet
+  }
+
+  type ButtonAnchorProps = ButtonCommonProps &
+    Omit<HTMLAnchorAttributes, "class" | "href" | "type"> & {
+      href: string
     }
+
+  type ButtonNativeProps = ButtonCommonProps &
+    Omit<HTMLButtonAttributes, "class" | "type"> & {
+      href?: undefined
+    }
+
+  export type ButtonProps = ButtonAnchorProps | ButtonNativeProps
 </script>
 
 <script lang="ts">
@@ -103,7 +133,7 @@ import type { HTMLAnchorAttributes, HTMLButtonAttributes } from "svelte/elements
   <a
     bind:this={ref}
     data-slot="button"
-    {...restProps}
+    {...(restProps as Omit<HTMLAnchorAttributes, "class" | "href" | "type">)}
     href={isDisabled ? undefined : href}
     aria-label={title}
     class={cn(classes, className ?? "", isDisabled ? "pointer-events-none opacity-50" : "")}
@@ -118,7 +148,7 @@ import type { HTMLAnchorAttributes, HTMLButtonAttributes } from "svelte/elements
   <button
     bind:this={ref}
     data-slot="button"
-    {...restProps}
+    {...(restProps as Omit<HTMLButtonAttributes, "class" | "type">)}
     {type}
     aria-label={title}
     class={cn(classes, className ?? "")}

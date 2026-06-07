@@ -6,8 +6,8 @@
   import { resolve } from '$app/paths'
   import useAuthStore from '$lib/stores/auth'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
-  import Badge from '$shared/ui/Badge.svelte'
-  import Button from '$shared/ui/Button.svelte'
+  import CBadge from '$shared/ui/CBadge.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'
   import ZIcon from '$shared/ui/ZIcon.svelte'
@@ -104,10 +104,10 @@
   <div class="mb-5 flex items-center justify-between">
     <div class="flex-1"></div>
     {#if isSysop}
-      <Button variant="outline" size="small" href={resolve('/tool/ai-edit/prompts/new')}>
+      <CButton variant="outline" size="small" href={resolve('/tool/ai-edit/prompts/new')}>
         <ZIcon path={mdiPlus} class="mr-1" />
         새 프롬프트 작성
-      </Button>
+      </CButton>
     {/if}
   </div>
 
@@ -141,7 +141,7 @@
           <tr>
             <td class="text-center text-sm text-(--color-subtle)">{item.id}</td>
             <td>
-              <Badge variant="outline" class={`mr-2 ${getRequestTypeClass(item.request_type)}`}>{getRequestTypeLabel(item.request_type)}</Badge>
+              <CBadge variant="outline" class={`mr-2 ${getRequestTypeClass(item.request_type)}`}>{getRequestTypeLabel(item.request_type)}</CBadge>
               <a class="font-medium hover:underline" href={resolve(`/tool/ai-edit/prompts/${item.id}` as '/tool/ai-edit/prompts/[id]')}>{item.title}</a>
             </td>
             <td class="text-center text-sm text-(--color-subtle)">{item.use_count === 0 ? '-' : item.use_count}</td>
@@ -156,13 +156,13 @@
             </td>
             <td class="text-center">
               <div class="flex items-center justify-center gap-1">
-                <Button variant="ghost" size="small" title="즐겨찾기" onclick={() => void toggleFavorite(item)}>
+                <CButton variant="ghost" size="small" title="즐겨찾기" onclick={() => void toggleFavorite(item)}>
                   <ZIcon path={item.is_favorite ? mdiStar : mdiStarOutline} class={item.is_favorite ? 'text-amber-500' : ''} />
-                </Button>
+                </CButton>
                 {#if isSysop}
-                  <Button variant="ghost" size="small" disabled={deletingPromptId === item.id} onclick={() => void delPrompt(item)}>
+                  <CButton variant="ghost" size="small" disabled={deletingPromptId === item.id} onclick={() => void delPrompt(item)}>
                     <ZIcon path={mdiDelete} />
-                  </Button>
+                  </CButton>
                 {/if}
               </div>
             </td>

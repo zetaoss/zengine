@@ -3,7 +3,7 @@
   import { onMount } from 'svelte'
   import { createEventDispatcher } from 'svelte'
 
-  import Button, { type ButtonVariant } from '$shared/ui/Button.svelte'
+  import CButton, { type ButtonVariant } from '$shared/ui/CButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
 
   export let show = false
@@ -56,16 +56,16 @@
             {/if}
           </div>
           {#if closable}
-            <Button variant="ghost" class="self-stretch rounded-none px-4 py-0" onclick={() => dispatch('cancel')}>
+            <CButton variant="ghost" class="self-stretch rounded-none px-4 py-0" onclick={() => dispatch('cancel')}>
               <ZIcon path={mdiClose} />
-            </Button>
+            </CButton>
           {/if}
         </header>
       {:else if closable}
         <div class="flex justify-end border-b px-3 py-2">
-          <Button variant="ghost" onclick={() => dispatch('cancel')}>
+          <CButton variant="ghost" onclick={() => dispatch('cancel')}>
             <ZIcon path={mdiClose} />
-          </Button>
+          </CButton>
         </div>
       {/if}
 
@@ -74,10 +74,10 @@
       </section>
 
       <footer class="flex justify-center gap-3 border-t px-4 py-3">
-        <Button variant={okVariant} disabled={okDisabled} onclick={() => !okDisabled && dispatch('ok')}>
+        <CButton variant={okVariant} disabled={okDisabled} onclick={() => !okDisabled && dispatch('ok')}>
           {okText}
-        </Button>
-        <Button variant="outline" onclick={() => dispatch('cancel')}>{cancelText}</Button>
+        </CButton>
+        <CButton variant="outline" onclick={() => dispatch('cancel')}>{cancelText}</CButton>
       </footer>
     </div>
   </div>

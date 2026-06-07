@@ -10,8 +10,8 @@
   import type { PaginateData } from '$lib/components/pagination/types'
   import useAuthStore from '$lib/stores/auth'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
-  import Badge from '$shared/ui/Badge.svelte'
-  import Button from '$shared/ui/Button.svelte'
+  import CBadge from '$shared/ui/CBadge.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'
   import ZIcon from '$shared/ui/ZIcon.svelte'
@@ -284,7 +284,7 @@
           <tr class={isCurrentTask(row) ? 'bg-blue-50/70' : ''}>
             <td class="text-center">{row.id}</td>
             <td>
-              <Badge variant="outline" class={`mr-2 ${getRequestTypeClass(row.request_type)}`}>{getRequestTypeLabel(row.request_type)}</Badge>
+              <CBadge variant="outline" class={`mr-2 ${getRequestTypeClass(row.request_type)}`}>{getRequestTypeLabel(row.request_type)}</CBadge>
               <a
                 href={getTitleHref(row)}
                 rel="noopener"
@@ -296,7 +296,7 @@
               </a>
               <span class="ml-1 inline-flex items-center gap-1 align-middle">
                 {#if isCompleted(row)}
-                  <Button
+                  <CButton
                     href={getWikiDiffHref(row.title, row.revid)}
                     variant="ghost"
                     size="small"
@@ -305,12 +305,12 @@
                     title="차이보기"
                   >
                     <ZIcon path={mdiCompare} />
-                  </Button>
+                  </CButton>
                 {/if}
                 {#if canViewDetail(row)}
-                  <Button variant="ghost" size="small" href={resolve(`/tool/ai-edit/tasks/${row.id}`)} title="작업 상세 보기">
+                  <CButton variant="ghost" size="small" href={resolve(`/tool/ai-edit/tasks/${row.id}`)} title="작업 상세 보기">
                     <ZIcon path={mdiInformation} />
-                  </Button>
+                  </CButton>
                 {/if}
               </span>
             </td>
@@ -334,9 +334,9 @@
             <td class="text-center">
               <div class="flex items-center justify-center gap-1">
                 {#if isSysop}
-                  <Button variant="outline" size="small" disabled={deletingId === row.id} onclick={() => del(row)}>
+                  <CButton variant="outline" size="small" disabled={deletingId === row.id} onclick={() => del(row)}>
                     <ZIcon path={mdiDelete} />
-                  </Button>
+                  </CButton>
                 {/if}
               </div>
             </td>

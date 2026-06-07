@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Badge from './Badge.svelte'
+  import CBadge from './CBadge.svelte'
 
   interface ZTabItem {
     value: string
@@ -68,7 +68,7 @@
       <span class="inline-flex items-center gap-1">
         {tab.label}
         {#if tab.badge !== undefined}
-          <Badge variant="outline">{String(tab.badge)}</Badge>
+          <CBadge variant="outline">{String(tab.badge)}</CBadge>
         {/if}
       </span>
     </a>

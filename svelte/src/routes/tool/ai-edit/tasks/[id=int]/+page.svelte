@@ -7,8 +7,8 @@
   import RouteLinkButton from '$lib/components/RouteLinkButton.svelte'
   import useAuthStore from '$lib/stores/auth'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
-  import Badge from '$shared/ui/Badge.svelte'
-  import Button from '$shared/ui/Button.svelte'
+  import CBadge from '$shared/ui/CBadge.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
   import httpy from '$shared/utils/httpy'
@@ -194,7 +194,7 @@
         >
           {row.title}
         </a>
-        <Button
+        <CButton
           href={getWikiDiffHref(row.title, row.revid)}
           variant="ghost"
           size="small"
@@ -203,7 +203,7 @@
           title="차이보기"
         >
           <ZIcon path={mdiCompare} />
-        </Button>
+        </CButton>
       </div>
 
       <div class="mb-5 border-y border-(--border-color-subtle) py-4">
@@ -235,7 +235,7 @@
           <div class="mb-2 break-inside-avoid grid grid-cols-[7rem_1fr] items-start gap-2">
             <div class="text-sm text-(--color-subtle)">유형</div>
             <div>
-              <Badge class={getRequestTypeClass(row.request_type)}>{getRequestTypeLabel(row.request_type)}</Badge>
+              <CBadge class={getRequestTypeClass(row.request_type)}>{getRequestTypeLabel(row.request_type)}</CBadge>
             </div>
           </div>
           <div class="mb-2 break-inside-avoid grid grid-cols-[7rem_1fr] items-start gap-2">

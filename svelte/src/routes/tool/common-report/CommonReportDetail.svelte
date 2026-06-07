@@ -9,7 +9,7 @@
   import useAuthStore from '$lib/stores/auth'
   import { titlesExist } from '$lib/utils/mediawiki'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
-  import Button from '$shared/ui/Button.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'
   import ZIcon from '$shared/ui/ZIcon.svelte'
@@ -248,7 +248,7 @@
         </div>
         <div class="flex flex-wrap gap-2">
           {#each copyActions as action (action.key)}
-            <Button variant="outline" onclick={() => handleCopy(action)}>
+            <CButton variant="outline" onclick={() => handleCopy(action)}>
               <span class="mr-2">{action.label}</span>
               {#if activeTooltip !== action.key}
                 <ZIcon path={mdiContentCopy} />
@@ -258,7 +258,7 @@
                   <span class="text-xs">Copied!</span>
                 </span>
               {/if}
-            </Button>
+            </CButton>
           {/each}
         </div>
       </div>
@@ -383,10 +383,10 @@
 
     <div class="flex gap-2 py-4">
       {#if $canDelete(row.user_id)}
-        <Button variant="destructive" onclick={() => del(row)}>삭제</Button>
+        <CButton variant="destructive" onclick={() => del(row)}>삭제</CButton>
       {/if}
       {#if $canDelete(row.user_id) && row.phase === 'Failed'}
-        <Button variant="default" onclick={() => rerun(row)}>재실행</Button>
+        <CButton variant="default" onclick={() => rerun(row)}>재실행</CButton>
       {/if}
       <div class="flex-1 text-right">
         <RouteLinkButton to="/tool/common-report" variant="outline">목록</RouteLinkButton>

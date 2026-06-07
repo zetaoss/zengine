@@ -12,7 +12,7 @@
   import type { PaginateData } from '$lib/components/pagination/types'
   import useAuthStore from '$lib/stores/auth'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
-  import Button from '$shared/ui/Button.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'
   import ZIcon from '$shared/ui/ZIcon.svelte'
@@ -230,7 +230,7 @@
   <ZTabs tabs={modeTabs} selected={mode} onChange={(value) => setMode(value as Mode)} />
 
   <div class="flex justify-end py-3">
-    <Button variant="outline" onclick={openModal}>등록</Button>
+    <CButton variant="outline" onclick={openModal}>등록</CButton>
   </div>
 
   <table class="z-table">
@@ -276,9 +276,9 @@
             <div class="flex items-center gap-2">
               <a href={getTitleHref(row)} rel="external" class={mode === 'done' ? '' : 'new'}>{row.title}</a>
               {#if $canDelete(row.user_id)}
-                <Button variant="ghost" size="small" title="삭제" onclick={() => del(row)}>
+                <CButton variant="ghost" size="small" title="삭제" onclick={() => del(row)}>
                   <ZIcon path={mdiDelete} />
-                </Button>
+                </CButton>
               {/if}
             </div>
           </td>
@@ -286,7 +286,7 @@
             {#if mode === 'done'}
               {row.rate}
             {:else}
-              <Button variant="outline" class="min-w-10 px-2 py-1" onclick={() => recommend(row)}>{row.rate}</Button>
+              <CButton variant="outline" class="min-w-10 px-2 py-1" onclick={() => recommend(row)}>{row.rate}</CButton>
             {/if}
           </td>
           <td class="text-center">{row.hit}</td>
@@ -319,7 +319,7 @@
   </table>
 
   <div class="py-4 text-right">
-    <Button variant="outline" onclick={openModal}>등록</Button>
+    <CButton variant="outline" onclick={openModal}>등록</CButton>
   </div>
 
   {#if paginateData}

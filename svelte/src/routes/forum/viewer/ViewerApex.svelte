@@ -4,7 +4,7 @@
   import RouteLinkButton from '$lib/components/RouteLinkButton.svelte'
   import useAuthStore from '$lib/stores/auth'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
-  import Button from '$shared/ui/Button.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
   import ZModal from '$shared/ui/ZModal.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
   import httpy from '$shared/utils/httpy'
@@ -118,10 +118,10 @@
 
   {#if post}
     {#if $canEdit(post.user_id)}
-      <Button variant="outline" onclick={edit}>수정</Button>
+      <CButton variant="outline" onclick={edit}>수정</CButton>
     {/if}
     {#if $canDelete(post.user_id)}
-      <Button variant="outline" onclick={del}>삭제</Button>
+      <CButton variant="outline" onclick={del}>삭제</CButton>
     {/if}
   {/if}
 </div>

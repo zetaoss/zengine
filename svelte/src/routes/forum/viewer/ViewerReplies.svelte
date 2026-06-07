@@ -3,7 +3,7 @@
 
   import useAuthStore from '$lib/stores/auth'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
-  import Button from '$shared/ui/Button.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZMenu from '$shared/ui/ZMenu.svelte'
   import ZMenuItem from '$shared/ui/ZMenuItem.svelte'
@@ -180,8 +180,8 @@
             </div>
 
             <div class="mt-3 flex justify-center gap-3">
-              <Button variant="default" class="w-24" disabled={editBody.length === 0} onclick={editOK}>저장</Button>
-              <Button variant="outline" class="w-24" onclick={editCancel}>취소</Button>
+              <CButton variant="default" class="w-24" disabled={editBody.length === 0} onclick={editOK}>저장</CButton>
+              <CButton variant="outline" class="w-24" onclick={editCancel}>취소</CButton>
             </div>
           </div>
         {:else}
@@ -206,7 +206,7 @@
         </div>
         <div class="flex justify-end gap-3">
           <div class="text-xs text-gray-400">{replyBody.length} 자</div>
-          <Button variant="default" class="w-20" disabled={replyBody.length === 0} onclick={postReply}>등록</Button>
+          <CButton variant="default" class="w-20" disabled={replyBody.length === 0} onclick={postReply}>등록</CButton>
         </div>
       </div>
     </div>

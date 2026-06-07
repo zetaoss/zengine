@@ -1,6 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths'
-  import Button, { type ButtonSize, type ButtonVariant } from '$shared/ui/Button.svelte'
+  import CButton, { type ButtonSize, type ButtonVariant } from '$shared/ui/CButton.svelte'
 
   export let to: string
   export let disabled = false
@@ -11,7 +11,7 @@
   const resolvePath = resolve as unknown as (path: string) => string
 </script>
 
-<Button
+<CButton
   {...$$restProps}
   class={typeof $$props.class === 'string' ? $$props.class : undefined}
   href={resolvePath(to)}
@@ -21,4 +21,4 @@
   {onclick}
 >
   <slot />
-</Button>
+</CButton>
