@@ -3,7 +3,7 @@
 <script lang="ts">
   import { fly } from 'svelte/transition'
 
-  import ZButtonLink from '../ZButtonLink.svelte'
+  import CButton from '../CButton.svelte'
   import { dismissToast, toasts } from './toast'
 </script>
 
@@ -11,12 +11,12 @@
   {#each $toasts as toast (toast.id)}
     {#if toast.placement === 'top-right'}
       <div
-        class="mt-1 w-56 rounded bg-slate-500/80 text-white shadow-md"
+        class="mt-1 w-56 rounded bg-x-slate-500/80 text-x-white shadow-md"
         in:fly={{ y: 6, duration: 200 }}
         out:fly={{ y: 6, duration: 200 }}
       >
         <div class="flex min-h-10 items-center px-4 py-2 leading-tight">{toast.message}</div>
-        <hr class="toast-bar m-0 h-1 rounded border-0 bg-black/50" style={`animation-duration: ${toast.timeout}ms`} />
+        <hr class="toast-bar m-0 h-1 rounded border-0 bg-foreground/40" style={`animation-duration: ${toast.timeout}ms`} />
       </div>
     {/if}
   {/each}
@@ -26,19 +26,19 @@
   {#each $toasts as toast (toast.id)}
     {#if toast.placement === 'center'}
       <div
-        class="pointer-events-auto w-full max-w-sm rounded border bg-white text-(--z-text) shadow-lg"
+        class="pointer-events-auto w-full max-w-sm rounded border bg-x-white text-foreground shadow-lg"
         in:fly={{ y: 8, duration: 200 }}
         out:fly={{ y: 8, duration: 200 }}
       >
         <div class="flex min-h-14 items-center justify-center px-5 py-4 text-center leading-tight">{toast.message}</div>
         {#if toast.action}
           <div class="flex justify-center px-5 pb-4">
-            <ZButtonLink href={toast.action.href} color="primary" onclick={() => dismissToast(toast.id)}>
+            <CButton href={toast.action.href} variant="default" onclick={() => dismissToast(toast.id)}>
               {toast.action.label}
-            </ZButtonLink>
+            </CButton>
           </div>
         {/if}
-        <hr class="toast-bar m-0 h-1 rounded border-0 bg-black/20" style={`animation-duration: ${toast.timeout}ms`} />
+        <hr class="toast-bar m-0 h-1 rounded border-0 bg-foreground/20" style={`animation-duration: ${toast.timeout}ms`} />
       </div>
     {/if}
   {/each}

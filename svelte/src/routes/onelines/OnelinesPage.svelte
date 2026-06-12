@@ -8,7 +8,7 @@
   import type { PaginateData } from '$lib/components/pagination/types'
   import { useOnelineDelete } from '$lib/composables/useOnelineDelete'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
-  import ZButton from '$shared/ui/ZButton.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
   import httpy from '$shared/utils/httpy'
@@ -86,15 +86,15 @@
 
   <div class="z-card">
     {#if isLoading}
-      <div class="flex items-center justify-center py-10 text-gray-500">
+      <div class="flex items-center justify-center py-10 text-x-gray-500">
         <ZSpinner />
       </div>
     {:else if loadError}
-      <div class="py-10 text-center text-red-500">
+      <div class="py-10 text-center text-x-red-500">
         {loadError}
       </div>
     {:else if rows.length === 0}
-      <div class="py-10 text-center text-gray-500">아직 등록된 한줄잡담이 없습니다.</div>
+      <div class="py-10 text-center text-x-gray-500">아직 등록된 한줄잡담이 없습니다.</div>
     {:else}
       {#each rows as r (r.id)}
         <div class="border-b px-3 py-3 last:border-b-0">
@@ -103,9 +103,9 @@
           <span class="ml-1">{@html r.message}</span>
           <span class="z-muted2 ml-1 text-xs">{r.created.substring(0, 10)}</span>
           {#if $canDelete(r.user_id)}
-            <ZButton color="ghost" class="z-muted3 py-1 align-middle leading-none" onclick={() => del(r)}>
+            <CButton variant="ghost" class="z-muted3 py-1 align-middle leading-none" onclick={() => del(r)}>
               <ZIcon path={mdiDelete} />
-            </ZButton>
+            </CButton>
           {/if}
         </div>
       {/each}

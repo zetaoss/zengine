@@ -46,11 +46,11 @@
   }
 </script>
 
-<ZModal {show} on:ok={ok} okColor="primary" backdropClosable={false} okDisabled={trimmedNames.length < 2} on:cancel={cancel}>
+<ZModal {show} on:ok={ok} okVariant="default" backdropClosable={false} okDisabled={trimmedNames.length < 2} on:cancel={cancel}>
   <div class="block w-full">
     <div class="mb-2 text-lg">새로운 비교 등록하기</div>
     {#if errorMessage}
-      <div class="mb-2 text-sm text-red-600">
+      <div class="mb-2 text-sm text-x-red-600">
         {errorMessage}
       </div>
     {/if}

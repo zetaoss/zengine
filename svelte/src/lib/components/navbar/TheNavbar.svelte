@@ -13,7 +13,7 @@
   let isTool = $derived(path.startsWith('/tool'))
 </script>
 
-<nav id="navbar" class="bg-(--raw-slate-700) text-sm">
+<nav id="navbar" class="bg-slate-700 text-sm">
   <div class="mx-auto flex w-full max-w-8xl flex-wrap items-center">
     <div class="order-1 flex h-12 items-stretch">
       <a class="navlink" href={resolve('/')}>

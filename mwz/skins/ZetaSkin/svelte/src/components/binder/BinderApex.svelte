@@ -6,7 +6,7 @@
 
   import type { Binder } from '$lib/types/binder'
   import getRLCONF from '$lib/utils/rlconf'
-  import ZButton from '$shared/ui/ZButton.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import { isMdOrLargerStore } from '$shared/utils/screen'
 
@@ -109,12 +109,12 @@
 {#if bindersRef.length > 0}
   <div
     bind:this={root}
-    class={`flex-none shrink-0 z-30 transition-[width] bg-gray-50 border-r ${isDrawer ? 'fixed' : 'sticky'}`}
+    class={`flex-none shrink-0 z-30 transition-[width] bg-surface border-r ${isDrawer ? 'fixed' : 'sticky'}`}
     style={`width:${styleVars.width}; margin-top:${styleVars.marginTop}; top:${styleVars.top}; height:${styleVars.height};`}
   >
     {#if isDrawer}
       <button
-        class="binder-menu-toggle absolute p-2 z-20 flex rounded-r opacity-80 cursor-pointer bg-(--background-color-interactive--hover) right-0 translate-x-full"
+        class="binder-menu-toggle absolute p-2 z-20 flex rounded-r opacity-80 cursor-pointer bg-accent right-0 translate-x-full"
         aria-expanded={!isCollapsed}
         on:click={toggle}
       >
@@ -124,35 +124,35 @@
 
     {#if isCollapsed && !isDrawer}
       <div class="h-full w-full">
-        <ZButton color="ghost" class="h-full! w-full! rounded-none! p-0!" title="바인더 펼치기" onclick={toggle}>
+        <CButton variant="ghost" class="h-full! w-full! rounded-none! p-0!" title="바인더 펼치기" onclick={toggle}>
           <ZIcon path={mdiChevronRight} />
-        </ZButton>
+        </CButton>
       </div>
     {:else}
       <div bind:this={scrollEl} class="z-scrollbar h-full w-full overflow-y-auto" on:scroll={updateScrollState}>
         {#each bindersRef as binder (binder.id)}
           <div>
             <header
-              class="book sticky top-0 z-10 flex min-h-9 items-stretch overflow-hidden rounded bg-gray-200/80 border-gray-400/60 font-bold"
+              class="book sticky top-0 z-10 flex min-h-9 items-stretch overflow-hidden rounded bg-muted/80 border-border/60 font-bold"
             >
               <a href={`/wiki/Binder:${binder.text}`} class="binder-title-link inline-flex min-w-0 flex-1 items-center px-3 py-2">
                 <span class="wrap-break-word">{binder.text}</span>
               </a>
               {#if isLoggedIn}
-                <ZButton
-                  color="ghost"
+                <CButton
+                  variant="ghost"
                   class="w-9! self-stretch rounded-none! p-0!"
                   disabled={refreshingId !== null}
                   title="바인더 새로고침"
                   onclick={refreshBinder}
                 >
                   <ZIcon path={mdiRefresh} class={refreshingId === wgArticleId ? 'animate-spin' : ''} />
-                </ZButton>
+                </CButton>
               {/if}
               {#if !isDrawer}
-                <ZButton color="ghost" class="w-9! self-stretch rounded-none! p-0!" title="바인더 접기" onclick={toggle}>
+                <CButton variant="ghost" class="w-9! self-stretch rounded-none! p-0!" title="바인더 접기" onclick={toggle}>
                   <ZIcon path={mdiChevronLeft} />
-                </ZButton>
+                </CButton>
               {/if}
             </header>
 
@@ -182,17 +182,17 @@
     bottom: 0;
     left: 0;
     height: 50px;
-    background: linear-gradient(to bottom, transparent, var(--color-gray-50) 55%);
+    background: linear-gradient(to bottom, transparent, var(--muted) 55%);
     pointer-events: none;
   }
 
   .binder-title-link {
-    color: var(--color-base);
+    color: var(--foreground);
     text-decoration: none;
   }
 
   .binder-title-link:hover {
-    color: var(--z-link);
+    color: var(--color-x-sky-600);
     text-decoration: underline;
   }
 

@@ -3,10 +3,10 @@
 
   import useAuthStore from '$lib/stores/auth'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
-  import ZButton from '$shared/ui/ZButton.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
+  import CMenu from '$shared/ui/CMenu.svelte'
+  import CMenuItem from '$shared/ui/CMenuItem.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
-  import ZMenu from '$shared/ui/ZMenu.svelte'
-  import ZMenuItem from '$shared/ui/ZMenuItem.svelte'
   import ZModal from '$shared/ui/ZModal.svelte'
   import ZTextarea from '$shared/ui/ZTextarea.svelte'
   import httpy from '$shared/utils/httpy'
@@ -14,18 +14,22 @@
   import type { Reply } from '../types'
   import BoxHTML from './ViewerHTML.svelte'
 
-  export let postId = 0
+  interface Props {
+    postId?: number
+  }
+
+  let { postId = 0 }: Props = $props()
 
   const auth = useAuthStore()
   const { userInfo, isLoggedIn, canEdit } = auth
 
-  let replies: Reply[] = []
-  let replyBody = ''
-  let editingReply: { id: number; body: string } | null = null
-  let showModal = false
-  let deletingReply: Reply | null = null
+  let replies = $state<Reply[]>([])
+  let replyBody = $state('')
+  let editingReply = $state<{ id: number; body: string } | null>(null)
+  let showModal = $state(false)
+  let deletingReply = $state<Reply | null>(null)
 
-  $: editBody = editingReply?.body ?? ''
+  let editBody = $derived(editingReply?.body ?? '')
 
   function isEditing(id: number) {
     return editingReply?.id === id
@@ -43,7 +47,7 @@
       console.error(err)
       return
     }
-    replies = data
+    replies = data ?? []
   }
 
   async function postReply() {
@@ -100,7 +104,11 @@
     fetchData()
   }
 
-  $: if (postId) fetchData()
+  $effect(() => {
+    if (postId) {
+      fetchData()
+    }
+  })
 
   function formatDate(date: string) {
     const d = new Date(date)
@@ -124,49 +132,49 @@
       <div class="grid grid-cols-2">
         <div>
           <AvatarUser user={{ id: reply.user_id, name: reply.user_name }} />
-          <div class="text-xs text-gray-500">{formatDate(reply.created_at)}</div>
+          <div class="text-xs text-x-gray-500">{formatDate(reply.created_at)}</div>
         </div>
 
         {#if $canEdit(reply.user_id)}
           <div class="text-right">
-            <ZMenu>
-              <svelte:fragment slot="trigger" let:toggle>
-                <button type="button" on:click={toggle}>
+            <CMenu>
+              {#snippet trigger({ toggle })}
+                <CButton variant="ghost" size="icon-sm" onclick={toggle}>
                   <ZIcon path={mdiDotsVertical} />
-                </button>
-              </svelte:fragment>
+                </CButton>
+              {/snippet}
 
-              <svelte:fragment slot="menu" let:close>
+              {#snippet menu({ close })}
                 <div class="text-xs">
-                  <ZMenuItem
-                    on:click={() => {
+                  <CMenuItem
+                    onclick={() => {
                       edit(reply)
                       close()
                     }}
                   >
                     수정
-                  </ZMenuItem>
-                  <ZMenuItem
-                    on:click={() => {
+                  </CMenuItem>
+                  <CMenuItem
+                    onclick={() => {
                       del(reply)
                       close()
                     }}
                   >
                     삭제
-                  </ZMenuItem>
+                  </CMenuItem>
                 </div>
-              </svelte:fragment>
-            </ZMenu>
+              {/snippet}
+            </CMenu>
           </div>
         {/if}
       </div>
 
       <div class="pt-2">
         {#if isEditing(reply.id)}
-          <div class="rounded border-2 bg-white p-3">
+          <div class="rounded border-2 bg-x-white p-3">
             <div class="flex items-center justify-between">
-              <span class="text-xs text-gray-400">수정 중</span>
-              <span class="text-xs text-gray-400">{editBody.length} characters</span>
+              <span class="text-xs text-x-gray-400">수정 중</span>
+              <span class="text-xs text-x-gray-400">{editBody.length} characters</span>
             </div>
 
             <div class="mt-2">
@@ -180,8 +188,8 @@
             </div>
 
             <div class="mt-3 flex justify-center gap-3">
-              <ZButton class="w-24" color="primary" disabled={editBody.length === 0} onclick={editOK}>저장</ZButton>
-              <ZButton class="w-24" onclick={editCancel}>취소</ZButton>
+              <CButton variant="default" class="w-24" disabled={editBody.length === 0} onclick={editOK}>저장</CButton>
+              <CButton variant="outline" class="w-24" onclick={editCancel}>취소</CButton>
             </div>
           </div>
         {:else}
@@ -193,7 +201,7 @@
 
   {#if $isLoggedIn && $userInfo}
     <div class="p-3">
-      <div class="z-bg-muted rounded border p-4">
+      <div class="bg-muted rounded border p-4">
         <AvatarUser user={$userInfo} showLink={false} />
         <div class="mt-2">
           <ZTextarea
@@ -205,8 +213,8 @@
           />
         </div>
         <div class="flex justify-end gap-3">
-          <div class="text-xs text-gray-400">{replyBody.length} 자</div>
-          <ZButton class="w-20" color="primary" disabled={replyBody.length === 0} onclick={postReply}>등록</ZButton>
+          <div class="text-xs text-x-gray-400">{replyBody.length} 자</div>
+          <CButton variant="default" class="w-20" disabled={replyBody.length === 0} onclick={postReply}>등록</CButton>
         </div>
       </div>
     </div>

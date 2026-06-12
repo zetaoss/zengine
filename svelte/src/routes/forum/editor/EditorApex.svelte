@@ -109,7 +109,7 @@
   }
 </script>
 
-<div class={`editor ${isError ? 'border-red-50' : ''}`}>
+<div class={`editor ${isError ? 'border-x-red-50' : ''}`}>
   {#if hasEditor && editor}
     <MenuBar {editor} />
     <TableMenuBar {editor} />
@@ -132,7 +132,7 @@
   @reference '$shared/assets/app.css';
 
   .editor {
-    @apply border rounded bg-white flex flex-col h-[60vh];
+    @apply border rounded bg-x-white flex flex-col h-[60vh];
   }
 
   .editor__content {
@@ -175,6 +175,6 @@
   }
 
   .divider {
-    @apply ml-2 mr-1 h-4 w-px bg-gray-300;
+    @apply ml-2 mr-1 h-4 w-px bg-x-gray-300;
   }
 </style>

@@ -30,7 +30,7 @@
 </script>
 
 <nav>
-  <ul class="text-sm tracking-tight list-none m-0 p-0 z-text2">
+  <ul class="text-sm tracking-tight list-none m-0 p-0 text-foreground/80">
     <li class="m-0 mb-3 flex items-center gap-2 font-bold">
       <button type="button" on:click={scrollToTop}>목차</button>
     </li>

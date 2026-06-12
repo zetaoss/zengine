@@ -6,6 +6,9 @@
 
   import getRLCONF from '$lib/utils/rlconf'
   import AvatarIcon from '$shared/components/avatar/AvatarIcon.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
+  import CMenu from '$shared/ui/CMenu.svelte'
+  import CMenuItem from '$shared/ui/CMenuItem.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import httpy from '$shared/utils/httpy'
   import linkify from '$shared/utils/linkify'
@@ -22,11 +25,11 @@
 
   const { wgUserId, wgUserName, wgArticleId, wgUserGroups } = getRLCONF()
 
-  let message = ''
-  let docComments: Row[] = []
-  let editingRow: Row | null = null
-  let deletingRow: Row | null = null
-  let showModal = false
+  let message = $state('')
+  let docComments = $state<Row[]>([])
+  let editingRow = $state<Row | null>(null)
+  let deletingRow = $state<Row | null>(null)
+  let showModal = $state(false)
   let fetchDataToken = 0
 
   const isLoggedIn = wgUserId > 0
@@ -115,12 +118,12 @@
 </script>
 
 {#if showModal}
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-    <div class="bg-white rounded shadow-lg w-[22rem] max-w-[90vw] p-4">
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40">
+    <div class="bg-background rounded shadow-lg w-[22rem] max-w-[90vw] p-4 border">
       <div class="text-sm pb-3">댓글을 삭제하시겠습니까?</div>
       <div class="flex justify-end gap-2">
-        <button type="button" class="page-btn" on:click={() => (showModal = false)}> 취소 </button>
-        <button type="button" class="page-btn bg-red-600 text-white" on:click={delOK}> 삭제 </button>
+        <CButton variant="ghost" onclick={() => (showModal = false)}>취소</CButton>
+        <CButton variant="destructive" onclick={delOK}>삭제</CButton>
       </div>
     </div>
   </div>
@@ -143,18 +146,11 @@
         <div class="grid grid-cols-[5fr_1fr] gap-2">
           <textarea
             id="page-comment-new"
-            class="w-full min-h-[4.5rem] p-2 border rounded bg-white"
+            class="w-full min-h-[4.5rem] p-2 border rounded bg-background"
             placeholder="댓글을 쓸 수 있습니다..."
             bind:value={message}
           ></textarea>
-          <button
-            type="button"
-            class="page-btn bg-blue-600 text-white disabled:opacity-50"
-            disabled={message.trim().length === 0}
-            on:click={postNew}
-          >
-            저장
-          </button>
+          <CButton variant="outline" class="h-full!" disabled={message.trim().length === 0} onclick={postNew}>등록</CButton>
         </div>
       </div>
     </div>
@@ -168,14 +164,34 @@
 
       <div class="w-full">
         <div class="float-right flex items-center gap-1">
-          {#if canEdit(row.user_id)}
-            <button type="button" class="page-btn text-xs" on:click={() => edit(row)}> 수정 </button>
-          {/if}
-          {#if canDelete(row.user_id)}
-            <button type="button" class="page-btn text-xs" on:click={() => del(row)}> 삭제 </button>
-          {/if}
           {#if canEdit(row.user_id) || canDelete(row.user_id)}
-            <ZIcon path={mdiDotsHorizontal} class="w-4 h-4 opacity-60" />
+            <CMenu>
+              {#snippet trigger({ toggle })}
+                <CButton variant="ghost" size="icon-sm" onclick={toggle}>
+                  <ZIcon path={mdiDotsHorizontal} class="w-4 h-4 opacity-60" />
+                </CButton>
+              {/snippet}
+              {#snippet menu({ close })}
+                <div class="text-xs">
+                  {#if canEdit(row.user_id)}
+                    <CMenuItem
+                      onclick={() => {
+                        edit(row)
+                        close()
+                      }}>수정</CMenuItem
+                    >
+                  {/if}
+                  {#if canDelete(row.user_id)}
+                    <CMenuItem
+                      onclick={() => {
+                        del(row)
+                        close()
+                      }}>삭제</CMenuItem
+                    >
+                  {/if}
+                </div>
+              {/snippet}
+            </CMenu>
           {/if}
         </div>
 
@@ -185,7 +201,7 @@
 
         <!-- eslint-disable-next-line svelte/no-at-html-tags -->
         <div class="message text-sm">{@html row.messageHtml || ''}</div>
-        <div class="text-sm z-text3">{row.created.substring(0, 10)}</div>
+        <div class="text-sm text-muted-foreground">{row.created.substring(0, 10)}</div>
 
         {#if editingRow && row.id === editingRow.id}
           <div class="py-3">
@@ -194,27 +210,23 @@
                 <div class="float-left">
                   <AvatarIcon user={{ id: row.user_id, name: row.user_name }} size={32} />
                 </div>
-                <div class="float-right text-xs text-gray-400">
+                <div class="float-right text-xs text-muted-foreground">
                   {editingRow.message.length} characters
                 </div>
               </div>
 
               <div class="py-2">
-                <textarea id="page-comment-edit" class="w-full min-h-[4.5rem] p-2 border rounded bg-white" bind:value={editingRow.message}
+                <textarea
+                  id="page-comment-edit"
+                  class="w-full min-h-[4.5rem] p-2 border rounded bg-background"
+                  bind:value={editingRow.message}
                 ></textarea>
               </div>
 
               <div class="overflow-auto">
                 <div class="float-right flex gap-1">
-                  <button type="button" class="page-btn text-xs" on:click={editCancel}> 취소 </button>
-                  <button
-                    type="button"
-                    class="page-btn text-xs bg-blue-600 text-white disabled:opacity-50"
-                    disabled={editingRow.message.trim().length === 0}
-                    on:click={editOK}
-                  >
-                    저장
-                  </button>
+                  <CButton variant="ghost" onclick={editCancel}>취소</CButton>
+                  <CButton variant="default" disabled={editingRow.message.trim().length === 0} onclick={editOK}>저장</CButton>
                 </div>
               </div>
             </div>

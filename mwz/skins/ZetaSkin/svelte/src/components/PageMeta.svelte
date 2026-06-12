@@ -14,7 +14,7 @@
 
 {#if contributors?.length}
   {#if historyHref}
-    <a href={historyHref} class="z-text2 inline-flex items-center gap-1">
+    <a href={historyHref} class="text-foreground/80 inline-flex items-center gap-1">
       <ZIcon path={mdiClockOutline} class="h-4 w-4" />
       {lastMod}
     </a>

@@ -653,7 +653,7 @@
   <div class="mb-4 mt-3 flex flex-wrap items-center justify-between gap-3">
     <ZTabs tabs={rangeTabs} selected={range} onChange={setRange} />
 
-    <p class="text-sm text-gray-500">
+    <p class="text-sm text-x-gray-500">
       {md(visibleTimeslots[0])} - {md(visibleTimeslots[visibleTimeslots.length - 1])}
     </p>
   </div>
@@ -663,14 +663,14 @@
       <ZSpinner />
     </div>
   {:else if failed}
-    <div class="rounded border border-red-300 bg-red-50 p-4 text-sm text-red-700">조회 실패: {failed}</div>
+    <div class="rounded border border-x-red-300 bg-x-red-50 p-4 text-sm text-x-red-700">조회 실패: {failed}</div>
   {:else}
     <section>
-      <p class="mb-2 text-gray-500">Cloudflare Analytics</p>
+      <p class="mb-2 text-x-gray-500">Cloudflare Analytics</p>
       {#each rows as row, idx (row.key)}
         <div class="grid items-center md:grid-cols-[180px_minmax(0,1fr)]">
           <aside class="rounded">
-            <div class="text-gray-500">{row.label}</div>
+            <div class="text-x-gray-500">{row.label}</div>
             <div class="text-[1.2rem] font-bold">{formatStatValue(row.value, row.unit)}</div>
           </aside>
 
@@ -689,17 +689,17 @@
           />
         </div>
         {#if idx < rows.length - 1}
-          <hr class="border-0 border-t border-gray-200" />
+          <hr class="border-0 border-t border-x-gray-200" />
         {/if}
       {/each}
     </section>
 
     <section class="mt-8">
-      <p class="mb-2 text-gray-500">Google Analytics</p>
+      <p class="mb-2 text-x-gray-500">Google Analytics</p>
       {#each gaRows as row, idx (row.key)}
         <div class="grid items-center md:grid-cols-[180px_minmax(0,1fr)]">
           <aside class="rounded">
-            <div class="text-gray-500">{row.label}</div>
+            <div class="text-x-gray-500">{row.label}</div>
             <div class="text-[1.2rem] font-bold">{formatStatValue(row.value, row.unit)}</div>
           </aside>
 
@@ -718,17 +718,17 @@
           />
         </div>
         {#if idx < gaRows.length - 1}
-          <hr class="border-0 border-t border-gray-200" />
+          <hr class="border-0 border-t border-x-gray-200" />
         {/if}
       {/each}
     </section>
 
     <section class="mt-8">
-      <p class="mb-2 text-gray-500">Google Search Console</p>
+      <p class="mb-2 text-x-gray-500">Google Search Console</p>
       {#each gscRows as row, idx (row.key)}
         <div class="grid items-center md:grid-cols-[180px_minmax(0,1fr)]">
           <aside class="rounded">
-            <div class="text-gray-500">{row.label}</div>
+            <div class="text-x-gray-500">{row.label}</div>
             <div class="text-[1.2rem] font-bold">{formatStatValue(row.value, row.unit)}</div>
           </aside>
 
@@ -748,17 +748,17 @@
           />
         </div>
         {#if idx < gscRows.length - 1}
-          <hr class="border-0 border-t border-gray-200" />
+          <hr class="border-0 border-t border-x-gray-200" />
         {/if}
       {/each}
     </section>
 
     <section class="mt-8">
-      <p class="mb-2 text-gray-500">MediaWiki Statistics</p>
+      <p class="mb-2 text-x-gray-500">MediaWiki Statistics</p>
       {#each mwRows as row, idx (row.key)}
         <div class="grid items-center md:grid-cols-[180px_minmax(0,1fr)]">
           <aside class="rounded">
-            <div class="text-gray-500">{row.label}</div>
+            <div class="text-x-gray-500">{row.label}</div>
             <div class="text-[1.2rem] font-bold">{formatStatValue(row.value, row.unit)}</div>
           </aside>
 
@@ -782,13 +782,13 @@
           />
         </div>
         {#if idx < mwRows.length - 1}
-          <hr class="border-0 border-t border-gray-200" />
+          <hr class="border-0 border-t border-x-gray-200" />
         {/if}
       {/each}
     </section>
 
     <div class="mt-8 flex justify-center">
-      <div class="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-500">
+      <div class="flex flex-wrap items-center justify-center gap-6 text-sm text-x-gray-500">
         <div class="flex items-center gap-2">
           <span>exact</span>
           <ZToggle

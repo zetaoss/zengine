@@ -48,12 +48,12 @@
   })
 </script>
 
-<details bind:this={root} class="page-menu relative print:hidden z-link">
+<details bind:this={root} class="page-menu relative print:hidden text-x-sky-600">
   <summary class="page-btn cursor-pointer" aria-label="Page menu">
     <ZIcon path={mdiDotsVertical} />
   </summary>
 
-  <div class="page-menu-panel absolute z-30 right-0 border rounded bg-white shadow-md text-sm text-black">
+  <div class="page-menu-panel absolute z-30 right-0 border rounded bg-x-white shadow-md text-sm text-foreground">
     <ul class="page-menu-items">
       {#each links as l, i (i)}
         <!-- svelte-ignore a11y_accesskey -->

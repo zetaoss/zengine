@@ -5,7 +5,7 @@
 
   import { page } from '$app/state'
   import useAuthStore from '$lib/stores/auth'
-  import ZButtonLink from '$shared/ui/ZButtonLink.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
 
   import doLogin from './login'
@@ -94,33 +94,33 @@
 </script>
 
 <div class="mx-auto w-[75%] max-w-xl pb-20 pt-10">
-  <div class="rounded border bg-white p-6">
+  <div class="rounded border bg-x-white p-6">
     <div class="py-3">소셜 로그인</div>
 
     <div class="flex flex-col gap-2">
-      <ZButtonLink class="w-full bg-white text-black" href={socialHref('google')} rel="external" data-sveltekit-reload>
-        <ZIcon path={mdiGoogle} size={18} />
+      <CButton class="py-5 w-full" size="lg" href={socialHref('google')} rel="external" data-sveltekit-reload>
+        <ZIcon path={mdiGoogle} />
         Login with Google
-      </ZButtonLink>
+      </CButton>
 
-      <ZButtonLink class="w-full bg-black text-white" href={socialHref('github')} rel="external" data-sveltekit-reload>
-        <ZIcon path={mdiGithub} size={18} />
+      <CButton class="py-5 w-full" size="lg" href={socialHref('github')} rel="external" data-sveltekit-reload>
+        <ZIcon path={mdiGithub} />
         Log in with GitHub
-      </ZButtonLink>
+      </CButton>
     </div>
 
-    <div class="relative my-6 overflow-hidden text-center text-gray-400">
+    <div class="relative my-6 overflow-hidden text-center text-x-gray-400">
       <span class="relative px-3">
         또는
-        <span class="absolute right-full top-2.5 w-250 border-t border-[#aaa8]"></span>
-        <span class="absolute left-full top-2.5 w-250 border-t border-[#aaa8]"></span>
+        <span class="absolute right-full top-2.5 w-250 border-t border-border"></span>
+        <span class="absolute left-full top-2.5 w-250 border-t border-border"></span>
       </span>
     </div>
 
     <div class="py-3">아이디 로그인</div>
 
     {#if message}
-      <div class="rounded bg-red-400 p-2 px-4 text-sm">
+      <div class="rounded bg-x-red-400 p-2 px-4 text-sm">
         {message}
       </div>
     {/if}
@@ -132,45 +132,41 @@
       }}
     >
       <div class="my-1 flex">
-        <span class="inline-flex items-center rounded-l border border-r-0 bg-gray-200 px-3 text-gray-500">
+        <span class="inline-flex items-center rounded-l border border-r-0 bg-x-gray-200 px-3 text-x-gray-500">
           <ZIcon path={mdiAccount} size={24} />
         </span>
         <input
           bind:value={username}
           aria-label="username"
           type="text"
-          class="block w-full min-w-0 flex-1 rounded-none rounded-r border bg-white p-2.5 text-sm text-black focus:border-blue-500 focus:outline-none focus:ring"
+          class="block w-full min-w-0 flex-1 rounded-none rounded-r border bg-x-white p-2.5 text-sm text-foreground focus:border-x-blue-500 focus:outline-none focus:ring"
           placeholder="사용자명"
           required
         />
       </div>
 
       <div class="my-1 flex">
-        <span class="inline-flex items-center rounded-l border border-r-0 bg-gray-200 px-3 text-gray-500">
+        <span class="inline-flex items-center rounded-l border border-r-0 bg-x-gray-200 px-3 text-x-gray-500">
           <ZIcon path={mdiLock} size={24} />
         </span>
         <input
           bind:value={password}
           aria-label="password"
           type="password"
-          class="block w-full min-w-0 flex-1 rounded-none rounded-r border bg-white p-2.5 text-sm text-black focus:border-blue-500 focus:outline-none focus:ring"
+          class="block w-full min-w-0 flex-1 rounded-none rounded-r border bg-x-white p-2.5 text-sm text-foreground focus:border-x-blue-500 focus:outline-none focus:ring"
           placeholder="패스워드"
           required
           autocomplete="on"
         />
       </div>
 
-      <button
-        type="submit"
-        disabled={loading || username === '' || password === ''}
-        class="my-1 h-10 w-full rounded bg-gray-800 text-white disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-700"
-      >
+      <CButton type="submit" size="lg" class="py-5 w-full h-auto" disabled={loading || username === '' || password === ''}>
         {#if loading}
           로그인 중...
         {:else}
           로그인
         {/if}
-      </button>
+      </CButton>
     </form>
 
     <div class="py-6">

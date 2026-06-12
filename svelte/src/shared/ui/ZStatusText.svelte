@@ -4,6 +4,6 @@
   $: className = typeof $$props.class === 'string' ? $$props.class : ''
 </script>
 
-<span {...$$restProps} class={`inline-flex items-center text-(--color-subtle) ${className}`.trim()} aria-label={text}>
+<span {...$$restProps} class={`inline-flex items-center text-muted-foreground ${className}`.trim()} aria-label={text}>
   {text}
 </span>

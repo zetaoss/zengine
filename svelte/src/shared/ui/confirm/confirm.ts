@@ -1,10 +1,10 @@
 import { writable } from 'svelte/store'
 
-export type ConfirmColor = 'default' | 'danger' | 'primary' | 'ghost'
+export type ConfirmVariant = 'outline' | 'default' | 'ghost' | 'destructive'
 
 const defaultOptions = {
   okText: '확인',
-  okColor: 'default' as ConfirmColor,
+  okVariant: 'default' as ConfirmVariant,
   cancelText: '취소',
   closable: true,
 }

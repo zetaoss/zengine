@@ -1,11 +1,12 @@
 <script lang="ts">
-  import ConsoleArg from './ConsoleArg.svelte'
-  import type { LogLevel } from './types'
+  import { type ConsoleLogLevel, getConsoleEmoji } from '$shared/utils/console'
 
-  export let level: LogLevel
+  import ConsoleArg from './ConsoleArg.svelte'
+
+  export let level: ConsoleLogLevel
   export let args: unknown[]
 
-  $: emoji = getComputedStyle(document.documentElement).getPropertyValue(`--console-emoji-${level}`)
+  $: emoji = getConsoleEmoji(level)
 </script>
 
 <div class={`px-2 py-0.5 border-t ${level}`}>

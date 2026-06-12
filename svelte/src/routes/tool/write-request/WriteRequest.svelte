@@ -12,9 +12,9 @@
   import type { PaginateData } from '$lib/components/pagination/types'
   import useAuthStore from '$lib/stores/auth'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'
-  import ZButton from '$shared/ui/ZButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
   import ZTabs from '$shared/ui/ZTabs.svelte'
@@ -169,7 +169,7 @@
   }
 
   async function del(row: Row) {
-    const ok = await showConfirm(`'${row.title}' 건을 삭제하시겠습니까 ? `, { okColor: 'danger' })
+    const ok = await showConfirm(`'${row.title}' 건을 삭제하시겠습니까 ? `, { okVariant: 'destructive' })
     if (!ok) return
 
     const [, err] = await httpy.delete(`/api/write-request/${row.id}`)
@@ -230,7 +230,7 @@
   <ZTabs tabs={modeTabs} selected={mode} onChange={(value) => setMode(value as Mode)} />
 
   <div class="flex justify-end py-3">
-    <ZButton onclick={openModal}>등록</ZButton>
+    <CButton variant="outline" onclick={openModal}>등록</CButton>
   </div>
 
   <table class="z-table">
@@ -276,9 +276,9 @@
             <div class="flex items-center gap-2">
               <a href={getTitleHref(row)} rel="external" class={mode === 'done' ? '' : 'new'}>{row.title}</a>
               {#if $canDelete(row.user_id)}
-                <ZButton color="ghost" size="small" title="삭제" onclick={() => del(row)}>
+                <CButton variant="ghost" size="small" title="삭제" onclick={() => del(row)}>
                   <ZIcon path={mdiDelete} />
-                </ZButton>
+                </CButton>
               {/if}
             </div>
           </td>
@@ -286,7 +286,7 @@
             {#if mode === 'done'}
               {row.rate}
             {:else}
-              <ZButton class="min-w-10 px-2 py-1" onclick={() => recommend(row)}>{row.rate}</ZButton>
+              <CButton variant="outline" class="min-w-10 px-2 py-1" onclick={() => recommend(row)}>{row.rate}</CButton>
             {/if}
           </td>
           <td class="text-center">{row.hit}</td>
@@ -319,7 +319,7 @@
   </table>
 
   <div class="py-4 text-right">
-    <ZButton onclick={openModal}>등록</ZButton>
+    <CButton variant="outline" onclick={openModal}>등록</CButton>
   </div>
 
   {#if paginateData}

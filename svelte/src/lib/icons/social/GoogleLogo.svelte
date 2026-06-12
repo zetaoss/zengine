@@ -1,3 +1,6 @@
+<script lang="ts">
+</script>
+
 <svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" aria-hidden="true">
   <g>
     <path fill="#34a853" d="M153 292c30 82 118 95 171 60h62v48A192 192 0 0190 341"></path>

@@ -5,6 +5,7 @@
   import { onMount } from 'svelte'
 
   import useAuthStore from '$lib/stores/auth'
+  import CButton from '$shared/ui/CButton.svelte'
   import { showToast } from '$shared/ui/toast/toast'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZToggle from '$shared/ui/ZToggle.svelte'
@@ -190,24 +191,24 @@
 </script>
 
 <div class="p-4 md:p-6">
-  <h1 class="text-xl font-bold text-slate-800">문서 템플릿</h1>
-  <p class="mt-2 text-sm text-slate-600">문서 작성 시 사용하는 템플릿 목록입니다.</p>
+  <h1 class="text-xl font-bold text-foreground">문서 템플릿</h1>
+  <p class="mt-2 text-sm text-muted-foreground">문서 작성 시 사용하는 템플릿 목록입니다.</p>
 
   {#if loading}
-    <div class="mt-4 rounded border border-slate-200 bg-white p-4 text-sm text-slate-600">불러오는 중...</div>
+    <div class="mt-4 rounded border border-border bg-card p-4 text-sm text-muted-foreground">불러오는 중...</div>
   {:else if errorMessage}
-    <div class="mt-4 rounded border border-red-200 bg-red-50 p-4 text-sm text-red-700">{errorMessage}</div>
+    <div class="mt-4 rounded border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">{errorMessage}</div>
   {:else if rows.length === 0}
-    <div class="mt-4 rounded border border-slate-200 bg-white p-4 text-sm text-slate-600">등록된 새문서 틀이 없습니다.</div>
+    <div class="mt-4 rounded border border-border bg-card p-4 text-sm text-muted-foreground">등록된 새문서 틀이 없습니다.</div>
   {:else}
-    <div class="mt-4 overflow-hidden rounded border border-slate-200 bg-white">
+    <div class="mt-4 overflow-hidden rounded border border-border bg-card">
       <table class="w-full text-sm">
         <thead>
-          <tr class="bg-slate-100 text-slate-700">
+          <tr class="bg-muted text-muted-foreground">
             <th class="px-3 py-2 text-left">ID</th>
             <th class="px-3 py-2 text-left">제목</th>
             <th class="px-3 py-2 text-center">활성</th>
-            <th class="px-3 py-2 text-center">순서</th>
+            <th class="px-3 py-2 text-center" aria-hidden="true"></th>
           </tr>
         </thead>
         {#if isBusy}
@@ -223,14 +224,14 @@
         {/if}
         <tbody>
           {#each orderedRows as row (row.id)}
-            <tr class="border-t border-slate-200">
-              <td class="px-3 py-2 text-slate-700">{row.id}</td>
-              <td class="px-3 py-2 text-slate-800">
+            <tr class="border-t border-border">
+              <td class="px-3 py-2 text-muted-foreground">{row.id}</td>
+              <td class="px-3 py-2 text-foreground">
                 <a href={toWikiPath(row.title)} target="_blank" rel="noopener noreferrer external" class="hover:underline">
                   {row.title}
                 </a>
               </td>
-              <td class="px-3 py-2 text-center text-slate-700">
+              <td class="px-3 py-2 text-center text-muted-foreground">
                 <div class="inline-flex items-center justify-center">
                   <ZToggle
                     checked={row.enabled}
@@ -240,27 +241,27 @@
                   />
                 </div>
               </td>
-              <td class="px-3 py-2 text-center text-slate-700">
-                {#if row.enabled}
+              <td class="px-3 py-2 text-center text-muted-foreground">
+                {#if isSysop && row.enabled}
                   <div class="inline-flex items-center gap-2">
-                    <button
-                      type="button"
-                      aria-label="올리기"
-                      class="rounded border border-slate-300 px-2 py-1 text-xs text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-                      disabled={!isSysop || enabledIndex(row.id) <= 0}
+                    <CButton
+                      variant="outline"
+                      size="icon"
+                      title="올리기"
+                      disabled={enabledIndex(row.id) <= 0}
                       onclick={() => void moveEnabled(row.id, -1)}
                     >
                       <ZIcon path={mdiArrowUp} size={14} />
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="내리기"
-                      class="rounded border border-slate-300 px-2 py-1 text-xs text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-                      disabled={!isSysop || enabledIndex(row.id) < 0 || enabledIndex(row.id) >= enabledOrder.length - 1}
+                    </CButton>
+                    <CButton
+                      variant="outline"
+                      size="icon"
+                      title="내리기"
+                      disabled={enabledIndex(row.id) < 0 || enabledIndex(row.id) >= enabledOrder.length - 1}
                       onclick={() => void moveEnabled(row.id, 1)}
                     >
                       <ZIcon path={mdiArrowDown} size={14} />
-                    </button>
+                    </CButton>
                   </div>
                 {/if}
               </td>
@@ -277,7 +278,7 @@
     position: relative;
     overflow: hidden;
     height: 4px;
-    background: var(--background-color-progressive-subtle);
+    background: var(--color-muted);
   }
 
   .progress-bar {
@@ -285,7 +286,7 @@
     inset-block: 0;
     inline-size: 40%;
     animation: article-tpl-progress 1s infinite linear;
-    background: var(--color-progressive);
+    background: var(--color-primary);
   }
 
   @keyframes article-tpl-progress {

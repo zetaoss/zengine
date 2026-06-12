@@ -10,11 +10,10 @@
   import type { PaginateData } from '$lib/components/pagination/types'
   import useAuthStore from '$lib/stores/auth'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
+  import CBadge from '$shared/ui/CBadge.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'
-  import ZBadge from '$shared/ui/ZBadge.svelte'
-  import ZButton from '$shared/ui/ZButton.svelte'
-  import ZButtonLink from '$shared/ui/ZButtonLink.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
   import ZStatusText from '$shared/ui/ZStatusText.svelte'
@@ -68,9 +67,7 @@
   })
 
   let isSysop = $derived(($userInfo?.groups ?? []).includes('sysop'))
-  let currentTask = $derived.by(
-    () => rows.find((row) => ['Generating', 'Publishing', 'Retrying'].includes(row.phase)) ?? null,
-  )
+  let currentTask = $derived.by(() => rows.find((row) => ['Generating', 'Publishing', 'Retrying'].includes(row.phase)) ?? null)
   let hasActiveRows = $derived.by(() => rows.some((row) => !['Completed', 'Rejected', 'Failed'].includes(row.phase)))
   let activeCount = $derived.by(() => rows.filter((row) => !['Completed', 'Rejected', 'Failed'].includes(row.phase)).length)
 
@@ -199,8 +196,8 @@
   }
 
   function getRequestTypeClass(requestType: string) {
-    if (requestType === 'create') return 'text-emerald-600'
-    if (requestType === 'edit') return 'text-amber-600'
+    if (requestType === 'create') return 'text-x-emerald-600'
+    if (requestType === 'edit') return 'text-x-amber-600'
     return ''
   }
 
@@ -278,40 +275,36 @@
         </tr>
       {:else if rows.length === 0}
         <tr>
-          <td colspan="6" class="text-center text-(--color-subtle)">AI 편집 큐가 비어 있습니다.</td>
+          <td colspan="6" class="text-center text-muted-foreground">AI 편집 큐가 비어 있습니다.</td>
         </tr>
       {:else}
         {#each rows as row (row.id)}
-          <tr class={isCurrentTask(row) ? 'bg-blue-50/70' : ''}>
+          <tr class={isCurrentTask(row) ? 'bg-x-blue-50/70' : ''}>
             <td class="text-center">{row.id}</td>
             <td>
-              <ZBadge text={getRequestTypeLabel(row.request_type)} class={`mr-2 ${getRequestTypeClass(row.request_type)}`} />
-              <a
-                href={getTitleHref(row)}
-                rel="noopener"
-                target="_blank"
-                class="font-medium hover:underline"
-                class:new={!isCompleted(row)}
+              <CBadge variant="outline" class={`mr-2 ${getRequestTypeClass(row.request_type)}`}
+                >{getRequestTypeLabel(row.request_type)}</CBadge
               >
+              <a href={getTitleHref(row)} rel="noopener" target="_blank" class="font-medium hover:underline" class:new={!isCompleted(row)}>
                 {row.title}
               </a>
               <span class="ml-1 inline-flex items-center gap-1 align-middle">
                 {#if isCompleted(row)}
-                  <ZButtonLink
-                    color="ghost"
-                    size="small"
+                  <CButton
                     href={getWikiDiffHref(row.title, row.revid)}
+                    variant="ghost"
+                    size="small"
                     rel="external noopener noreferrer"
                     target="_blank"
                     title="차이보기"
                   >
                     <ZIcon path={mdiCompare} />
-                  </ZButtonLink>
+                  </CButton>
                 {/if}
                 {#if canViewDetail(row)}
-                  <ZButtonLink color="ghost" size="small" href={resolve(`/tool/ai-edit/tasks/${row.id}`)} title="작업 상세 보기">
+                  <CButton variant="ghost" size="small" href={resolve(`/tool/ai-edit/tasks/${row.id}`)} title="작업 상세 보기">
                     <ZIcon path={mdiInformation} />
-                  </ZButtonLink>
+                  </CButton>
                 {/if}
               </span>
             </td>
@@ -325,7 +318,7 @@
                 <ZStatusText text={row.phase} />
               </div>
             </td>
-            <td class="text-center text-sm text-(--color-subtle)">
+            <td class="text-center text-sm text-muted-foreground">
               {row.llm_model ?? '-'}
             </td>
             <td>
@@ -335,17 +328,17 @@
             <td class="text-center">
               <div class="flex items-center justify-center gap-1">
                 {#if isSysop}
-                  <ZButton color="default" size="small" disabled={deletingId === row.id} onclick={() => del(row)}>
+                  <CButton variant="outline" size="small" disabled={deletingId === row.id} onclick={() => del(row)}>
                     <ZIcon path={mdiDelete} />
-                  </ZButton>
+                  </CButton>
                 {/if}
               </div>
             </td>
           </tr>
           {#if isCurrentTask(row) && (row.error_count ?? 0) > 0}
-            <tr class="border-b border-blue-200 bg-blue-50/50">
+            <tr class="border-b border-x-blue-200 bg-x-blue-50/50">
               <td colspan="6" class="text-center text-sm">
-                <div class="text-blue-900">
+                <div class="text-x-blue-900">
                   실패 {row.error_count ?? 0}회
                   {#if row.last_error}
                     <small class="ml-1 opacity-80">{row.last_error}</small>

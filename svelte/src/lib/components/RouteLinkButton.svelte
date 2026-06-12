@@ -1,33 +1,27 @@
 <script lang="ts">
   import { resolve } from '$app/paths'
-  import type { ZButtonColor, ZButtonSize } from '$shared/ui/zButtonShared'
-  import { getZButtonClasses, handleZButtonClick } from '$shared/ui/zButtonShared'
-
-  const resolvePath = resolve as unknown as (path: string) => string
+  import CButton, { type ButtonSize, type ButtonVariant } from '$shared/ui/CButton.svelte'
 
   export let to: string
   export let disabled = false
-  export let color: ZButtonColor = 'default'
-  export let size: ZButtonSize = 'medium'
+  export let variant: ButtonVariant = 'outline'
+  export let size: ButtonSize = 'medium'
   export let onclick: ((event: MouseEvent) => void) | undefined = undefined
 
-  $: isDisabled = disabled
-  $: classes = getZButtonClasses({
-    size,
-    color,
-    isDisabled,
-    className: typeof $$props.class === 'string' ? $$props.class : undefined,
-  })
+  let className = ''
+  export { className as class }
 
-  function handleClick(event: MouseEvent) {
-    handleZButtonClick({
-      event,
-      isDisabled,
-      onclick,
-    })
-  }
+  const resolvePath = resolve as unknown as (path: string) => string
 </script>
 
-<svelte:element this={'a'} {...$$restProps} href={resolvePath(to)} class={classes} aria-disabled={isDisabled} onclick={handleClick}>
+<CButton
+  {...$$restProps}
+  class={className}
+  href={resolvePath(to)}
+  {disabled}
+  {variant}
+  {size}
+  {onclick}
+>
   <slot />
-</svelte:element>
+</CButton>

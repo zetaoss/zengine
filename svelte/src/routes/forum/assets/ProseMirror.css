@@ -24,13 +24,13 @@
   }
 
   & code {
-    @apply px-2 py-1 bg-zinc-100 text-zinc-600;
+    @apply px-2 py-1 bg-x-zinc-100 text-x-zinc-600;
     font-size: 85%;
     border-radius: 6px;
   }
 
   & pre {
-    @apply bg-zinc-100 text-zinc-600;
+    @apply bg-x-zinc-100 text-x-zinc-600;
     border-radius: 0.5rem;
     font-family: 'JetBrainsMono', monospace;
     padding: 0.75rem 1rem;
@@ -43,7 +43,7 @@
   }
 
   & mark {
-    @apply bg-yellow-700;
+    @apply bg-x-yellow-700;
   }
 
   & img {
@@ -55,7 +55,7 @@
   }
 
   & blockquote {
-    @apply border-l-4 pl-4 border-gray-200;
+    @apply border-l-4 pl-4 border-x-gray-200;
   }
 
   & ul[data-type='taskList'] {
@@ -91,7 +91,7 @@
     }
 
     & th {
-      @apply font-bold text-left bg-zinc-100;
+      @apply font-bold text-left bg-x-zinc-100;
     }
 
     & .selectedCell:after {

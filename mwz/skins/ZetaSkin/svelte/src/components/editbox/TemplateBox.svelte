@@ -1,8 +1,7 @@
 <script lang="ts">
   import { mdiFileCogOutline } from '@mdi/js'
 
-  import ZButton from '$shared/ui/ZButton.svelte'
-  import ZButtonLink from '$shared/ui/ZButtonLink.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
 
   export let titles: string[] = []
@@ -33,12 +32,12 @@
   }
 </script>
 
-<div class="mb-2 rounded border border-gray-300 px-3 py-2">
+<div class="mb-2 rounded border border-x-gray-300 px-3 py-2">
   <div class="grid grid-cols-2 gap-3">
     <div class="flex items-center gap-2">
-      <span class="text-sm font-medium text-slate-700">템플릿:</span>
+      <span class="text-sm font-medium text-x-slate-700">템플릿:</span>
       <select
-        class="cursor-pointer rounded border px-2 py-0.5 text-sm scheme-light-dark hover:bg-slate-100"
+        class="cursor-pointer rounded border px-2 py-0.5 text-sm scheme-light-dark hover:bg-x-slate-100"
         bind:value={selected}
         onchange={handleChange}
       >
@@ -47,30 +46,22 @@
           <option value={title}>{toBoilerplateLabel(title)}</option>
         {/each}
       </select>
-      <ZButtonLink
+      <CButton
         href="/tool/article-tpl"
         target="_blank"
         rel="noopener noreferrer"
         size="small"
-        color="default"
+        variant="outline"
         class="inline-flex items-center"
         aria-label="템플릿 관리 바로가기"
         title="템플릿 관리"
       >
         <ZIcon path={mdiFileCogOutline} class="h-4 w-4" />
-      </ZButtonLink>
+      </CButton>
     </div>
 
     <div class="flex items-center justify-end">
-      <ZButton
-        id="zeta-ai-edit-button"
-        size="small"
-        color="default"
-        aria-label="AI 편집"
-        onclick={onToggleAiEdit}
-      >
-        AI 편집
-      </ZButton>
+      <CButton id="zeta-ai-edit-button" size="small" variant="default" aria-label="AI 편집" onclick={onToggleAiEdit}>AI 편집</CButton>
     </div>
   </div>
 </div>

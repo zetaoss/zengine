@@ -20,7 +20,7 @@
   <h2 class="my-5 text-2xl font-bold">포럼</h2>
 
   <div class="flex justify-end py-2">
-    <RouteLinkButton to={`/forum${pageNumber === 1 ? '' : `?page=${pageNumber}`}`}>목록</RouteLinkButton>
+    <RouteLinkButton to={`/forum${pageNumber === 1 ? '' : `?page=${pageNumber}`}`} variant="outline">목록</RouteLinkButton>
   </div>
 
   <ViewerApex {postId} />

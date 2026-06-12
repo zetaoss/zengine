@@ -172,7 +172,7 @@
       <ZSpinner />
     </div>
   {:else if loadError}
-    <div class="mt-4 text-center text-sm text-red-500">
+    <div class="mt-4 text-center text-sm text-x-red-500">
       {loadError}
     </div>
   {:else}
@@ -193,7 +193,7 @@
           <div class="z-muted2 mt-2 space-y-1 text-sm">
             <p>
               편집수:
-              <span class="z-text font-semibold">{editCount.toLocaleString()}</span>
+              <span class="text-foreground font-semibold">{editCount.toLocaleString()}</span>
             </p>
             <p>
               가입일:

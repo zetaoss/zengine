@@ -5,8 +5,8 @@
   import { useOnelineDelete } from '$lib/composables/useOnelineDelete'
   import useAuthStore from '$lib/stores/auth'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
   import { showToast } from '$shared/ui/toast/toast'
-  import ZButton from '$shared/ui/ZButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import httpy from '$shared/utils/httpy'
   import linkify from '$shared/utils/linkify'
@@ -112,9 +112,9 @@
     <span class="ml-1">{@html r.message}</span>
     <span class="z-muted2 ml-1 text-xs">{r.created.substring(0, 10)}</span>
     {#if $canDelete(r.user_id)}
-      <ZButton color="ghost" class="z-muted3 py-1 align-middle leading-none" onclick={() => del(r)}>
+      <CButton variant="ghost" class="z-muted3 py-1 align-middle leading-none" onclick={() => del(r)}>
         <ZIcon path={mdiDelete} />
-      </ZButton>
+      </CButton>
     {/if}
   </div>
 {/each}
