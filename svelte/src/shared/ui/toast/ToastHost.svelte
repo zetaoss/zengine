@@ -11,7 +11,7 @@
   {#each $toasts as toast (toast.id)}
     {#if toast.placement === 'top-right'}
       <div
-        class="mt-1 w-56 rounded bg-a-slate-500/80 text-background shadow-md"
+        class="mt-1 w-56 rounded bg-a-slate-500/80 text-foreground shadow-md"
         in:fly={{ y: 6, duration: 200 }}
         out:fly={{ y: 6, duration: 200 }}
       >
