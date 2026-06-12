@@ -24,11 +24,11 @@
 
   const statusClass = $derived(
     status === Status.Can
-      ? 'border-x-green-500'
+      ? 'border-a-green-500'
       : status === Status.Cannot
         ? 'border-[#f008]'
         : status === Status.Checking
-          ? 'border-x-gray-400'
+          ? 'border-a-gray-400'
           : '',
   )
 
@@ -195,23 +195,23 @@
   </div>
 
   {#if status === Status.Checking}
-    <div class="text-sm text-x-gray-500">확인 중...</div>
+    <div class="text-sm text-a-gray-500">확인 중...</div>
   {:else if status === Status.Cannot}
     <div class="text-sm text-[#f008]">
       {errorMessage || '사용불가한 사용자명입니다.'}
     </div>
   {:else if status === Status.Can}
-    <div class="text-sm text-x-green-600">사용가능한 사용자명입니다.</div>
+    <div class="text-sm text-a-green-600">사용가능한 사용자명입니다.</div>
   {/if}
 
   {#if warningMessage}
-    <div class="my-2 rounded bg-x-yellow-100 p-2 px-4 text-sm text-x-yellow-800">
+    <div class="my-2 rounded bg-a-yellow-100 p-2 px-4 text-sm text-a-yellow-800">
       {warningMessage}
     </div>
   {/if}
 
   {#if errorMessage && status !== Status.Cannot}
-    <div class="my-2 rounded bg-x-red-400 p-2 px-4 text-sm">
+    <div class="my-2 rounded bg-a-red-400 p-2 px-4 text-sm">
       {errorMessage}
     </div>
   {/if}

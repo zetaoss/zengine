@@ -14,10 +14,10 @@
     text-decoration: none;
     border-radius: 0.4rem;
     padding: 0.2rem 0.4rem;
-    background-color: color-mix(in srgb, var(--color-x-sky-600), transparent 90%);
+    background-color: color-mix(in srgb, var(--color-a-sky-600), transparent 90%);
 
     &:hover {
-      background-color: color-mix(in srgb, var(--color-x-sky-600), transparent 80%);
+      background-color: color-mix(in srgb, var(--color-a-sky-600), transparent 80%);
     }
   }
 }

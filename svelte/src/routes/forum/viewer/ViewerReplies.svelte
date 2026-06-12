@@ -122,7 +122,7 @@
   }
 </script>
 
-<ZModal show={showModal} on:ok={modalOK} on:cancel={() => (showModal = false)}>댓글을 삭제하시겠습니까?</ZModal>
+<ZModal show={showModal} onOk={modalOK} onCancel={() => { showModal = false }}>댓글을 삭제하시겠습니까?</ZModal>
 
 <div>
   <h3 class="pt-4 text-lg">댓글 ({replies.length})</h3>
@@ -132,7 +132,7 @@
       <div class="grid grid-cols-2">
         <div>
           <AvatarUser user={{ id: reply.user_id, name: reply.user_name }} />
-          <div class="text-xs text-x-gray-500">{formatDate(reply.created_at)}</div>
+          <div class="text-xs text-a-gray-500">{formatDate(reply.created_at)}</div>
         </div>
 
         {#if $canEdit(reply.user_id)}
@@ -171,10 +171,10 @@
 
       <div class="pt-2">
         {#if isEditing(reply.id)}
-          <div class="rounded border-2 bg-x-white p-3">
+          <div class="rounded border-2 bg-background p-3">
             <div class="flex items-center justify-between">
-              <span class="text-xs text-x-gray-400">수정 중</span>
-              <span class="text-xs text-x-gray-400">{editBody.length} characters</span>
+              <span class="text-xs text-a-gray-400">수정 중</span>
+              <span class="text-xs text-a-gray-400">{editBody.length} characters</span>
             </div>
 
             <div class="mt-2">
@@ -213,7 +213,7 @@
           />
         </div>
         <div class="flex justify-end gap-3">
-          <div class="text-xs text-x-gray-400">{replyBody.length} 자</div>
+          <div class="text-xs text-a-gray-400">{replyBody.length} 자</div>
           <CButton variant="default" class="w-20" disabled={replyBody.length === 0} onclick={postReply}>등록</CButton>
         </div>
       </div>

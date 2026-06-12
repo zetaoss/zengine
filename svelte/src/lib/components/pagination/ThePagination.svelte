@@ -28,7 +28,7 @@
 
   const baseClass =
     'inline-flex items-center justify-center min-w-8 px-2 sm:px-3 py-2 rounded transition text-foreground ' +
-    'hover:no-underline hover:bg-x-zinc-100 whitespace-nowrap'
+    'hover:no-underline hover:bg-a-zinc-100 whitespace-nowrap'
   const activeClass = 'font-bold bg-[#8883]'
   const disabledClass = 'opacity-40 cursor-default pointer-events-none'
 

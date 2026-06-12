@@ -1,10 +1,11 @@
 <script lang="ts">
   import { mdiClose } from '@mdi/js'
   import { onMount } from 'svelte'
-  import { createEventDispatcher } from 'svelte'
 
   import CButton, { type ButtonVariant } from '$shared/ui/CButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
+
+  type ModalCallback = () => void | Promise<void>
 
   export let show = false
   export let title = ''
@@ -17,12 +18,12 @@
   export let closable = true
   export let backdropClosable = true
   export let panelClass = 'max-w-[60vw] md:max-w-[40vw]'
-
-  const dispatch = createEventDispatcher<{ ok: void; cancel: void }>()
+  export let onOk: ModalCallback | undefined = undefined
+  export let onCancel: ModalCallback | undefined = undefined
 
   onMount(() => {
     function onKeyup(e: KeyboardEvent) {
-      if (e.key === 'Escape' && show && closable) dispatch('cancel')
+      if (e.key === 'Escape' && show && closable) void onCancel?.()
     }
 
     document.addEventListener('keyup', onKeyup)
@@ -35,14 +36,14 @@
 {#if show}
   <div class="fixed inset-0 z-40 flex items-center justify-center bg-foreground/40">
     {#if backdropClosable}
-      <button type="button" class="absolute inset-0 cursor-default bg-transparent" aria-label="닫기" onclick={() => dispatch('cancel')}
+      <button type="button" class="absolute inset-0 cursor-default bg-transparent" aria-label="닫기" onclick={() => void onCancel?.()}
       ></button>
     {/if}
 
     <div
       role="dialog"
       aria-modal="true"
-      class={`relative flex max-h-[calc(100dvh-2rem)] w-full min-h-0 flex-col overflow-hidden rounded-md border bg-x-white ${panelClass}`}
+      class={`relative flex max-h-[calc(100dvh-2rem)] w-full min-h-0 flex-col overflow-hidden rounded-md border bg-background ${panelClass}`}
     >
       {#if title}
         <header class="flex min-h-12 items-stretch justify-between gap-2 border-b pl-5">
@@ -56,14 +57,14 @@
             {/if}
           </div>
           {#if closable}
-            <CButton variant="ghost" class="self-stretch rounded-none px-4 py-0" onclick={() => dispatch('cancel')}>
+            <CButton variant="ghost" class="self-stretch rounded-none px-4 py-0" onclick={() => void onCancel?.()}>
               <ZIcon path={mdiClose} />
             </CButton>
           {/if}
         </header>
       {:else if closable}
         <div class="flex justify-end border-b px-3 py-2">
-          <CButton variant="ghost" onclick={() => dispatch('cancel')}>
+          <CButton variant="ghost" onclick={() => void onCancel?.()}>
             <ZIcon path={mdiClose} />
           </CButton>
         </div>
@@ -74,10 +75,10 @@
       </section>
 
       <footer class="flex justify-center gap-3 border-t px-4 py-3">
-        <CButton variant={okVariant} disabled={okDisabled} onclick={() => !okDisabled && dispatch('ok')}>
+        <CButton variant={okVariant} disabled={okDisabled} onclick={() => !okDisabled && void onOk?.()}>
           {okText}
         </CButton>
-        <CButton variant="outline" onclick={() => dispatch('cancel')}>{cancelText}</CButton>
+        <CButton variant="outline" onclick={() => void onCancel?.()}>{cancelText}</CButton>
       </footer>
     </div>
   </div>

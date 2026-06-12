@@ -23,7 +23,7 @@
         {@render children(error !== '')}
       {/if}
       {#if error}
-        <div class="text-xs text-x-red-500 px-1">{error}</div>
+        <div class="text-xs text-a-red-500 px-1">{error}</div>
       {/if}
     </div>
   </div>

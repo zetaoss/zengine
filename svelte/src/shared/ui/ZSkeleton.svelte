@@ -6,6 +6,6 @@
 
 <span
   aria-hidden="true"
-  class={`inline-block align-middle animate-pulse rounded bg-x-gray-300/70 ${extraClass}`}
+  class={`inline-block align-middle animate-pulse rounded bg-a-gray-300/70 ${extraClass}`}
   style={`width:${width}; height:${height};`}
 ></span>

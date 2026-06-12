@@ -2,7 +2,6 @@
   import { mdiCheckCircle, mdiCloseCircle, mdiProgressClock } from '@mdi/js'
   import { onDestroy } from 'svelte'
   import { tick } from 'svelte'
-  import { createEventDispatcher } from 'svelte'
 
   import titleExist from '$lib/utils/mediawiki'
   import { showToast } from '$shared/ui/toast/toast'
@@ -14,8 +13,7 @@
   const AUTO_CHECK_DELAY_MS = 700
 
   export let show = false
-
-  const dispatch = createEventDispatcher<{ close: void }>()
+  export let onClose: (() => void) | undefined = undefined
 
   let title = ''
   let state: State = 'idle'
@@ -41,7 +39,7 @@
         icon: mdiProgressClock,
         label: '확인중',
         text: '중복확인',
-        className: 'text-x-blue-600'
+        className: 'text-a-blue-600'
       }
     }
     if (state === 'available') {
@@ -49,7 +47,7 @@
         icon: mdiCheckCircle,
         label: '확인완료',
         text: '중복확인',
-        className: 'text-x-green-600'
+        className: 'text-a-green-600'
       }
     }
     if (state === 'exists') {
@@ -57,7 +55,7 @@
         icon: mdiCloseCircle,
         label: '중복',
         text: '중복확인',
-        className: 'text-x-red-600'
+        className: 'text-a-red-600'
       }
     }
     return {
@@ -158,20 +156,20 @@
       return
     }
 
-    dispatch('close')
+    onClose?.()
     showToast('등록 완료')
     reset()
   }
 
   function cancel() {
-    dispatch('close')
+    onClose?.()
     reset()
   }
 
   onDestroy(clearAutoCheck)
 </script>
 
-<ZModal {show} title="새 작성 요청 등록하기" okDisabled={!canSubmit} okVariant="default" on:ok={ok} on:cancel={cancel}>
+<ZModal {show} title="새 작성 요청 등록하기" okDisabled={!canSubmit} okVariant="default" onOk={ok} onCancel={cancel}>
   <div class="w-full">
     <div class="flex items-center gap-2">
       <input
@@ -197,7 +195,7 @@
       </div>
     </div>
     {#if state === 'exists'}
-      <div class="mt-2 text-sm text-x-red-500">'{trimmedTitle}' 문서는 이미 있습니다.</div>
+      <div class="mt-2 text-sm text-a-red-500">'{trimmedTitle}' 문서는 이미 있습니다.</div>
     {/if}
   </div>
 </ZModal>

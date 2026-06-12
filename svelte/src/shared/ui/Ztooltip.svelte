@@ -118,14 +118,14 @@
   {#if isPinned}
     <button
       type="button"
-      class="fixed inset-0 z-40 cursor-default bg-x-slate-950/15 backdrop-saturate-0 backdrop-brightness-75"
+      class="fixed inset-0 z-40 cursor-default bg-a-slate-950/15 backdrop-saturate-0 backdrop-brightness-75"
       aria-label="툴팁 닫기"
       onclick={closePinnedTooltip}
     ></button>
   {/if}
   <span
     bind:this={tooltipEl}
-    class={`pointer-events-none fixed z-50 w-[360px] max-w-[calc(100vw-1rem)] -translate-x-1/2 rounded border border-x-slate-300 bg-x-white px-2 py-1 text-xs text-x-slate-700 shadow-lg whitespace-normal wrap-break-word transition-opacity duration-150 ${isOpen ? 'visible opacity-100' : 'invisible opacity-0'}`}
+    class={`pointer-events-none fixed z-50 w-[360px] max-w-[calc(100vw-1rem)] -translate-x-1/2 rounded border border-a-slate-300 bg-background px-2 py-1 text-xs text-a-slate-700 shadow-lg whitespace-normal wrap-break-word transition-opacity duration-150 ${isOpen ? 'visible opacity-100' : 'invisible opacity-0'}`}
     role="tooltip"
     style={tooltipStyle}
   >

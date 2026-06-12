@@ -192,7 +192,7 @@
   }
 
   .binder-title-link:hover {
-    color: var(--color-x-sky-600);
+    color: var(--color-a-sky-600);
     text-decoration: underline;
   }
 

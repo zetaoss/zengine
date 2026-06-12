@@ -11,7 +11,7 @@
   {#each $toasts as toast (toast.id)}
     {#if toast.placement === 'top-right'}
       <div
-        class="mt-1 w-56 rounded bg-x-slate-500/80 text-x-white shadow-md"
+        class="mt-1 w-56 rounded bg-a-slate-500/80 text-background shadow-md"
         in:fly={{ y: 6, duration: 200 }}
         out:fly={{ y: 6, duration: 200 }}
       >
@@ -26,7 +26,7 @@
   {#each $toasts as toast (toast.id)}
     {#if toast.placement === 'center'}
       <div
-        class="pointer-events-auto w-full max-w-sm rounded border bg-x-white text-foreground shadow-lg"
+        class="pointer-events-auto w-full max-w-sm rounded border bg-background text-foreground shadow-lg"
         in:fly={{ y: 8, duration: 200 }}
         out:fly={{ y: 8, duration: 200 }}
       >
