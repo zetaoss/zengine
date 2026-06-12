@@ -4,7 +4,7 @@
   import RouteLinkButton from '$lib/components/RouteLinkButton.svelte'
   import useAuthStore from '$lib/stores/auth'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
-  import ZButton from '$shared/ui/ZButton.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
   import ZModal from '$shared/ui/ZModal.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
   import httpy from '$shared/utils/httpy'
@@ -77,7 +77,7 @@
     <div>
       {#if post}
         <div class="float-left mr-2">
-          <span class="rounded border p-1 text-xs text-gray-600">
+          <span class="rounded border p-1 text-xs text-x-gray-600">
             {post.cat}
           </span>
         </div>
@@ -98,7 +98,7 @@
     <hr />
 
     {#if isLoading}
-      <div class="min-h-36 py-10 text-center text-gray-500">
+      <div class="min-h-36 py-10 text-center text-x-gray-500">
         <ZSpinner />
       </div>
     {:else if post}
@@ -108,20 +108,20 @@
       <hr />
       <ViewerReplies {postId} />
     {:else}
-      <div class="min-h-36 py-10 text-center text-gray-500">게시글을 불러올 수 없습니다.</div>
+      <div class="min-h-36 py-10 text-center text-x-gray-500">게시글을 불러올 수 없습니다.</div>
     {/if}
   </div>
 </div>
 
 <div class="flex gap-3 py-4">
-  <RouteLinkButton to="/forum/new" disabled={!$canWrite}>글쓰기</RouteLinkButton>
+  <RouteLinkButton to="/forum/new" variant="outline" disabled={!$canWrite}>글쓰기</RouteLinkButton>
 
   {#if post}
     {#if $canEdit(post.user_id)}
-      <ZButton onclick={edit}>수정</ZButton>
+      <CButton variant="outline" onclick={edit}>수정</CButton>
     {/if}
     {#if $canDelete(post.user_id)}
-      <ZButton onclick={del}>삭제</ZButton>
+      <CButton variant="outline" onclick={del}>삭제</CButton>
     {/if}
   {/if}
 </div>

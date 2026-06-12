@@ -10,12 +10,7 @@
     children?: Snippet<[boolean]>
   }
 
-  let {
-    error = '',
-    containerClass = '',
-    left,
-    children,
-  }: Props = $props()
+  let { error = '', containerClass = '', left, children }: Props = $props()
 </script>
 
 <div class="flex flex-col gap-1 {containerClass}">
@@ -28,7 +23,7 @@
         {@render children(error !== '')}
       {/if}
       {#if error}
-        <div class="text-xs text-red-500 px-1">{error}</div>
+        <div class="text-xs text-x-red-500 px-1">{error}</div>
       {/if}
     </div>
   </div>

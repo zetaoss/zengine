@@ -40,7 +40,7 @@
 
 <style>
   .z-toggle {
-    border-color: var(--color-subtle);
-    color: var(--color-subtle);
+    border-color: var(--muted-foreground);
+    color: var(--muted-foreground);
   }
 </style>

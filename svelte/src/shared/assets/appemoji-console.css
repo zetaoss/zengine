@@ -1,9 +1,0 @@
-@layer base {
-  :root {
-    --console-emoji-debug: 🐛;
-    --console-emoji-error: ❌;
-    --console-emoji-info: ℹ️;
-    --console-emoji-trace: 🔍;
-    --console-emoji-warn: ⚠️;
-  }
-}

@@ -27,13 +27,13 @@
 
 <span
   class={`inline-flex items-center justify-center overflow-hidden rounded-full box-border align-middle relative hover:z-40 ${
-    showBorder ? 'ring-2 ring-white outline -outline-offset-1 outline-black/5' : ''
+    showBorder ? 'ring-2 ring-x-white outline -outline-offset-1 outline-foreground/5' : ''
   }`}
   style={`height: ${size}px; width: ${size}px; background: #f0f0f0;`}
   title={user?.name}
 >
   {#if user?.id === 0}
-    <span class="flex h-full w-full items-center justify-center text-xs text-gray-500">?</span>
+    <span class="flex h-full w-full items-center justify-center text-xs text-x-gray-500">?</span>
   {:else if user}
     <img
       class="h-full w-full"

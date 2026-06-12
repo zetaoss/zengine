@@ -43,6 +43,7 @@ export default ts.config(
     },
     rules: {
       'svelte/block-lang': ['error', { script: 'ts', style: [null, 'postcss'] }],
+      '@typescript-eslint/no-deprecated': 'error',
     },
   },
   {

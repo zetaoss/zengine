@@ -4,7 +4,7 @@
   import { mdiChevronDown, mdiChevronUp, mdiWeatherNight } from '@mdi/js'
   import { onMount } from 'svelte'
 
-  import ZButton from '$shared/ui/ZButton.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import { scrollToBottom, scrollToTop } from '$shared/utils/scroll'
 
@@ -21,14 +21,6 @@
     localStorage.setItem('theme', isDark ? 'dark' : 'light')
   }
 
-  const flyUp = () => {
-    scrollToTop()
-  }
-
-  const diveDive = () => {
-    scrollToBottom()
-  }
-
   onMount(() => {
     const stored = localStorage.getItem('theme')
     const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false
@@ -37,16 +29,16 @@
   })
 </script>
 
-<div class="fixed bottom-0 right-0 z-40 print:hidden p-2 text-(--raw-white)">
+<div class="fixed bottom-0 right-0 z-40 print:hidden p-2 text-white">
   <div class="z-50 flex gap-1 opacity-60">
-    <ZButton class="bg-[#8888]! border-0 p-1 text-inherit dark:text-[#eb0]" onclick={toggleDark}>
-      <ZIcon path={mdiWeatherNight} size={24} />
-    </ZButton>
-    <ZButton class="bg-[#8888]! border-0 p-1 text-inherit" onclick={flyUp}>
-      <ZIcon path={mdiChevronUp} size={24} />
-    </ZButton>
-    <ZButton class="bg-[#8888]! border-0 p-1 text-inherit" onclick={diveDive}>
-      <ZIcon path={mdiChevronDown} size={24} />
-    </ZButton>
+    <CButton size="icon-lg" class="bg-[#8888]! border-0! text-white! dark:text-[#eb0]!" onclick={toggleDark}>
+      <ZIcon path={mdiWeatherNight} class="size-6" />
+    </CButton>
+    <CButton size="icon-lg" class="bg-[#8888]! border-0! text-white!" onclick={scrollToTop}>
+      <ZIcon path={mdiChevronUp} class="size-6" />
+    </CButton>
+    <CButton size="icon-lg" class="bg-[#8888]! border-0! text-white!" onclick={scrollToBottom}>
+      <ZIcon path={mdiChevronDown} class="size-6" />
+    </CButton>
   </div>
 </div>

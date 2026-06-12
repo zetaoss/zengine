@@ -1,0 +1,17 @@
+:root {
+  --console-bg: light-dark(#e4e4e4, #000);
+  --console-string: light-dark(#0084d1, #00bcff);
+  --console-number: light-dark(#9810fa, #c27aff);
+  --console-null: #6b7280;
+  --console-circular: #f87171;
+
+  --console-warn-bg: light-dark(#fef9c3, #413c26);
+  --console-error-bg: light-dark(#fee2e2, #4e3534);
+  --console-detail-bg: light-dark(#f1f5f9, #1e293b);
+
+  --console-arrkey: #60a5fa;
+  --console-objkey: #9ca3af;
+
+  --code-bg: light-dark(#f9f9f9, #1c2029);
+  --nbout-error: light-dark(#fee2e2, #4e3534);
+}

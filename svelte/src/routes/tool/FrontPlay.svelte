@@ -10,10 +10,11 @@
   import { onDestroy, onMount } from 'svelte'
 
   import buildHtml from '$shared/components/sandbox/buildHtml'
-  import ZButton from '$shared/ui/ZButton.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
+  import { type ConsoleLogLevel } from '$shared/utils/console'
 
   import ConsoleLog from './frontplay/ConsoleLog.svelte'
-  import type { LogLevel, SandboxLog } from './frontplay/types'
+  import type { SandboxLog } from './frontplay/types'
 
   interface LogItem extends SandboxLog {
     id: number
@@ -44,7 +45,7 @@ console.log("Hello HTML");
   let iframeSrcDoc = ''
   const bridgeId = `frontplay_${Math.random().toString(36).slice(2)}`
 
-  function appendLog(level: LogLevel, args: unknown[]) {
+  function appendLog(level: ConsoleLogLevel, args: unknown[]) {
     logs = [...logs, { id: (logSeed += 1), level, args }]
   }
 
@@ -106,7 +107,7 @@ console.log("Hello HTML");
   if (typeof window !== 'undefined') {
     const bridgeWindow = window as unknown as Record<string, unknown>
     bridgeWindow[bridgeId] = (payload: unknown) => {
-      const data = payload as { level?: LogLevel; args?: unknown[] }
+      const data = payload as { level?: ConsoleLogLevel; args?: unknown[] }
       if (!data?.level || !Array.isArray(data.args)) return
       appendLog(data.level, data.args)
     }
@@ -161,7 +162,7 @@ console.log("Hello HTML");
     <div class="flex items-center py-2">
       <b>Front Play</b>
       <span class="ml-2">
-        <ZButton onclick={run}>Run</ZButton>
+        <CButton variant="outline" onclick={run}>Run</CButton>
       </span>
     </div>
 
@@ -187,8 +188,8 @@ console.log("Hello HTML");
       </div>
 
       <div class="flex min-h-0 flex-1 flex-col">
-        <header class="bg-slate-400 py-1 text-center font-bold text-white">Console</header>
-        <div class="console h-[30vh] overflow-y-auto bg-(--console-bg) text-sm">
+        <header class="bg-x-slate-400 py-1 text-center font-bold text-x-white">Console</header>
+        <div class="console h-[30vh] overflow-y-auto bg-code text-sm">
           {#if logs.length === 0}
             <div class="p-2 opacity-60">No logs yet.</div>
           {:else}

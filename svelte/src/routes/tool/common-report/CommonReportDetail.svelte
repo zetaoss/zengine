@@ -9,9 +9,9 @@
   import useAuthStore from '$lib/stores/auth'
   import { titlesExist } from '$lib/utils/mediawiki'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'
-  import ZButton from '$shared/ui/ZButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import httpy from '$shared/utils/httpy'
   import { getWikiHref } from '$shared/utils/wikiLink'
@@ -219,13 +219,13 @@
 {#if row && row.id}
   <div class="p-5">
     <div class="flex justify-end">
-      <RouteLinkButton to="/tool/common-report">목록</RouteLinkButton>
+      <RouteLinkButton to="/tool/common-report" variant="outline">목록</RouteLinkButton>
     </div>
 
     <div class="z-card my-2 rounded border p-5">
       <div class="my-5 flex items-center gap-3 text-2xl font-bold">
         <h2 class="m-0">통용 보고서 #{currentId}</h2>
-        <div class="flex items-center gap-1 text-base text-gray-600">
+        <div class="flex items-center gap-1 text-base text-x-gray-600">
           {#if row.phase === 'Pending'}
             <span>⏳</span>
           {:else if row.phase === 'Running'}
@@ -248,17 +248,17 @@
         </div>
         <div class="flex flex-wrap gap-2">
           {#each copyActions as action (action.key)}
-            <ZButton onclick={() => handleCopy(action)}>
+            <CButton variant="outline" onclick={() => handleCopy(action)}>
               <span class="mr-2">{action.label}</span>
               {#if activeTooltip !== action.key}
                 <ZIcon path={mdiContentCopy} />
               {:else}
-                <span class="inline-flex items-center gap-1 text-green-600">
+                <span class="inline-flex items-center gap-1 text-x-green-600">
                   <ZIcon path={mdiCheckBold} />
                   <span class="text-xs">Copied!</span>
                 </span>
               {/if}
-            </ZButton>
+            </CButton>
           {/each}
         </div>
       </div>
@@ -383,13 +383,13 @@
 
     <div class="flex gap-2 py-4">
       {#if $canDelete(row.user_id)}
-        <ZButton onclick={() => del(row)}>삭제</ZButton>
+        <CButton variant="destructive" onclick={() => row && del(row)}>삭제</CButton>
       {/if}
       {#if $canDelete(row.user_id) && row.phase === 'Failed'}
-        <ZButton onclick={() => rerun(row)}>재실행</ZButton>
+        <CButton variant="default" onclick={() => row && rerun(row)}>재실행</CButton>
       {/if}
       <div class="flex-1 text-right">
-        <RouteLinkButton to="/tool/common-report">목록</RouteLinkButton>
+        <RouteLinkButton to="/tool/common-report" variant="outline">목록</RouteLinkButton>
       </div>
     </div>
   </div>

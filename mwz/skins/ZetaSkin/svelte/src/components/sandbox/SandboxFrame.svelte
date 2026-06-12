@@ -50,10 +50,10 @@
 
 {#if resizable}
   <ResizableBox className={`h-full rounded ${className}`}>
-    <iframe bind:this={iframe} title={`sandbox-${id}`} class="w-full h-full border-0 bg-white"></iframe>
+    <iframe bind:this={iframe} title={`sandbox-${id}`} class="w-full h-full border-0 bg-x-white"></iframe>
   </ResizableBox>
 {:else}
   <div class={`h-full rounded ${className}`}>
-    <iframe bind:this={iframe} title={`sandbox-${id}`} class="w-full h-full border-0 bg-white"></iframe>
+    <iframe bind:this={iframe} title={`sandbox-${id}`} class="w-full h-full border-0 bg-x-white"></iframe>
   </div>
 {/if}

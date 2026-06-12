@@ -24,12 +24,12 @@
 
 <a
   href={anchor ? `#${anchor}` : '#'}
-  class={`flex w-full items-start gap-1 z-text2 hover:no-underline ${showRail ? 'border-l-2' : ''}`}
+  class={`flex w-full items-start gap-1 text-foreground/80 hover:no-underline ${showRail ? 'border-l-2' : ''}`}
   style={`padding-left: calc((${depth} + 1) * 0.75rem); ${showRail ? `border-color: ${isInView ? '#999' : '#9993'};` : ''}`}
   aria-current={isInView ? 'location' : undefined}
   on:click={onClick}
 >
-  <span class="shrink-0 z-text4">
+  <span class="shrink-0 text-muted-foreground/70">
     <span>{number}</span>
     {#if depth === 0}
       <span>.</span>

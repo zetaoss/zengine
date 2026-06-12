@@ -1,7 +1,6 @@
-// types.ts
-export type LogLevel = 'log' | 'error' | 'warn' | 'info' | 'debug' | 'trace'
+import type { ConsoleLogLevel } from '$shared/utils/console'
 
 export interface SandboxLog {
-  level: LogLevel
+  level: ConsoleLogLevel
   args: unknown[]
 }

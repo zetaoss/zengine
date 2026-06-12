@@ -3,7 +3,7 @@
   import { onMount } from 'svelte'
   import { createEventDispatcher } from 'svelte'
 
-  import ZButton from '$shared/ui/ZButton.svelte'
+  import CButton, { type ButtonVariant } from '$shared/ui/CButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
 
   export let show = false
@@ -11,7 +11,7 @@
   export let titleIconPath: string | undefined = undefined
   export let titleIconAtEnd = false
   export let okText = '확인'
-  export let okColor: 'ghost' | 'default' | 'danger' | 'primary' = 'danger'
+  export let okVariant: ButtonVariant = 'destructive'
   export let okDisabled = false
   export let cancelText = '취소'
   export let closable = true
@@ -33,7 +33,7 @@
 </script>
 
 {#if show}
-  <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
+  <div class="fixed inset-0 z-40 flex items-center justify-center bg-foreground/40">
     {#if backdropClosable}
       <button type="button" class="absolute inset-0 cursor-default bg-transparent" aria-label="닫기" onclick={() => dispatch('cancel')}
       ></button>
@@ -42,7 +42,7 @@
     <div
       role="dialog"
       aria-modal="true"
-      class={`relative flex max-h-[calc(100dvh-2rem)] w-full min-h-0 flex-col overflow-hidden rounded-md border bg-white ${panelClass}`}
+      class={`relative flex max-h-[calc(100dvh-2rem)] w-full min-h-0 flex-col overflow-hidden rounded-md border bg-x-white ${panelClass}`}
     >
       {#if title}
         <header class="flex min-h-12 items-stretch justify-between gap-2 border-b pl-5">
@@ -56,16 +56,16 @@
             {/if}
           </div>
           {#if closable}
-            <ZButton color="ghost" class="self-stretch rounded-none px-4 py-0" onclick={() => dispatch('cancel')}>
+            <CButton variant="ghost" class="self-stretch rounded-none px-4 py-0" onclick={() => dispatch('cancel')}>
               <ZIcon path={mdiClose} />
-            </ZButton>
+            </CButton>
           {/if}
         </header>
       {:else if closable}
         <div class="flex justify-end border-b px-3 py-2">
-          <ZButton color="ghost" onclick={() => dispatch('cancel')}>
+          <CButton variant="ghost" onclick={() => dispatch('cancel')}>
             <ZIcon path={mdiClose} />
-          </ZButton>
+          </CButton>
         </div>
       {/if}
 
@@ -74,10 +74,10 @@
       </section>
 
       <footer class="flex justify-center gap-3 border-t px-4 py-3">
-        <ZButton color={okColor} disabled={okDisabled} onclick={() => !okDisabled && dispatch('ok')}>
+        <CButton variant={okVariant} disabled={okDisabled} onclick={() => !okDisabled && dispatch('ok')}>
           {okText}
-        </ZButton>
-        <ZButton onclick={() => dispatch('cancel')}>{cancelText}</ZButton>
+        </CButton>
+        <CButton variant="outline" onclick={() => dispatch('cancel')}>{cancelText}</CButton>
       </footer>
     </div>
   </div>

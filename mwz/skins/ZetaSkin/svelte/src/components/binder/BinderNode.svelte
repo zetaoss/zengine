@@ -98,7 +98,7 @@
       type={isInlineToggle() ? 'button' : undefined}
       class={`binder-link flex min-w-0 flex-1 items-center px-2 py-1 ${
         isInlineToggle() ? 'cursor-pointer justify-between pr-0 text-left rounded-lg' : isSplitToggle() ? 'rounded-lg' : 'rounded-lg'
-      } ${isCurrent() ? 'font-bold' : ''} ${node?.new ? 'z-link-new' : isLink() ? 'z-link' : ''}`}
+      } ${isCurrent() ? 'font-bold' : ''} ${node?.new ? 'text-x-red-600' : isLink() ? 'text-x-sky-600' : ''}`}
       title={node?.text}
       aria-expanded={isInlineToggle() ? expanded : undefined}
       on:click={isInlineToggle() ? toggle : undefined}

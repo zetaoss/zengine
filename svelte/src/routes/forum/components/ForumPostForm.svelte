@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
 
-  import ZButton from '$shared/ui/ZButton.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
   import ZSelect from '$shared/ui/ZSelect.svelte'
 
   import type { ForumPostFormValue } from './types'
@@ -65,17 +65,15 @@
       }}
       type="text"
       placeholder="제목을 입력해 주세요"
-      class={`block w-full rounded border bg-white px-4 py-2 text-gray-900 outline-0 ${
-        titleError ? 'border-red-300' : ''
-      }`}
+      class={`block w-full rounded border bg-x-white px-4 py-2 text-x-gray-900 outline-0 ${titleError ? 'border-x-red-300' : ''}`}
     />
     {#if titleError}
-      <div class="text-sm text-red-400">{titleError}</div>
+      <div class="text-sm text-x-red-400">{titleError}</div>
     {/if}
   </div>
 
   <div>
-    <div class={bodyError ? 'border border-red-300' : ''}>
+    <div class={bodyError ? 'border border-x-red-300' : ''}>
       {#if EditorApex}
         <svelte:component
           this={EditorApex}
@@ -88,18 +86,18 @@
           }}
         />
       {:else}
-        <div class="p-4 text-sm text-gray-500">에디터 로딩 중...</div>
+        <div class="p-4 text-sm text-x-gray-500">에디터 로딩 중...</div>
       {/if}
     </div>
     {#if bodyError}
-      <div class="text-sm text-red-400">{bodyError}</div>
+      <div class="text-sm text-x-red-400">{bodyError}</div>
     {/if}
   </div>
 
   <div class="my-4 flex justify-center gap-3">
-    <ZButton color="primary" {disabled} onclick={onSubmit}>
+    <CButton variant="default" {disabled} onclick={onSubmit}>
       {submitText}
-    </ZButton>
-    <ZButton onclick={onCancel}>취소</ZButton>
+    </CButton>
+    <CButton variant="outline" onclick={onCancel}>취소</CButton>
   </div>
 </div>

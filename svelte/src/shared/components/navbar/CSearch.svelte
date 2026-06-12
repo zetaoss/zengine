@@ -165,10 +165,10 @@
   })
 </script>
 
-<div class="z-text ml-auto flex w-full md:max-w-2xl">
+<div class="text-foreground ml-auto flex w-full md:max-w-2xl">
   <div class="m-1.5 grow">
     <div bind:this={root} class="relative" role="search">
-      <div class={`flex h-9 z-base rounded-t ${!expanded || !keyword.trim().length ? 'rounded-b' : ''}`}>
+      <div class={`flex h-9 bg-background rounded-t ${!expanded || !keyword.trim().length ? 'rounded-b' : ''}`}>
         <!-- svelte-ignore a11y_accesskey -->
         <input
           accesskey="f"
@@ -184,18 +184,18 @@
           on:focus={onFocus}
           on:keydown={onKeyDown}
         />
-        <button type="button" class="z-10 h-full w-12 flex-none bg-transparent focus:text-blue-700" on:click={onClick}>
+        <button type="button" class="z-10 h-full w-12 flex-none bg-transparent focus:text-x-blue-700" on:click={onClick}>
           <ZIcon path={mdiMagnify} size={24} />
         </button>
       </div>
 
-      <div class={`absolute z-40 w-full z-base border rounded-b ${!expanded || !keyword.trim().length ? 'hidden' : ''}`}>
+      <div class={`absolute z-40 w-full bg-background border rounded-b ${!expanded || !keyword.trim().length ? 'hidden' : ''}`}>
         <nav aria-label="검색 제안" on:mouseleave={() => (hIndex = -1)}>
           {#if pages.length}
             {#each pages as p, i (p.id)}
               <div>
                 <a
-                  class={`block p-1.5 px-3 z-text ${currentIndex === i ? 'focused' : ''}`}
+                  class={`block p-1.5 px-3 text-foreground ${currentIndex === i ? 'focused' : ''}`}
                   href={`/w/index.php?title=특수:검색&search=${encodeURIComponent(p.title)}`}
                   rel="external"
                   data-sveltekit-reload
@@ -210,7 +210,7 @@
           {/if}
 
           <a
-            class={`block p-2 px-3 border-t rounded-b z-text ${currentIndex === pages.length ? 'focused' : ''}`}
+            class={`block p-2 px-3 border-t rounded-b text-foreground ${currentIndex === pages.length ? 'focused' : ''}`}
             href={`/w/index.php?title=특수:검색&fulltext=1&search=${encodeURIComponent(keyword)}`}
             rel="external"
             data-sveltekit-reload
@@ -242,7 +242,7 @@
 <style>
   .focused {
     background-color: rgb(79 70 229 / 0.7);
-    color: var(--raw-white);
+    color: white;
     text-decoration: none;
   }
 </style>

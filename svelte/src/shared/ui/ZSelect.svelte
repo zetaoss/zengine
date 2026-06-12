@@ -57,20 +57,20 @@
           {selectedItem.label}
         {/if}
       {:else}
-        <span class="text-(--color-subtle)">{placeholder}</span>
+        <span class="text-muted-foreground">{placeholder}</span>
       {/if}
     </div>
   </button>
 
   {#if open}
     <div
-      class="z-base2 z-ring absolute left-0 right-0 top-full z-50 mt-1 max-h-64 overflow-y-auto rounded border border-(--border-color-subtle) py-1 shadow-lg"
+      class="bg-card ring-border absolute left-0 right-0 top-full z-50 mt-1 max-h-64 overflow-y-auto rounded border border-border py-1 shadow-lg"
     >
       {#each items as item (item.value)}
         <button
           type="button"
-          class="flex w-full items-center gap-2 px-3 py-1 text-left transition hover:bg-gray-200 {value === item.value
-            ? 'bg-gray-100 font-semibold'
+          class="flex w-full items-center gap-2 px-3 py-1 text-left transition hover:bg-x-gray-200 {value === item.value
+            ? 'bg-x-gray-100 font-semibold'
             : ''}"
           onclick={() => select(item)}
         >
@@ -82,7 +82,7 @@
         </button>
       {/each}
       {#if items.length === 0}
-        <div class="px-3 py-2 text-sm text-(--color-subtle)">항목이 없습니다.</div>
+        <div class="px-3 py-2 text-sm text-muted-foreground">항목이 없습니다.</div>
       {/if}
     </div>
   {/if}

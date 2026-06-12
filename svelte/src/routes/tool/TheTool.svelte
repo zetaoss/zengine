@@ -52,8 +52,8 @@
             <td>
               <a
                 href={item.href}
-                class={`block w-full rounded px-3 py-2 text-left transition z-text hover:no-underline hover:bg-gray-200 ${
-                  isActive(pathname, item.key) || pendingKey === item.key ? 'bg-gray-200 font-semibold' : ''
+                class={`block w-full rounded px-3 py-2 text-left transition text-foreground hover:no-underline hover:bg-x-gray-200 ${
+                  isActive(pathname, item.key) || pendingKey === item.key ? 'bg-x-gray-200 font-semibold' : ''
                 }`}
                 rel={item.external ? 'external' : undefined}
                 data-sveltekit-reload={item.external ? true : undefined}

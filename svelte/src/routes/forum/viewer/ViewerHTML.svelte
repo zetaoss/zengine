@@ -111,14 +111,14 @@
 <div bind:this={rootEl} class="ProseMirror">{@html html}</div>
 
 <style lang="postcss">
-  @reference 'tailwindcss';
+  @reference '$shared/assets/app.css';
 
   :global(.preview) {
     @apply flex border rounded p-3;
   }
 
   :global(.preview a) {
-    @apply px-3 text-sm text-gray-700;
+    @apply px-3 text-sm text-x-gray-700;
   }
 
   :global(.preview a:hover) {

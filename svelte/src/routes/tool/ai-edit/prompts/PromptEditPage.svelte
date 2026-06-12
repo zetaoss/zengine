@@ -9,10 +9,10 @@
   import RouteLinkButton from '$lib/components/RouteLinkButton.svelte'
   import useAuthStore from '$lib/stores/auth'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
+  import CBadge from '$shared/ui/CBadge.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'
-  import ZBadge from '$shared/ui/ZBadge.svelte'
-  import ZButton from '$shared/ui/ZButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZSelect from '$shared/ui/ZSelect.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
@@ -125,8 +125,8 @@
   }
 
   function getRequestTypeClass(requestType: string) {
-    if (requestType === 'create') return 'text-emerald-600'
-    if (requestType === 'edit') return 'text-amber-600'
+    if (requestType === 'create') return 'text-x-emerald-600'
+    if (requestType === 'edit') return 'text-x-amber-600'
     return ''
   }
 
@@ -204,7 +204,7 @@
 
 <div class="p-5">
   <div class="mb-4">
-    <RouteLinkButton to="/tool/ai-edit/prompts" color="ghost" size="small">
+    <RouteLinkButton to="/tool/ai-edit/prompts" variant="ghost" size="small">
       <ZIcon path={mdiArrowLeft} />
       프롬프트 목록
     </RouteLinkButton>
@@ -216,7 +216,7 @@
     </div>
   {:else if row}
     {@const currentRow = row}
-    <section class="rounded-lg border border-(--border-color-subtle) bg-(--background-color-neutral-subtle) p-6">
+    <section class="rounded-lg border border-border bg-muted p-6">
       <div class="mb-4 flex flex-wrap items-center justify-between gap-4">
         <div class="flex flex-1 items-start gap-3">
           {#if isEditing}
@@ -235,14 +235,14 @@
                 <input
                   type="text"
                   bind:value={currentRow.title}
-                  class="z-input text-lg font-semibold {hasError ? 'border-red-500! focus:ring-red-500/20!' : ''}"
+                  class="z-input text-lg font-semibold {hasError ? 'border-x-red-500! focus:ring-x-red-500/20!' : ''}"
                   placeholder="프롬프트 제목"
                 />
               {/snippet}
             </ZValidator>
           {:else}
             <div class="flex items-center gap-3 py-1">
-              <ZBadge text={getRequestTypeLabel(row.request_type)} class={`text-base ${getRequestTypeClass(row.request_type)}`} />
+              <CBadge class={`text-base ${getRequestTypeClass(row.request_type)}`}>{getRequestTypeLabel(row.request_type)}</CBadge>
               <h2 class="text-2xl font-bold">{row.title}</h2>
             </div>
           {/if}
@@ -250,34 +250,39 @@
 
         <div class="flex shrink-0 items-center gap-2">
           {#if isEditing}
-            <ZButton color="primary" size="small" disabled={isSaving} onclick={() => void save()}>
+            <CButton variant="default" size="small" disabled={isSaving} onclick={() => void save()}>
               {isSaving ? '저장 중...' : '저장'}
-            </ZButton>
-            <ZButton color="ghost" size="small" disabled={isSaving} onclick={() => (id === 0 ? void goto(resolve('/tool/ai-edit/prompts')) : void fetchPrompt())}>
+            </CButton>
+            <CButton
+              variant="ghost"
+              size="small"
+              disabled={isSaving}
+              onclick={() => (id === 0 ? void goto(resolve('/tool/ai-edit/prompts')) : void fetchPrompt())}
+            >
               취소
-            </ZButton>
+            </CButton>
           {:else}
-            <ZButton color="ghost" size="small" title="즐겨찾기" onclick={() => void toggleFavorite()}>
-              <ZIcon path={row.is_favorite ? mdiStar : mdiStarOutline} class={row.is_favorite ? 'text-amber-500' : ''} />
-            </ZButton>
+            <CButton variant="ghost" size="small" title="즐겨찾기" onclick={() => void toggleFavorite()}>
+              <ZIcon path={row.is_favorite ? mdiStar : mdiStarOutline} class={row.is_favorite ? 'text-x-amber-500' : ''} />
+            </CButton>
             {#if canEdit()}
-              <ZButton color="default" size="small" onclick={startEdit}>
+              <CButton variant="outline" size="small" onclick={startEdit}>
                 <ZIcon path={mdiPencil} class="mr-1" />
                 편집
-              </ZButton>
+              </CButton>
             {/if}
             {#if isSysop && row.id > 0}
-              <ZButton color="ghost" size="small" disabled={deleting} onclick={() => void delPrompt()}>
+              <CButton variant="ghost" size="small" disabled={deleting} onclick={() => void delPrompt()}>
                 <ZIcon path={mdiDelete} class="mr-1" />
                 삭제
-              </ZButton>
+              </CButton>
             {/if}
           {/if}
         </div>
       </div>
 
       {#if row.id > 0}
-        <div class="mb-4 flex items-center gap-2 text-sm text-(--color-subtle)">
+        <div class="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
           <span>작성자:</span>
           <AvatarUser user={{ id: row.user_id, name: row.user_name }} />
         </div>
@@ -287,15 +292,15 @@
         <textarea
           bind:value={row.content}
           class="z-input min-h-[500px] w-full font-mono text-sm leading-relaxed"
-          placeholder={"프롬프트 내용을 입력하세요. {제목}, {기존문서} 등의 변수를 사용할 수 있습니다."}
+          placeholder={'프롬프트 내용을 입력하세요. {제목}, {기존문서} 등의 변수를 사용할 수 있습니다.'}
         ></textarea>
       {:else}
-        <div class="min-h-[300px] rounded border border-(--border-color-subtle) bg-(--background-color) p-4">
+        <div class="min-h-[300px] rounded border border-border bg-background p-4">
           <pre class="whitespace-pre-wrap font-mono text-sm leading-relaxed">{row.content || '내용이 없습니다.'}</pre>
         </div>
       {/if}
     </section>
   {:else}
-    <div class="text-(--color-subtle)">프롬프트를 찾을 수 없습니다.</div>
+    <div class="text-muted-foreground">프롬프트를 찾을 수 없습니다.</div>
   {/if}
 </div>

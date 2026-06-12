@@ -7,7 +7,7 @@
   import { page } from '$app/state'
   import useAuthStore from '$lib/stores/auth'
   import AvatarIcon from '$shared/components/avatar/AvatarIcon.svelte'
-  import ZButton from '$shared/ui/ZButton.svelte'
+  import CButton from '$shared/ui/CButton.svelte'
   import ZCard from '$shared/ui/ZCard.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
   import httpy from '$shared/utils/httpy'
@@ -238,7 +238,7 @@
       <ZSpinner />
     </div>
   {:else if loadError}
-    <div class="mt-4 text-center text-sm text-red-500">
+    <div class="mt-4 text-center text-sm text-x-red-500">
       {loadError}
     </div>
   {:else}
@@ -251,13 +251,13 @@
       </svelte:fragment>
 
       {#if !isMe}
-        <div class="text-sm text-red-500">본인만 프로필을 수정할 수 있습니다.</div>
+        <div class="text-sm text-x-red-500">본인만 프로필을 수정할 수 있습니다.</div>
       {:else}
         <div class="space-y-4">
           <div class="text-sm font-semibold">아바타 선택</div>
 
           <ul class="space-y-2">
-            <li class="z-ring flex items-center gap-3 rounded p-3 ring-1">
+            <li class="ring-border flex items-center gap-3 rounded p-3 ring-1">
               <input
                 type="radio"
                 name="avatarType"
@@ -275,7 +275,7 @@
               </div>
             </li>
 
-            <li class="z-ring flex items-center gap-3 rounded p-3 ring-1">
+            <li class="ring-border flex items-center gap-3 rounded p-3 ring-1">
               <input
                 type="radio"
                 name="avatarType"
@@ -293,7 +293,7 @@
               </div>
             </li>
 
-            <li class="z-ring flex items-center gap-3 rounded p-3 ring-1">
+            <li class="ring-border flex items-center gap-3 rounded p-3 ring-1">
               <input
                 type="radio"
                 name="avatarType"
@@ -318,7 +318,7 @@
                       type="email"
                       bind:value={gravatarEmail}
                       placeholder="Gravatar Email"
-                      class="z-base w-64 max-w-full rounded border px-3 py-2 text-sm"
+                      class="bg-background w-64 max-w-full rounded border px-3 py-2 text-sm"
                       disabled={!canEditGravatar || gravatarBusy}
                     />
                   {:else}
@@ -326,24 +326,28 @@
                       type="text"
                       value={gravatarDisplay}
                       readonly
-                      class="z-base w-64 max-w-full rounded border px-3 py-2 text-sm"
+                      class="bg-background w-64 max-w-full rounded border px-3 py-2 text-sm"
                       disabled={!canEditGravatar}
                     />
                   {/if}
 
                   {#if canEditGravatar}
                     {#if !isEditingGravatar}
-                      <ZButton onclick={startEditGravatar}>수정</ZButton>
+                      <CButton variant="outline" onclick={startEditGravatar}>수정</CButton>
                     {:else}
-                      <ZButton disabled={gravatarBusy || !gravatarChanged || !validateEmail(gravatarEmail)} onclick={confirmGravatar}>
+                      <CButton
+                        variant="outline"
+                        disabled={gravatarBusy || !gravatarChanged || !validateEmail(gravatarEmail)}
+                        onclick={confirmGravatar}
+                      >
                         확인
-                      </ZButton>
-                      <ZButton disabled={gravatarBusy} onclick={cancelEditGravatar}>취소</ZButton>
+                      </CButton>
+                      <CButton variant="outline" disabled={gravatarBusy} onclick={cancelEditGravatar}>취소</CButton>
                     {/if}
                   {/if}
 
                   {#if gravatarError}
-                    <div class="text-sm text-red-500">
+                    <div class="text-sm text-x-red-500">
                       {gravatarError}
                     </div>
                   {/if}
@@ -353,14 +357,14 @@
           </ul>
 
           <div class="flex flex-col items-center gap-2 pt-4">
-            <ZButton color="primary" disabled={!canSave} onclick={save}>저장</ZButton>
+            <CButton variant="default" disabled={!canSave} onclick={save}>저장</CButton>
 
             {#if saving}
               <div class="z-muted2 text-sm">저장 중...</div>
             {:else if saveOk}
               <div class="text-sm">✅ 저장됨</div>
             {:else if saveError}
-              <div class="text-sm text-red-500">
+              <div class="text-sm text-x-red-500">
                 {saveError}
               </div>
             {/if}

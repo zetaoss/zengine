@@ -43,7 +43,7 @@
   />
 
   {#if logs.length > 0}
-    <div class="max-h-40 overflow-y-auto mt-1 bg-(--console-bg)">
+    <div class="max-h-40 overflow-y-auto mt-1 bg-code">
       <SandboxConsole {logs} className="rounded-lg" />
     </div>
   {/if}

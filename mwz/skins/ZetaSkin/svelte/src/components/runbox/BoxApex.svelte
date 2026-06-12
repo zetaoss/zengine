@@ -55,21 +55,21 @@
 
 {#if jobValue}
   <div>
-    <div class="mb-1 bg-(--code-bg) p-1 border rounded-lg">
+    <div class="mb-1 bg-code p-1 border rounded-lg">
       <svelte:component this={CurrentComponent} {job} {seq}>
         <div class="pt-1 px-4">
           <div class="sticky top-0 z-10 h-0">
             <div class="flex justify-end items-center space-x-1">
               {#if isSysop && isMain && (jobValue.phase === 'Pending' || jobValue.phase === 'Failed' || jobValue.phase === 'Succeeded')}
                 <button
-                  class="p-1 rounded text-xs z-text3 inline-flex items-center space-x-1 cursor-pointer"
+                  class="p-1 rounded text-xs text-muted-foreground inline-flex items-center space-x-1 cursor-pointer"
                   on:click={() => rerunJob(job)}
                 >
                   <ZIcon size={14} path={mdiReplay} />
                   <span>Rerun</span>
                 </button>
               {/if}
-              <button class="p-1 rounded text-xs z-text3 inline-flex items-center space-x-1 cursor-pointer" on:click={onCopy}>
+              <button class="p-1 rounded text-xs text-muted-foreground inline-flex items-center space-x-1 cursor-pointer" on:click={onCopy}>
                 {#if !copied}
                   <ZIcon size={14} path={mdiContentCopy} />
                   <span>Copy</span>
@@ -81,7 +81,7 @@
             </div>
           </div>
 
-          <div class="text-xs z-text3 select-none flex items-center gap-2">
+          <div class="text-xs text-muted-foreground select-none flex items-center gap-2">
             <span>{box.lang}</span>
             {#if jobValue.boxes.length > 1}
               <span>
