@@ -3,3 +3,6 @@ allowBuilds:
 
 ignoredBuiltDependencies:
   - esbuild
+
+overrides:
+  shell-quote: 1.8.4

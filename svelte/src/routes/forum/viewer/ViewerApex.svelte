@@ -70,14 +70,14 @@
   }
 </script>
 
-<ZModal show={showModal} on:ok={modalOK} on:cancel={() => (showModal = false)}>글을 삭제하시겠습니까?</ZModal>
+<ZModal show={showModal} onOk={modalOK} onCancel={() => { showModal = false }}>글을 삭제하시겠습니까?</ZModal>
 
 <div class="rounded border py-4">
   <div class="px-4">
     <div>
       {#if post}
         <div class="float-left mr-2">
-          <span class="rounded border p-1 text-xs text-x-gray-600">
+          <span class="rounded border p-1 text-xs text-a-gray-600">
             {post.cat}
           </span>
         </div>
@@ -98,7 +98,7 @@
     <hr />
 
     {#if isLoading}
-      <div class="min-h-36 py-10 text-center text-x-gray-500">
+      <div class="min-h-36 py-10 text-center text-a-gray-500">
         <ZSpinner />
       </div>
     {:else if post}
@@ -108,7 +108,7 @@
       <hr />
       <ViewerReplies {postId} />
     {:else}
-      <div class="min-h-36 py-10 text-center text-x-gray-500">게시글을 불러올 수 없습니다.</div>
+      <div class="min-h-36 py-10 text-center text-a-gray-500">게시글을 불러올 수 없습니다.</div>
     {/if}
   </div>
 </div>

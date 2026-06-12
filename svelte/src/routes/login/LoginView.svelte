@@ -94,7 +94,7 @@
 </script>
 
 <div class="mx-auto w-[75%] max-w-xl pb-20 pt-10">
-  <div class="rounded border bg-x-white p-6">
+  <div class="rounded border bg-background p-6">
     <div class="py-3">소셜 로그인</div>
 
     <div class="flex flex-col gap-2">
@@ -109,7 +109,7 @@
       </CButton>
     </div>
 
-    <div class="relative my-6 overflow-hidden text-center text-x-gray-400">
+    <div class="relative my-6 overflow-hidden text-center text-a-gray-400">
       <span class="relative px-3">
         또는
         <span class="absolute right-full top-2.5 w-250 border-t border-border"></span>
@@ -120,7 +120,7 @@
     <div class="py-3">아이디 로그인</div>
 
     {#if message}
-      <div class="rounded bg-x-red-400 p-2 px-4 text-sm">
+      <div class="rounded bg-a-red-400 p-2 px-4 text-sm">
         {message}
       </div>
     {/if}
@@ -132,28 +132,28 @@
       }}
     >
       <div class="my-1 flex">
-        <span class="inline-flex items-center rounded-l border border-r-0 bg-x-gray-200 px-3 text-x-gray-500">
+        <span class="inline-flex items-center rounded-l border border-r-0 bg-a-gray-200 px-3 text-a-gray-500">
           <ZIcon path={mdiAccount} size={24} />
         </span>
         <input
           bind:value={username}
           aria-label="username"
           type="text"
-          class="block w-full min-w-0 flex-1 rounded-none rounded-r border bg-x-white p-2.5 text-sm text-foreground focus:border-x-blue-500 focus:outline-none focus:ring"
+          class="block w-full min-w-0 flex-1 rounded-none rounded-r border bg-background p-2.5 text-sm text-foreground focus:border-a-blue-500 focus:outline-none focus:ring"
           placeholder="사용자명"
           required
         />
       </div>
 
       <div class="my-1 flex">
-        <span class="inline-flex items-center rounded-l border border-r-0 bg-x-gray-200 px-3 text-x-gray-500">
+        <span class="inline-flex items-center rounded-l border border-r-0 bg-a-gray-200 px-3 text-a-gray-500">
           <ZIcon path={mdiLock} size={24} />
         </span>
         <input
           bind:value={password}
           aria-label="password"
           type="password"
-          class="block w-full min-w-0 flex-1 rounded-none rounded-r border bg-x-white p-2.5 text-sm text-foreground focus:border-x-blue-500 focus:outline-none focus:ring"
+          class="block w-full min-w-0 flex-1 rounded-none rounded-r border bg-background p-2.5 text-sm text-foreground focus:border-a-blue-500 focus:outline-none focus:ring"
           placeholder="패스워드"
           required
           autocomplete="on"

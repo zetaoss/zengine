@@ -238,7 +238,7 @@
       <ZSpinner />
     </div>
   {:else if loadError}
-    <div class="mt-4 text-center text-sm text-x-red-500">
+    <div class="mt-4 text-center text-sm text-a-red-500">
       {loadError}
     </div>
   {:else}
@@ -251,7 +251,7 @@
       </svelte:fragment>
 
       {#if !isMe}
-        <div class="text-sm text-x-red-500">본인만 프로필을 수정할 수 있습니다.</div>
+        <div class="text-sm text-a-red-500">본인만 프로필을 수정할 수 있습니다.</div>
       {:else}
         <div class="space-y-4">
           <div class="text-sm font-semibold">아바타 선택</div>
@@ -347,7 +347,7 @@
                   {/if}
 
                   {#if gravatarError}
-                    <div class="text-sm text-x-red-500">
+                    <div class="text-sm text-a-red-500">
                       {gravatarError}
                     </div>
                   {/if}
@@ -364,7 +364,7 @@
             {:else if saveOk}
               <div class="text-sm">✅ 저장됨</div>
             {:else if saveError}
-              <div class="text-sm text-x-red-500">
+              <div class="text-sm text-a-red-500">
                 {saveError}
               </div>
             {/if}

@@ -69,8 +69,8 @@
       {#each items as item (item.value)}
         <button
           type="button"
-          class="flex w-full items-center gap-2 px-3 py-1 text-left transition hover:bg-x-gray-200 {value === item.value
-            ? 'bg-x-gray-100 font-semibold'
+          class="flex w-full items-center gap-2 px-3 py-1 text-left transition hover:bg-a-gray-200 {value === item.value
+            ? 'bg-a-gray-100 font-semibold'
             : ''}"
           onclick={() => select(item)}
         >

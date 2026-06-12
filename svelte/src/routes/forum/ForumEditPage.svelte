@@ -107,7 +107,7 @@
   }
 </script>
 
-<ZModal show={showCancelModal} on:ok={cancelOk} on:cancel={() => (showCancelModal = false)}>
+<ZModal show={showCancelModal} onOk={cancelOk} onCancel={() => { showCancelModal = false }}>
   {isEdit ? '글 수정하기를 취소하시겠습니까?' : '새 글 쓰기를 취소하시겠습니까?'}
 </ZModal>
 
@@ -118,7 +118,7 @@
     </h2>
 
     {#if loading}
-      <div class="py-10 text-center text-x-gray-500">불러오는 중...</div>
+      <div class="py-10 text-center text-a-gray-500">불러오는 중...</div>
     {:else}
       <ForumPostForm
         bind:modelValue={form}

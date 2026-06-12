@@ -61,8 +61,8 @@
   }
 
   function getRequestTypeClass(requestType: string) {
-    if (requestType === 'create') return 'text-x-emerald-600'
-    if (requestType === 'edit') return 'text-x-amber-600'
+    if (requestType === 'create') return 'text-a-emerald-600'
+    if (requestType === 'edit') return 'text-a-amber-600'
     return ''
   }
 
@@ -160,7 +160,7 @@
             <td class="text-center">
               <div class="flex items-center justify-center gap-1">
                 <CButton variant="ghost" size="small" title="즐겨찾기" onclick={() => void toggleFavorite(item)}>
-                  <ZIcon path={item.is_favorite ? mdiStar : mdiStarOutline} class={item.is_favorite ? 'text-x-amber-500' : ''} />
+                  <ZIcon path={item.is_favorite ? mdiStar : mdiStarOutline} class={item.is_favorite ? 'text-a-amber-500' : ''} />
                 </CButton>
                 {#if isSysop}
                   <CButton variant="ghost" size="small" disabled={deletingPromptId === item.id} onclick={() => void delPrompt(item)}>

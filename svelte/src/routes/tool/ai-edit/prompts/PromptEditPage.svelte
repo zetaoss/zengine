@@ -125,8 +125,8 @@
   }
 
   function getRequestTypeClass(requestType: string) {
-    if (requestType === 'create') return 'text-x-emerald-600'
-    if (requestType === 'edit') return 'text-x-amber-600'
+    if (requestType === 'create') return 'text-a-emerald-600'
+    if (requestType === 'edit') return 'text-a-amber-600'
     return ''
   }
 
@@ -235,7 +235,7 @@
                 <input
                   type="text"
                   bind:value={currentRow.title}
-                  class="z-input text-lg font-semibold {hasError ? 'border-x-red-500! focus:ring-x-red-500/20!' : ''}"
+                  class="z-input text-lg font-semibold {hasError ? 'border-a-red-500! focus:ring-a-red-500/20!' : ''}"
                   placeholder="프롬프트 제목"
                 />
               {/snippet}
@@ -263,7 +263,7 @@
             </CButton>
           {:else}
             <CButton variant="ghost" size="small" title="즐겨찾기" onclick={() => void toggleFavorite()}>
-              <ZIcon path={row.is_favorite ? mdiStar : mdiStarOutline} class={row.is_favorite ? 'text-x-amber-500' : ''} />
+              <ZIcon path={row.is_favorite ? mdiStar : mdiStarOutline} class={row.is_favorite ? 'text-a-amber-500' : ''} />
             </CButton>
             {#if canEdit()}
               <CButton variant="outline" size="small" onclick={startEdit}>

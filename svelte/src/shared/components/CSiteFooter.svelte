@@ -17,7 +17,7 @@
   })
 </script>
 
-<footer id="footer" class="bg-x-gray-400 p-6 pb-9 text-center text-white">
+<footer id="footer" class="bg-a-gray-400 p-6 pb-9 text-center text-white">
   <img alt="logo" class="mb-3 w-24" src="//storage.googleapis.com/zpub/logo.png" />
   <p class="mb-3">CC-BY-SA 3.0 · Powered by MediaWiki</p>
 

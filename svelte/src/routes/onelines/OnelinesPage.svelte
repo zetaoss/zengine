@@ -86,15 +86,15 @@
 
   <div class="z-card">
     {#if isLoading}
-      <div class="flex items-center justify-center py-10 text-x-gray-500">
+      <div class="flex items-center justify-center py-10 text-a-gray-500">
         <ZSpinner />
       </div>
     {:else if loadError}
-      <div class="py-10 text-center text-x-red-500">
+      <div class="py-10 text-center text-a-red-500">
         {loadError}
       </div>
     {:else if rows.length === 0}
-      <div class="py-10 text-center text-x-gray-500">아직 등록된 한줄잡담이 없습니다.</div>
+      <div class="py-10 text-center text-a-gray-500">아직 등록된 한줄잡담이 없습니다.</div>
     {:else}
       {#each rows as r (r.id)}
         <div class="border-b px-3 py-3 last:border-b-0">

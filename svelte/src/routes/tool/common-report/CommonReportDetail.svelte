@@ -225,7 +225,7 @@
     <div class="z-card my-2 rounded border p-5">
       <div class="my-5 flex items-center gap-3 text-2xl font-bold">
         <h2 class="m-0">통용 보고서 #{currentId}</h2>
-        <div class="flex items-center gap-1 text-base text-x-gray-600">
+        <div class="flex items-center gap-1 text-base text-a-gray-600">
           {#if row.phase === 'Pending'}
             <span>⏳</span>
           {:else if row.phase === 'Running'}
@@ -253,7 +253,7 @@
               {#if activeTooltip !== action.key}
                 <ZIcon path={mdiContentCopy} />
               {:else}
-                <span class="inline-flex items-center gap-1 text-x-green-600">
+                <span class="inline-flex items-center gap-1 text-a-green-600">
                   <ZIcon path={mdiCheckBold} />
                   <span class="text-xs">Copied!</span>
                 </span>
