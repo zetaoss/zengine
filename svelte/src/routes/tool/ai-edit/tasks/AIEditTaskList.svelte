@@ -275,7 +275,7 @@
         </tr>
       {:else if rows.length === 0}
         <tr>
-          <td colspan="6" class="text-center text-(--color-subtle)">AI 편집 큐가 비어 있습니다.</td>
+          <td colspan="6" class="text-center text-muted-foreground">AI 편집 큐가 비어 있습니다.</td>
         </tr>
       {:else}
         {#each rows as row (row.id)}
@@ -318,7 +318,7 @@
                 <ZStatusText text={row.phase} />
               </div>
             </td>
-            <td class="text-center text-sm text-(--color-subtle)">
+            <td class="text-center text-sm text-muted-foreground">
               {row.llm_model ?? '-'}
             </td>
             <td>

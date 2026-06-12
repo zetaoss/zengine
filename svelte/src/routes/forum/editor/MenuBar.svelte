@@ -229,14 +229,14 @@
   @reference '$shared/assets/app.css';
 
   .menu-bar {
-    @apply border-b text-right items-center flex flex-wrap p-1 bg-(--background-color-neutral-subtle);
-  }
+    @apply flex flex-wrap items-center border-b bg-muted p-1 text-right;
 
-  .code-lang {
-    @apply ml-auto flex items-center;
-  }
+    .code-lang {
+      @apply ml-auto flex items-center;
+    }
 
-  .divider {
-    @apply ml-2 mr-1 h-4 w-px bg-x-gray-300;
+    .divider {
+      @apply ml-2 mr-1 h-4 w-px bg-x-gray-300;
+    }
   }
 </style>

@@ -13,7 +13,7 @@ const SEARCH_DIRS = [
 const query = process.argv.slice(2).join(" ").trim().toLowerCase();
 
 const regex =
-  /\b(?:bg|text|border|ring|outline|fill|stroke|from|via|to|decoration|accent|caret|shadow)-(?:\[[^\]\s'"]+\]|\(--[A-Za-z0-9_-]+\)|[a-z]+(?:-[a-z]+)*-\d{2,3}|(?:[a-z]+-)*(?:black|white))(?:\/\d{1,3})?!?/g;
+  /\b(?:bg|text|border|ring|outline|fill|stroke|from|via|to|decoration|accent|caret|shadow)-(?:\[[^\]\s'"]+\]|\(--[A-Za-z0-9_-]+\)|[a-z0-9]+(?:-[a-z0-9]+)*)(?:\/\d{1,3})?!?/g;
 
 const extensions = new Set([
   ".js",
@@ -77,6 +77,81 @@ function isArbitraryColor(cls) {
   );
 }
 
+const nonColorTextValues = new Set([
+  "align",
+  "balance",
+  "center",
+  "clip",
+  "decoration",
+  "decoration-line",
+  "ellipsis",
+  "end",
+  "justify",
+  "left",
+  "nowrap",
+  "pretty",
+  "rendering",
+  "right",
+  "start",
+  "wrap",
+]);
+
+function isTextSize(cls) {
+  const value = cls.match(/^text-(.+)$/)?.[1];
+  if (!value) {
+    return false;
+  }
+
+  if (/^(?:xs|sm|lg|xl|[2-9]xl)$/.test(value)) {
+    return true;
+  }
+
+  const arbitraryValue = value.match(/^\[([^\]]+)\]$/)?.[1];
+  if (!arbitraryValue) {
+    return false;
+  }
+
+  return (
+    /^-?\d*\.?\d+(?:px|r?em|lh|ch|ex|cap|ic|vw|vh|vmin|vmax|svw|svh|lvw|lvh|dvw|dvh|cqw|cqh|cqi|cqb|cqmin|cqmax|%)$/i.test(
+      arbitraryValue,
+    ) ||
+    /^(?:calc|min|max|clamp)\(/i.test(arbitraryValue)
+  );
+}
+
+function isNonColorUtility(cls) {
+  const textValue = cls.match(/^text-(.+)$/)?.[1];
+  if (textValue) {
+    return (
+      isTextSize(cls) ||
+      nonColorTextValues.has(textValue) ||
+      textValue.startsWith("decoration-") ||
+      textValue.startsWith("opacity-")
+    );
+  }
+
+  if (
+    /^bg-(?:bottom|center|clip|clip-.+|contain|cover|fixed|left|local|no-repeat|repeat|repeat-.+|right|scroll|top)$/.test(
+      cls,
+    )
+  ) {
+    return true;
+  }
+
+  return (
+    /^(?:border|ring|outline|shadow)-(?:0|1|2|4|8|x|y|s|e|t|r|b|l|solid|dashed|dotted|double|hidden|none|sm|md|lg|xl|2xl|inner)$/.test(
+      cls,
+    ) ||
+    /^(?:border|outline)-(?:[trblxyse]-)?(?:0|1|2|4|8)$/.test(cls) ||
+    /^border-(?:bottom|bottom-color|box|collapse|color|color-.+|radius|width)$/.test(
+      cls,
+    ) ||
+    /^outline-offset/.test(cls) ||
+    /^ring-(?:0|1|2|3|4|8|inset|offset|offset-.+)$/.test(cls) ||
+    /^shadow-color-.+/.test(cls)
+  );
+}
+
 const files = SEARCH_DIRS.flatMap((dir) => listFiles(dir));
 const rows = [];
 
@@ -89,6 +164,10 @@ for (const file of files) {
 
     for (const match of line.matchAll(regex)) {
       const cls = match[0].replace(/\/\d{1,3}/, "").replace(/!$/, "");
+      if (isNonColorUtility(cls)) {
+        continue;
+      }
+
       if (!isArbitraryColor(cls)) {
         continue;
       }

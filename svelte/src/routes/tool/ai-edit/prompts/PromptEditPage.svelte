@@ -216,7 +216,7 @@
     </div>
   {:else if row}
     {@const currentRow = row}
-    <section class="rounded-lg border border-(--border-color-subtle) bg-(--background-color-neutral-subtle) p-6">
+    <section class="rounded-lg border border-border bg-muted p-6">
       <div class="mb-4 flex flex-wrap items-center justify-between gap-4">
         <div class="flex flex-1 items-start gap-3">
           {#if isEditing}
@@ -282,7 +282,7 @@
       </div>
 
       {#if row.id > 0}
-        <div class="mb-4 flex items-center gap-2 text-sm text-(--color-subtle)">
+        <div class="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
           <span>작성자:</span>
           <AvatarUser user={{ id: row.user_id, name: row.user_name }} />
         </div>
@@ -295,12 +295,12 @@
           placeholder={'프롬프트 내용을 입력하세요. {제목}, {기존문서} 등의 변수를 사용할 수 있습니다.'}
         ></textarea>
       {:else}
-        <div class="min-h-[300px] rounded border border-(--border-color-subtle) bg-(--background-color) p-4">
+        <div class="min-h-[300px] rounded border border-border bg-background p-4">
           <pre class="whitespace-pre-wrap font-mono text-sm leading-relaxed">{row.content || '내용이 없습니다.'}</pre>
         </div>
       {/if}
     </section>
   {:else}
-    <div class="text-(--color-subtle)">프롬프트를 찾을 수 없습니다.</div>
+    <div class="text-muted-foreground">프롬프트를 찾을 수 없습니다.</div>
   {/if}
 </div>

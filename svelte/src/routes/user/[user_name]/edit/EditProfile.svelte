@@ -257,7 +257,7 @@
           <div class="text-sm font-semibold">아바타 선택</div>
 
           <ul class="space-y-2">
-            <li class="z-ring flex items-center gap-3 rounded p-3 ring-1">
+            <li class="ring-border flex items-center gap-3 rounded p-3 ring-1">
               <input
                 type="radio"
                 name="avatarType"
@@ -275,7 +275,7 @@
               </div>
             </li>
 
-            <li class="z-ring flex items-center gap-3 rounded p-3 ring-1">
+            <li class="ring-border flex items-center gap-3 rounded p-3 ring-1">
               <input
                 type="radio"
                 name="avatarType"
@@ -293,7 +293,7 @@
               </div>
             </li>
 
-            <li class="z-ring flex items-center gap-3 rounded p-3 ring-1">
+            <li class="ring-border flex items-center gap-3 rounded p-3 ring-1">
               <input
                 type="radio"
                 name="avatarType"
@@ -318,7 +318,7 @@
                       type="email"
                       bind:value={gravatarEmail}
                       placeholder="Gravatar Email"
-                      class="z-base w-64 max-w-full rounded border px-3 py-2 text-sm"
+                      class="bg-background w-64 max-w-full rounded border px-3 py-2 text-sm"
                       disabled={!canEditGravatar || gravatarBusy}
                     />
                   {:else}
@@ -326,7 +326,7 @@
                       type="text"
                       value={gravatarDisplay}
                       readonly
-                      class="z-base w-64 max-w-full rounded border px-3 py-2 text-sm"
+                      class="bg-background w-64 max-w-full rounded border px-3 py-2 text-sm"
                       disabled={!canEditGravatar}
                     />
                   {/if}

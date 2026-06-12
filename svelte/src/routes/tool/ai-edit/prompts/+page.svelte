@@ -133,12 +133,12 @@
         </tr>
       {:else if promptList.length === 0}
         <tr>
-          <td colspan="5" class="text-center text-(--color-subtle)">등록된 프롬프트가 없습니다.</td>
+          <td colspan="5" class="text-center text-muted-foreground">등록된 프롬프트가 없습니다.</td>
         </tr>
       {:else}
         {#each promptList as item (item.id)}
           <tr>
-            <td class="text-center text-sm text-(--color-subtle)">{item.id}</td>
+            <td class="text-center text-sm text-muted-foreground">{item.id}</td>
             <td>
               <CBadge variant="outline" class={`mr-2 ${getRequestTypeClass(item.request_type)}`}
                 >{getRequestTypeLabel(item.request_type)}</CBadge
@@ -147,14 +147,14 @@
                 >{item.title}</a
               >
             </td>
-            <td class="text-center text-sm text-(--color-subtle)">{item.use_count === 0 ? '-' : item.use_count}</td>
+            <td class="text-center text-sm text-muted-foreground">{item.use_count === 0 ? '-' : item.use_count}</td>
             <td>
               <AvatarUser user={{ id: item.user_id, name: item.user_name }} />
             </td>
-            <td class="text-center text-sm text-(--color-subtle)">
+            <td class="text-center text-sm text-muted-foreground">
               {item.created_at?.substring(0, 10) || '-'}
             </td>
-            <td class="text-center text-sm text-(--color-subtle)">
+            <td class="text-center text-sm text-muted-foreground">
               {item.updated_at?.substring(0, 10) || '-'}
             </td>
             <td class="text-center">

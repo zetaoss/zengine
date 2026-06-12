@@ -128,7 +128,7 @@
   <CommonReportNew show={showModal} onClose={closeModal} />
 
   <table class="w-full">
-    <thead class="z-base3">
+    <thead class="bg-muted">
       <tr>
         <th class="not-mobile">번호</th>
         <th>이름</th>
@@ -224,10 +224,6 @@
 
   .unknown {
     color: gray;
-  }
-
-  .new {
-    color: var(--z-link-new);
   }
 
   .progress-wrap {

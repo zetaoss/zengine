@@ -25,7 +25,7 @@
 <slot />
 
 {#if loaded && isMain && (jobValue.phase === 'Succeeded' || jobValue.phase === 'Failed')}
-  <div class="rounded-lg bg-(--console-bg) px-4 py-2 text-sm break-all">
+  <div class="rounded-lg bg-code px-4 py-2 text-sm break-all">
     {#if hasLogs || hasImages}
       {#if hasLogs && !hideTexLogs}
         {#each logs as log, index (index)}

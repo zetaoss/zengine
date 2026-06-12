@@ -8,9 +8,9 @@
 
 {#if $confirmState.show}
   <div class="fixed inset-0 z-50 flex items-center justify-center">
-    <button class="absolute inset-0 bg-x-black/40" aria-label="Close" on:click={() => $confirmState.closable && handleConfirmCancel()}
+    <button class="absolute inset-0 bg-foreground/40" aria-label="Close" on:click={() => $confirmState.closable && handleConfirmCancel()}
     ></button>
-    <div class="relative w-full max-w-md rounded-lg bg-(--background-color-base) p-6 shadow-lg border">
+    <div class="relative w-full max-w-md rounded-lg bg-background p-6 shadow-lg border">
       <div class="text-sm text-x-slate-700">{$confirmState.message}</div>
       <div class="mt-6 flex justify-end gap-2">
         <CButton variant="ghost" class="px-4 py-2" onclick={handleConfirmCancel}>
@@ -26,7 +26,7 @@
 
 <style>
   :global(.confirm-btn-outline) {
-    background-color: var(--background-color-interactive);
+    background-color: var(--muted);
   }
   :global(.confirm-btn-default) {
     background-color: var(--color-progressive);

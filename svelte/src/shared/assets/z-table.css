@@ -8,14 +8,14 @@
   }
 
   thead {
-    background-color: var(--z-base3);
+    background-color: var(--muted);
   }
 
   tbody tr {
     transition: background-color 80ms;
 
     &:nth-child(even) {
-      background-color: var(--background-color-interactive-subtle);
+      background-color: var(--muted);
     }
 
     &:hover {

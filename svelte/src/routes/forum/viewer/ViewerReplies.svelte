@@ -4,9 +4,9 @@
   import useAuthStore from '$lib/stores/auth'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
   import CButton from '$shared/ui/CButton.svelte'
+  import CMenu from '$shared/ui/CMenu.svelte'
+  import CMenuItem from '$shared/ui/CMenuItem.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
-  import ZMenu from '$shared/ui/ZMenu.svelte'
-  import ZMenuItem from '$shared/ui/ZMenuItem.svelte'
   import ZModal from '$shared/ui/ZModal.svelte'
   import ZTextarea from '$shared/ui/ZTextarea.svelte'
   import httpy from '$shared/utils/httpy'
@@ -14,18 +14,22 @@
   import type { Reply } from '../types'
   import BoxHTML from './ViewerHTML.svelte'
 
-  export let postId = 0
+  interface Props {
+    postId?: number
+  }
+
+  let { postId = 0 }: Props = $props()
 
   const auth = useAuthStore()
   const { userInfo, isLoggedIn, canEdit } = auth
 
-  let replies: Reply[] = []
-  let replyBody = ''
-  let editingReply: { id: number; body: string } | null = null
-  let showModal = false
-  let deletingReply: Reply | null = null
+  let replies = $state<Reply[]>([])
+  let replyBody = $state('')
+  let editingReply = $state<{ id: number; body: string } | null>(null)
+  let showModal = $state(false)
+  let deletingReply = $state<Reply | null>(null)
 
-  $: editBody = editingReply?.body ?? ''
+  let editBody = $derived(editingReply?.body ?? '')
 
   function isEditing(id: number) {
     return editingReply?.id === id
@@ -43,7 +47,7 @@
       console.error(err)
       return
     }
-    replies = data
+    replies = data ?? []
   }
 
   async function postReply() {
@@ -100,7 +104,11 @@
     fetchData()
   }
 
-  $: if (postId) fetchData()
+  $effect(() => {
+    if (postId) {
+      fetchData()
+    }
+  })
 
   function formatDate(date: string) {
     const d = new Date(date)
@@ -129,34 +137,34 @@
 
         {#if $canEdit(reply.user_id)}
           <div class="text-right">
-            <ZMenu>
-              <svelte:fragment slot="trigger" let:toggle>
-                <button type="button" on:click={toggle}>
+            <CMenu>
+              {#snippet trigger({ toggle })}
+                <CButton variant="ghost" size="icon-sm" onclick={toggle}>
                   <ZIcon path={mdiDotsVertical} />
-                </button>
-              </svelte:fragment>
+                </CButton>
+              {/snippet}
 
-              <svelte:fragment slot="menu" let:close>
+              {#snippet menu({ close })}
                 <div class="text-xs">
-                  <ZMenuItem
-                    on:click={() => {
+                  <CMenuItem
+                    onclick={() => {
                       edit(reply)
                       close()
                     }}
                   >
                     수정
-                  </ZMenuItem>
-                  <ZMenuItem
-                    on:click={() => {
+                  </CMenuItem>
+                  <CMenuItem
+                    onclick={() => {
                       del(reply)
                       close()
                     }}
                   >
                     삭제
-                  </ZMenuItem>
+                  </CMenuItem>
                 </div>
-              </svelte:fragment>
-            </ZMenu>
+              {/snippet}
+            </CMenu>
           </div>
         {/if}
       </div>
@@ -193,7 +201,7 @@
 
   {#if $isLoggedIn && $userInfo}
     <div class="p-3">
-      <div class="z-bg-muted rounded border p-4">
+      <div class="bg-muted rounded border p-4">
         <AvatarUser user={$userInfo} showLink={false} />
         <div class="mt-2">
           <ZTextarea

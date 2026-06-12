@@ -27,7 +27,7 @@
 
 <span
   class={`inline-flex items-center justify-center overflow-hidden rounded-full box-border align-middle relative hover:z-40 ${
-    showBorder ? 'ring-2 ring-x-white outline -outline-offset-1 outline-x-black/5' : ''
+    showBorder ? 'ring-2 ring-x-white outline -outline-offset-1 outline-foreground/5' : ''
   }`}
   style={`height: ${size}px; width: ${size}px; background: #f0f0f0;`}
   title={user?.name}

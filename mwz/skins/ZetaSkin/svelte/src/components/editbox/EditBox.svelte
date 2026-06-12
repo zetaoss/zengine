@@ -23,6 +23,6 @@
 <div bind:this={rootElement}>
   <div bind:this={templateBoxMountElement}></div>
 </div>
-<div class="mt-3 flex flex-col gap-3 md:flex-row-reverse md:items-start" bind:this={editAreaMountElement}>
+<div class="flex flex-col gap-3 md:flex-row-reverse md:items-start" bind:this={editAreaMountElement}>
   <div class="hidden min-w-0 md:flex-1" bind:this={aiEditPanelMountElement}></div>
 </div>

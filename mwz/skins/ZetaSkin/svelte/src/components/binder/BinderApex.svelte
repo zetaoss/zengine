@@ -109,12 +109,12 @@
 {#if bindersRef.length > 0}
   <div
     bind:this={root}
-    class={`flex-none shrink-0 z-30 transition-[width] bg-x-gray-50 border-r ${isDrawer ? 'fixed' : 'sticky'}`}
+    class={`flex-none shrink-0 z-30 transition-[width] bg-surface border-r ${isDrawer ? 'fixed' : 'sticky'}`}
     style={`width:${styleVars.width}; margin-top:${styleVars.marginTop}; top:${styleVars.top}; height:${styleVars.height};`}
   >
     {#if isDrawer}
       <button
-        class="binder-menu-toggle absolute p-2 z-20 flex rounded-r opacity-80 cursor-pointer bg-(--background-color-interactive--hover) right-0 translate-x-full"
+        class="binder-menu-toggle absolute p-2 z-20 flex rounded-r opacity-80 cursor-pointer bg-accent right-0 translate-x-full"
         aria-expanded={!isCollapsed}
         on:click={toggle}
       >
@@ -133,7 +133,7 @@
         {#each bindersRef as binder (binder.id)}
           <div>
             <header
-              class="book sticky top-0 z-10 flex min-h-9 items-stretch overflow-hidden rounded bg-x-gray-200/80 border-x-gray-400/60 font-bold"
+              class="book sticky top-0 z-10 flex min-h-9 items-stretch overflow-hidden rounded bg-muted/80 border-border/60 font-bold"
             >
               <a href={`/wiki/Binder:${binder.text}`} class="binder-title-link inline-flex min-w-0 flex-1 items-center px-3 py-2">
                 <span class="wrap-break-word">{binder.text}</span>
@@ -182,17 +182,17 @@
     bottom: 0;
     left: 0;
     height: 50px;
-    background: linear-gradient(to bottom, transparent, var(--color-gray-50) 55%);
+    background: linear-gradient(to bottom, transparent, var(--muted) 55%);
     pointer-events: none;
   }
 
   .binder-title-link {
-    color: var(--color-base);
+    color: var(--foreground);
     text-decoration: none;
   }
 
   .binder-title-link:hover {
-    color: var(--z-link);
+    color: var(--color-x-sky-600);
     text-decoration: underline;
   }
 

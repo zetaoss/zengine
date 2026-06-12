@@ -189,7 +189,7 @@ console.log("Hello HTML");
 
       <div class="flex min-h-0 flex-1 flex-col">
         <header class="bg-x-slate-400 py-1 text-center font-bold text-x-white">Console</header>
-        <div class="console h-[30vh] overflow-y-auto bg-(--console-bg) text-sm">
+        <div class="console h-[30vh] overflow-y-auto bg-code text-sm">
           {#if logs.length === 0}
             <div class="p-2 opacity-60">No logs yet.</div>
           {:else}

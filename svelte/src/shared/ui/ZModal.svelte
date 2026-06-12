@@ -33,7 +33,7 @@
 </script>
 
 {#if show}
-  <div class="fixed inset-0 z-40 flex items-center justify-center bg-x-black/40">
+  <div class="fixed inset-0 z-40 flex items-center justify-center bg-foreground/40">
     {#if backdropClosable}
       <button type="button" class="absolute inset-0 cursor-default bg-transparent" aria-label="닫기" onclick={() => dispatch('cancel')}
       ></button>

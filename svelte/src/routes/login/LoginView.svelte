@@ -139,7 +139,7 @@
           bind:value={username}
           aria-label="username"
           type="text"
-          class="block w-full min-w-0 flex-1 rounded-none rounded-r border bg-x-white p-2.5 text-sm text-x-black focus:border-x-blue-500 focus:outline-none focus:ring"
+          class="block w-full min-w-0 flex-1 rounded-none rounded-r border bg-x-white p-2.5 text-sm text-foreground focus:border-x-blue-500 focus:outline-none focus:ring"
           placeholder="사용자명"
           required
         />
@@ -153,7 +153,7 @@
           bind:value={password}
           aria-label="password"
           type="password"
-          class="block w-full min-w-0 flex-1 rounded-none rounded-r border bg-x-white p-2.5 text-sm text-x-black focus:border-x-blue-500 focus:outline-none focus:ring"
+          class="block w-full min-w-0 flex-1 rounded-none rounded-r border bg-x-white p-2.5 text-sm text-foreground focus:border-x-blue-500 focus:outline-none focus:ring"
           placeholder="패스워드"
           required
           autocomplete="on"

@@ -6,6 +6,7 @@
   import ThePagination from '$lib/components/pagination/ThePagination.svelte'
   import type { PaginateData } from '$lib/components/pagination/types'
   import AvatarIcon from '$shared/components/avatar/AvatarIcon.svelte'
+  import CBadge from '$shared/ui/CBadge.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
   import httpy from '$shared/utils/httpy'
 
@@ -79,7 +80,7 @@
   {/if}
 
   <div class="z-card">
-    <div class="z-base3 hidden p-2 text-center font-bold md:flex">
+    <div class="bg-muted hidden p-2 text-center font-bold md:flex">
       <div class="flex w-[65%]">
         <span class="w-[10%]">번호</span>
         <span class="w-[90%] text-left">제목</span>
@@ -111,16 +112,16 @@
       {#each posts as p (p.id)}
         <a
           href={resolve(`/forum/${p.id}${pageNumber === 1 ? '' : `?page=${pageNumber}`}`)}
-          class={`z-text block border-b px-3 py-2 hover:bg-x-gray-50 hover:no-underline md:flex md:px-2 ${
+          class={`text-foreground block border-b px-3 py-2 hover:bg-x-gray-50 hover:no-underline md:flex md:px-2 ${
             currentPostId === p.id ? 'bg-x-slate-100' : ''
           }`}
         >
           <div class="flex py-1 md:w-[65%]">
             <span class="hidden w-[10%] text-center md:inline">{p.id}</span>
             <span class="w-full truncate pr-2 md:w-[90%]">
-              <span class="rounded-lg bg-[#6668] px-1.5 text-xs text-x-white">
+              <CBadge variant="secondary" class="mr-1">
                 {p.cat}
-              </span>
+              </CBadge>
               {p.title}
               {#if p.replies_count > 0}
                 <span>({p.replies_count})</span>

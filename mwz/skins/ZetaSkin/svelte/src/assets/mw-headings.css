@@ -12,7 +12,7 @@
 
 .mw-parser-output {
   .mw-headline::before {
-    color: var(--z-text4);
+    color: color-mix(in srgb, var(--muted-foreground), transparent 30%);
   }
 
   counter-reset: h2 h3 h4 h5 h6;

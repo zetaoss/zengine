@@ -16,7 +16,7 @@
         out:fly={{ y: 6, duration: 200 }}
       >
         <div class="flex min-h-10 items-center px-4 py-2 leading-tight">{toast.message}</div>
-        <hr class="toast-bar m-0 h-1 rounded border-0 bg-x-black/50" style={`animation-duration: ${toast.timeout}ms`} />
+        <hr class="toast-bar m-0 h-1 rounded border-0 bg-foreground/40" style={`animation-duration: ${toast.timeout}ms`} />
       </div>
     {/if}
   {/each}
@@ -26,7 +26,7 @@
   {#each $toasts as toast (toast.id)}
     {#if toast.placement === 'center'}
       <div
-        class="pointer-events-auto w-full max-w-sm rounded border bg-x-white text-(--z-text) shadow-lg"
+        class="pointer-events-auto w-full max-w-sm rounded border bg-x-white text-foreground shadow-lg"
         in:fly={{ y: 8, duration: 200 }}
         out:fly={{ y: 8, duration: 200 }}
       >
@@ -38,7 +38,7 @@
             </CButton>
           </div>
         {/if}
-        <hr class="toast-bar m-0 h-1 rounded border-0 bg-x-black/20" style={`animation-duration: ${toast.timeout}ms`} />
+        <hr class="toast-bar m-0 h-1 rounded border-0 bg-foreground/20" style={`animation-duration: ${toast.timeout}ms`} />
       </div>
     {/if}
   {/each}

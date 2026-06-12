@@ -98,7 +98,7 @@
 
 {#if open}
   <div
-    class="fixed inset-0 z-60 flex items-end justify-end bg-x-black/30 p-4"
+    class="fixed inset-0 z-60 flex items-end justify-end bg-foreground/30 p-4"
     role="button"
     tabindex="0"
     on:click|self={closeConsent}

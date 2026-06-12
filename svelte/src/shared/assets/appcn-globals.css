@@ -55,13 +55,13 @@
   --color-code-foreground: var(--code-foreground);
   --color-code-highlight: var(--code-highlight);
   --color-code-number: var(--code-number);
-  --color-selection: var(--selection);
-  --color-selection-foreground: var(--selection-foreground);
 }
 
 :root {
+  color-scheme: light;
+
   /* --radius: 0.625rem; */
-  --radius: 0.25rem;
+  --radius: 0.3rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0% 0 0);
   --card: oklch(1 0 0);
@@ -100,11 +100,11 @@
   --code-foreground: var(--surface-foreground);
   --code-highlight: oklch(0.96 0 0);
   --code-number: oklch(0.56 0 0);
-  --selection: oklch(0% 0 0);
-  --selection-foreground: oklch(1 0 0);
 }
 
 .dark {
+  color-scheme: dark;
+
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -143,16 +143,11 @@
   --code-foreground: var(--surface-foreground);
   --code-highlight: oklch(0.27 0 0);
   --code-number: oklch(0.72 0 0);
-  --selection: oklch(0.922 0 0);
-  --selection-foreground: oklch(0.205 0 0);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
-  }
-  ::selection {
-    @apply bg-selection text-selection-foreground;
   }
   html {
     @apply overscroll-y-none;

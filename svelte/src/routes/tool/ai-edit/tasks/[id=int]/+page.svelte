@@ -201,14 +201,14 @@
         </CButton>
       </div>
 
-      <div class="mb-5 border-y border-(--border-color-subtle) py-4">
+      <div class="mb-5 border-y border-border py-4">
         <div class="columns-1 gap-6 md:columns-2">
           <div class="mb-2 break-inside-avoid grid grid-cols-[7rem_1fr] items-start gap-2">
-            <div class="text-sm text-(--color-subtle)">번호</div>
+            <div class="text-sm text-muted-foreground">번호</div>
             <div class="font-medium">#{row.id}</div>
           </div>
           <div class="mb-2 break-inside-avoid grid grid-cols-[7rem_1fr] items-start gap-2">
-            <div class="text-sm text-(--color-subtle)">상태</div>
+            <div class="text-sm text-muted-foreground">상태</div>
             <div class="flex items-center gap-1">
               {#if isActivePhase(row.phase)}
                 <span class:animate-spin={shouldSpinPhase(row.phase)} aria-hidden="true">⌛</span>
@@ -217,36 +217,36 @@
             </div>
           </div>
           <div class="mb-2 break-inside-avoid grid grid-cols-[7rem_1fr] items-start gap-2">
-            <div class="text-sm text-(--color-subtle)">모델</div>
+            <div class="text-sm text-muted-foreground">모델</div>
             <div>{row.llm_model || '-'}</div>
           </div>
           <div class="mb-2 break-inside-avoid grid grid-cols-[7rem_1fr] items-start gap-2">
-            <div class="text-sm text-(--color-subtle)">처리</div>
+            <div class="text-sm text-muted-foreground">처리</div>
             <div>
               시도 {row.attempts}
-              <span class="ml-1 text-(--color-subtle)">(실패 {row.error_count}, skip {row.skip_count})</span>
+              <span class="ml-1 text-muted-foreground">(실패 {row.error_count}, skip {row.skip_count})</span>
             </div>
           </div>
           <div class="mb-2 break-inside-avoid grid grid-cols-[7rem_1fr] items-start gap-2">
-            <div class="text-sm text-(--color-subtle)">유형</div>
+            <div class="text-sm text-muted-foreground">유형</div>
             <div>
               <CBadge class={getRequestTypeClass(row.request_type)}>{getRequestTypeLabel(row.request_type)}</CBadge>
             </div>
           </div>
           <div class="mb-2 break-inside-avoid grid grid-cols-[7rem_1fr] items-start gap-2">
-            <div class="text-sm text-(--color-subtle)">등록자</div>
+            <div class="text-sm text-muted-foreground">등록자</div>
             <div><AvatarUser user={getUser(row)} /></div>
           </div>
           <div class="mb-2 break-inside-avoid grid grid-cols-[7rem_1fr] items-start gap-2">
-            <div class="text-sm text-(--color-subtle)">생성</div>
+            <div class="text-sm text-muted-foreground">생성</div>
             <div>{formatDateTime(row.created_at)}</div>
           </div>
           <div class="mb-2 break-inside-avoid grid grid-cols-[7rem_1fr] items-start gap-2">
-            <div class="text-sm text-(--color-subtle)">갱신</div>
+            <div class="text-sm text-muted-foreground">갱신</div>
             <div>
               {formatDateTime(row.updated_at)}
               {#if row.retry_at}
-                <span class="ml-2 text-(--color-subtle)">retry {formatDateTime(row.retry_at)} ({formatRemaining(row.retry_at)} 남음)</span>
+                <span class="ml-2 text-muted-foreground">retry {formatDateTime(row.retry_at)} ({formatRemaining(row.retry_at)} 남음)</span>
               {/if}
             </div>
           </div>
@@ -275,10 +275,10 @@
         </section>
       </div>
     {:else}
-      <div class="text-(--color-subtle)">권한이 없습니다. 등록자 또는 Sysop만 볼 수 있습니다.</div>
+      <div class="text-muted-foreground">권한이 없습니다. 등록자 또는 Sysop만 볼 수 있습니다.</div>
     {/if}
   {:else}
-    <div class="text-(--color-subtle)">AI 편집 항목을 찾을 수 없습니다.</div>
+    <div class="text-muted-foreground">AI 편집 항목을 찾을 수 없습니다.</div>
   {/if}
 </div>
 
