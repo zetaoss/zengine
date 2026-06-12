@@ -67,7 +67,7 @@
 
   <button
     type="button"
-    class="absolute inset-y-0 z-20 flex w-4 cursor-col-resize select-none items-center justify-center bg-x-white hover:bg-x-slate-200 text-xs text-x-slate-400 rounded-r"
+    class="absolute inset-y-0 z-20 flex w-4 cursor-col-resize select-none items-center justify-center bg-background hover:bg-a-slate-200 text-xs text-a-slate-400 rounded-r"
     style={`right: ${marginPx}px;`}
     aria-label="Resize output"
     on:mousedown|stopPropagation|preventDefault={onHandleDown}

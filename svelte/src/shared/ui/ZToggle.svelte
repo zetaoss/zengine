@@ -22,7 +22,7 @@
   aria-checked={checked}
   aria-disabled={disabled}
   aria-label={label}
-  class="z-toggle relative inline-flex h-5 w-9 items-center rounded-full border-2 bg-transparent transition"
+  class="border-muted-foreground text-muted-foreground relative inline-flex h-5 w-9 items-center rounded-full border-2 bg-transparent transition"
   class:cursor-not-allowed={disabled}
   class:opacity-40={!checked}
   class:opacity-60={disabled && checked}
@@ -37,10 +37,3 @@
     {/if}
   </span>
 </button>
-
-<style>
-  .z-toggle {
-    border-color: var(--muted-foreground);
-    color: var(--muted-foreground);
-  }
-</style>

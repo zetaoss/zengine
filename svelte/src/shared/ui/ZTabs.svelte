@@ -58,8 +58,8 @@
       href={resolve(tab.href ?? '#')}
       class={`relative border-b-2 px-3 py-2 text-sm transition ${
         selected === tab.value || pendingSelected === tab.value
-          ? 'border-x-slate-900 font-semibold text-x-slate-900'
-          : 'border-transparent text-x-gray-500 hover:text-x-gray-800'
+          ? 'border-a-slate-900 font-semibold text-a-slate-900'
+          : 'border-transparent text-a-gray-500 hover:text-a-gray-800'
       }`}
       onpointerdown={(e) => beginSelect(e, tab.value)}
       onkeydown={(e) => beginKeyboardSelect(e, tab.value)}

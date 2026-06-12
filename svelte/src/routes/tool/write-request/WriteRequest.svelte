@@ -225,7 +225,7 @@
 
 <div class="p-5">
   <h2 class="my-5 text-2xl font-bold">작성 요청</h2>
-  <WriteRequestNew show={showModal} on:close={closeModal} />
+  <WriteRequestNew show={showModal} onClose={closeModal} />
 
   <ZTabs tabs={modeTabs} selected={mode} onChange={(value) => setMode(value as Mode)} />
 

@@ -65,15 +65,15 @@
       }}
       type="text"
       placeholder="제목을 입력해 주세요"
-      class={`block w-full rounded border bg-x-white px-4 py-2 text-x-gray-900 outline-0 ${titleError ? 'border-x-red-300' : ''}`}
+      class={`block w-full rounded border bg-background px-4 py-2 text-a-gray-900 outline-0 ${titleError ? 'border-a-red-300' : ''}`}
     />
     {#if titleError}
-      <div class="text-sm text-x-red-400">{titleError}</div>
+      <div class="text-sm text-a-red-400">{titleError}</div>
     {/if}
   </div>
 
   <div>
-    <div class={bodyError ? 'border border-x-red-300' : ''}>
+    <div class={bodyError ? 'border border-a-red-300' : ''}>
       {#if EditorApex}
         <svelte:component
           this={EditorApex}
@@ -86,11 +86,11 @@
           }}
         />
       {:else}
-        <div class="p-4 text-sm text-x-gray-500">에디터 로딩 중...</div>
+        <div class="p-4 text-sm text-a-gray-500">에디터 로딩 중...</div>
       {/if}
     </div>
     {#if bodyError}
-      <div class="text-sm text-x-red-400">{bodyError}</div>
+      <div class="text-sm text-a-red-400">{bodyError}</div>
     {/if}
   </div>
 

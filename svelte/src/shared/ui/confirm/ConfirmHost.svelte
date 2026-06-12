@@ -11,7 +11,7 @@
     <button class="absolute inset-0 bg-foreground/40" aria-label="Close" on:click={() => $confirmState.closable && handleConfirmCancel()}
     ></button>
     <div class="relative w-full max-w-md rounded-lg bg-background p-6 shadow-lg border">
-      <div class="text-sm text-x-slate-700">{$confirmState.message}</div>
+      <div class="text-sm text-a-slate-700">{$confirmState.message}</div>
       <div class="mt-6 flex justify-end gap-2">
         <CButton variant="ghost" class="px-4 py-2" onclick={handleConfirmCancel}>
           {$confirmState.cancelText}
@@ -26,7 +26,7 @@
 
 <style>
   :global(.confirm-btn-outline) {
-    background-color: var(--muted);
+    background-color: var(--color-muted);
   }
   :global(.confirm-btn-default) {
     background-color: var(--color-progressive);

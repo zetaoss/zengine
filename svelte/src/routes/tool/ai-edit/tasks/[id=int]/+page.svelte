@@ -121,8 +121,8 @@
   }
 
   function getRequestTypeClass(requestType: string) {
-    if (requestType === 'create') return 'text-x-emerald-600'
-    if (requestType === 'edit') return 'text-x-amber-600'
+    if (requestType === 'create') return 'text-a-emerald-600'
+    if (requestType === 'edit') return 'text-a-amber-600'
     return ''
   }
 
