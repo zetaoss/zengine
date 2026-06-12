@@ -18,7 +18,7 @@ article {
 
   & input[type='submit'] {
     background-color: var(--z-btn);
-    color: var(--foreground);
+    color: var(--color-foreground);
 
     border-radius: 0.25rem;
     margin-left: 0.125rem;

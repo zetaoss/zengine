@@ -26,7 +26,7 @@
 
 <style>
   :global(.confirm-btn-outline) {
-    background-color: var(--muted);
+    background-color: var(--color-muted);
   }
   :global(.confirm-btn-default) {
     background-color: var(--color-progressive);

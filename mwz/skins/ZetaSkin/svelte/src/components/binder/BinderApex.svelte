@@ -182,12 +182,12 @@
     bottom: 0;
     left: 0;
     height: 50px;
-    background: linear-gradient(to bottom, transparent, var(--muted) 55%);
+    background: linear-gradient(to bottom, transparent, var(--color-muted) 55%);
     pointer-events: none;
   }
 
   .binder-title-link {
-    color: var(--foreground);
+    color: var(--color-foreground);
     text-decoration: none;
   }
 
