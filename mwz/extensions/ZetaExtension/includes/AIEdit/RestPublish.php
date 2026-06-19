@@ -43,7 +43,7 @@ class RestPublish extends SimpleHandler
 
         $userId = (int) ($data['user_id'] ?? 0);
         $titleText = (string) ($data['title'] ?? '');
-        $content = (string) ($data['text'] ?? '');
+        $content = (string) ($data['content'] ?? '');
         $summary = (string) ($data['summary'] ?? '');
         $requestType = (string) ($data['request_type'] ?? '');
 
