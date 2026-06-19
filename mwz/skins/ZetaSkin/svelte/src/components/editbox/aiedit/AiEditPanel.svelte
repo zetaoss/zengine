@@ -1,19 +1,16 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-  import { mdiEye, mdiHelpCircleOutline, mdiRefresh } from '@mdi/js'
-  import { SvelteMap } from 'svelte/reactivity'
+  import { mdiEye, mdiRefresh } from '@mdi/js'
 
-  import mwapi from '$lib/utils/mwapi'
+  import AiEditRunner from '$shared/components/ai-edit/AiEditRunner.svelte'
+  import type { AIEditPromptForRunner, AIEditRequestType, AIEditRunnerSubmitPayload } from '$shared/types/aiEdit'
   import CButton from '$shared/ui/CButton.svelte'
   import { showToast } from '$shared/ui/toast/toast'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZSelect from '$shared/ui/ZSelect.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
-  import ZTooltip from '$shared/ui/Ztooltip.svelte'
   import httpy from '$shared/utils/httpy'
-
-  import { getPromptParts, renderFinalPrompt } from './promptRenderer'
 
   interface PromptItem {
     id: number
@@ -29,46 +26,6 @@
     label: string
   }
 
-  type TemplateVariableMode = 'plain' | 'code'
-
-  interface TemplateVariable {
-    name: string
-    hashes: string
-    mode: TemplateVariableMode
-    blockLang: string
-  }
-
-  type PreviewPartType = 'plain' | 'inline' | 'block' | 'code' | 'text'
-
-  interface PreviewPart {
-    text: string
-    type: PreviewPartType
-    source?: 'preset' | 'custom'
-    ordinal?: number
-    label?: string
-  }
-
-  interface MwRevision {
-    content?: string
-    slots?: {
-      main?: {
-        content?: string
-      }
-    }
-  }
-
-  interface MwPage {
-    title: string
-    missing?: boolean
-    revisions?: MwRevision[]
-  }
-
-  interface MwRawTextResp {
-    query?: {
-      pages?: MwPage[] | Record<string, MwPage>
-    }
-  }
-
   interface StoreResp {
     ok: boolean
     id: number
@@ -80,7 +37,7 @@
     pageId,
     title,
   }: {
-    requestType: 'create' | 'edit'
+    requestType: AIEditRequestType
     pageId: number | undefined
     title: string
   } = $props()
@@ -88,14 +45,24 @@
   let promptItems = $state<PromptItem[]>([])
   let promptTitle = $state('')
   let promptListLoading = $state(false)
-  let existingContentLoading = $state(false)
-  let submitting = $state(false)
-  let existingContent = $state('')
-  let displayTitle = $state('')
-  let notesEnabled = $state(false)
-  let notes = $state('')
-  let customFieldValues = $state<Record<string, string>>({})
-  let lastPromptTitle = $state('')
+  let mwEditorContent = $state('')
+  let mwEditorContentDirty = $state(false)
+  let contentVersion = $state(0)
+
+  $effect(() => {
+    const textarea = document.getElementById('wpTextbox1') as HTMLTextAreaElement | null
+    if (!textarea) return
+
+    mwEditorContent = textarea.value
+    mwEditorContentDirty = false
+
+    const handleInput = () => {
+      mwEditorContentDirty = textarea.value !== mwEditorContent
+    }
+
+    textarea.addEventListener('input', handleInput)
+    return () => textarea.removeEventListener('input', handleInput)
+  })
 
   let filteredPromptItems = $derived(
     promptItems
@@ -105,94 +72,39 @@
         return b.use_count - a.use_count
       }),
   )
-
   let currentPromptItem = $derived(filteredPromptItems.find((p) => p.title === promptTitle))
+  let currentRunnerPrompt = $derived<AIEditPromptForRunner | null>(
+    currentPromptItem && isAIEditRequestType(currentPromptItem.request_type)
+      ? {
+          id: currentPromptItem.id,
+          title: currentPromptItem.title,
+          requestType: currentPromptItem.request_type,
+          content: currentPromptItem.content,
+        }
+      : null,
+  )
   let promptSelectItems = $derived<PromptSelectItem[]>(
     filteredPromptItems.length > 0
       ? filteredPromptItems.map((p) => ({ value: p.title, label: p.title }))
       : [{ value: '', label: '프롬프트 없음' }],
   )
 
-  let llmPromptTemplate = $derived(filteredPromptItems.find((p) => p.title === promptTitle)?.content ?? '')
-
-  let effectiveNotes = $derived(notesEnabled ? notes : '')
-
-  let templateVariables = $derived.by(() => {
-    const vars = new SvelteMap<string, TemplateVariable>()
-    const matches = llmPromptTemplate.matchAll(/\{(#+\s*)([^}]+)\}/g)
-    for (const match of matches) {
-      const hashes = match[1]
-      const [namePart, ...modeParts] = match[2].split(':')
-      const modeToken = (modeParts[0] ?? '').trim().toLowerCase()
-      const mode: TemplateVariableMode = modeToken === 'code' ? 'code' : 'plain'
-      const name = namePart.trim()
-      if (name === '제목' || name === '기존 문서 내용') continue
-      vars.set(name, { name, hashes, mode, blockLang: (modeParts[1] ?? '').trim() })
-    }
-    return Array.from(vars.values())
-  })
-
-  let renderedLlmInput = $derived(
-    renderFinalPrompt({
-      template: llmPromptTemplate,
-      displayTitle,
-      existingContent,
-      customFieldValues,
-      notes: effectiveNotes,
-    }),
-  )
-
-  let canSubmit = $derived(Boolean(promptTitle && renderedLlmInput.trim() && !existingContentLoading) && !submitting)
-  let previewParts = $derived<PreviewPart[]>(
-    getPromptParts({
-      template: llmPromptTemplate,
-      displayTitle,
-      existingContent,
-      customFieldValues,
-      notes: effectiveNotes,
-      rawMode: false,
-      preserveEmptyBlockPlaceholders: true,
-    }),
-  )
-
   $effect(() => {
-    displayTitle = (title ?? '').replace(/\s*\(.*?\)$/, '').trim()
-    existingContent = ''
-    notesEnabled = false
-    notes = ''
-    customFieldValues = {}
-    lastPromptTitle = ''
     void fetchPromptList()
-    if (requestType === 'edit') {
-      void fetchExistingContent(title)
-    }
   })
 
   $effect(() => {
-    if (!filteredPromptItems.length) return
+    if (!filteredPromptItems.length) {
+      promptTitle = ''
+      return
+    }
     if (!filteredPromptItems.some((p) => p.title === promptTitle)) {
       promptTitle = filteredPromptItems[0].title
     }
   })
 
-  $effect(() => {
-    if (!promptTitle || promptTitle === lastPromptTitle) return
-    lastPromptTitle = promptTitle
-    const nextValues: Record<string, string> = {}
-    for (const variable of templateVariables) {
-      nextValues[variable.name] = ''
-    }
-    customFieldValues = nextValues
-  })
-
-  function asArray<T>(value: T[] | Record<string, T> | undefined): T[] {
-    if (!value) return []
-    return Array.isArray(value) ? value : Object.values(value)
-  }
-
-  function getRevisionContent(pageData: MwPage | undefined) {
-    const revision = pageData?.revisions?.[0]
-    return revision?.slots?.main?.content ?? revision?.content ?? ''
+  function isAIEditRequestType(value: string): value is AIEditRequestType {
+    return value === 'create' || value === 'edit'
   }
 
   async function fetchPromptList() {
@@ -201,11 +113,13 @@
       const [data, err] = await httpy.get<PromptItem[]>('/api/ai-edit/prompts')
       if (err) {
         console.error(err)
+        showToast(err.message || '프롬프트 목록을 불러오지 못했습니다.')
         return
       }
       promptItems = data ?? []
-    } catch (e) {
-      console.error(e)
+    } catch (error) {
+      console.error(error)
+      showToast('프롬프트 목록을 불러오지 못했습니다.')
     } finally {
       promptListLoading = false
     }
@@ -215,69 +129,31 @@
     await fetchPromptList()
   }
 
-  function updateFieldValue(name: string, value: string) {
-    customFieldValues = {
-      ...customFieldValues,
-      [name]: value,
-    }
-  }
-
-  async function fetchExistingContent(pageTitle: string) {
-    existingContentLoading = true
-    const [data, err] = await mwapi.get<MwRawTextResp>({
-      action: 'query',
-      prop: 'revisions',
-      rvprop: 'content',
-      rvslots: 'main',
-      titles: pageTitle,
-    })
-    existingContentLoading = false
-
-    if (err) {
-      console.error(err)
-      showToast(err.message || '기존 문서를 불러오지 못했습니다.')
-      return
-    }
-
-    const pageData = asArray<MwPage>(data?.query?.pages)[0]
-    if (!pageData || pageData.missing) {
-      showToast('기존 문서를 찾을 수 없습니다.')
-      return
-    }
-
-    existingContent = getRevisionContent(pageData)
-  }
-
   function releaseEditWarning() {
     window.jQuery?.(window).off('beforeunload.editwarning')
   }
 
-  async function submit() {
-    if (!canSubmit) return
+  function resetContentFromEditor() {
+    const textarea = document.getElementById('wpTextbox1') as HTMLTextAreaElement | null
+    mwEditorContent = textarea?.value ?? ''
+    mwEditorContentDirty = false
+    contentVersion += 1
+  }
 
-    submitting = true
+  async function submitRunner(payload: AIEditRunnerSubmitPayload) {
     const [data, err] = await httpy.post<StoreResp>('/api/ai-edit', {
-      page_id: pageId,
-      title,
-      prompt_title: promptTitle,
-      request_type: requestType,
-      llm_input: renderedLlmInput,
+      page_id: payload.pageId ?? pageId,
+      title: payload.title,
+      prompt_title: payload.promptTitle,
+      request_type: payload.requestType,
+      llm_input: payload.llmInput,
     })
-    submitting = false
 
-    if (err) {
-      console.error(err)
-      return
-    }
-    if (!data) return
+    if (err) throw err
+    if (!data) throw new Error('AI 편집 등록에 실패했습니다.')
 
     releaseEditWarning()
     window.location.assign(`/tool/ai-edit/tasks/${data.id}`)
-  }
-
-  async function handleSubmitClick() {
-    if (!canSubmit) return
-    await submit()
   }
 </script>
 
@@ -318,105 +194,24 @@
     {/if}
   </div>
 
-  <div class="flex flex-wrap items-center gap-2">
-    <span class="w-20 shrink-0 text-right text-sm font-semibold text-a-slate-700">제목</span>
-    <ZTooltip content="제목은 AI 편집에 전달되는 표시용 제목입니다. 원본 표제어와 다를 수 있습니다." ariaLabel="제목 도움말">
-      <ZIcon path={mdiHelpCircleOutline} class="h-5 w-5 text-a-slate-500" aria-hidden="true" />
-    </ZTooltip>
-    <input type="text" class="min-w-0 flex-1 rounded border px-2 py-1 text-sm" bind:value={displayTitle} />
-    <span class="w-20 shrink-0 text-right text-sm font-semibold text-a-slate-700">표제어</span>
-    <input type="text" class="min-w-0 flex-1 rounded border bg-a-slate-100 px-2 py-1 text-sm text-a-slate-600" value={title} readonly />
-  </div>
-
-  {#if templateVariables.length > 0}
-    {#each templateVariables as variable (variable.name)}
-      <div class="flex flex-col gap-1">
-        <div class="flex items-center justify-between gap-2 text-sm text-a-slate-700">
-          <label class="flex items-center gap-2 font-semibold" for={`ai-edit-panel-field-${variable.name}`}>
-            <span>{variable.name}</span>
-            {#if variable.mode === 'code'}
-              <span
-                class="inline-flex items-center rounded border border-a-slate-200 px-1 py-0.5 text-[10px] font-medium leading-none text-a-slate-500 select-none"
-              >
-                code
-              </span>
-            {/if}
-          </label>
-        </div>
-        <textarea
-          id={`ai-edit-panel-field-${variable.name}`}
-          class={`min-h-24 rounded border border-a-slate-300 px-2 py-1 text-sm ${variable.mode === 'code' ? 'font-mono' : ''}`}
-          value={customFieldValues[variable.name] ?? ''}
-          oninput={(event) => updateFieldValue(variable.name, (event.currentTarget as HTMLTextAreaElement).value)}
-          placeholder={`${variable.name} 내용을 입력하세요.`}
-        ></textarea>
-      </div>
-    {/each}
-  {/if}
-
-  <div class="flex items-center gap-2 text-sm text-a-slate-700">
-    <label for="ai-edit-panel-notes-enabled" class="font-semibold">비고</label>
-    <label class="flex items-center gap-1 text-xs text-a-slate-500" for="ai-edit-panel-notes-enabled">
-      <input id="ai-edit-panel-notes-enabled" type="checkbox" bind:checked={notesEnabled} class="h-3.5 w-3.5 rounded border-a-slate-300" />
-      <span>사용</span>
-    </label>
-  </div>
-  {#if notesEnabled}
-    <textarea
-      id="ai-edit-panel-additional-content"
-      class="min-h-24 rounded border border-a-slate-300 px-2 py-1 text-sm"
-      bind:value={notes}
-      placeholder="프롬프트에 덧붙일 내용을 입력하세요."
-    ></textarea>
-  {/if}
-
-  <hr class="border-a-slate-200" />
-
-  <div class="flex min-h-0 flex-1 flex-col gap-1">
-    <div class="flex items-center justify-between gap-2 text-sm text-a-slate-700">
-      <label for="ai-edit-panel-prompt-preview" class="font-semibold">프롬프트</label>
+  {#if currentRunnerPrompt}
+    <AiEditRunner
+      prompt={currentRunnerPrompt}
+      initialTitle={title}
+      initialPageId={pageId}
+      externalContent={mwEditorContent}
+      externalContentDirty={mwEditorContentDirty}
+      externalContentVersion={contentVersion}
+      onContentResetRequest={resetContentFromEditor}
+      submit={submitRunner}
+      layout="compact"
+      hideTitle={true}
+      hideReservedStatus={true}
+      class="border-0! p-0!"
+    />
+  {:else if !promptListLoading}
+    <div class="flex min-h-0 flex-1 items-center justify-center rounded border border-dashed border-a-slate-300 text-sm text-a-slate-500">
+      사용할 수 있는 프롬프트가 없습니다.
     </div>
-    <div
-      id="ai-edit-panel-prompt-preview"
-      class="z-input min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap rounded border border-a-slate-300 bg-a-slate-50 p-2 font-mono text-xs text-a-slate-700"
-    >
-      {#each previewParts as part, i (i)}
-        {@const partType = part.type as PreviewPartType}
-        {@const isEmptyPart = part.text === ''}
-        {#if partType === 'text'}
-          <div class="rounded border">{part.text}</div>
-        {:else if partType === 'plain'}
-          {part.text}
-        {:else if partType === 'inline'}
-          {#if isEmptyPart}
-            <span
-              class="inline-flex items-center justify-center rounded border border-dashed border-a-slate-300 px-2 text-a-slate-400 select-none"
-            >
-              {part.label ?? ''}
-            </span>
-          {:else}
-            <span class="inline-flex items-stretch overflow-hidden rounded border border-a-slate-300 bg-a-slate-100 text-a-slate-700">
-              <span class="px-1">{part.text}</span>
-            </span>
-          {/if}
-        {:else if isEmptyPart}
-          <div
-            class="flex w-full items-center justify-center rounded border border-dashed border-a-slate-300 px-2 text-a-slate-400 select-none"
-          >
-            {part.label ?? ''}
-          </div>
-        {:else}
-          <div class="flex w-full min-h-2 items-stretch overflow-hidden rounded border border-a-slate-300 bg-a-slate-100 text-a-slate-700">
-            <span class="px-1 whitespace-pre-wrap">{part.text}</span>
-          </div>
-        {/if}
-      {/each}
-    </div>
-  </div>
-
-  <div class="flex justify-center">
-    <CButton variant="outline" disabled={!canSubmit} onclick={() => void handleSubmitClick()}>
-      {submitting ? '등록 중' : 'AI 편집 등록'}
-    </CButton>
-  </div>
+  {/if}
 </div>

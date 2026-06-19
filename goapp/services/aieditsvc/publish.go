@@ -43,7 +43,7 @@ func PublishContent(cfg *config.Config, userID int, title string, requestType st
 		"secret":       secret,
 		"user_id":      userID,
 		"title":        title,
-		"text":         content,
+		"content":      content,
 		"summary":      fmt.Sprintf("AI Edit task #%d", taskID),
 		"request_type": requestType,
 	}

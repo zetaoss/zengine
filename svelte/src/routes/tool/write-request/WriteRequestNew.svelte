@@ -47,7 +47,7 @@
         icon: mdiCheckCircle,
         label: '확인완료',
         text: '중복확인',
-        className: 'text-a-green-600'
+        className: 'text-a-emerald-600'
       }
     }
     if (state === 'exists') {
@@ -64,6 +64,13 @@
       text: '',
       className: '',
     }
+  })()
+
+  $: inputBorderClass = (() => {
+    if (state === 'available') return 'border-a-emerald-500 focus:border-a-emerald-600'
+    if (state === 'checking') return 'border-a-blue-500 focus:border-a-blue-600'
+    if (state === 'exists') return 'border-a-red-500 focus:border-a-red-600'
+    return 'border-a-slate-300 focus:border-a-blue-500'
   })()
 
   $: if (show) {
@@ -176,7 +183,7 @@
         bind:this={inputEl}
         value={title}
         type="text"
-        class="min-w-0 flex-1 rounded border p-1 px-2"
+        class={`min-w-0 flex-1 rounded border p-1 px-2 outline-none transition-colors ${inputBorderClass}`}
         placeholder="제목 입력"
         on:input={onInput}
         on:keydown={onInputKeydown}
