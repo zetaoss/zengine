@@ -55,17 +55,11 @@
 
     mwEditorContent = textarea.value
     mwEditorContentDirty = false
-  })
-
-  $effect(() => {
-    const textarea = document.getElementById('wpTextbox1') as HTMLTextAreaElement | null
-    if (!textarea) return
 
     const handleInput = () => {
       mwEditorContentDirty = textarea.value !== mwEditorContent
     }
 
-    mwEditorContentDirty = textarea.value !== mwEditorContent
     textarea.addEventListener('input', handleInput)
     return () => textarea.removeEventListener('input', handleInput)
   })

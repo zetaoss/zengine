@@ -128,8 +128,10 @@ export function getPromptParts({
       const textAfter = template.substring(offset + fullMatch.length)
       const isLineStart = textBefore === '' || textBefore.endsWith('\n')
       const isLineEnd = textAfter === '' || textAfter.startsWith('\n')
-      const lineBefore = textBefore.split('\n').pop() || ''
-      const lineAfter = textAfter.split('\n', 1)[0] || ''
+      const lastNewlineIndex = textBefore.lastIndexOf('\n')
+      const nextNewlineIndex = textAfter.indexOf('\n')
+      const lineBefore = lastNewlineIndex === -1 ? textBefore : textBefore.substring(lastNewlineIndex + 1)
+      const lineAfter = nextNewlineIndex === -1 ? textAfter : textAfter.substring(0, nextNewlineIndex)
       const isInlineOnlyVariable = label === '제목'
       const isBlock = !isInlineOnlyVariable && isLineStart && isLineEnd && lineBefore.trim() === '' && lineAfter.trim() === ''
 
