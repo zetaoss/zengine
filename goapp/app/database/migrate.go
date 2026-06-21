@@ -3,11 +3,13 @@ package database
 import (
 	"database/sql"
 	"embed"
+	"errors"
 	"fmt"
 	"os"
 	"sort"
 	"strings"
 
+	"github.com/go-sql-driver/mysql"
 	"github.com/zetaoss/zengine/goapp/app/config"
 )
 
@@ -66,6 +68,18 @@ func RunMigrate(cfg *config.Config) error {
 		}
 		for _, stmt := range splitSQLStatements(string(raw)) {
 			if _, err := tx.Exec(stmt); err != nil {
+				var mysqlErr *mysql.MySQLError
+				if errors.As(err, &mysqlErr) {
+					// Error codes for "already exists" or "doesn't exist" for columns/indexes
+					// 1054: Unknown column
+					// 1060: Duplicate column name
+					// 1061: Duplicate key name
+					// 1091: Can't DROP...; check that column/key exists
+					if mysqlErr.Number == 1054 || mysqlErr.Number == 1060 || mysqlErr.Number == 1061 || mysqlErr.Number == 1091 {
+						fmt.Fprintf(os.Stderr, "[worker:migrate] info: ignoring idempotent DDL error in %s: %v\n", mf.Name, err)
+						continue // Ignore this error and continue
+					}
+				}
 				_ = tx.Rollback()
 				return fmt.Errorf("apply migration %s: %w", mf.Name, err)
 			}

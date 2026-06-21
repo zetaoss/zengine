@@ -18,7 +18,7 @@
     { key: '/tool/common-report', href: resolve('/tool/common-report'), label: '통용' },
     { key: '/tool/article-tpl', href: resolve('/tool/article-tpl'), label: '템플릿' },
     { key: '/tool/write-request', href: resolve('/tool/write-request'), label: '작성요청' },
-    { key: '/tool/ai-edit', href: resolve('/tool/ai-edit'), label: 'AI 편집' },
+    { key: '/tool/ai-prompts', href: resolve('/tool/ai-prompts'), label: 'AI 프롬프트' },
     { key: '/tool/stat', href: resolve('/tool/stat'), label: '통계' },
     { key: '/tool/frontplay', href: resolve('/tool/frontplay'), label: 'FrontPlay' },
   ]

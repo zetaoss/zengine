@@ -1,22 +1,15 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-  import { mdiArrowLeft, mdiDelete, mdiPencil, mdiStar, mdiStarOutline } from '@mdi/js'
+  import { mdiArrowLeft, mdiDelete, mdiPencil } from '@mdi/js'
+  import { get } from 'svelte/store'
 
   import { goto } from '$app/navigation'
   import { resolve } from '$app/paths'
   import { page } from '$app/state'
   import RouteLinkButton from '$lib/components/RouteLinkButton.svelte'
   import useAuthStore from '$lib/stores/auth'
-  import mwapi from '$lib/utils/mwapi'
-  import AiEditRunner from '$shared/components/ai-edit/AiEditRunner.svelte'
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
-  import type {
-    AIEditExistingContentResult,
-    AIEditPromptForRunner,
-    AIEditRequestType,
-    AIEditRunnerSubmitPayload,
-  } from '$shared/types/aiEdit'
   import CBadge from '$shared/ui/CBadge.svelte'
   import CButton from '$shared/ui/CButton.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
@@ -34,47 +27,7 @@
     title: string
     request_type: string
     content: string
-    is_favorite: boolean
     updated_at?: string
-  }
-
-  interface MwRevision {
-    content?: string
-    slots?: {
-      main?: {
-        content?: string
-      }
-    }
-  }
-
-  interface MwPage {
-    pageid?: number
-    title: string
-    invalid?: boolean
-    missing?: boolean
-    revisions?: MwRevision[]
-  }
-
-  interface MwRawTextResp {
-    query?: {
-      pages?: MwPage[] | Record<string, MwPage>
-    }
-  }
-
-  interface StoreResp {
-    ok: boolean
-    id: number
-    created: boolean
-  }
-
-  class NotFoundError extends Error {
-    title: string
-
-    constructor(message: string, title: string) {
-      super(message)
-      this.name = 'NotFoundError'
-      this.title = title
-    }
   }
 
   let row = $state<PromptItem | null>(null)
@@ -88,17 +41,6 @@
   const auth = useAuthStore()
   const userInfo = auth.userInfo
   let isSysop = $derived(($userInfo?.groups ?? []).includes('sysop'))
-  let runnerPrompt = $derived<AIEditPromptForRunner | null>(
-    row && isAIEditRequestType(row.request_type)
-      ? {
-          id: row.id,
-          title: row.title,
-          requestType: row.request_type,
-          content: row.content,
-        }
-      : null,
-  )
-  let runnerDisabledReason = $derived(!$userInfo ? '로그인이 필요합니다.' : '')
 
   let id = $derived.by(() => {
     if (page.url.pathname.endsWith('/new')) return 0
@@ -112,14 +54,14 @@
     titleError = ''
     if (id === 0) {
       loading = false
+      const currentUserInfo = get(userInfo)
       row = {
         id: 0,
         title: '',
         request_type: 'create',
         content: '',
-        is_favorite: false,
-        user_id: $userInfo?.id ?? 0,
-        user_name: $userInfo?.name ?? '',
+        user_id: currentUserInfo?.id ?? 0,
+        user_name: currentUserInfo?.name ?? '',
       }
       isEditing = true
       return
@@ -150,7 +92,7 @@
 
   async function fetchPrompt() {
     loading = true
-    const [data, err] = await httpy.get<PromptItem>(`/api/ai-edit/prompts/${id}`)
+    const [data, err] = await httpy.get<PromptItem>(`/api/ai-prompts/${id}`)
     loading = false
     if (err) {
       console.error(err)
@@ -158,22 +100,6 @@
     }
     row = data
     isEditing = false
-  }
-
-  async function toggleFavorite() {
-    if (!row || !$userInfo) {
-      showToast('로그인이 필요합니다.')
-      return
-    }
-
-    const [data, err] = await httpy.post<{ is_favorite: boolean }>(`/api/ai-edit/prompts/${row.id}/favorite`)
-    if (err) {
-      showToast(err.message || '즐겨찾기 실패')
-      return
-    }
-
-    row.is_favorite = data?.is_favorite ?? false
-    showToast(row.is_favorite ? '즐겨찾기 지정' : '즐겨찾기 해제')
   }
 
   function getRequestTypeLabel(requestType: string) {
@@ -186,20 +112,6 @@
     if (requestType === 'create') return 'text-a-emerald-600'
     if (requestType === 'edit') return 'text-a-amber-600'
     return ''
-  }
-
-  function isAIEditRequestType(value: string): value is AIEditRequestType {
-    return value === 'create' || value === 'edit'
-  }
-
-  function asArray<T>(value: T[] | Record<string, T> | undefined): T[] {
-    if (!value) return []
-    return Array.isArray(value) ? value : Object.values(value)
-  }
-
-  function getRevisionContent(pageData: MwPage | undefined) {
-    const revision = pageData?.revisions?.[0]
-    return revision?.slots?.main?.content ?? revision?.content ?? ''
   }
 
   function startEdit() {
@@ -220,7 +132,7 @@
       row.user_name = $userInfo.name
     }
 
-    const [data, err] = await httpy.post<PromptItem>('/api/ai-edit/prompts', row as unknown as Record<string, unknown>)
+    const [data, err] = await httpy.post<PromptItem>('/api/ai-prompts', row as unknown as Record<string, unknown>)
     isSaving = false
     if (err) {
       if (err.code === 409) {
@@ -233,7 +145,7 @@
     row = data
     isEditing = false
     showToast('저장 완료')
-    await goto(resolve('/tool/ai-edit/prompts'))
+    await goto(resolve('/tool/ai-prompts'))
   }
 
   async function delPrompt() {
@@ -242,7 +154,7 @@
     if (!ok) return
 
     deleting = true
-    const [, err] = await httpy.delete(`/api/ai-edit/prompts/${row.id}`)
+    const [, err] = await httpy.delete(`/api/ai-prompts/${row.id}`)
     deleting = false
     if (err) {
       showToast(err.message || '삭제 실패')
@@ -250,7 +162,7 @@
     }
     row = null
     showToast('삭제 완료')
-    await goto(resolve('/tool/ai-edit/prompts'))
+    await goto(resolve('/tool/ai-prompts'))
   }
 
   async function checkTitleExists() {
@@ -259,7 +171,7 @@
       return
     }
 
-    const [data, err] = await httpy.get<{ exists: boolean }>('/api/ai-edit/prompts/exists', {
+    const [data, err] = await httpy.get<{ exists: boolean }>('/api/ai-prompts/exists', {
       title: row.title,
       exclude_id: row.id,
     })
@@ -272,67 +184,11 @@
       titleError = ''
     }
   }
-
-  class InvalidTitleError extends Error {
-    constructor(message: string) {
-      super(message)
-      this.name = 'InvalidTitleError'
-    }
-  }
-
-  async function loadExistingContent(title: string): Promise<AIEditExistingContentResult> {
-    const [data, err] = await mwapi.get<MwRawTextResp>({
-      action: 'query',
-      prop: 'revisions',
-      rvprop: 'content',
-      rvslots: 'main',
-      titles: title,
-    })
-
-    if (err) throw err
-
-    const pageData = asArray<MwPage>(data?.query?.pages)[0]
-    if (!pageData) {
-      throw new Error('문서 정보를 가져올 수 없습니다.')
-    }
-    if (pageData.invalid !== undefined) {
-      throw new InvalidTitleError('유효하지 않은 문서 제목입니다.')
-    }
-    if (pageData.missing) {
-      throw new NotFoundError('기존 문서를 찾을 수 없습니다.', pageData.title || title)
-    }
-
-    return {
-      title: pageData.title || title,
-      content: getRevisionContent(pageData),
-      pageId: pageData.pageid,
-    }
-  }
-
-  async function submitRunner(payload: AIEditRunnerSubmitPayload) {
-    if (!$userInfo) {
-      throw new Error('로그인이 필요합니다.')
-    }
-
-    const [data, err] = await httpy.post<StoreResp>('/api/ai-edit', {
-      page_id: payload.pageId,
-      title: payload.title,
-      prompt_title: payload.promptTitle,
-      request_type: payload.requestType,
-      llm_input: payload.llmInput,
-    })
-
-    if (err) throw err
-    if (!data) throw new Error('AI 편집 작업 등록에 실패했습니다.')
-
-    showToast('AI 편집 작업을 등록했습니다.')
-    await goto(resolve(`/tool/ai-edit/tasks/${data.id}`))
-  }
 </script>
 
 <div class="p-5">
   <div class="mb-4">
-    <RouteLinkButton to="/tool/ai-edit/prompts" variant="ghost" size="small">
+    <RouteLinkButton to="/tool/ai-prompts" variant="ghost" size="small">
       <ZIcon path={mdiArrowLeft} />
       프롬프트 목록
     </RouteLinkButton>
@@ -385,14 +241,11 @@
               variant="ghost"
               size="small"
               disabled={isSaving}
-              onclick={() => (id === 0 ? void goto(resolve('/tool/ai-edit/prompts')) : void fetchPrompt())}
+              onclick={() => (id === 0 ? void goto(resolve('/tool/ai-prompts')) : void fetchPrompt())}
             >
               취소
             </CButton>
           {:else}
-            <CButton variant="ghost" size="small" title="즐겨찾기" onclick={() => void toggleFavorite()}>
-              <ZIcon path={row.is_favorite ? mdiStar : mdiStarOutline} class={row.is_favorite ? 'text-a-amber-500' : ''} />
-            </CButton>
             {#if canEdit()}
               <CButton variant="outline" size="small" onclick={startEdit}>
                 <ZIcon path={mdiPencil} class="mr-1" />
@@ -420,7 +273,7 @@
         <textarea
           bind:value={row.content}
           class="z-input min-h-[500px] w-full font-mono text-sm leading-relaxed"
-          placeholder={'프롬프트 내용을 입력하세요. {제목}, {기존 문서 내용} 등의 변수를 사용할 수 있습니다.'}
+          placeholder={'프롬프트 내용을 입력하세요. {제목}, {기존 문서 내용} 변수를 사용할 수 있습니다.'}
         ></textarea>
       {:else}
         <div class="min-h-[300px] rounded border border-border bg-background p-4">
@@ -428,21 +281,6 @@
         </div>
       {/if}
     </section>
-
-    {#if runnerPrompt}
-      <section class="mt-4">
-        <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <h3 class="text-base font-semibold">프롬프트 사용</h3>
-        </div>
-        <AiEditRunner
-          prompt={runnerPrompt}
-          {loadExistingContent}
-          submit={submitRunner}
-          disabled={!$userInfo}
-          disabledReason={runnerDisabledReason}
-        />
-      </section>
-    {/if}
   {:else}
     <div class="text-muted-foreground">프롬프트를 찾을 수 없습니다.</div>
   {/if}

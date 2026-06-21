@@ -15,13 +15,16 @@ import (
 	"github.com/zetaoss/zengine/goapp/app/config"
 	"github.com/zetaoss/zengine/goapp/jobs/aieditjob"
 	"github.com/zetaoss/zengine/goapp/models"
-	"github.com/zetaoss/zengine/goapp/server/paginator"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
 
 	"gorm.io/gorm"
 )
 
-const perPage = 25
+const (
+	perPage              = 25
+	defaultPageTaskLimit = 10
+	maxPageTaskLimit     = 100
+)
 
 type storePayload struct {
 	PageID      int    `json:"page_id"`
@@ -31,20 +34,55 @@ type storePayload struct {
 	LLMInput    string `json:"llm_input"`
 }
 
-func Index(c *serverctx.Context) {
-	rows := make([]models.AIEdit, 0, perPage)
+type taskResponse struct {
+	models.AIEdit
+	Title string `json:"title"`
+}
+
+func MyIndex(c *serverctx.Context) {
+	user, ok := c.User()
+	if !ok || user.ID < 1 {
+		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
+		return
+	}
+
+	pageID, _ := strconv.Atoi(c.R.URL.Query().Get("page_id"))
+	pageTitle := strings.TrimSpace(c.R.URL.Query().Get("page_title"))
+
+	if pageID < 1 && pageTitle == "" {
+		c.JSONError(http.StatusUnprocessableEntity, "page_id or page_title is required")
+		return
+	}
+
+	limit := defaultPageTaskLimit
+	if rawLimit := c.R.URL.Query().Get("limit"); rawLimit != "" {
+		parsedLimit, err := strconv.Atoi(rawLimit)
+		if err != nil || parsedLimit < 1 || parsedLimit > maxPageTaskLimit {
+			c.JSONError(http.StatusUnprocessableEntity, "Invalid limit")
+			return
+		}
+		limit = parsedLimit
+	}
+
+	rows := make([]models.AIEdit, 0, limit)
 	q := c.DB.Table("aiedit_tasks").
-		Select("id, user_id, user_name, title, request_type, phase, llm_model, revid, error_count, last_error, created_at, updated_at").
-		Order("id DESC")
-	payload, err := paginator.Paginate(c.R, q, perPage, &rows)
-	if err != nil {
+		Select("id, user_id, user_name, page_id, page_title, request_type, phase, llm_output, llm_model, revid, error_count, last_error, created_at, updated_at").
+		Where("user_id = ?", user.ID)
+
+	switch {
+	case pageID > 0 && pageTitle != "":
+		q = q.Where("page_id = ? OR page_title = ?", pageID, pageTitle)
+	case pageID > 0:
+		q = q.Where("page_id = ?", pageID)
+	default:
+		q = q.Where("page_title = ?", pageTitle)
+	}
+
+	if err := q.Order("id DESC").Limit(limit).Find(&rows).Error; err != nil {
 		c.InternalError()
 		return
 	}
-	for i := range rows {
-		rows[i].RetryAt = retryAt(rows[i])
-	}
-	c.JSON(payload)
+	c.JSON(taskResponses(rows))
 }
 
 func Show(c *serverctx.Context) {
@@ -63,7 +101,7 @@ func Show(c *serverctx.Context) {
 		return
 	}
 	row.RetryAt = retryAt(row)
-	c.JSON(row)
+	c.JSON(newTaskResponse(row))
 }
 
 func Store(c *serverctx.Context) {
@@ -113,7 +151,8 @@ func Store(c *serverctx.Context) {
 		ID          int                `gorm:"column:id"`
 		UserID      int                `gorm:"column:user_id"`
 		UserName    string             `gorm:"column:user_name"`
-		Title       string             `gorm:"column:title"`
+		PageID      int                `gorm:"column:page_id"`
+		PageTitle   string             `gorm:"column:page_title"`
 		RequestType string             `gorm:"column:request_type"`
 		LLMOutput   string             `gorm:"column:llm_output"`
 		LLMInput    string             `gorm:"column:llm_input"`
@@ -123,7 +162,8 @@ func Store(c *serverctx.Context) {
 	}{
 		UserID:      user.ID,
 		UserName:    user.Name,
-		Title:       title,
+		PageID:      body.PageID,
+		PageTitle:   title,
 		RequestType: body.RequestType,
 		LLMOutput:   "",
 		LLMInput:    llmInput,
@@ -145,19 +185,6 @@ func Store(c *serverctx.Context) {
 		}
 	}
 	c.JSON(app.H{"ok": true, "id": insert.ID, "created": true})
-}
-
-func Destroy(c *serverctx.Context) {
-	id, ok := c.PathInt("id")
-	if !ok {
-		c.NotFound()
-		return
-	}
-	if err := c.DB.Table("aiedit_tasks").Where("id = ?", id).Delete(nil).Error; err != nil {
-		c.InternalError()
-		return
-	}
-	c.JSON(map[string]bool{"ok": true})
 }
 
 func normalizePromptTitle(title string, requestType string) string {
@@ -224,6 +251,22 @@ func retryAt(task models.AIEdit) *string {
 	return aieditjob.CalculateRetryAt(task)
 }
 
+func newTaskResponse(task models.AIEdit) taskResponse {
+	task.RetryAt = retryAt(task)
+	return taskResponse{
+		AIEdit: task,
+		Title:  task.PageTitle,
+	}
+}
+
+func taskResponses(tasks []models.AIEdit) []taskResponse {
+	responses := make([]taskResponse, 0, len(tasks))
+	for _, task := range tasks {
+		responses = append(responses, newTaskResponse(task))
+	}
+	return responses
+}
+
 func resolvePageTitle(db *gorm.DB, cfg *config.Config, pageID int) string {
 	apiServer := strings.TrimRight(cfg.App.APIServer, "/")
 	if apiServer != "" {
@@ -253,212 +296,4 @@ func resolvePageTitle(db *gorm.DB, cfg *config.Config, pageID int) string {
 		return ""
 	}
 	return strings.ReplaceAll(strings.TrimSpace(row.PageTitle), "_", " ")
-}
-
-func PromptIndex(c *serverctx.Context) {
-	user, _ := c.User()
-	var rows []models.AIEditPrompt
-
-	if err := c.DB.Order("id DESC").Find(&rows).Error; err != nil {
-		c.InternalError()
-		return
-	}
-
-	if user.ID < 1 {
-		c.JSON(rows)
-		return
-	}
-
-	// Fetch favorite prompt IDs for this user
-	var favIDs []int
-	c.DB.Table("aiedit_prompt_favorites").Where("user_id = ?", user.ID).Pluck("prompt_id", &favIDs)
-	favMap := make(map[int]bool, len(favIDs))
-	for _, id := range favIDs {
-		favMap[id] = true
-	}
-
-	// Create response with is_favorite field
-	type promptResp struct {
-		models.AIEditPrompt
-		IsFavorite bool `json:"is_favorite"`
-	}
-	resp := make([]promptResp, len(rows))
-	for i, r := range rows {
-		resp[i] = promptResp{
-			AIEditPrompt: r,
-			IsFavorite:   favMap[r.ID],
-		}
-	}
-
-	c.JSON(resp)
-}
-
-func PromptToggleFavorite(c *serverctx.Context) {
-	id, ok := c.PathInt("id")
-	if !ok {
-		c.NotFound()
-		return
-	}
-	user, ok := c.User()
-	if !ok || user.ID < 1 {
-		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
-		return
-	}
-
-	var count int64
-	c.DB.Table("aiedit_prompt_favorites").Where("user_id = ? AND prompt_id = ?", user.ID, id).Count(&count)
-
-	if count > 0 {
-		if err := c.DB.Table("aiedit_prompt_favorites").Where("user_id = ? AND prompt_id = ?", user.ID, id).Delete(nil).Error; err != nil {
-			c.InternalError()
-			return
-		}
-		c.JSON(app.H{"is_favorite": false})
-	} else {
-		insert := map[string]any{
-			"user_id":    user.ID,
-			"prompt_id":  id,
-			"created_at": time.Now().Format("2006-01-02 15:04:05"),
-		}
-		if err := c.DB.Table("aiedit_prompt_favorites").Create(&insert).Error; err != nil {
-			c.InternalError()
-			return
-		}
-		c.JSON(app.H{"is_favorite": true})
-	}
-}
-
-func PromptShow(c *serverctx.Context) {
-	id, ok := c.PathInt("id")
-	if !ok {
-		c.NotFound()
-		return
-	}
-	user, _ := c.User()
-	var row models.AIEditPrompt
-
-	if err := c.DB.Where("id = ?", id).Take(&row).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.NotFound()
-			return
-		}
-		c.InternalError()
-		return
-	}
-
-	isFavorite := false
-	if user.ID > 0 {
-		var count int64
-		c.DB.Table("aiedit_prompt_favorites").Where("user_id = ? AND prompt_id = ?", user.ID, id).Count(&count)
-		isFavorite = count > 0
-	}
-
-	c.JSON(struct {
-		models.AIEditPrompt
-		IsFavorite bool `json:"is_favorite"`
-	}{
-		AIEditPrompt: row,
-		IsFavorite:   isFavorite,
-	})
-}
-
-func PromptExists(c *serverctx.Context) {
-	title := strings.TrimSpace(c.R.URL.Query().Get("title"))
-	excludeID, _ := strconv.Atoi(c.R.URL.Query().Get("exclude_id"))
-
-	if title == "" {
-		c.JSON(app.H{"exists": false})
-		return
-	}
-
-	var count int64
-	q := c.DB.Model(&models.AIEditPrompt{}).Where("title = ?", title)
-	if excludeID > 0 {
-		q = q.Where("id != ?", excludeID)
-	}
-	q.Count(&count)
-
-	c.JSON(app.H{"exists": count > 0})
-}
-
-func PromptStore(c *serverctx.Context) {
-	var body struct {
-		ID          int    `json:"id"`
-		Title       string `json:"title"`
-		RequestType string `json:"request_type"`
-		Content     string `json:"content"`
-	}
-	if !c.Decode(&body) {
-		return
-	}
-	body.Title = strings.TrimSpace(body.Title)
-	if body.Title == "" {
-		c.JSONError(http.StatusUnprocessableEntity, "제목은 필수입니다.")
-		return
-	}
-
-	user, _ := c.User()
-
-	now := time.Now().Format("2006-01-02 15:04:05")
-	row := models.AIEditPrompt{
-		ID:          body.ID,
-		Title:       body.Title,
-		RequestType: body.RequestType,
-		Content:     body.Content,
-		UpdatedAt:   now,
-	}
-
-	if row.ID > 0 {
-		var existing models.AIEditPrompt
-		if err := c.DB.Where("id = ?", row.ID).First(&existing).Error; err != nil {
-			c.InternalError()
-			return
-		}
-		if existing.UserID != user.ID {
-			c.JSONError(http.StatusForbidden, "본인만 편집할 수 있습니다.")
-			return
-		}
-
-		var count int64
-		c.DB.Model(&models.AIEditPrompt{}).Where("title = ? AND id != ?", row.Title, row.ID).Count(&count)
-		if count > 0 {
-			c.JSONError(http.StatusConflict, "이미 사용 중인 제목입니다.")
-			return
-		}
-
-		if err := c.DB.Model(&models.AIEditPrompt{}).Where("id = ?", row.ID).Select("title", "request_type", "content", "updated_at").Updates(&row).Error; err != nil {
-			c.InternalError()
-			return
-		}
-	} else {
-		row.UserID = user.ID
-		row.UserName = user.Name
-		row.CreatedAt = now
-
-		var count int64
-		c.DB.Model(&models.AIEditPrompt{}).Where("title = ?", row.Title).Count(&count)
-		if count > 0 {
-			c.JSONError(http.StatusConflict, "이미 사용 중인 제목입니다.")
-			return
-		}
-
-		if err := c.DB.Create(&row).Error; err != nil {
-			c.InternalError()
-			return
-		}
-	}
-	c.JSON(row)
-}
-
-func PromptDestroy(c *serverctx.Context) {
-	id, ok := c.PathInt("id")
-	if !ok {
-		c.NotFound()
-		return
-	}
-	if err := c.DB.Where("id = ?", id).Delete(&models.AIEditPrompt{}).Error; err != nil {
-		c.InternalError()
-		return
-	}
-	c.JSON(app.H{"ok": true})
 }

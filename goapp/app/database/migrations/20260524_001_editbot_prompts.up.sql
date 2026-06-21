@@ -75,10 +75,3 @@ SET @aiedit_prompts_use_count_sql := IF(
 PREPARE stmt FROM @aiedit_prompts_use_count_sql;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
-
-CREATE TABLE IF NOT EXISTS aiedit_prompt_favorites (
-  user_id BIGINT UNSIGNED NOT NULL,
-  prompt_id BIGINT UNSIGNED NOT NULL,
-  created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (user_id, prompt_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

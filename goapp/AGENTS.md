@@ -61,7 +61,7 @@ To keep `routes.go` clean and declarative, the `Router` struct provides concise 
 ## AIEdit Map
 ...
 ### AIEdit Prompts
-- Routes: `/api/ai-edit/prompts*` in `server/routes.go`
+- Routes: `/api/ai-prompts*` in `server/routes.go`
 - Permissions: 
     - Create: `r.Unblocked()`
     - Update: Only Author (via `r.Owner(models.AIEditPrompt{})`)
@@ -76,9 +76,7 @@ To keep `routes.go` clean and declarative, the `Router` struct provides concise 
 
 - Active phases include:
   - `Generating`
-  - `Publishing`
-  - `RetryingGenerate`
-  - `RetryingPublish`
+  - `Retrying`
 - List-page auto-refresh should be a single page-level timer, paused when leaving the list tab.
 
 ## Write-Request Map

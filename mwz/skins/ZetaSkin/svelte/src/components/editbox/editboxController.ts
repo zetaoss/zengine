@@ -5,7 +5,8 @@ import getRLCONF from '$lib/utils/rlconf'
 import httpy from '$shared/utils/httpy'
 
 import AiEditPanel from './aiedit/AiEditPanel.svelte'
-import TemplateBox from './TemplateBox.svelte'
+import EditHeader from './EditHeader.svelte'
+import { replaceWikiEditorContent } from './wikiEditor'
 
 interface EnabledArticleTplItem {
   content: string
@@ -22,15 +23,14 @@ interface StartEditBoxOptions {
   aiEditPanelMountElement: HTMLDivElement
   editAreaMountElement: HTMLDivElement
   rootElement: HTMLDivElement
-  templateBoxMountElement: HTMLDivElement
+  editHeaderMountElement: HTMLDivElement
 }
 
-export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, rootElement, templateBoxMountElement }: StartEditBoxOptions) {
-  let templateSelectInstance: object | null = null
-  let templateSelectPromise: Promise<boolean> | null = null
+export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, rootElement, editHeaderMountElement }: StartEditBoxOptions) {
+  let editHeaderInstance: object | null = null
+  let editHeaderPromise: Promise<boolean> | null = null
   let aiEditPanelInstance: object | null = null
-  let aiEditVisible = false
-  let toggleAiEdit: (() => void) | null = null
+  let toggleAiEdit: ((visible: boolean) => void) | null = null
   let isDisposed = false
   const boilerplateContentByTitle: Record<string, string> = {}
   const editFormLayoutClasses = ['flex-1', 'min-w-0']
@@ -59,12 +59,6 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
       if (saveButton) return saveButton
     }
     return null
-  }
-
-  function findSaveWidget(saveButton: HTMLInputElement | HTMLButtonElement) {
-    const saveWidget = document.getElementById('wpSaveWidget')
-    if (saveWidget) return saveWidget
-    return saveButton.closest<HTMLElement>('.oo-ui-buttonInputWidget')
   }
 
   function findEditForm() {
@@ -142,41 +136,23 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
   }
 
   function applyBoilerplate(title: string) {
-    const textarea = document.querySelector<HTMLTextAreaElement>('#wpTextbox1')
-    if (!textarea) return
-
-    if (title === '') {
-      textarea.focus()
-      textarea.value = ''
-      textarea.dispatchEvent(new Event('input', { bubbles: true }))
-      return
-    }
-
-    const content = boilerplateContentByTitle[title] ?? ''
+    const content = boilerplateContentByTitle[title]
     if (!content) return
-
-    textarea.focus()
-    textarea.setSelectionRange(0, textarea.value.length)
-    const inserted = document.execCommand('insertText', false, content)
-
-    if (!inserted) {
-      textarea.value = content
-      textarea.dispatchEvent(new Event('input', { bubbles: true }))
-    }
+    replaceWikiEditorContent(content)
   }
 
-  async function injectBoilerplateBox() {
+  async function injectEditHeader() {
     if (isDisposed || !isEditAction()) return false
-    if (templateSelectInstance) return true
-    if (templateSelectPromise) return false
+    if (editHeaderInstance) return true
+    if (editHeaderPromise) return false
     if (!toggleAiEdit) return false
 
-    templateSelectPromise = (async () => {
+    editHeaderPromise = (async () => {
       const titles = await fetchEnabledBoilerplates()
-      if (isDisposed || templateSelectInstance) return true
+      if (isDisposed || editHeaderInstance) return true
 
-      templateSelectInstance = mount(TemplateBox, {
-        target: templateBoxMountElement,
+      editHeaderInstance = mount(EditHeader, {
+        target: editHeaderMountElement,
         props: {
           autoApplyOnSelect: isCreateAction(),
           onToggleAiEdit: toggleAiEdit,
@@ -188,29 +164,15 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
     })()
 
     try {
-      return await templateSelectPromise
+      return await editHeaderPromise
     } finally {
-      templateSelectPromise = null
+      editHeaderPromise = null
     }
   }
 
-  function applyAiEditVisible(
-    editForm: HTMLElement | null,
-    saveButton: HTMLInputElement | HTMLButtonElement,
-    visible: boolean,
-    hideEditForm: boolean,
-  ) {
-    aiEditVisible = visible
+  function applyAiEditVisible(visible: boolean) {
     aiEditPanelMountElement.classList.toggle('hidden', !visible)
-    editForm?.classList.toggle('hidden', visible && hideEditForm)
     toggleWikiPreview(!visible)
-    const hideSaveButton = visible && hideEditForm
-    const saveWidget = findSaveWidget(saveButton)
-    if (saveWidget) {
-      saveWidget.classList.toggle('hidden', hideSaveButton)
-      return
-    }
-    saveButton.classList.toggle('hidden', hideSaveButton)
   }
 
   function ensureAiEditPanel() {
@@ -258,14 +220,9 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
       return false
     }
 
-    toggleAiEdit = () => {
-      const aiEditPanel = ensureAiEditPanel()
-      if (!aiEditPanel) return
-      if (aiEditVisible) {
-        applyAiEditVisible(aiEditPanel.editForm, saveButton, false, isCreateAction())
-        return
-      }
-      applyAiEditVisible(aiEditPanel.editForm, saveButton, true, isCreateAction())
+    toggleAiEdit = (visible: boolean) => {
+      if (!ensureAiEditPanel()) return
+      applyAiEditVisible(visible)
     }
     ;(window as typeof window & { __aiEditDebug?: Record<string, unknown> }).__aiEditDebug = {
       stage: 'inject:done',
@@ -283,15 +240,15 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
   let attempts = 0
   const maxAttempts = 20
   let aiEditReady = false
-  let boilerplateReady = false
+  let editHeaderReady = false
   const timer = window.setInterval(() => {
     placeRootBeforeEditForm()
     aiEditReady = injectAiEdit() || aiEditReady
-    void injectBoilerplateBox().then((mounted) => {
-      boilerplateReady = mounted || boilerplateReady
+    void injectEditHeader().then((mounted) => {
+      editHeaderReady = mounted || editHeaderReady
     })
     attempts += 1
-    if ((aiEditReady && boilerplateReady) || attempts >= maxAttempts) {
+    if ((aiEditReady && editHeaderReady) || attempts >= maxAttempts) {
       window.clearInterval(timer)
     }
   }, 100)
@@ -299,12 +256,6 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
   return () => {
     isDisposed = true
     window.clearInterval(timer)
-    const saveButton = findSaveButton()
-    if (saveButton) {
-      const saveWidget = findSaveWidget(saveButton)
-      if (saveWidget) saveWidget.classList.remove('hidden')
-      else saveButton.classList.remove('hidden')
-    }
     const editForm = findEditForm()
     if (editForm && editAreaMountElement.parentElement) {
       editAreaMountElement.parentElement.insertBefore(editForm, editAreaMountElement)
@@ -314,13 +265,12 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
         editForm.classList.remove(className)
       }
     }
-    editForm?.classList.remove('hidden')
     toggleWikiPreview(true)
-    if (templateSelectInstance) {
-      unmount(templateSelectInstance)
-      templateSelectInstance = null
+    if (editHeaderInstance) {
+      unmount(editHeaderInstance)
+      editHeaderInstance = null
     }
-    templateSelectPromise = null
+    editHeaderPromise = null
     if (aiEditPanelInstance) {
       unmount(aiEditPanelInstance)
       aiEditPanelInstance = null
