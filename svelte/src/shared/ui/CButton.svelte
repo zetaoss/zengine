@@ -1,18 +1,3 @@
-<svelte:options
-  customElement={{
-    props: {
-      class: { type: "String" },
-      cooldown: { type: "Number" },
-      disabled: { type: "Boolean" },
-      href: { type: "String" },
-      size: { type: "String" },
-      title: { type: "String" },
-      type: { type: "String" },
-      variant: { type: "String" },
-    },
-  }}
-/>
-
 <script lang="ts" module>
 // https://github.com/huntabyte/shadcn-svelte/blob/main/docs/src/lib/registry/ui/button/button.svelte
 

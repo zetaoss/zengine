@@ -5,6 +5,8 @@ import { svelte } from '@sveltejs/vite-plugin-svelte'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig, type Plugin } from 'vite'
 
+import { isCustomElement } from './svelte.config.js'
+
 const outDir = '../dist'
 
 function devDist(): Plugin {
@@ -71,7 +73,7 @@ export default defineConfig(({ command }) => ({
   },
   plugins: [
     svelte({
-      compilerOptions: { customElement: true },
+      compilerOptions: { customElement: isCustomElement },
       include: ['src/**/*.svelte'],
     }),
     tailwindcss(),

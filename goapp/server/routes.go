@@ -6,6 +6,7 @@ import (
 
 	"github.com/zetaoss/zengine/goapp/models"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/aiedit"
+	"github.com/zetaoss/zengine/goapp/server/handlers/api/aiprompts"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/articletpl"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/binder"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/comments"
@@ -53,17 +54,15 @@ func RegisterRoutes(mux *http.ServeMux, serverCtx *serverctx.Context, components
 	r.POST("/api/common-report/{id}/rerun", commonreport.Rerun, r.OwnerOrSysop(models.CommonReport{}))
 	r.DELETE("/api/common-report/{id}", commonreport.Destroy, r.OwnerOrSysop(models.CommonReport{}))
 
-	r.GET("/api/ai-edit", aiedit.Index)
+	r.GET("/api/my-ai-edits", aiedit.MyIndex, r.Unblocked())
 	r.GET("/api/ai-edit/{id}", aiedit.Show, r.OwnerOrSysop(models.AIEdit{}))
-	r.POST("/api/ai-edit", aiedit.Store, r.User())
-	r.DELETE("/api/ai-edit/{id}", aiedit.Destroy, r.Sysop())
+	r.POST("/api/ai-edit", aiedit.Store, r.Unblocked())
 
-	r.GET("/api/ai-edit/prompts", aiedit.PromptIndex, r.WithUser())
-	r.GET("/api/ai-edit/prompts/exists", aiedit.PromptExists)
-	r.GET("/api/ai-edit/prompts/{id}", aiedit.PromptShow, r.WithUser())
-	r.POST("/api/ai-edit/prompts", aiedit.PromptStore, r.Unblocked())
-	r.POST("/api/ai-edit/prompts/{id}/favorite", aiedit.PromptToggleFavorite, r.User())
-	r.DELETE("/api/ai-edit/prompts/{id}", aiedit.PromptDestroy, r.OwnerOrSysop(models.AIEditPrompt{}))
+	r.GET("/api/ai-prompts", aiprompts.Index)
+	r.GET("/api/ai-prompts/exists", aiprompts.Exists)
+	r.GET("/api/ai-prompts/{id}", aiprompts.Show)
+	r.POST("/api/ai-prompts", aiprompts.Store, r.Unblocked())
+	r.DELETE("/api/ai-prompts/{id}", aiprompts.Destroy, r.OwnerOrSysop(models.AIEditPrompt{}))
 
 	r.GET("/api/internal/profiles/{id}", internalprofile.Show, r.Internal())
 

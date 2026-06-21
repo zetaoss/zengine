@@ -37,7 +37,6 @@ func (j *NannyJob) Run(ctx context.Context, jobCtx job.JobContext, _ any) job.Re
 	candidatePhases := []models.AIEditPhase{
 		models.AIEditPhasePending,
 		models.AIEditPhaseGenerating,
-		models.AIEditPhasePublishing,
 		models.AIEditPhaseRetrying,
 	}
 	candidates := make([]models.AIEdit, 0, batchSize)
@@ -75,7 +74,7 @@ func isReadyToEnqueue(task models.AIEdit, now time.Time) bool {
 	}
 
 	switch task.Phase {
-	case models.AIEditPhasePending, models.AIEditPhaseGenerating, models.AIEditPhasePublishing:
+	case models.AIEditPhasePending, models.AIEditPhaseGenerating:
 		// Task is considered stale and needs recovery after jobTimeout.
 		return now.After(task.UpdatedAt.Add(aiEditJobTimeout + 1*time.Minute))
 	case models.AIEditPhaseRetrying:

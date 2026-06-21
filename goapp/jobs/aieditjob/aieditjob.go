@@ -14,7 +14,6 @@ import (
 	"github.com/zetaoss/zengine/goapp/app/job"
 
 	"github.com/zetaoss/zengine/goapp/models"
-	"github.com/zetaoss/zengine/goapp/services/aieditsvc"
 	"github.com/zetaoss/zengine/goapp/services/llmsvc"
 
 	"gorm.io/gorm"
@@ -69,20 +68,14 @@ func (j *AIEditJob) Run(ctx context.Context, jobCtx job.JobContext, p aiEditPayl
 		}
 		return job.Error(err)
 	}
-	slog.Info("[aiedit] Job picked", "task_id", task.ID, "title", task.Title, "phase", task.Phase)
+	slog.Info("[aiedit] Job picked", "task_id", task.ID, "page_id", task.PageID, "page_title", task.PageTitle, "phase", task.Phase)
 
 	llmOutput := task.LLMOutput
 	var actualModel string
 	var llmInput string
 
-	// If we already have LLM output, we can skip the generation phase.
-	nextPhase := models.AIEditPhaseGenerating
-	if strings.TrimSpace(llmOutput) != "" {
-		nextPhase = models.AIEditPhasePublishing
-	}
-
 	updates := app.H{
-		"phase":      nextPhase,
+		"phase":      models.AIEditPhaseGenerating,
 		"attempts":   task.Attempts + 1,
 		"updated_at": now,
 	}
@@ -96,7 +89,7 @@ func (j *AIEditJob) Run(ctx context.Context, jobCtx job.JobContext, p aiEditPayl
 		return job.Error(fmt.Errorf("task #%d already claimed by another worker", task.ID))
 	}
 
-	if nextPhase == models.AIEditPhaseGenerating {
+	if strings.TrimSpace(llmOutput) == "" {
 		slog.Info("[aiedit] generating content", "task_id", task.ID)
 		var genErr error
 		llmOutput, actualModel, llmInput, genErr = j.generateContent(ctx, jobCtx, task)
@@ -111,48 +104,19 @@ func (j *AIEditJob) Run(ctx context.Context, jobCtx job.JobContext, p aiEditPayl
 			}).Error
 			return job.Error(genErr)
 		}
-
-		slog.Info("[aiedit] LLM generation success, now publishing", "task_id", task.ID, "model", actualModel)
-
-		_ = db.WithContext(ctx).Table("aiedit_tasks").Where("id = ?", task.ID).Updates(app.H{
-			"phase":      models.AIEditPhasePublishing,
-			"llm_input":  llmInput,
-			"llm_model":  actualModel,
-			"llm_output": llmOutput,
-			"updated_at": time.Now(),
-		}).Error
 	} else {
 		slog.Info("[aiedit] using existing LLM output, skipping generation", "task_id", task.ID)
+		llmInput = task.LLMInput
+		actualModel = task.LLMModel
 	}
 
-	slog.Info("[aiedit] publishing content", "task_id", task.ID, "user_id", task.UserID)
-
-	pubRes, pubErr := aieditsvc.PublishContent(jobCtx.Config(), task.UserID, task.Title, strings.TrimSpace(task.RequestType), llmOutput, task.ID)
-	if pubErr != nil {
-		newPhase := models.AIEditPhaseRetrying
-		var pErr *aieditsvc.PublishError
-		if errors.As(pubErr, &pErr) {
-			// Terminal errors that should not be retried
-			switch pErr.Code {
-			case "articleexists", "protectedpage", "permissiondenied", "nocreate-missing", "invalidtitle", "nosuchpageid":
-				newPhase = models.AIEditPhaseRejected
-			}
-		}
-
-		_ = db.WithContext(ctx).Table("aiedit_tasks").Where("id = ?", task.ID).Updates(app.H{
-			"phase":       newPhase,
-			"error_count": task.ErrorCount + 1,
-			"last_error":  pubErr.Error(),
-			"updated_at":  time.Now(),
-		}).Error
-		return job.Error(pubErr)
-	}
-
-	slog.Info("[aiedit] publish completed", "task_id", task.ID, "revid", pubRes.Revid)
+	slog.Info("[aiedit] LLM generation completed", "task_id", task.ID, "model", actualModel)
 
 	finalUpdates := app.H{
 		"phase":      models.AIEditPhaseCompleted,
-		"revid":      pubRes.Revid,
+		"llm_input":  llmInput,
+		"llm_model":  actualModel,
+		"llm_output": llmOutput,
 		"last_error": nil,
 		"updated_at": time.Now(),
 	}
@@ -161,9 +125,8 @@ func (j *AIEditJob) Run(ctx context.Context, jobCtx job.JobContext, p aiEditPayl
 	}
 
 	return job.Success(app.H{
-		"task_id":   task.ID,
-		"phase":     models.AIEditPhaseCompleted,
-		"published": pubRes,
+		"task_id": task.ID,
+		"phase":   models.AIEditPhaseCompleted,
 	})
 }
 

@@ -54,7 +54,7 @@
 
   {#if open}
     <div
-      class="bg-card ring-border absolute right-0 top-full z-50 mt-1 inline-flex w-max flex-col rounded py-1 shadow-lg"
+      class="bg-card ring-1 ring-border absolute right-0 top-full z-50 mt-1 inline-flex w-max flex-col rounded py-1 shadow-lg"
       role="menu"
       tabindex="-1"
       onclick={(e) => e.stopPropagation()}
