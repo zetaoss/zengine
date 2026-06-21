@@ -1,7 +1,7 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-  import { mdiDelete, mdiPlus, mdiStar, mdiStarOutline } from '@mdi/js'
+  import { mdiDelete, mdiPlus } from '@mdi/js'
 
   import { resolve } from '$app/paths'
   import useAuthStore from '$lib/stores/auth'
@@ -22,7 +22,6 @@
     request_type: string
     content: string
     use_count: number
-    is_favorite: boolean
     created_at?: string
     updated_at?: string
   }
@@ -45,7 +44,7 @@
 
   async function fetchPromptList() {
     promptListLoading = true
-    const [data, err] = await httpy.get<PromptItem[]>('/api/ai-edit/prompts')
+    const [data, err] = await httpy.get<PromptItem[]>('/api/ai-prompts')
     promptListLoading = false
     if (err) {
       console.error(err)
@@ -71,7 +70,7 @@
     if (!ok) return
 
     deletingPromptId = item.id
-    const [, err] = await httpy.delete(`/api/ai-edit/prompts/${item.id}`)
+    const [, err] = await httpy.delete(`/api/ai-prompts/${item.id}`)
     deletingPromptId = null
     if (err) {
       showToast(err.message || '삭제 실패')
@@ -81,29 +80,13 @@
     showToast('삭제 완료')
     promptList = promptList.filter((row) => row.id !== item.id)
   }
-
-  async function toggleFavorite(item: PromptItem) {
-    if (!$userInfo) {
-      showToast('로그인이 필요합니다.')
-      return
-    }
-
-    const [data, err] = await httpy.post<{ is_favorite: boolean }>(`/api/ai-edit/prompts/${item.id}/favorite`)
-    if (err) {
-      showToast(err.message || '즐겨찾기 실패')
-      return
-    }
-
-    item.is_favorite = data?.is_favorite ?? false
-    showToast(item.is_favorite ? '즐겨찾기 지정' : '즐겨찾기 해제')
-  }
 </script>
 
 <div class="p-5">
   <div class="mb-5 flex items-center justify-between">
     <div class="flex-1"></div>
     {#if isSysop}
-      <CButton variant="outline" size="small" href={resolve('/tool/ai-edit/prompts/new')}>
+      <CButton variant="outline" size="small" href={resolve('/tool/ai-prompts/new')}>
         <ZIcon path={mdiPlus} class="mr-1" />
         새 프롬프트 작성
       </CButton>
@@ -143,7 +126,7 @@
               <CBadge variant="outline" class={`mr-2 ${getRequestTypeClass(item.request_type)}`}
                 >{getRequestTypeLabel(item.request_type)}</CBadge
               >
-              <a class="font-medium hover:underline" href={resolve(`/tool/ai-edit/prompts/${item.id}` as '/tool/ai-edit/prompts/[id]')}
+              <a class="font-medium hover:underline" href={resolve(`/tool/ai-prompts/${item.id}` as '/tool/ai-prompts/[id]')}
                 >{item.title}</a
               >
             </td>
@@ -159,9 +142,6 @@
             </td>
             <td class="text-center">
               <div class="flex items-center justify-center gap-1">
-                <CButton variant="ghost" size="small" title="즐겨찾기" onclick={() => void toggleFavorite(item)}>
-                  <ZIcon path={item.is_favorite ? mdiStar : mdiStarOutline} class={item.is_favorite ? 'text-a-amber-500' : ''} />
-                </CButton>
                 {#if isSysop}
                   <CButton variant="ghost" size="small" disabled={deletingPromptId === item.id} onclick={() => void delPrompt(item)}>
                     <ZIcon path={mdiDelete} />

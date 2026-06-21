@@ -126,6 +126,11 @@ func findUpMigrations() ([]migrationFile, error) {
 		}
 		return out[i].Version < out[j].Version
 	})
+	for i := 1; i < len(out); i++ {
+		if out[i-1].Version == out[i].Version {
+			return nil, fmt.Errorf("duplicate migration version %q in %s and %s", out[i].Version, out[i-1].Name, out[i].Name)
+		}
+	}
 	return out, nil
 }
 

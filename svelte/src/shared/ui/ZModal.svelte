@@ -15,9 +15,11 @@
   export let okVariant: ButtonVariant = 'destructive'
   export let okDisabled = false
   export let cancelText = '취소'
+  export let showCancel = true
   export let closable = true
   export let backdropClosable = true
   export let panelClass = 'max-w-[60vw] md:max-w-[40vw]'
+  export let sectionClass = 'min-h-0 flex-1 overflow-y-auto p-5'
   export let onOk: ModalCallback | undefined = undefined
   export let onCancel: ModalCallback | undefined = undefined
 
@@ -70,7 +72,7 @@
         </div>
       {/if}
 
-      <section class="min-h-0 flex-1 overflow-y-auto p-5">
+      <section class={sectionClass}>
         <slot />
       </section>
 
@@ -78,7 +80,9 @@
         <CButton variant={okVariant} disabled={okDisabled} onclick={() => !okDisabled && void onOk?.()}>
           {okText}
         </CButton>
-        <CButton variant="outline" onclick={() => void onCancel?.()}>{cancelText}</CButton>
+        {#if showCancel}
+          <CButton variant="outline" onclick={() => void onCancel?.()}>{cancelText}</CButton>
+        {/if}
       </footer>
     </div>
   </div>
