@@ -214,7 +214,7 @@
       {pageId}
       editorContent={mwEditorContent}
       submit={submitRunner}
-      onDelete={refreshPromptList}
+      onPromptListChanged={refreshPromptList}
       onRequestTypeChange={handleRequestTypeChange}
     />
   {:else if !promptListLoading}

@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { mdiChevronDown } from '@mdi/js'
+  import { untrack } from 'svelte'
 
   import getRLCONF from '$lib/utils/rlconf'
   import CButton from '$shared/ui/CButton.svelte'
@@ -26,7 +27,7 @@
     pageId,
     editorContent,
     submit,
-    onDelete = undefined,
+    onPromptListChanged = undefined,
     onRequestTypeChange = undefined,
   }: {
     prompt: AIEditPromptForRunner
@@ -34,7 +35,7 @@
     pageId: number | undefined
     editorContent: string
     submit: SubmitHandler
-    onDelete?: () => void
+    onPromptListChanged?: () => void | Promise<void>
     onRequestTypeChange?: (newType: AIEditRequestType) => void
   } = $props()
 
@@ -45,6 +46,8 @@
   let taskResetToken = $state(0)
   let workingTemplate = $state('')
   let lastRunnerIdentity = $state('')
+  let lastRunnerContextIdentity = $state('')
+  let lastSavedContent: string | undefined
   let previewModalOpen = $state(false)
   let savingPrompt = $state(false)
   let saveAsModalOpen = $state(false)
@@ -74,10 +77,20 @@
   let canSubmit = $derived(hasPromptContent && trimmedTitle.length > 0 && renderedLlmInput.trim().length > 0 && !submitting)
 
   $effect(() => {
+    const nextRunnerContextIdentity = `${prompt.id ?? ''}\u0000${prompt.title}\u0000${prompt.requestType}\u0000${title}\u0000${pageId ?? ''}`
     const nextPromptIdentity = `${prompt.id ?? ''}\u0000${prompt.title}\u0000${prompt.requestType}\u0000${prompt.content}\u0000${title}\u0000${pageId ?? ''}`
     if (nextPromptIdentity === lastRunnerIdentity) return
 
+    const contextChanged = nextRunnerContextIdentity !== lastRunnerContextIdentity
     lastRunnerIdentity = nextPromptIdentity
+    lastRunnerContextIdentity = nextRunnerContextIdentity
+    if (!contextChanged && prompt.content === lastSavedContent) {
+      lastSavedContent = undefined
+      return
+    }
+    lastSavedContent = undefined
+    if (!contextChanged && prompt.content === untrack(() => workingTemplate)) return
+
     workingTemplate = prompt.content
     submitError = ''
     resetResultState()
@@ -131,19 +144,22 @@
       return
     }
 
+    const savedContent = workingTemplate
     savingPrompt = true
     try {
       const [, err] = await httpy.post('/api/ai-prompts', {
         id: prompt.id,
         title: prompt.title,
         request_type: prompt.requestType,
-        content: workingTemplate,
+        content: savedContent,
       })
       if (err) {
         showToast(err.message || '프롬프트 저장에 실패했습니다.')
         return
       }
       showToast('프롬프트를 저장했습니다.')
+      lastSavedContent = savedContent
+      void onPromptListChanged?.()
     } catch (error) {
       showToast(error instanceof Error && error.message ? error.message : '프롬프트 저장에 실패했습니다.')
     } finally {
@@ -173,6 +189,7 @@
       }
       saveAsModalOpen = false
       showToast('새 프롬프트로 저장했습니다.')
+      void onPromptListChanged?.()
     } catch (error) {
       showToast(error instanceof Error && error.message ? error.message : '새 프롬프트 저장에 실패했습니다.')
     } finally {
@@ -201,7 +218,7 @@
         return
       }
       showToast('프롬프트를 삭제했습니다.')
-      onDelete?.()
+      void onPromptListChanged?.()
     } catch (error) {
       showToast(error instanceof Error && error.message ? error.message : '프롬프트 삭제에 실패했습니다.')
     } finally {

@@ -116,6 +116,7 @@
 
   async function fetchResultTask(taskId: number, serial: number) {
     if (serial !== pollSerial) return
+    console.log(`[AIEdit] Polling task ${taskId} (delay: ${pollDelay}ms)`)
     setPolling(true)
 
     const [data, err] = await httpy.get<AIEditTaskResult>(`/api/ai-edit/${taskId}`)

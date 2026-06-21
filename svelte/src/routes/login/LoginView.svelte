@@ -165,7 +165,6 @@
         size="lg"
         class="py-5 w-full h-auto"
         disabled={loading || username === '' || password === ''}
-        onclick={() => void login()}
       >
         {#if loading}
           로그인 중...

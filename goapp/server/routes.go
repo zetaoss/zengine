@@ -54,9 +54,9 @@ func RegisterRoutes(mux *http.ServeMux, serverCtx *serverctx.Context, components
 	r.POST("/api/common-report/{id}/rerun", commonreport.Rerun, r.OwnerOrSysop(models.CommonReport{}))
 	r.DELETE("/api/common-report/{id}", commonreport.Destroy, r.OwnerOrSysop(models.CommonReport{}))
 
-	r.GET("/api/my-ai-edits", aiedit.MyIndex, r.Sysop())
+	r.GET("/api/my-ai-edits", aiedit.MyIndex, r.Unblocked())
 	r.GET("/api/ai-edit/{id}", aiedit.Show, r.OwnerOrSysop(models.AIEdit{}))
-	r.POST("/api/ai-edit", aiedit.Store, r.Sysop())
+	r.POST("/api/ai-edit", aiedit.Store, r.Unblocked())
 
 	r.GET("/api/ai-prompts", aiprompts.Index)
 	r.GET("/api/ai-prompts/exists", aiprompts.Exists)
