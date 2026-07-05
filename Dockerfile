@@ -44,4 +44,5 @@ RUN set -eux \
     && mv /var/www/html                         /app/w \
     && ln -rs /app/mwz/extensions/ZetaExtension /app/w/extensions/ \
     && ln -rs /app/mwz/skins/ZetaSkin           /app/w/skins/ \
+    && /app/goapp/ctl extensions upgrade \
     && chown www-data:www-data -R /app/*
