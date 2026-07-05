@@ -48,8 +48,6 @@ func printUsage(wkr *worker.Worker) {
 	_, _ = fmt.Printf("  %-30s %s\n", "migrate", "run database migrations")
 	_, _ = fmt.Printf("  %-30s %s\n", "jobs [--watch|-w]", "show job specs and queue state")
 	_, _ = fmt.Printf("  %-30s %s\n", "flush (all|running|pending)", "remove queued/running jobs from queue storage")
-	_, _ = fmt.Printf("  %-30s %s\n", "extensions list", "show MediaWiki extension names and versions")
-	_, _ = fmt.Printf("  %-30s %s\n", "extensions upgrade", "refresh w/extensions from hack/extensions.yaml")
 	_, _ = fmt.Printf("  %-30s %s\n", "routes", "show api routes")
 	_, _ = fmt.Printf("  %-30s %s\n", "help", "show this help message")
 	_, _ = fmt.Printf("  %-30s %s\n", "<job> [json-input]", "run a job immediately (direct run)")

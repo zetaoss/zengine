@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/zetaoss/zengine/goapp/app/config"
-	"github.com/zetaoss/zengine/goapp/cmd/ctl/tablewriter"
+	"github.com/zetaoss/zengine/goapp/cmd/util/tablewriter"
 	"github.com/zetaoss/zengine/goapp/server"
 	"github.com/zetaoss/zengine/goapp/server/runtime/common"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"

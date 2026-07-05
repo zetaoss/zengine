@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zetaoss/zengine/goapp/cmd/ctl/tablewriter"
+	"github.com/zetaoss/zengine/goapp/cmd/util/tablewriter"
 	"github.com/zetaoss/zengine/goapp/worker"
 	"github.com/zetaoss/zengine/goapp/worker/queue"
 	"github.com/zetaoss/zengine/goapp/worker/registry"

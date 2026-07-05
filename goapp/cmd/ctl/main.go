@@ -45,8 +45,6 @@ func run(cfg *config.Config, wkr *worker.Worker, args []string) error {
 		return runFlush(wkr, args[1:])
 	case "routes":
 		return runRoutes(cfg)
-	case "extensions":
-		return runExtensions(args[1:])
 	case "help", "-h", "--help":
 		printUsage(wkr)
 		return nil
