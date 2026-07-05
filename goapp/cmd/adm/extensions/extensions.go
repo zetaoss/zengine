@@ -240,6 +240,7 @@ func cloneExtensionRepo(repo string, tag string, targetDir string) error {
 	}
 
 	cmd := exec.Command("git", "clone", "--depth=1", "-b", tag, repo, targetDir)
+	cmd.Dir = filepath.Dir(targetDir)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
