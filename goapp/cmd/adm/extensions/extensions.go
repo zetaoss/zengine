@@ -45,10 +45,7 @@ type Extension struct {
 }
 
 func runList() error {
-	rootDir, err := repoRootFrom(".")
-	if err != nil {
-		return err
-	}
+	rootDir := repoRootFromEnv()
 
 	entries, err := os.ReadDir(filepath.Join(rootDir, "w", "extensions"))
 	if err != nil {
@@ -92,10 +89,7 @@ func runList() error {
 }
 
 func runUpgrade() error {
-	rootDir, err := repoRootFrom(".")
-	if err != nil {
-		return err
-	}
+	rootDir := repoRootFromEnv()
 
 	entries, err := parseYAML(filepath.Join(rootDir, "mwz", "extensions", "extensions.yaml"))
 	if err != nil {
@@ -305,28 +299,8 @@ func trimTagPrefix(tag string) string {
 	return strings.TrimPrefix(tag, "v")
 }
 
-func repoRootFrom(cwd string) (string, error) {
-	dir := cwd
-	for {
-		wExt := filepath.Join(dir, "w", "extensions")
-		mwzYaml := filepath.Join(dir, "mwz", "extensions", "extensions.yaml")
-		if st, err := os.Stat(wExt); err == nil && st.IsDir() {
-			if _, err := os.Stat(mwzYaml); err == nil {
-				return dir, nil
-			}
-		}
-		if st, err := os.Stat(mwzYaml); err == nil && !st.IsDir() {
-			return dir, nil
-		}
-
-		parent := filepath.Dir(dir)
-		if parent == dir {
-			break
-		}
-		dir = parent
-	}
-
-	return "", fmt.Errorf("could not find repository root from current directory")
+func repoRootFromEnv() string {
+	return filepath.Dir(filepath.Clean(strings.TrimSpace(os.Getenv("MW_INSTALL_PATH"))))
 }
 
 func trimQuotes(s string) string {

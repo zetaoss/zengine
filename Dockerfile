@@ -35,16 +35,17 @@ FROM ghcr.io/zetaoss/zbase:v0.43.900
 
 ARG APP_VERSION=v0.0.0
 ENV APP_VERSION=${APP_VERSION}
+ENV MW_INSTALL_PATH=/app/w
 
 COPY --from=nodebuild /app          /app
-	COPY --from=gobuild   /out/server   /app/goapp/server
-	COPY --from=gobuild   /out/worker   /app/goapp/worker
-	COPY --from=gobuild   /out/ctl      /app/goapp/ctl
-	COPY --from=gobuild   /out/adm      /app/goapp/adm
+COPY --from=gobuild   /out/server   /app/goapp/server
+COPY --from=gobuild   /out/worker   /app/goapp/worker
+COPY --from=gobuild   /out/ctl      /app/goapp/ctl
+COPY --from=gobuild   /out/adm      /app/goapp/adm
 
 RUN set -eux \
     && mv /var/www/html                         /app/w \
     && ln -rs /app/mwz/extensions/ZetaExtension /app/w/extensions/ \
     && ln -rs /app/mwz/skins/ZetaSkin           /app/w/skins/ \
-	    && /app/goapp/adm extensions upgrade \
-	    && chown www-data:www-data -R /app/*
+    && /app/goapp/adm extensions upgrade \
+    && chown www-data:www-data -R /app/*

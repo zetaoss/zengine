@@ -8,3 +8,5 @@ w
 .env
 .env.backup
 .env.production
+adm
+ctl
