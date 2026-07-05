@@ -1,0 +1,9 @@
+- name: SimpleMaps
+  repo: https://github.com/jmnote/SimpleMaps.git
+  tag: v0.2.2
+- name: SimpleMarkdown
+  repo: https://github.com/jmnote/SimpleMarkdown.git
+  tag: v0.1.1
+- name: SimpleMermaid
+  repo: https://github.com/jmnote/SimpleMermaid.git
+  tag: v0.1.3
