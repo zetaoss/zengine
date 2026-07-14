@@ -5,7 +5,7 @@
   import mwapi from '$lib/utils/mwapi'
   import getRLCONF from '$lib/utils/rlconf'
   import CButton from '$shared/ui/CButton.svelte'
-  import ZSelect from '$shared/ui/ZSelect.svelte'
+  import ZNativeSelect from '$shared/ui/ZNativeSelect.svelte'
   import ZToggle from '$shared/ui/ZToggle.svelte'
   import { getAge } from '$shared/utils/time'
 
@@ -175,24 +175,23 @@
   }
 </script>
 
-<div class="mb-2 rounded border border-a-gray-300 px-3 py-2">
+<div class="wikiEditor-ui-toolbar px-2 border-b border-[#ccc]">
   <div class:grid-cols-2={isSysop} class:grid-cols-1={!isSysop} class="grid gap-3">
-    <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2">
       <CButton size="small" variant="outline" aria-label="원복" onclick={handleReset}>원복</CButton>
-      <ZSelect
+      <ZNativeSelect
         bind:value={selectedValue}
         items={loadSelectItems}
         placeholder="-- 불러오기 --"
         class="w-full max-w-[150px] text-sm md:max-w-[320px]"
-        triggerClass="bg-a-slate-50 hover:bg-a-slate-100"
         onchange={(value) => void handleSelectChange(value)}
       />
     </div>
 
     {#if isSysop}
       <div id="zeta-ai-edit-button" class="flex items-center justify-end gap-2">
-        <span class="text-sm text-a-slate-700">AI 편집</span>
-        <ZToggle checked={aiEditVisible} label="AI 편집" onchange={handleAiEditToggle} />
+        <span class="text-sm text-a-slate-700">AI</span>
+        <ZToggle checked={aiEditVisible} label="AI" onchange={handleAiEditToggle} />
       </div>
     {/if}
   </div>

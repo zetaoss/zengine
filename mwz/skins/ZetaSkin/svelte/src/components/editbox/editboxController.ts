@@ -69,6 +69,10 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
     return document.querySelector<HTMLElement>('#wikiPreview')
   }
 
+  function findWikiEditorTop() {
+    return document.querySelector<HTMLElement>('.wikiEditor-ui-top')
+  }
+
   function toggleWikiPreview(visible: boolean) {
     const wikiPreview = findWikiPreview()
     if (!wikiPreview) return
@@ -118,6 +122,16 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
     return true
   }
 
+  function placeEditHeaderBeforeWikiEditorTop() {
+    const wikiEditorTop = findWikiEditorTop()
+    if (!wikiEditorTop) return false
+
+    if (editHeaderMountElement.parentElement !== wikiEditorTop || wikiEditorTop.firstChild !== editHeaderMountElement) {
+      wikiEditorTop.insertBefore(editHeaderMountElement, wikiEditorTop.firstChild)
+    }
+    return true
+  }
+
   async function fetchEnabledBoilerplates() {
     const [data, err] = await httpy.get<EnabledArticleTplResp>('/api/article-tpl/enabled')
     if (err) {
@@ -150,6 +164,7 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
     editHeaderPromise = (async () => {
       const titles = await fetchEnabledBoilerplates()
       if (isDisposed || editHeaderInstance) return true
+      if (!placeEditHeaderBeforeWikiEditorTop()) return false
 
       editHeaderInstance = mount(EditHeader, {
         target: editHeaderMountElement,
@@ -236,6 +251,7 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
 
   placeRootBeforeEditForm()
   placeEditAreaBeforeEditForm()
+  placeEditHeaderBeforeWikiEditorTop()
 
   let attempts = 0
   const maxAttempts = 20
@@ -243,6 +259,7 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
   let editHeaderReady = false
   const timer = window.setInterval(() => {
     placeRootBeforeEditForm()
+    placeEditHeaderBeforeWikiEditorTop()
     aiEditReady = injectAiEdit() || aiEditReady
     void injectEditHeader().then((mounted) => {
       editHeaderReady = mounted || editHeaderReady
@@ -264,6 +281,9 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
       for (const className of editFormLayoutClasses) {
         editForm.classList.remove(className)
       }
+    }
+    if (editHeaderMountElement.parentElement !== rootElement || rootElement.children[1] !== editHeaderMountElement) {
+      rootElement.insertBefore(editHeaderMountElement, rootElement.children[1] ?? null)
     }
     toggleWikiPreview(true)
     if (editHeaderInstance) {
