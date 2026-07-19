@@ -1,7 +1,7 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-  import { mdiOpenInNew, mdiRefresh } from '@mdi/js'
+  import { mdiRefresh } from '@mdi/js'
 
   import CButton from '$shared/ui/CButton.svelte'
   import { showToast } from '$shared/ui/toast/toast'
@@ -118,9 +118,7 @@
   }
 
   function selectPreferredPrompt(type: AIEditRequestType) {
-    const promptsForType = promptItems
-      .filter((prompt) => prompt.request_type === type)
-      .sort((a, b) => b.use_count - a.use_count)
+    const promptsForType = promptItems.filter((prompt) => prompt.request_type === type).sort((a, b) => b.use_count - a.use_count)
     const storedPromptTitle = getStoredPromptTitle(type)
     const preferredPrompt = promptsForType.find((prompt) => prompt.title === storedPromptTitle) ?? promptsForType[0] ?? sortedPromptItems[0]
     promptTitle = preferredPrompt?.title ?? ''
@@ -172,19 +170,11 @@
   }
 </script>
 
-<div class="flex h-full min-h-0 flex-col gap-3 border p-4">
+<div class="flex h-full min-h-0 flex-col gap-3 border bg-a-gray-100 p-4">
   <div class="flex items-center gap-2">
-    프롬프트
-    <CButton
-      href="/tool/ai-prompts"
-      target="_blank"
-      rel="noopener noreferrer"
-      variant="ghost"
-      size="icon-sm"
-      title="프롬프트 관리 새 창에서 열기"
-    >
-      <ZIcon path={mdiOpenInNew} />
-    </CButton>
+    <a href="/tool/ai-prompts" target="_blank" rel="noopener noreferrer" class="external text-xs" title="프롬프트 관리 새 창에서 열기">
+      프롬프트
+    </a>
     {#if promptListLoading}
       <ZSpinner />
     {:else}

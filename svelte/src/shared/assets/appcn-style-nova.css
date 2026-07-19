@@ -50,7 +50,7 @@
 }
 
 .cn-button-variant-ghost {
-  @apply hover:bg-muted hover:text-foreground dark:hover:bg-muted/50 aria-expanded:bg-muted aria-expanded:text-foreground;
+  @apply hover:bg-a-gray-500/50 hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground;
 }
 
 .cn-button-variant-destructive {
