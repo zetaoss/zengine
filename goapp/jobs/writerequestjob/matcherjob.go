@@ -135,13 +135,18 @@ func fetchTitleExistsMap(ctx context.Context, jobCtx job.JobContext, titles []st
 	for start := 0; start < len(uniqueTitles); start += matcherPageSize {
 		end := min(start+matcherPageSize, len(uniqueTitles))
 		params := url.Values{"action": {"query"}, "format": {"json"}, "titles": {strings.Join(uniqueTitles[start:end], "|")}}
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiServer+"/w/api.php?"+params.Encode(), nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiServer+"/w/api.php", strings.NewReader(params.Encode()))
 		if err != nil {
 			return nil, err
 		}
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		resp, err := client.Do(req)
 		if err != nil {
 			return nil, err
+		}
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+			_ = resp.Body.Close()
+			return nil, fmt.Errorf("MediaWiki API request failed: HTTP %d", resp.StatusCode)
 		}
 		var payload struct {
 			Query struct {
@@ -153,9 +158,6 @@ func fetchTitleExistsMap(ctx context.Context, jobCtx job.JobContext, titles []st
 		}
 		decodeErr := json.NewDecoder(resp.Body).Decode(&payload)
 		_ = resp.Body.Close()
-		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-			return nil, fmt.Errorf("MediaWiki API request failed: HTTP %d", resp.StatusCode)
-		}
 		if decodeErr != nil {
 			return nil, fmt.Errorf("decode MediaWiki API response: %w", decodeErr)
 		}

@@ -26,7 +26,6 @@
     return hasLogs && hasImages && !!box?.lang && box.lang.includes('tex')
   })()
 
-  $: console.log('BoxLang state:', { seq, main: jobValue.main, isMain, loaded, phase: jobValue.phase })
   $: lowerPhase = jobValue.phase?.toLowerCase()
 
   const containerClass = 'rounded-b-lg border-t px-4 py-2 text-sm'

@@ -18,6 +18,17 @@ interface JobStatus {
   outs: string | null
 }
 
+function isJobPhase(value: unknown): value is JobPhase {
+  return (
+    value === 'pending' ||
+    value === 'running' ||
+    value === 'succeeded' ||
+    value === 'failed' ||
+    value === 'none' ||
+    value === 'error'
+  )
+}
+
 function parseOuts(raw: string | null): unknown {
   if (raw == null || raw.trim() === '') return null
   try {
@@ -68,27 +79,33 @@ async function getJob(store: JobStore): Promise<void> {
     return
   }
 
+  if (!data || !isJobPhase(data.phase) || (data.outs !== null && typeof data.outs !== 'string')) {
+    console.error('Invalid runbox job response', data)
+    updateJob(store, (j) => {
+      j.phase = 'error'
+    })
+    return
+  }
+
   const { phase, outs } = data
   const parsedOuts = parseOuts(outs)
   updateJob(store, (j) => {
     j.phase = phase
   })
 
-  const lowerPhase = phase?.toLowerCase()
-
-  if (lowerPhase === 'none') {
+  if (phase === 'none') {
     enqueue((j) => postJob(j), store)
     return
   }
 
-  if (lowerPhase === 'pending' || lowerPhase === 'running') {
+  if (phase === 'pending' || phase === 'running') {
     console.log(`Job ${job.id}: ${phase}, refresh in ${Math.round(delay)}ms`)
     delay *= 1.1
     setTimeout(() => enqueue((j) => getJob(j), store), delay)
     return
   }
 
-  if (lowerPhase === 'failed') {
+  if (phase === 'failed') {
     updateJob(store, (j) => {
       if (j.type === JobType.Lang && j.langOuts == null) {
         j.langOuts = { logs: ['2Runbox job failed.'], images: [] }
@@ -100,7 +117,7 @@ async function getJob(store: JobStore): Promise<void> {
     return
   }
 
-  if (lowerPhase === 'succeeded') {
+  if (phase === 'succeeded') {
     const jobType = get(store).type
     if (jobType === JobType.Lang) {
       updateJob(store, (j) => {
