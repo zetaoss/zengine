@@ -1,6 +1,7 @@
 import { mount, unmount } from 'svelte'
 
 import getCurrentTitle from '$lib/utils/getCurrentTitle'
+import mwapi from '$lib/utils/mwapi'
 import getRLCONF from '$lib/utils/rlconf'
 import httpy from '$shared/utils/httpy'
 
@@ -9,9 +10,14 @@ import EditHeader from './EditHeader.svelte'
 import { replaceWikiEditorContent } from './wikiEditor'
 
 interface EnabledArticleTplItem {
-  content: string
   id: number
   title: string
+}
+
+interface PreSaveTransformResp {
+  parse?: {
+    text?: string
+  }
 }
 
 interface EnabledArticleTplResp {
@@ -33,6 +39,7 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
   let toggleAiEdit: ((visible: boolean) => void) | null = null
   let isDisposed = false
   const boilerplateContentByTitle: Record<string, string> = {}
+  let boilerplateRequestId = 0
   const editFormLayoutClasses = ['flex-1', 'min-w-0']
 
   function isEditAction() {
@@ -122,9 +129,19 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
     return true
   }
 
-  function placeEditHeaderBeforeWikiEditorTop() {
+  function placeEditHeaderInRoot() {
+    if (!rootElement.parentElement) return false
+
+    const targetNode = rootElement.children[1] ?? null
+    if (editHeaderMountElement.parentElement !== rootElement || editHeaderMountElement !== targetNode) {
+      rootElement.insertBefore(editHeaderMountElement, targetNode)
+    }
+    return true
+  }
+
+  function placeEditHeader() {
     const wikiEditorTop = findWikiEditorTop()
-    if (!wikiEditorTop) return false
+    if (!wikiEditorTop) return placeEditHeaderInRoot()
 
     if (editHeaderMountElement.parentElement !== wikiEditorTop || wikiEditorTop.firstChild !== editHeaderMountElement) {
       wikiEditorTop.insertBefore(editHeaderMountElement, wikiEditorTop.firstChild)
@@ -139,20 +156,31 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
       return []
     }
     const rows = Array.isArray(data?.value) ? data.value : []
-    for (const key of Object.keys(boilerplateContentByTitle)) {
-      delete boilerplateContentByTitle[key]
-    }
-    for (const row of rows) {
-      if (!row.title.startsWith('틀:새문서틀')) continue
-      boilerplateContentByTitle[row.title] = row.content ?? ''
-    }
     return rows.map((row) => row.title).filter((title) => title.startsWith('틀:새문서틀'))
   }
 
-  function applyBoilerplate(title: string) {
-    const content = boilerplateContentByTitle[title]
-    if (!content) return
-    replaceWikiEditorContent(content)
+  async function applyBoilerplate(title: string) {
+    const requestId = ++boilerplateRequestId
+    if (!title) return
+
+    let content = boilerplateContentByTitle[title]
+    if (content === undefined) {
+      const [data, err] = await mwapi.get<PreSaveTransformResp>({
+        action: 'parse',
+        onlypst: true,
+        text: `{{subst:${title}}}`,
+        title: getCurrentTitle(),
+      })
+      if (err) {
+        console.error('Failed to substitute boilerplate template:', err)
+        return
+      }
+      content = data?.parse?.text ?? ''
+      boilerplateContentByTitle[title] = content
+    }
+
+    if (requestId !== boilerplateRequestId) return
+    replaceWikiEditorContent(content, { preventScroll: true })
   }
 
   async function injectEditHeader() {
@@ -164,7 +192,7 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
     editHeaderPromise = (async () => {
       const titles = await fetchEnabledBoilerplates()
       if (isDisposed || editHeaderInstance) return true
-      if (!placeEditHeaderBeforeWikiEditorTop()) return false
+      if (!placeEditHeader()) return false
 
       editHeaderInstance = mount(EditHeader, {
         target: editHeaderMountElement,
@@ -251,7 +279,7 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
 
   placeRootBeforeEditForm()
   placeEditAreaBeforeEditForm()
-  placeEditHeaderBeforeWikiEditorTop()
+  placeEditHeader()
 
   let attempts = 0
   const maxAttempts = 20
@@ -259,7 +287,7 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
   let editHeaderReady = false
   const timer = window.setInterval(() => {
     placeRootBeforeEditForm()
-    placeEditHeaderBeforeWikiEditorTop()
+    placeEditHeader()
     aiEditReady = injectAiEdit() || aiEditReady
     void injectEditHeader().then((mounted) => {
       editHeaderReady = mounted || editHeaderReady

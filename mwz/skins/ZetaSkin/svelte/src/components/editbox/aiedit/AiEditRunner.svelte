@@ -242,7 +242,7 @@
       <div id="ai-edit-runner-prompt" class="relative min-h-40 font-mono text-xs leading-relaxed">
         <ZTextarea
           id="ai-edit-runner-prompt-textarea"
-          class="bg-a-gray-50 pr-32!"
+          class="bg-a-gray-50"
           modelValue={workingTemplate}
           placeholder="프롬프트 내용을 입력하세요."
           maxHeight={promptTextareaMaxHeight}

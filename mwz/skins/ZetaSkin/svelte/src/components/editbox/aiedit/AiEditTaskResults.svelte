@@ -195,7 +195,7 @@
     <div class="relative">
       <ZTextarea
         id="ai-edit-task-result-textarea"
-        class="z-input min-h-40 bg-a-gray-50 pr-24! font-mono text-xs leading-relaxed"
+        class="z-input min-h-40 bg-a-gray-50 font-mono text-xs leading-relaxed"
         modelValue={resultOutput}
         placeholder="AI 편집본이 여기에 표시됩니다."
         maxHeight={500}

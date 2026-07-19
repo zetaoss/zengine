@@ -7,6 +7,8 @@
     label: string
   }
 
+  type ChangeHandler = (value: string) => void | Promise<void>
+
   let {
     value = $bindable(''),
     items = [],
@@ -18,13 +20,20 @@
     items: SelectItem[]
     placeholder?: string
     class?: string
-    onchange?: (value: string) => void
+    onchange?: ChangeHandler
   } = $props()
+
+  let selectElement: HTMLSelectElement | undefined
 
   let groupedItems = $derived(
     items.reduce<Array<{ group?: string; items: SelectItem[] }>>((acc, item) => {
       const lastGroup = acc[acc.length - 1]
       if (item.group && lastGroup?.group === item.group) {
+        lastGroup.items.push(item)
+        return acc
+      }
+
+      if (!item.group && lastGroup && !lastGroup.group) {
         lastGroup.items.push(item)
         return acc
       }
@@ -39,14 +48,26 @@
     }, []),
   )
 
-  function handleChange(event: Event) {
+  function restoreSelectViewport(scrollX: number, scrollY: number) {
+    window.scrollTo(scrollX, scrollY)
+    selectElement?.focus({ preventScroll: true })
+  }
+
+  async function handleChange(event: Event) {
     const select = event.currentTarget as HTMLSelectElement
-    value = select.value
-    onchange?.(select.value)
+    const scrollX = window.scrollX
+    const scrollY = window.scrollY
+
+    try {
+      await onchange?.(select.value)
+    } finally {
+      restoreSelectViewport(scrollX, scrollY)
+      requestAnimationFrame(() => restoreSelectViewport(scrollX, scrollY))
+    }
   }
 </script>
 
-<select bind:value class="z-select {className}" onchange={handleChange}>
+<select bind:this={selectElement} bind:value class="z-select {className}" onchange={handleChange}>
   <option value="" disabled={items.length > 0}>{placeholder}</option>
 
   {#each groupedItems as group, index (group.group ?? `group-${index}`)}

@@ -56,6 +56,7 @@
   let applyingExternalSync = $state(false)
   let valueLabelX = $state(0)
   let valueLabelY = $state(0)
+  let destroyed = false
 
   const structureSignature = $derived.by(
     () => `${unit}::${series.map((s) => `${s.label}:${s.color ?? color}`).join('|')}::${barColor}::${barValues ? barValues.length : 0}`,
@@ -357,6 +358,7 @@
         x: { time: false },
         y: {
           range: (_, min, max) => {
+            if (destroyed) return [min, max]
             if (unit === 'rank') {
               const lower = Number.isFinite(min) && min >= 0 ? min : 0
               const upper = Number.isFinite(max) && max > lower ? max : Math.max(lower + 1, 1)
@@ -374,6 +376,7 @@
           grid: { show: true, stroke: 'rgba(120, 120, 120, 0.14)', width: 1 },
           values: (_, vals) => vals.map(() => ''),
           splits: () => {
+            if (destroyed) return []
             const len = labels.length
             if (len <= 0) return []
             if (len === 1) return [0]
@@ -395,7 +398,10 @@
         ...series.map((line) => ({
           stroke: line.color ?? color,
           fill: fillArea ? fillColor(line.color ?? color) : 'transparent',
-          fillTo: (_u: uPlot, _seriesIdx: number, min: number, max: number) => (unit === 'rank' ? max : 0),
+          fillTo: (_u: uPlot, _seriesIdx: number, min: number, max: number) => {
+            if (destroyed) return 0
+            return unit === 'rank' ? max : 0
+          },
           width: 2.2,
           points: { show: false },
         })),
@@ -407,12 +413,14 @@
       hooks: {
         drawClear: [
           (u) => {
+            if (destroyed) return
             drawWeekendBands(u)
             drawBars(u)
           },
         ],
         setCursor: [
           (u) => {
+            if (destroyed) return
             updateHoverIndex(u)
           },
         ],
@@ -430,6 +438,7 @@
 
     if (chartEl) {
       resizeObserver = new ResizeObserver(() => {
+        if (destroyed) return
         const next = getWidth()
         if (next <= 0 || next === width) return
         width = next
@@ -441,8 +450,10 @@
   })
 
   onDestroy(() => {
+    destroyed = true
     resizeObserver?.disconnect()
     chart?.destroy()
+    chart = null
   })
 
   $effect(() => {

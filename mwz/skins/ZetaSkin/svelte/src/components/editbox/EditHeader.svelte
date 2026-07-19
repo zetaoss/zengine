@@ -143,14 +143,14 @@
         const revs = pages[0].revisions
         if (revs && Array.isArray(revs) && revs.length > 0) {
           const content = revs[0].slots?.main?.content ?? revs[0].content ?? ''
-          replaceWikiEditorContent(content)
+          replaceWikiEditorContent(content, { preventScroll: true })
         }
       }
     }
   }
 
   function handleReset() {
-    replaceWikiEditorContent(originalContent)
+    replaceWikiEditorContent(originalContent, { preventScroll: true })
     selectedValue = ''
     onSelect('')
   }
@@ -184,7 +184,7 @@
         items={loadSelectItems}
         placeholder="-- 불러오기 --"
         class="w-full max-w-[150px] text-sm md:max-w-[320px]"
-        onchange={(value) => void handleSelectChange(value)}
+        onchange={handleSelectChange}
       />
     </div>
 
