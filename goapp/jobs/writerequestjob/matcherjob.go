@@ -2,8 +2,10 @@ package writerequestjob
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -18,11 +20,16 @@ type MatcherJob struct{}
 const (
 	matcherJobName    = "request-matcher"
 	matcherJobTimeout = 5 * time.Minute
+	matcherPageSize   = 50
 )
 
-func NewMatcherJob() *MatcherJob {
-	return &MatcherJob{}
+type writeRequestTarget struct {
+	ID       uint       `gorm:"column:id"`
+	Title    string     `gorm:"column:title"`
+	WritedAt *time.Time `gorm:"column:writed_at"`
 }
+
+func NewMatcherJob() *MatcherJob { return &MatcherJob{} }
 
 func (j *MatcherJob) Name() string { return matcherJobName }
 
@@ -34,42 +41,86 @@ func (j *MatcherJob) Run(ctx context.Context, jobCtx job.JobContext, _ any) job.
 		return job.Error(err)
 	}
 
-	targets, err := collectWriteRequestTargets(db)
+	targets, err := collectWriteRequestTargets(db.WithContext(ctx))
 	if err != nil {
 		return job.Error(err)
 	}
-
 	if len(targets) == 0 {
-		return job.Success(app.H{"updated": 0})
+		return job.Success(app.H{"checked": 0, "to_done": 0, "to_todo": 0})
 	}
 
-	existsMap, err := fetchTitleExistsMap(ctx, jobCtx, targets)
+	titles := make([]string, 0, len(targets))
+	for _, target := range targets {
+		titles = append(titles, target.Title)
+	}
+	existsMap, err := fetchTitleExistsMap(ctx, jobCtx, titles)
 	if err != nil {
 		return job.Error(err)
 	}
 
-	updated := 0
-	for _, title := range targets {
-		if existsMap[title] {
-			err := db.Table("write_requests").
-				Where("title = ? AND is_matched = ?", title, false).
-				Updates(app.H{"is_matched": true, "updated_at": time.Now()}).Error
-			if err == nil {
-				updated++
-			}
+	toDone := make([]uint, 0)
+	toTodo := make([]uint, 0)
+	checked := make([]uint, 0, len(targets))
+	for _, target := range targets {
+		checked = append(checked, target.ID)
+		exists := resolveTitleExists(existsMap, target.Title)
+		if exists && target.WritedAt == nil {
+			toDone = append(toDone, target.ID)
+		} else if !exists && target.WritedAt != nil {
+			toTodo = append(toTodo, target.ID)
 		}
 	}
 
-	return job.Success(app.H{"updated": updated})
+	now := time.Now()
+	err = db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if len(toDone) > 0 {
+			if err := tx.Table("write_requests").Where("id IN ?", toDone).Updates(app.H{
+				"writer_id": 0, "writer_name": "Unknown", "writed_at": now, "updated_at": now,
+			}).Error; err != nil {
+				return err
+			}
+		}
+		if len(toTodo) > 0 {
+			if err := tx.Table("write_requests").Where("id IN ?", toTodo).Updates(app.H{
+				"writed_at": nil, "updated_at": now,
+			}).Error; err != nil {
+				return err
+			}
+		}
+		return tx.Table("write_requests").Where("id IN ?", checked).Update("updated_at", now).Error
+	})
+	if err != nil {
+		return job.Error(err)
+	}
+
+	return job.Success(app.H{"checked": len(targets), "to_done": len(toDone), "to_todo": len(toTodo)})
 }
 
-func collectWriteRequestTargets(db *gorm.DB) ([]string, error) {
-	var titles []string
-	err := db.Table("write_requests").
-		Where("is_matched = ?", false).
-		Distinct("title").
-		Pluck("title", &titles).Error
-	return titles, err
+func collectWriteRequestTargets(db *gorm.DB) ([]writeRequestTarget, error) {
+	queries := []*gorm.DB{
+		db.Table("write_requests").Select("id, title, writed_at").Where("writed_at IS NULL").Order("id DESC").Limit(matcherPageSize),
+		db.Table("write_requests AS w").Select("w.id, w.title, w.writed_at").Where("w.writed_at IS NULL").
+			Order("w.rate DESC").Order("(SELECT COALESCE(n.hit, 0) FROM not_matches n WHERE n.title = w.title LIMIT 1) DESC").
+			Order("w.ref DESC").Order("w.id DESC").Limit(matcherPageSize),
+		db.Table("write_requests").Select("id, title, writed_at").Where("writed_at IS NOT NULL").Order("writed_at DESC").Order("id DESC").Limit(matcherPageSize),
+		db.Table("write_requests").Select("id, title, writed_at").Order("updated_at").Order("id").Limit(matcherPageSize),
+	}
+
+	seen := make(map[uint]bool)
+	targets := make([]writeRequestTarget, 0, matcherPageSize*len(queries))
+	for _, query := range queries {
+		var rows []writeRequestTarget
+		if err := query.Find(&rows).Error; err != nil {
+			return nil, err
+		}
+		for _, row := range rows {
+			if !seen[row.ID] {
+				seen[row.ID] = true
+				targets = append(targets, row)
+			}
+		}
+	}
+	return targets, nil
 }
 
 func fetchTitleExistsMap(ctx context.Context, jobCtx job.JobContext, titles []string) (map[string]bool, error) {
@@ -78,42 +129,76 @@ func fetchTitleExistsMap(ctx context.Context, jobCtx job.JobContext, titles []st
 		return nil, fmt.Errorf("apiServer is required")
 	}
 
-	uniq := uniqueStrings(titles)
-	out := make(map[string]bool, len(uniq))
+	uniqueTitles := uniqueStrings(titles)
+	out := make(map[string]bool, len(uniqueTitles))
 	client := &http.Client{Timeout: 20 * time.Second}
-
-	for start := 0; start < len(uniq); start += 50 {
-		end := start + 50
-		if end > len(uniq) {
-			end = len(uniq)
+	for start := 0; start < len(uniqueTitles); start += matcherPageSize {
+		end := min(start+matcherPageSize, len(uniqueTitles))
+		params := url.Values{"action": {"query"}, "format": {"json"}, "titles": {strings.Join(uniqueTitles[start:end], "|")}}
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiServer+"/w/api.php?"+params.Encode(), nil)
+		if err != nil {
+			return nil, err
 		}
-		chunk := uniq[start:end]
-
-		for _, title := range chunk {
-			url := fmt.Sprintf("%s/w/api.php?action=query&titles=%s&format=json", apiServer, strings.ReplaceAll(title, " ", "_"))
-			req, _ := http.NewRequestWithContext(ctx, "GET", url, nil)
-			resp, err := client.Do(req)
-			if err != nil {
-				continue
+		resp, err := client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		var payload struct {
+			Query struct {
+				Pages map[string]struct {
+					Title   string          `json:"title"`
+					Missing json.RawMessage `json:"missing"`
+				} `json:"pages"`
+			} `json:"query"`
+		}
+		decodeErr := json.NewDecoder(resp.Body).Decode(&payload)
+		_ = resp.Body.Close()
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+			return nil, fmt.Errorf("MediaWiki API request failed: HTTP %d", resp.StatusCode)
+		}
+		if decodeErr != nil {
+			return nil, fmt.Errorf("decode MediaWiki API response: %w", decodeErr)
+		}
+		if payload.Query.Pages == nil {
+			return nil, fmt.Errorf("MediaWiki API response is missing query.pages")
+		}
+		for _, page := range payload.Query.Pages {
+			exists := page.Missing == nil
+			for _, variant := range titleVariants(page.Title) {
+				out[normalizeTitleKey(variant)] = exists
 			}
-			// Simple check if page exists (this is a placeholder logic, usually requires parsing JSON)
-			// For now, let's assume if it's 200 and not "missing" in body
-			out[title] = (resp.StatusCode == 200)
-			_ = resp.Body.Close()
 		}
 	}
 	return out, nil
 }
 
-func uniqueStrings(input []string) []string {
-	m := make(map[string]bool)
-	var uniq []string
-	for _, row := range input {
-		if m[row] {
-			continue
+func resolveTitleExists(existsMap map[string]bool, title string) bool {
+	for _, variant := range titleVariants(title) {
+		if exists, ok := existsMap[normalizeTitleKey(variant)]; ok {
+			return exists
 		}
-		m[row] = true
-		uniq = append(uniq, row)
 	}
-	return uniq
+	return false
+}
+
+func titleVariants(title string) []string {
+	title = strings.TrimSpace(title)
+	if title == "" {
+		return nil
+	}
+	return uniqueStrings([]string{title, strings.ReplaceAll(title, "_", " "), strings.ReplaceAll(title, " ", "_")})
+}
+
+func normalizeTitleKey(title string) string { return strings.ToLower(strings.TrimSpace(title)) }
+
+func uniqueStrings(input []string) []string {
+	seen := make(map[string]bool, len(input))
+	unique := make([]string, 0, len(input))
+	for _, value := range input {
+		if !seen[value] {
+			seen[value] = true
+			unique = append(unique, value)
+		}
+	}
+	return unique
 }

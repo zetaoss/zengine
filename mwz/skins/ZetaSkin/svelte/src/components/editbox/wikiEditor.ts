@@ -12,7 +12,7 @@ export function replaceWikiEditorContent(content: string, options: { preventScro
 
   textarea.focus({ preventScroll: options.preventScroll })
   textarea.setSelectionRange(0, textarea.value.length)
-   
+
   const inserted = document.execCommand('insertText', false, content)
   if (!inserted) {
     textarea.value = content
