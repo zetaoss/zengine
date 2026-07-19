@@ -7,15 +7,26 @@ import httpy from '$shared/utils/httpy'
 
 import BoxApex from './BoxApex.svelte'
 import { buildLangPayload, buildNotebookPayload, enqueue, sha256 } from './runbox.helpers'
-import { type Box, BoxType, type Job, JobType } from './types'
+import { type Box, BoxType, type Job, type JobPhase, JobType } from './types'
 
 const pageId = getRLCONF().wgArticleId
 
 let delay = 1000
 
 interface JobStatus {
-  phase: Job['phase'] | 'none' | 'Pending' | 'Running' | 'Succeeded' | 'error'
+  phase: JobPhase
   outs: string | null
+}
+
+function isJobPhase(value: unknown): value is JobPhase {
+  return (
+    value === 'pending' ||
+    value === 'running' ||
+    value === 'succeeded' ||
+    value === 'failed' ||
+    value === 'none' ||
+    value === 'error'
+  )
 }
 
 function parseOuts(raw: string | null): unknown {
@@ -38,11 +49,14 @@ function normalizeLangOuts(parsed: unknown): { logs: string[]; images: string[] 
 }
 
 function normalizeNotebookOuts(parsed: unknown): Job['notebookOuts'] {
-  if (!Array.isArray(parsed)) {
+  const outputsList =
+    parsed && typeof parsed === 'object' && 'outputsList' in parsed ? (parsed as Record<string, unknown>).outputsList : parsed
+
+  if (!Array.isArray(outputsList)) {
     return []
   }
 
-  return parsed.map((cell) => (Array.isArray(cell) ? cell : [])) as Job['notebookOuts']
+  return outputsList.map((cell) => (Array.isArray(cell) ? cell : [])) as Job['notebookOuts']
 }
 
 type JobStore = Writable<Job>
@@ -65,6 +79,14 @@ async function getJob(store: JobStore): Promise<void> {
     return
   }
 
+  if (!data || !isJobPhase(data.phase) || (data.outs !== null && typeof data.outs !== 'string')) {
+    console.error('Invalid runbox job response', data)
+    updateJob(store, (j) => {
+      j.phase = 'error'
+    })
+    return
+  }
+
   const { phase, outs } = data
   const parsedOuts = parseOuts(outs)
   updateJob(store, (j) => {
@@ -76,14 +98,14 @@ async function getJob(store: JobStore): Promise<void> {
     return
   }
 
-  if (phase === 'Pending' || phase === 'Running') {
+  if (phase === 'pending' || phase === 'running') {
     console.log(`Job ${job.id}: ${phase}, refresh in ${Math.round(delay)}ms`)
     delay *= 1.1
     setTimeout(() => enqueue((j) => getJob(j), store), delay)
     return
   }
 
-  if (phase === 'Failed') {
+  if (phase === 'failed') {
     updateJob(store, (j) => {
       if (j.type === JobType.Lang && j.langOuts == null) {
         j.langOuts = { logs: ['2Runbox job failed.'], images: [] }
@@ -95,7 +117,7 @@ async function getJob(store: JobStore): Promise<void> {
     return
   }
 
-  if (phase === 'Succeeded') {
+  if (phase === 'succeeded') {
     const jobType = get(store).type
     if (jobType === JobType.Lang) {
       updateJob(store, (j) => {
@@ -127,7 +149,7 @@ async function postJob(store: JobStore): Promise<void> {
   }
 
   updateJob(store, (j) => {
-    j.phase = 'Pending'
+    j.phase = 'pending'
   })
   enqueue((j) => getJob(j), store)
 }
@@ -145,7 +167,7 @@ export async function rerunJob(store: JobStore): Promise<void> {
 
   delay = 1000
   updateJob(store, (j) => {
-    j.phase = 'Pending'
+    j.phase = 'pending'
   })
   enqueue((j) => getJob(j), store)
 }

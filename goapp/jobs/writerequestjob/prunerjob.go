@@ -15,9 +15,7 @@ const (
 	prunerJobTimeout = 5 * time.Minute
 )
 
-func NewPrunerJob() *PrunerJob {
-	return &PrunerJob{}
-}
+func NewPrunerJob() *PrunerJob { return &PrunerJob{} }
 
 func (j *PrunerJob) Name() string { return prunerJobName }
 
@@ -29,14 +27,11 @@ func (j *PrunerJob) Run(ctx context.Context, jobCtx job.JobContext, _ any) job.R
 		return job.Error(err)
 	}
 
-	res := db.WithContext(ctx).Table("write_requests").
-		Where("is_matched = ? AND updated_at < ?", false, time.Now().AddDate(0, 0, -30)).
+	res := db.WithContext(ctx).Table("not_matches").
+		Where("hit <= ? AND updated_at <= ?", 1, time.Now().AddDate(-1, 0, 0)).
 		Delete(nil)
 	if res.Error != nil {
 		return job.Error(res.Error)
 	}
-
-	return job.Success(app.H{
-		"deleted": res.RowsAffected,
-	})
+	return job.Success(app.H{"deleted": res.RowsAffected})
 }

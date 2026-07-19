@@ -1,9 +1,12 @@
 <!-- BoxApex.svelte -->
 <script lang="ts">
-  import { mdiCheck, mdiContentCopy, mdiReplay } from '@mdi/js'
+  import { mdiCheck, mdiContentCopy, mdiDotsVertical, mdiReplay, mdiWrap, mdiWrapDisabled } from '@mdi/js'
   import type { Writable } from 'svelte/store'
 
   import getRLCONF from '$lib/utils/rlconf'
+  import CButton from '$shared/ui/CButton.svelte'
+  import CMenu from '$shared/ui/CMenu.svelte'
+  import CMenuItem from '$shared/ui/CMenuItem.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import { colorizeCss, colorizeHtml } from '$shared/utils/colorize'
 
@@ -37,6 +40,7 @@
 
   let copied = false
   let copyTimer: number | null = null
+  let wrapped = true
 
   const onCopy = async () => {
     try {
@@ -55,47 +59,65 @@
 
 {#if jobValue}
   <div>
-    <div class="mb-1 bg-code p-1 border rounded-lg">
-      <svelte:component this={CurrentComponent} {job} {seq}>
-        <div class="pt-1 px-4">
-          <div class="sticky top-0 z-10 h-0">
-            <div class="flex justify-end items-center space-x-1">
-              {#if isSysop && isMain && (jobValue.phase === 'Pending' || jobValue.phase === 'Failed' || jobValue.phase === 'Succeeded')}
-                <button
-                  class="p-1 rounded text-xs text-muted-foreground inline-flex items-center space-x-1 cursor-pointer"
-                  on:click={() => rerunJob(job)}
-                >
-                  <ZIcon size={14} path={mdiReplay} />
-                  <span>Rerun</span>
-                </button>
+    <div class="bg-a-gray-50 border rounded-lg pt-1">
+      <svelte:component this={CurrentComponent} {job} {seq} {wrapped}>
+        <div class="sticky top-0 z-10 h-0">
+          <div class="flex justify-end items-center pr-1">
+            <CButton variant="ghost" size="xs" onclick={onCopy}>
+              {#if !copied}
+                <ZIcon size={14} path={mdiContentCopy} />
+                <span>Copy</span>
+              {:else}
+                <ZIcon size={14} path={mdiCheck} />
+                <span>Copied</span>
               {/if}
-              <button class="p-1 rounded text-xs text-muted-foreground inline-flex items-center space-x-1 cursor-pointer" on:click={onCopy}>
-                {#if !copied}
-                  <ZIcon size={14} path={mdiContentCopy} />
-                  <span>Copy</span>
-                {:else}
-                  <ZIcon size={14} path={mdiCheck} />
-                  <span>Copied</span>
+            </CButton>
+            <CMenu>
+              {#snippet trigger({ toggle })}
+                <CButton variant="ghost" size="icon-xs" aria-label="Runbox menu" onclick={toggle}>
+                  <ZIcon size={14} path={mdiDotsVertical} />
+                </CButton>
+              {/snippet}
+              {#snippet menu({ close })}
+                <CMenuItem
+                  onclick={() => {
+                    wrapped = !wrapped
+                    close()
+                  }}
+                >
+                  <ZIcon size={14} path={wrapped ? mdiWrapDisabled : mdiWrap} />
+                  <span>{wrapped ? 'Unwrap' : 'Wrap'}</span>
+                </CMenuItem>
+                {#if isSysop && (isMain || jobValue.type === 'notebook') && (jobValue.phase === 'pending' || jobValue.phase === 'failed' || jobValue.phase === 'succeeded')}
+                  <CMenuItem
+                    onclick={() => {
+                      void rerunJob(job)
+                      close()
+                    }}
+                  >
+                    <ZIcon size={14} path={mdiReplay} />
+                    <span>Rerun</span>
+                  </CMenuItem>
                 {/if}
-              </button>
-            </div>
+              {/snippet}
+            </CMenu>
           </div>
+        </div>
 
-          <div class="text-xs text-muted-foreground select-none flex items-center gap-2">
-            <span>{box.lang}</span>
-            {#if jobValue.boxes.length > 1}
-              <span>
-                {#each jobValue.boxes as boxItem, i (i)}
-                  <span title={boxItem.lang || ''} class={i !== seq ? 'opacity-30' : ''}>●</span>
-                {/each}
-              </span>
-            {/if}
-          </div>
+        <div class="text-xs text-muted-foreground select-none flex items-center gap-2">
+          <span class="pl-2">{box.lang}</span>
+          {#if jobValue.boxes.length > 1}
+            <span>
+              {#each jobValue.boxes as boxItem, i (i)}
+                <span title={boxItem.lang || ''} class={i !== seq ? 'opacity-30' : ''}>●</span>
+              {/each}
+            </span>
+          {/if}
+        </div>
 
-          <div class="py-3">
-            <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-            {@html rendered}
-          </div>
+        <div class:code-wrapped={wrapped} class:code-unwrapped={!wrapped} class="px-4 py-3">
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+          {@html rendered}
         </div>
       </svelte:component>
     </div>
@@ -103,6 +125,38 @@
 {/if}
 
 <style>
+  .code-wrapped {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .code-wrapped :global(pre) {
+    white-space: inherit;
+    overflow-wrap: inherit;
+  }
+
+  .code-unwrapped {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: pre;
+    word-break: normal;
+    overflow-wrap: normal;
+  }
+
+  .code-unwrapped :global(*) {
+    white-space: inherit !important;
+    word-break: inherit !important;
+    overflow-wrap: inherit !important;
+  }
+
+  .code-unwrapped :global(pre) {
+    width: max-content;
+    min-width: 100%;
+  }
+
   :global(.colorize) {
     display: inline-block;
     width: 0.7em;
