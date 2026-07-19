@@ -28,7 +28,6 @@
       unsubscribeEditor()
     }
   })
-
 </script>
 
 {#if selectedResult}

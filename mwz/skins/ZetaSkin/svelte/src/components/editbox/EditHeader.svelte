@@ -177,7 +177,7 @@
 
 <div class="wikiEditor-ui-toolbar px-2 border-b border-[#ccc]">
   <div class:grid-cols-2={isSysop} class:grid-cols-1={!isSysop} class="grid gap-3">
-      <div class="flex items-center gap-2">
+    <div class="flex items-center gap-2">
       <CButton size="small" variant="outline" aria-label="원복" onclick={handleReset}>원복</CButton>
       <ZNativeSelect
         bind:value={selectedValue}

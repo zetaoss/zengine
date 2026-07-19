@@ -56,6 +56,8 @@ export interface LangOut {
   images: string[]
 }
 
+export type JobPhase = 'pending' | 'running' | 'succeeded' | 'failed' | 'none' | 'error'
+
 export interface Job {
   id: string
   hash: string
@@ -63,7 +65,7 @@ export interface Job {
   pageId: number
   main: number
   type: JobType
-  phase: string | null
+  phase: JobPhase | null
   payload: Payload | null
   langOuts: LangOut | null
   notebookOuts: Output[][]

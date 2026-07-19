@@ -6,6 +6,7 @@
   import type { Output } from '../types'
 
   export let out: Output
+  export let wrapped = true
   const ansiSgrRegex = new RegExp(`${String.fromCharCode(27)}\\[([\\d;]*)m`, 'g')
 
   const ansi2html = (input: string): string => {
@@ -37,15 +38,17 @@
   $: textJson = out.data?.['application/json']?.join('') ?? ''
 </script>
 
-<div class={`bg-code px-4 py-2 text-sm font-mono rounded-lg ${out.output_type === 'error' ? 'bg-(--nbout-error)' : ''}`}>
+<div
+  class={`py-1 text-sm font-mono rounded-lg ${out.output_type === 'error' ? 'bg-(--nbout-error)' : ''} ${wrapped ? '' : 'overflow-x-auto'}`}
+>
   {#if out.output_type === 'display_data'}
     {#if out.data?.['image/png']}
-      <img src={`data:image/png;base64,${out.data['image/png']}`} alt="" class="bg-background my-2 rounded max-h-[30rem] max-w-[75vw]" />
+      <img src={`data:image/png;base64,${out.data['image/png']}`} alt="" class="bg-white border my-2 rounded max-h-[30rem] max-w-[75vw]" />
     {:else if textHtml}
       <!-- eslint-disable-next-line svelte/no-at-html-tags -->
       {@html textHtml}
     {:else if textPlain}
-      <pre class="whitespace-pre-wrap">{textPlain}</pre>
+      <pre class={wrapped ? 'whitespace-pre-wrap' : 'whitespace-pre'}>{textPlain}</pre>
     {:else if textJson}
       <pre class="bg-a-gray-100 p-2 rounded overflow-auto">{textJson}</pre>
     {:else if textLatex}
@@ -56,17 +59,17 @@
       <!-- eslint-disable-next-line svelte/no-at-html-tags -->
       {@html textHtml}
     {:else if textPlain}
-      <pre class="whitespace-pre-wrap">{textPlain}</pre>
+      <pre class={wrapped ? 'whitespace-pre-wrap' : 'whitespace-pre'}>{textPlain}</pre>
     {:else if textLatex}
       <div class="text-a-purple-700">\({textLatex}\)</div>
     {:else if textJson}
       <pre class="bg-a-gray-100 p-2 rounded overflow-auto">{textJson}</pre>
     {/if}
   {:else if out.output_type === 'stream'}
-    <pre class="whitespace-pre-wrap">{out.text?.join('')}</pre>
+    <pre class={wrapped ? 'whitespace-pre-wrap' : 'whitespace-pre'}>{out.text?.join('')}</pre>
   {:else if out.output_type === 'error'}
     <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-    <pre>{@html ansi2html(out.traceback?.join('\n') ?? '')}</pre>
+    <pre class={wrapped ? 'whitespace-pre-wrap' : 'whitespace-pre'}>{@html ansi2html(out.traceback?.join('\n') ?? '')}</pre>
   {:else}
     <pre class="text-a-red-500">[Unsupported output_type: {out.output_type}]</pre>
   {/if}

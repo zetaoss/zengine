@@ -8,7 +8,7 @@
 
 <CButton
   variant="ghost"
-  class="w-full justify-start rounded-none px-3 py-2 font-normal whitespace-nowrap"
+  class="w-full !justify-start !rounded-none px-3 py-2 !font-normal whitespace-nowrap gap-2"
   {onclick}
 >
   {@render children?.()}

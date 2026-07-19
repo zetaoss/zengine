@@ -3,10 +3,10 @@ package models
 type RunboxPhase string
 
 const (
-	RunboxPhasePending   RunboxPhase = "Pending"
-	RunboxPhaseRunning   RunboxPhase = "Running"
-	RunboxPhaseSucceeded RunboxPhase = "Succeeded"
-	RunboxPhaseFailed    RunboxPhase = "Failed"
+	RunboxPhasePending   RunboxPhase = "pending"
+	RunboxPhaseRunning   RunboxPhase = "running"
+	RunboxPhaseSucceeded RunboxPhase = "succeeded"
+	RunboxPhaseFailed    RunboxPhase = "failed"
 )
 
 type Runbox struct {

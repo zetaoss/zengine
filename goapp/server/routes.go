@@ -71,7 +71,7 @@ func RegisterRoutes(mux *http.ServeMux, serverCtx *serverctx.Context, components
 
 	r.GET("/api/runbox/{hash}", runbox.Show)
 	r.POST("/api/runbox", runbox.Store)
-	r.POST("/api/runbox/{hash}/rerun", runbox.Rerun, r.User())
+	r.POST("/api/runbox/{hash}/rerun", runbox.Rerun, r.Sysop())
 
 	r.GET("/api/posts", post.Index)
 	r.GET("/api/posts/recent", post.Recent)

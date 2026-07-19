@@ -1,4 +1,6 @@
 @theme {
+  --color-a-white: light-dark(white, black);
+  --color-a-black: light-dark(black, white);
   --color-a-red-50: light-dark(oklch(97.1% 0.013 17.38), oklch(25.8% 0.092 26.042));
   --color-a-red-100: light-dark(oklch(93.6% 0.032 17.717), oklch(39.6% 0.141 25.723));
   --color-a-red-200: light-dark(oklch(88.5% 0.062 18.334), oklch(44.4% 0.177 26.899));
