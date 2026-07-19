@@ -122,7 +122,9 @@
       base.searchParams.set('fulltext', '1')
       base.searchParams.set('ns0', '1')
     } else {
-      base.searchParams.set('search', pages[kIndex]?.title ?? displayQuery)
+      const selectedTitle = pages[kIndex]?.title ?? displayQuery
+      base.searchParams.set('search', selectedTitle)
+      keyword = selectedTitle
     }
 
     close()

@@ -143,14 +143,14 @@
         const revs = pages[0].revisions
         if (revs && Array.isArray(revs) && revs.length > 0) {
           const content = revs[0].slots?.main?.content ?? revs[0].content ?? ''
-          replaceWikiEditorContent(content, { preventScroll: true })
+          replaceWikiEditorContent(content)
         }
       }
     }
   }
 
   function handleReset() {
-    replaceWikiEditorContent(originalContent, { preventScroll: true })
+    replaceWikiEditorContent(originalContent)
     selectedValue = ''
     onSelect('')
   }
