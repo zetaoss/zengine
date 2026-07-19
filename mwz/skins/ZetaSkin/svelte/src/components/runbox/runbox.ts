@@ -84,7 +84,7 @@ async function getJob(store: JobStore): Promise<void> {
   if (
     !data ||
     !isJobPhase(data.phase) ||
-    (data.phase !== 'none' && data.outs !== null && typeof data.outs !== 'string')
+    (data.phase !== 'none' && data.outs !== undefined && data.outs !== null && typeof data.outs !== 'string')
   ) {
     console.error('Invalid runbox job response', data)
     updateJob(store, (j) => {

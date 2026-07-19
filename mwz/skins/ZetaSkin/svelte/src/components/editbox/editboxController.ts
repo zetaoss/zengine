@@ -180,7 +180,7 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
     }
 
     if (requestId !== boilerplateRequestId) return
-    replaceWikiEditorContent(content, { preventScroll: true })
+    replaceWikiEditorContent(content)
   }
 
   async function injectEditHeader() {

@@ -6,18 +6,12 @@ export function getWikiEditorContent(): string {
   return findWikiEditor()?.value ?? ''
 }
 
-export function replaceWikiEditorContent(content: string, options: { preventScroll?: boolean } = {}): boolean {
+export function replaceWikiEditorContent(content: string): boolean {
   const textarea = findWikiEditor()
   if (!textarea) return false
 
-  textarea.focus({ preventScroll: options.preventScroll })
-  textarea.setSelectionRange(0, textarea.value.length)
-
-  const inserted = document.execCommand('insertText', false, content)
-  if (!inserted) {
-    textarea.value = content
-    textarea.dispatchEvent(new Event('input', { bubbles: true }))
-  }
+  textarea.value = content
+  textarea.dispatchEvent(new Event('input', { bubbles: true }))
   return true
 }
 

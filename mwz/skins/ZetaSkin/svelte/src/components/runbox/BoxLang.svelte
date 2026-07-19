@@ -41,7 +41,7 @@
     {#if displayPhase === 'loading' || displayPhase === 'running'}
       <ZSpinner size="0.875rem" extraClass="mr-1!" />
     {:else if displayPhase === 'pending'}
-      <ZSpinner size="0.875rem" extraClass="mr-1! [animation-direction:reverse]" />
+      <ZSpinner size="0.875rem" extraClass="mr-1!" reverse />
     {/if}
     <span class="text-muted-foreground text-xs">{displayPhase}...</span>
   </div>

@@ -248,7 +248,7 @@
           maxHeight={promptTextareaMaxHeight}
           onUpdateModelValue={handlePromptUpdate}
         />
-        <div class="absolute right-5 top-1 flex items-center gap-1">
+        <div class="absolute right-4 top-1 flex items-center">
           {#if displayedTaskStatus}
             <div class="flex items-center text-xs text-a-slate-500">
               {#if submitting || polling}
