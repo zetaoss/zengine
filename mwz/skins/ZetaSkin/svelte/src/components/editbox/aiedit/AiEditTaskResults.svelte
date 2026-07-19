@@ -1,7 +1,7 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-  import { mdiRefresh } from '@mdi/js'
+  import { mdiRefresh, mdiSend } from '@mdi/js'
   import { onDestroy } from 'svelte'
 
   import CButton from '$shared/ui/CButton.svelte'
@@ -10,6 +10,7 @@
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZSelect from '$shared/ui/ZSelect.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
+  import ZTextarea from '$shared/ui/ZTextarea.svelte'
   import httpy from '$shared/utils/httpy'
   import { getAge } from '$shared/utils/time'
 
@@ -24,6 +25,7 @@
     submittedTaskId,
     resetToken,
     onPollingChange,
+    onPhaseChange,
     onRequestTypeChange,
   }: {
     pageId: number | undefined
@@ -32,6 +34,7 @@
     submittedTaskId: number | undefined
     resetToken: number
     onPollingChange: (polling: boolean) => void
+    onPhaseChange: (phase: AIEditTaskResult['phase'] | undefined) => void
     onRequestTypeChange?: (newType: AIEditRequestType) => void
   } = $props()
 
@@ -72,6 +75,7 @@
     if (resetToken === handledResetToken) return
     handledResetToken = resetToken
     handledSubmittedTaskId = undefined
+    onPhaseChange(undefined)
     stopPolling()
   })
 
@@ -126,6 +130,7 @@
       return
     }
 
+    onPhaseChange(data.phase)
     resultOutput = data.llm_output ?? ''
     if (!activeTaskPhases.has(data.phase)) {
       setPolling(false)
@@ -187,13 +192,21 @@
     </CButton>
   </div>
   {#if selectedTaskId}
-    <textarea
-      class="z-input min-h-80 w-full resize-y font-mono text-xs"
-      bind:value={resultOutput}
-      placeholder="AI 편집본이 여기에 표시됩니다."
-    ></textarea>
-    <div class="flex justify-start">
-      <CButton type="button" variant="default" disabled={!resultOutput} onclick={applyResultToWikiEditor}>위키편집기에 반영</CButton>
+    <div class="relative">
+      <ZTextarea
+        id="ai-edit-task-result-textarea"
+        class="z-input min-h-40 bg-a-gray-50 font-mono text-xs leading-relaxed"
+        modelValue={resultOutput}
+        placeholder="AI 편집본이 여기에 표시됩니다."
+        maxHeight={500}
+        onUpdateModelValue={(value) => (resultOutput = value)}
+      />
+      <div class="absolute right-5 top-1">
+        <CButton type="button" variant="ghost" size="small" disabled={!resultOutput} onclick={applyResultToWikiEditor}>
+          <ZIcon path={mdiSend} />
+          Apply
+        </CButton>
+      </div>
     </div>
   {/if}
 </section>

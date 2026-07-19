@@ -121,11 +121,3 @@
     background-color: var(--color-background);
   }
 }
-
-.dark {
-  select,
-  option {
-    background-color: var(--color-white);
-    color: var(--color-black);
-  }
-}

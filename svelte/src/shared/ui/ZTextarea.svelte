@@ -6,6 +6,8 @@
   export let id: string
   export let maxHeight: number | undefined
   export let onUpdateModelValue: ((value: string) => void) | undefined = undefined
+  let className = ''
+  export { className as class }
 
   let textareaEl: HTMLTextAreaElement | null = null
 
@@ -39,7 +41,7 @@
 
 <textarea
   bind:this={textareaEl}
-  class="w-full resize-none overflow-y-hidden bg-inherit p-2 outline-none"
+  class="w-full resize-none overflow-y-hidden p-2 outline-none {className}"
   {id}
   value={modelValue}
   {placeholder}

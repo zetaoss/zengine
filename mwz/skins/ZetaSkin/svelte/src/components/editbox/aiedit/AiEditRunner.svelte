@@ -1,7 +1,7 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-  import { mdiChevronDown } from '@mdi/js'
+  import { mdiDotsVertical, mdiPlay } from '@mdi/js'
   import { untrack } from 'svelte'
 
   import getRLCONF from '$lib/utils/rlconf'
@@ -16,7 +16,13 @@
   import httpy from '$shared/utils/httpy'
 
   import AiEditTaskResults from './AiEditTaskResults.svelte'
-  import type { AIEditPromptForRunner, AIEditRequestType, AIEditRunnerSubmitPayload, AIEditStoreResult } from './aiEditTypes'
+  import type {
+    AIEditPromptForRunner,
+    AIEditRequestType,
+    AIEditRunnerSubmitPayload,
+    AIEditStoreResult,
+    AIEditTaskPhase,
+  } from './aiEditTypes'
   import { renderFinalPrompt } from './prompt/promptRenderer'
 
   type SubmitHandler = (payload: AIEditRunnerSubmitPayload) => Promise<AIEditStoreResult>
@@ -42,6 +48,7 @@
   let submitting = $state(false)
   let submitError = $state('')
   let polling = $state(false)
+  let submittedTaskPhase = $state<AIEditTaskPhase | undefined>(undefined)
   let submittedTaskId = $state<number | undefined>(undefined)
   let taskResetToken = $state(0)
   let workingTemplate = $state('')
@@ -55,7 +62,7 @@
   let savingPromptAs = $state(false)
   let deletingPrompt = $state(false)
 
-  const promptTextareaMaxHeight = 100000
+  const promptTextareaMaxHeight = 500
 
   let renderedLlmInput = $derived(
     renderFinalPrompt({
@@ -68,13 +75,10 @@
   let hasPromptContent = $derived(workingTemplate.trim().length > 0)
   let canSavePrompt = $derived((getRLCONF()?.wgUserId ?? 0) > 0 && prompt.userId === getRLCONF()?.wgUserId)
   let isSysop = $derived((getRLCONF()?.wgUserGroups || []).includes('sysop'))
-  let canDeletePrompt = $derived(
-    prompt.id &&
-      (getRLCONF()?.wgUserId ?? 0) > 0 &&
-      (prompt.userId === getRLCONF()?.wgUserId || isSysop)
-  )
+  let canDeletePrompt = $derived(prompt.id && (getRLCONF()?.wgUserId ?? 0) > 0 && (prompt.userId === getRLCONF()?.wgUserId || isSysop))
   let trimmedTitle = $derived(title.trim())
   let canSubmit = $derived(hasPromptContent && trimmedTitle.length > 0 && renderedLlmInput.trim().length > 0 && !submitting)
+  let displayedTaskStatus = $derived(submitting ? 'Creating' : submittedTaskPhase === 'Completed' ? undefined : submittedTaskPhase)
 
   $effect(() => {
     const nextRunnerContextIdentity = `${prompt.id ?? ''}\u0000${prompt.title}\u0000${prompt.requestType}\u0000${title}\u0000${pageId ?? ''}`
@@ -126,6 +130,7 @@
 
   function resetResultState() {
     polling = false
+    submittedTaskPhase = undefined
     submittedTaskId = undefined
     taskResetToken += 1
   }
@@ -225,7 +230,6 @@
       deletingPrompt = false
     }
   }
-
 </script>
 
 <div class="flex h-full min-h-0 flex-col gap-3">
@@ -235,78 +239,95 @@
 
   <div class="flex min-h-0 flex-1 flex-col gap-3">
     <div class="flex min-h-0 flex-col gap-1">
-      <div id="ai-edit-runner-prompt" class="min-h-40 overflow-hidden font-mono text-xs leading-relaxed">
+      <div id="ai-edit-runner-prompt" class="relative min-h-40 font-mono text-xs leading-relaxed">
         <ZTextarea
           id="ai-edit-runner-prompt-textarea"
+          class="bg-a-gray-50"
           modelValue={workingTemplate}
           placeholder="프롬프트 내용을 입력하세요."
           maxHeight={promptTextareaMaxHeight}
           onUpdateModelValue={handlePromptUpdate}
         />
+        <div class="absolute right-5 top-1 flex items-center gap-1">
+          {#if displayedTaskStatus}
+            <div class="flex items-center text-xs text-a-slate-500">
+              {#if submitting || polling}
+                <ZSpinner size="0.875rem" extraClass="mr-1" />
+              {/if}
+              {displayedTaskStatus}
+            </div>
+          {/if}
+          <CButton type="button" variant="ghost" size="small" disabled={!canSubmit || polling} onclick={() => void handleSubmitClick()}>
+            <ZIcon path={mdiPlay} />
+            Run
+          </CButton>
+          <CMenu>
+            {#snippet trigger({ toggle })}
+              <CButton type="button" variant="ghost" size="icon-sm" aria-label="프롬프트 메뉴" onclick={toggle}>
+                <ZIcon path={mdiDotsVertical} />
+              </CButton>
+            {/snippet}
+            {#snippet menu({ close })}
+              <div class="flex flex-col items-stretch">
+                <CButton
+                  type="button"
+                  variant="ghost"
+                  class="w-full justify-start! rounded-none!"
+                  disabled={!hasPromptContent}
+                  onclick={() => {
+                    previewModalOpen = true
+                    close()
+                  }}
+                >
+                  Render
+                </CButton>
+                <CButton
+                  type="button"
+                  variant="ghost"
+                  class="w-full justify-start! rounded-none!"
+                  disabled={!hasPromptContent || savingPrompt || !prompt.id || !canSavePrompt}
+                  onclick={() => {
+                    void savePrompt()
+                    close()
+                  }}
+                >
+                  {savingPrompt ? '저장 중...' : 'Save'}
+                </CButton>
+                <CButton
+                  type="button"
+                  variant="ghost"
+                  class="w-full justify-start! rounded-none!"
+                  disabled={!hasPromptContent || savingPromptAs}
+                  onclick={() => {
+                    openSaveAsModal()
+                    close()
+                  }}
+                >
+                  Save As...
+                </CButton>
+                {#if canDeletePrompt}
+                  <CButton
+                    type="button"
+                    variant="destructive"
+                    class="w-full justify-start! rounded-none!"
+                    disabled={deletingPrompt}
+                    onclick={() => {
+                      void deletePrompt()
+                      close()
+                    }}
+                  >
+                    {deletingPrompt ? '삭제 중...' : 'Delete'}
+                  </CButton>
+                {/if}
+              </div>
+            {/snippet}
+          </CMenu>
+        </div>
       </div>
     </div>
   </div>
 
   <div class="flex flex-col items-start gap-2">
-    <div class="flex w-full flex-wrap items-center justify-between gap-2">
-      <CButton variant="default" disabled={!canSubmit || polling} onclick={() => void handleSubmitClick()}>
-        {#if submitting || polling}
-          <ZSpinner size="1rem" extraClass="mr-2" />
-        {/if}
-        {submitting ? '등록 중' : polling ? '실행 중' : 'AI 편집본 생성'}
-      </CButton>
-      <div class="flex flex-wrap items-center gap-2">
-        <CMenu>
-          {#snippet trigger({ toggle })}
-            <div class="inline-flex rounded-md shadow-sm">
-              <CButton
-                type="button"
-                variant="outline"
-                class="rounded-r-none!"
-                disabled={!hasPromptContent}
-                onclick={() => (previewModalOpen = true)}
-              >
-                Render
-              </CButton>
-              <CButton type="button" variant="outline" class="rounded-l-none! border-l-0! px-2" onclick={toggle}>
-                <ZIcon path={mdiChevronDown} />
-              </CButton>
-            </div>
-          {/snippet}
-          <div class="flex flex-col items-stretch">
-            <CButton
-              type="button"
-              variant="ghost"
-              class="w-full justify-start! rounded-none!"
-              disabled={!hasPromptContent || savingPrompt || !prompt.id || !canSavePrompt}
-              onclick={() => void savePrompt()}
-            >
-              {savingPrompt ? '저장 중...' : 'Save'}
-            </CButton>
-            <CButton
-              type="button"
-              variant="ghost"
-              class="w-full justify-start! rounded-none!"
-              disabled={!hasPromptContent || savingPromptAs}
-              onclick={openSaveAsModal}
-            >
-              Save As...
-            </CButton>
-            {#if canDeletePrompt}
-              <CButton
-                type="button"
-                variant="destructive"
-                class="w-full justify-start! rounded-none!"
-                disabled={deletingPrompt}
-                onclick={() => void deletePrompt()}
-              >
-                {deletingPrompt ? '삭제 중...' : 'Delete'}
-              </CButton>
-            {/if}
-          </div>
-        </CMenu>
-      </div>
-    </div>
     {#if submitError}
       <div class="text-sm text-a-red-500">{submitError}</div>
     {/if}
@@ -319,6 +340,7 @@
     requestType={prompt.requestType}
     title={trimmedTitle}
     onPollingChange={(value) => (polling = value)}
+    onPhaseChange={(phase) => (submittedTaskPhase = phase)}
     {onRequestTypeChange}
   />
 </div>
