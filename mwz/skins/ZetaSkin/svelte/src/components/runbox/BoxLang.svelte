@@ -5,6 +5,7 @@
 
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
+  import { formatDateTime } from '$shared/utils/time'
 
   import type { Job } from './types'
 
@@ -27,28 +28,37 @@
   })()
 
   $: lowerPhase = jobValue.phase?.toLowerCase()
+  $: displayPhase = jobValue.isLoading ? 'loading' : lowerPhase
+  $: updatedAtLabel = formatDateTime(jobValue.updatedAt)
 
   const containerClass = 'rounded-b-lg border-t px-4 py-2 text-sm'
 </script>
 
 <slot />
 
-{#if loaded && isMain && (lowerPhase === 'pending' || lowerPhase === 'running')}
+{#if isMain && (displayPhase === 'loading' || displayPhase === 'pending' || displayPhase === 'running')}
   <div class="{containerClass} flex items-center">
-    {#if lowerPhase === 'running'}
-      <ZSpinner size="0.875rem" extraClass="mr-0!" />
-    {:else if lowerPhase === 'pending'}
-      <ZSpinner size="0.875rem" extraClass="mr-0! [animation-direction:reverse]" />
+    {#if displayPhase === 'loading' || displayPhase === 'running'}
+      <ZSpinner size="0.875rem" extraClass="mr-1!" />
+    {:else if displayPhase === 'pending'}
+      <ZSpinner size="0.875rem" extraClass="mr-1! [animation-direction:reverse]" />
     {/if}
-    <span class="text-muted-foreground text-xs">{lowerPhase}...</span>
+    <span class="text-muted-foreground text-xs">{displayPhase}...</span>
   </div>
 {/if}
 
 {#if loaded && isMain && (lowerPhase === 'succeeded' || lowerPhase === 'failed')}
   <div class="{containerClass} max-h-240 overflow-y-auto" class:break-all={wrapped} class:overflow-x-auto={!wrapped}>
     {#if lowerPhase === 'failed'}
-      <div class="flex items-center text-xs text-a-red-500 font-medium mb-2">
+      <div class="flex items-center gap-1 text-xs text-a-red-500 font-medium mb-2">
         <ZIcon size={14} path={mdiAlert} />
+        {#if updatedAtLabel}
+          <time datetime={jobValue.updatedAt ?? undefined} title={jobValue.updatedAt ?? undefined}>
+            Failed · {updatedAtLabel}
+          </time>
+        {:else}
+          <span>Failed</span>
+        {/if}
       </div>
     {/if}
 

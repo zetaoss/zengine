@@ -66,6 +66,8 @@ export interface Job {
   main: number
   type: JobType
   phase: JobPhase | null
+  isLoading: boolean
+  updatedAt: string | null
   payload: Payload | null
   langOuts: LangOut | null
   notebookOuts: Output[][]

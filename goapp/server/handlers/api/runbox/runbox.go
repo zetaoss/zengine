@@ -24,11 +24,11 @@ func Show(c *serverctx.Context) {
 
 	var row app.H
 	if err := c.DB.Table("runboxes").
-		Select("hash, phase, user_id, page_id, type, outs, cpu, mem, time").
+		Select("hash, phase, user_id, page_id, type, outs, cpu, mem, time, updated_at").
 		Where("hash = ?", hash).
 		Take(&row).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(map[string]string{"phase": "none"})
+			c.JSON(app.H{"phase": "none", "outs": nil})
 			return
 		}
 		http.Error(c.W, "internal server error", http.StatusInternalServerError)

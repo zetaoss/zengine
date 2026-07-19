@@ -59,23 +59,23 @@
 
 {#if jobValue}
   <div>
-    <div class="bg-a-gray-50 border rounded-lg pt-1">
+    <div class="bg-a-gray-50 border rounded-lg pt-0.5">
       <svelte:component this={CurrentComponent} {job} {seq} {wrapped}>
         <div class="sticky top-0 z-10 h-0">
-          <div class="flex justify-end items-center pr-1">
-            <CButton variant="ghost" size="xs" onclick={onCopy}>
+          <div class="flex justify-end items-center pr-0.5">
+            <CButton variant="ghost" size="sm" onclick={onCopy}>
               {#if !copied}
-                <ZIcon size={14} path={mdiContentCopy} />
+                <ZIcon path={mdiContentCopy} />
                 <span>Copy</span>
               {:else}
-                <ZIcon size={14} path={mdiCheck} />
+                <ZIcon path={mdiCheck} />
                 <span>Copied</span>
               {/if}
             </CButton>
             <CMenu>
               {#snippet trigger({ toggle })}
-                <CButton variant="ghost" size="icon-xs" aria-label="Runbox menu" onclick={toggle}>
-                  <ZIcon size={14} path={mdiDotsVertical} />
+                <CButton variant="ghost" size="sm" aria-label="Runbox menu" onclick={toggle}>
+                  <ZIcon path={mdiDotsVertical} />
                 </CButton>
               {/snippet}
               {#snippet menu({ close })}
@@ -105,7 +105,7 @@
         </div>
 
         <div class="text-xs text-muted-foreground select-none flex items-center gap-2">
-          <span class="pl-2">{box.lang}</span>
+          <span class="pl-4">{box.lang}</span>
           {#if jobValue.boxes.length > 1}
             <span>
               {#each jobValue.boxes as boxItem, i (i)}

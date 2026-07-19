@@ -15,7 +15,8 @@ let delay = 1000
 
 interface JobStatus {
   phase: JobPhase
-  outs: string | null
+  outs?: string | null
+  updated_at?: string | null
 }
 
 function isJobPhase(value: unknown): value is JobPhase {
@@ -74,23 +75,31 @@ async function getJob(store: JobStore): Promise<void> {
   if (err) {
     console.error(err)
     updateJob(store, (j) => {
+      j.isLoading = false
       j.phase = 'error'
     })
     return
   }
 
-  if (!data || !isJobPhase(data.phase) || (data.outs !== null && typeof data.outs !== 'string')) {
+  if (
+    !data ||
+    !isJobPhase(data.phase) ||
+    (data.phase !== 'none' && data.outs !== null && typeof data.outs !== 'string')
+  ) {
     console.error('Invalid runbox job response', data)
     updateJob(store, (j) => {
+      j.isLoading = false
       j.phase = 'error'
     })
     return
   }
 
-  const { phase, outs } = data
+  const { phase, outs = null } = data
   const parsedOuts = parseOuts(outs)
   updateJob(store, (j) => {
+    j.isLoading = false
     j.phase = phase
+    j.updatedAt = typeof data.updated_at === 'string' ? data.updated_at : null
   })
 
   if (phase === 'none') {
@@ -218,6 +227,8 @@ export function mountRunbox() {
         pageId,
         main: -1,
         phase: null,
+        isLoading: false,
+        updatedAt: null,
         payload: null,
         langOuts: null,
         notebookOuts: [],
@@ -257,6 +268,7 @@ export function mountRunbox() {
 
     if (job.type === JobType.Lang || job.type === JobType.Notebook) {
       job.hash = await sha256(job.id, job.pageId, job.type, job.payload)
+      job.isLoading = true
     }
 
     store.set(job)
