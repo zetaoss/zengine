@@ -24,3 +24,10 @@ export function getAge(timestamp: string): string {
   const year = Math.floor(month / 12)
   return `${year}년 전`
 }
+
+export function formatDateTime(value: string | null | undefined): string {
+  if (!value) return ''
+  const d = new Date(value)
+  return isNaN(d.getTime()) ? '' : d.toLocaleString()
+}
+

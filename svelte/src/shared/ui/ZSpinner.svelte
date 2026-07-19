@@ -1,11 +1,12 @@
 <script lang="ts">
   export let size = '2rem'
   export let extraClass = ''
+  export let reverse = false
 </script>
 
 <svg
   aria-hidden="true"
-  class={`mr-2 animate-spin text-a-gray-200 fill-a-blue-600 ${extraClass}`}
+  class={`mr-2 animate-spin text-a-gray-200 fill-a-blue-600 ${reverse ? '[animation-direction:reverse]' : ''} ${extraClass}`}
   viewBox="0 0 100 101"
   style={`width:${size}; height:${size}`}
   fill="none"
