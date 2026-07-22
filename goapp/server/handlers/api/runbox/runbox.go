@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/zetaoss/zengine/goapp/app"
-	"github.com/zetaoss/zengine/goapp/jobs/runboxjob"
+	"github.com/zetaoss/zengine/goapp/tasks/runbox"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
 
 	"gorm.io/gorm"
@@ -70,7 +70,7 @@ func Store(c *serverctx.Context) {
 		return
 	}
 
-	if _, err := runboxjob.Enqueue(context.Background(), c.AppContext, body.Hash); err != nil {
+	if _, err := runbox.Enqueue(context.Background(), c.AppContext, body.Hash); err != nil {
 		http.Error(c.W, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -95,7 +95,7 @@ func Rerun(c *serverctx.Context) {
 		return
 	}
 	_ = c.DB.Table("runboxes").Where("hash = ?", hash).Updates(app.H{"phase": "pending", "updated_at": time.Now()}).Error
-	if _, err := runboxjob.Enqueue(context.Background(), c.AppContext, hash); err != nil {
+	if _, err := runbox.Enqueue(context.Background(), c.AppContext, hash); err != nil {
 		http.Error(c.W, "internal server error", http.StatusInternalServerError)
 		return
 	}

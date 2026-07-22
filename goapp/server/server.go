@@ -1,46 +1,73 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
+	"sync"
 	"time"
 
+	"github.com/hibiken/asynq"
 	"github.com/zetaoss/zengine/goapp/app/config"
 	appredis "github.com/zetaoss/zengine/goapp/app/redis"
 	"github.com/zetaoss/zengine/goapp/server/runtime"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
-	"github.com/zetaoss/zengine/goapp/worker/queue"
 )
 
 const listenAddr = ":8080"
 
-func New(cfg *config.Config) (*http.Server, error) {
+type Server struct {
+	http       *http.Server
+	taskClient *asynq.Client
+	closeOnce  sync.Once
+	closeErr   error
+}
+
+func New(cfg *config.Config) (*Server, error) {
 	slog.Info("server start", "devMode", cfg.App.DevMode, "logLevel", cfg.App.LogLevel, "listen", listenAddr)
 
 	serverCtx, err := serverctx.New(cfg)
 	if err != nil {
 		return nil, err
 	}
-	redisClient, err := appredis.Open(cfg)
+	redisConn, err := appredis.AsynqConnOpt(cfg)
 	if err != nil {
 		return nil, err
 	}
-	serverCtx.JobEnqueuer = queue.New(redisClient)
+	taskClient := asynq.NewClient(redisConn)
+	serverCtx.TaskEnqueuer = taskClient
 
 	handler, err := BuildHandler(serverCtx)
 	if err != nil {
+		_ = taskClient.Close()
 		return nil, err
 	}
 
-	return &http.Server{
+	return &Server{http: &http.Server{
 		Addr:              listenAddr,
 		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      15 * time.Second,
 		IdleTimeout:       60 * time.Second,
-	}, nil
+	}, taskClient: taskClient}, nil
+}
+
+func (s *Server) ListenAndServe() error { return s.http.ListenAndServe() }
+
+func (s *Server) Shutdown(ctx context.Context) error {
+	httpErr := s.http.Shutdown(ctx)
+	closeErr := s.Close()
+	if httpErr != nil {
+		return httpErr
+	}
+	return closeErr
+}
+
+func (s *Server) Close() error {
+	s.closeOnce.Do(func() { s.closeErr = s.taskClient.Close() })
+	return s.closeErr
 }
 
 func BuildHandler(serverCtx *serverctx.Context) (http.Handler, error) {
