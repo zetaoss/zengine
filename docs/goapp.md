@@ -38,6 +38,8 @@ go run ./cmd/scheduler
 - Scheduler를 둘 이상 실행하면 각 instance가 동일 cron task를 enqueue한다. 배포 replica는 반드시 1로 고정하고 worker deployment에 합치지 않는다.
 - Scheduler가 중단되어도 이미 enqueue된 task는 계속 처리되지만 중단 중 cron task는 생성되지 않는다.
 
+Dockerfile은 `server`, `worker`, `scheduler` 바이너리를 빌드해 image에 포함하기만 한다. 실제 process는 Kubernetes의 container `command`로 선택하며, scheduler deployment는 `/app/goapp/scheduler`를 정확히 1 replica로 실행한다.
+
 ## 개발 Runtime
 
 개발 환경에서는 supervisor가 Air를 통해 세 Go process를 관리한다.
