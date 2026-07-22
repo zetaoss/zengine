@@ -13,7 +13,7 @@ import (
 
 	"github.com/zetaoss/zengine/goapp/app"
 	"github.com/zetaoss/zengine/goapp/app/config"
-	"github.com/zetaoss/zengine/goapp/jobs/aieditjob"
+	"github.com/zetaoss/zengine/goapp/tasks/aiedit"
 	"github.com/zetaoss/zengine/goapp/models"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
 
@@ -179,7 +179,7 @@ func Store(c *serverctx.Context) {
 		if promptTitle := strings.TrimSpace(body.PromptTitle); promptTitle != "" {
 			c.DB.Model(&models.AIEditPrompt{}).Where("title = ?", promptTitle).UpdateColumn("use_count", gorm.Expr("use_count + 1"))
 		}
-		if _, err := aieditjob.Enqueue(c.R.Context(), c.AppContext, insert.ID); err != nil {
+		if _, err := aiedit.Enqueue(c.R.Context(), c.AppContext, insert.ID); err != nil {
 			c.InternalError()
 			return
 		}
@@ -248,7 +248,7 @@ func fetchWikiPageText(ctx context.Context, cfg *config.Config, title string) (s
 }
 
 func retryAt(task models.AIEdit) *string {
-	return aieditjob.CalculateRetryAt(task)
+	return aiedit.CalculateRetryAt(task)
 }
 
 func newTaskResponse(task models.AIEdit) taskResponse {

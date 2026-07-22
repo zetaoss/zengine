@@ -1,0 +1,122 @@
+package ga
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"time"
+
+	"github.com/zetaoss/zengine/goapp/app"
+	"github.com/zetaoss/zengine/goapp/models/stat"
+)
+
+func runGAQuery(ctx context.Context, token, propertyID, startDate, endDate string, dimensions []string) (app.H, error) {
+	endpoint := "https://analyticsdata.googleapis.com/v1beta/properties/" + propertyID + ":runReport"
+	dims := make([]map[string]string, 0, len(dimensions))
+	for _, d := range dimensions {
+		dims = append(dims, map[string]string{"name": d})
+	}
+	body := app.H{
+		"dateRanges": []map[string]string{{"startDate": startDate, "endDate": endDate}},
+		"dimensions": dims,
+		"metrics": []map[string]string{
+			{"name": "sessions"},
+			{"name": "screenPageViews"},
+			{"name": "totalUsers"},
+			{"name": "activeUsers"},
+		},
+		"keepEmptyRows": true,
+	}
+	raw, _ := json.Marshal(body)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(raw))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := (&http.Client{Timeout: 20 * time.Second}).Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+	b, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return nil, fmt.Errorf("ga api failed: %d %s", resp.StatusCode, string(b))
+	}
+	var payload app.H
+	if err := json.Unmarshal(b, &payload); err != nil {
+		return nil, err
+	}
+	return payload, nil
+}
+
+func parseGARows(payload app.H, layout, outLayout string, loc *time.Location, useUTC bool) []statmodels.GA {
+	rowsRaw, _ := payload["rows"].([]any)
+	rows := make([]statmodels.GA, 0, len(rowsRaw))
+	for _, item := range rowsRaw {
+		m, ok := item.(app.H)
+		if !ok {
+			continue
+		}
+		dimValues, _ := m["dimensionValues"].([]any)
+		metricValues, _ := m["metricValues"].([]any)
+		if len(dimValues) < 1 || len(metricValues) < 4 {
+			continue
+		}
+
+		timeslotRaw := ""
+		for i, dv := range dimValues {
+			val, _ := valueFromH(dv, "value").(string)
+			if i > 0 {
+				timeslotRaw += " "
+			}
+			timeslotRaw += val
+		}
+
+		t, err := time.ParseInLocation(layout, timeslotRaw, loc)
+		if err != nil {
+			continue
+		}
+
+		timeslot := t.Format(outLayout)
+		if useUTC {
+			timeslot = t.UTC().Format(outLayout)
+		}
+
+		rows = append(rows, statmodels.GA{
+			Timeslot:        timeslot,
+			Sessions:        asInt(valueFromH(metricValues[0], "value")),
+			ScreenPageViews: asInt(valueFromH(metricValues[1], "value")),
+			ActiveUsers:     asInt(valueFromH(metricValues[3], "value")),
+		})
+	}
+	return rows
+}
+
+func valueFromH(v any, key string) any {
+	m, ok := v.(app.H)
+	if !ok {
+		return nil
+	}
+	return m[key]
+}
+
+func asInt(v any) int {
+	switch x := v.(type) {
+	case float64:
+		return int(x)
+	case int:
+		return x
+	case string:
+		var n int
+		_, _ = fmt.Sscanf(x, "%d", &n)
+		return n
+	default:
+		return 0
+	}
+}

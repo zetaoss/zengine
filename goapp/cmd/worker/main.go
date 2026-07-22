@@ -1,10 +1,10 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 
 	"github.com/zetaoss/zengine/goapp/app/config"
@@ -25,17 +25,18 @@ func main() {
 		slog.Error("failed to create worker", "err", err)
 		os.Exit(1)
 	}
-
-	slog.Info("starting worker", "jobs", strings.Join(wkr.JobNames(), ", "))
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-
-	go func() {
-		<-sigChan
-		slog.Info("stopping worker")
-		wkr.Stop()
-	}()
-
-	wkr.Run()
+	slog.Info("starting worker")
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+	runErr := wkr.Run(ctx)
+	closeErr := wkr.Close()
+	if runErr != nil {
+		slog.Error("worker stopped with error", "err", runErr)
+		os.Exit(1)
+	}
+	if closeErr != nil {
+		slog.Error("worker close error", "err", closeErr)
+		os.Exit(1)
+	}
 	slog.Info("worker stopped")
 }

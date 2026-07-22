@@ -1,23 +1,23 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
-	"sort"
 	"strings"
 	"time"
 
 	"github.com/zetaoss/zengine/goapp/cmd/util/tablewriter"
-	"github.com/zetaoss/zengine/goapp/worker"
-	"github.com/zetaoss/zengine/goapp/worker/queue"
 	"github.com/zetaoss/zengine/goapp/worker/registry"
+
+	"github.com/hibiken/asynq"
 )
 
 const defaultLimit = 200
 
-func runJobs(wkr *worker.Worker, args []string) error {
-	fs := flag.NewFlagSet("jobs", flag.ContinueOnError)
+func runTasks(reg *registry.Registry, inspector *asynq.Inspector, args []string) error {
+	fs := flag.NewFlagSet("tasks", flag.ContinueOnError)
 	fs.SetOutput(os.Stdout)
 	watch := fs.Bool("watch", false, "watch and refresh")
 	watchShort := fs.Bool("w", false, "watch and refresh")
@@ -26,32 +26,24 @@ func runJobs(wkr *worker.Worker, args []string) error {
 	}
 
 	show := func() error {
-		isWatch := *watch || *watchShort
-		if isWatch {
-			// Watch-style redraw: move cursor to home and clear to end of screen.
-			// This keeps the view anchored at the top while avoiding full scrollback churn.
+		if *watch || *watchShort {
 			fmt.Print("\033[H\033[J")
 			_, _ = fmt.Printf("%s\n\n", time.Now().Format(time.RFC3339))
 		}
-		if err := printSpecs(wkr); err != nil {
+		if err := printSpecs(reg); err != nil {
 			return err
 		}
 		fmt.Println()
-		if err := printRunning(wkr); err != nil {
-			return err
-		}
-		return nil
+		return printActive(registry.ConsumeQueues(reg.AllSpecs()), inspector)
 	}
-
 	if err := show(); err != nil {
 		return err
 	}
-
 	if !*watch && !*watchShort {
 		return nil
 	}
 
-	ticker := time.NewTicker(1 * time.Second)
+	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 	for range ticker.C {
 		if err := show(); err != nil {
@@ -61,106 +53,98 @@ func runJobs(wkr *worker.Worker, args []string) error {
 	return nil
 }
 
-func printSpecs(wkr *worker.Worker) error {
-	specs := wkr.Specs()
-	_, _ = fmt.Printf("jobs(%d):\n", len(specs))
-	tw := tablewriter.New(os.Stdout, "job", "timeout", "retries", "queue", "schedule")
+func printSpecs(reg *registry.Registry) error {
+	specs := reg.AllSpecs()
+	_, _ = fmt.Printf("tasks(%d):\n", len(specs))
+	tw := tablewriter.New(os.Stdout, "task", "timeout", "retries", "queue", "schedule")
 	if err := tw.Header(); err != nil {
 		return err
 	}
 	for _, spec := range specs {
 		timeout := spec.Timeout
-		if timeout == 0 {
-			timeout = spec.Job.Timeout()
-		}
 		queueName := spec.Queue
 		if queueName == "" {
 			queueName = "default"
 		}
-		scheduleName := "-"
-		if spec.Schedule != nil {
-			scheduleName = spec.Schedule.Name()
+		schedule := spec.Cron
+		if schedule == "" {
+			schedule = "-"
 		}
-		if err := tw.Row(spec.Job.Name(), formatDuration(timeout), spec.MaxRetries, queueName, scheduleName); err != nil {
+		if err := tw.Row(spec.Type, formatDuration(timeout), spec.MaxRetries, queueName, schedule); err != nil {
 			return err
 		}
 	}
 	return tw.Flush()
 }
 
-func printRunning(wkr *worker.Worker) error {
-	rows, err := wkr.RunningJobs(defaultLimit)
-	if err != nil {
-		return err
+func printActive(queues []string, inspector *asynq.Inspector) error {
+	type displayTask struct {
+		id, name, state, queue, attempt, due, payload string
 	}
-	queues := collectQueues(wkr.Specs())
-	pendingByQueue := make(map[string][]queue.PendingJob, len(queues))
-	totalPending := 0
+	rows := make([]displayTask, 0)
 	for _, queueName := range queues {
-		pendingRows, err := wkr.PendingJobs(queueName, defaultLimit)
-		if err != nil {
-			return err
+		lists := []struct {
+			state string
+			load  func() ([]*asynq.TaskInfo, error)
+		}{
+			{"active", func() ([]*asynq.TaskInfo, error) {
+				return inspector.ListActiveTasks(queueName, asynq.PageSize(defaultLimit))
+			}},
+			{"pending", func() ([]*asynq.TaskInfo, error) {
+				return inspector.ListPendingTasks(queueName, asynq.PageSize(defaultLimit))
+			}},
+			{"scheduled", func() ([]*asynq.TaskInfo, error) {
+				return inspector.ListScheduledTasks(queueName, asynq.PageSize(defaultLimit))
+			}},
+			{"retry", func() ([]*asynq.TaskInfo, error) {
+				return inspector.ListRetryTasks(queueName, asynq.PageSize(defaultLimit))
+			}},
 		}
-		pendingByQueue[queueName] = pendingRows
-		totalPending += len(pendingRows)
-	}
-	_, _ = fmt.Printf("active jobs(%d):\n", len(rows)+totalPending)
-	if len(rows) == 0 && totalPending == 0 {
-		_, _ = fmt.Println("No active jobs found.")
-		return nil
+		for _, list := range lists {
+			tasks, err := list.load()
+			if errors.Is(err, asynq.ErrQueueNotFound) {
+				continue
+			}
+			if err != nil {
+				return err
+			}
+			for _, task := range tasks {
+				due := "-"
+				if !task.NextProcessAt.IsZero() {
+					due = formatDue(task.NextProcessAt)
+				}
+				rows = append(rows, displayTask{
+					id: task.ID, name: task.Type, state: list.state, queue: queueName,
+					attempt: fmt.Sprintf("%d/%d", task.Retried+1, task.MaxRetry+1),
+					due:     due, payload: compactPayload(task.Payload),
+				})
+			}
+		}
 	}
 
-	tw := tablewriter.New(os.Stdout, "id", "job", "status", "queue", "attempt", "age", "payload")
+	_, _ = fmt.Printf("active tasks(%d):\n", len(rows))
+	if len(rows) == 0 {
+		_, _ = fmt.Println("No active tasks found.")
+		return nil
+	}
+	tw := tablewriter.New(os.Stdout, "id", "task", "status", "queue", "attempt", "due", "payload")
 	if err := tw.Header(); err != nil {
 		return err
 	}
 	for _, row := range rows {
-		age := "-"
-		if row.LockedAt != nil {
-			age = time.Since(*row.LockedAt).Truncate(time.Second).String()
-		}
-		payload := compactPayload(row.Payload)
-		if err := tw.Row(row.ID, row.JobName, "Running", row.Queue, row.Attempt, age, payload); err != nil {
+		if err := tw.Row(row.id, row.name, row.state, row.queue, row.attempt, row.due, row.payload); err != nil {
 			return err
-		}
-	}
-
-	for _, queueName := range queues {
-		pendingRows := pendingByQueue[queueName]
-		for _, row := range pendingRows {
-			age := "-"
-			if row.RunAt != nil {
-				wait := time.Until(*row.RunAt).Truncate(time.Second)
-				if wait <= 0 {
-					age = "0s"
-				} else {
-					age = wait.String()
-				}
-			}
-			payload := compactPayload(row.Payload)
-			if err := tw.Row(row.ID, row.JobName, "Pending", row.Queue, row.Attempt, age, payload); err != nil {
-				return err
-			}
 		}
 	}
 	return tw.Flush()
 }
 
-func collectQueues(specs []registry.Spec) []string {
-	seen := map[string]struct{}{"default": {}}
-	for _, spec := range specs {
-		q := spec.Queue
-		if q == "" {
-			q = "default"
-		}
-		seen[q] = struct{}{}
+func formatDue(t time.Time) string {
+	d := time.Until(t).Truncate(time.Second)
+	if d <= 0 {
+		return "0s"
 	}
-	out := make([]string, 0, len(seen))
-	for q := range seen {
-		out = append(out, q)
-	}
-	sort.Strings(out)
-	return out
+	return d.String()
 }
 
 func formatDuration(d time.Duration) string {
@@ -177,11 +161,10 @@ func formatDuration(d time.Duration) string {
 }
 
 func compactPayload(payload []byte) string {
-	if len(payload) == 0 {
+	if len(payload) == 0 || string(payload) == "null" {
 		return "-"
 	}
-	s := strings.ReplaceAll(string(payload), "\n", " ")
-	s = strings.TrimSpace(s)
+	s := strings.TrimSpace(strings.ReplaceAll(string(payload), "\n", " "))
 	const maxLen = 80
 	if len(s) <= maxLen {
 		return s

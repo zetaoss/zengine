@@ -2,21 +2,23 @@ package appctx
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
+	"github.com/hibiken/asynq"
 	"github.com/zetaoss/zengine/goapp/app/config"
 	"github.com/zetaoss/zengine/goapp/app/database"
-	"github.com/zetaoss/zengine/goapp/app/job"
+	"github.com/zetaoss/zengine/goapp/app/taskctx"
 
 	"gorm.io/gorm"
 )
 
 type AppContext struct {
-	Cfg         *config.Config
-	JobEnqueuer job.Enqueuer
-	db          *gorm.DB
-	dbOnce      sync.Once
-	dbErr       error
+	Cfg          *config.Config
+	TaskEnqueuer taskctx.Enqueuer
+	db           *gorm.DB
+	dbOnce       sync.Once
+	dbErr        error
 }
 
 func NewAppContext(cfg *config.Config) (*AppContext, error) {
@@ -29,11 +31,11 @@ func (c *AppContext) Config() *config.Config {
 	return c.Cfg
 }
 
-func (c *AppContext) Enqueue(ctx context.Context, req job.Request) (uint64, error) {
-	if c.JobEnqueuer == nil {
-		return 0, nil
+func (c *AppContext) EnqueueTask(ctx context.Context, task *asynq.Task, opts ...asynq.Option) (*asynq.TaskInfo, error) {
+	if c.TaskEnqueuer == nil {
+		return nil, fmt.Errorf("task enqueuer is not configured")
 	}
-	return c.JobEnqueuer.Enqueue(ctx, req)
+	return c.TaskEnqueuer.EnqueueContext(ctx, task, opts...)
 }
 
 func (c *AppContext) GetDB() (*gorm.DB, error) {

@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/zetaoss/zengine/goapp/app"
-	"github.com/zetaoss/zengine/goapp/jobs/commonreportjob"
+	"github.com/zetaoss/zengine/goapp/tasks/commonreport"
 	"github.com/zetaoss/zengine/goapp/models"
 	"github.com/zetaoss/zengine/goapp/server/paginator"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
@@ -87,7 +87,7 @@ func Store(c *serverctx.Context) {
 		c.InternalError()
 		return
 	}
-	if _, err := commonreportjob.Enqueue(context.Background(), c.AppContext, report.ID); err != nil {
+	if _, err := commonreport.Enqueue(context.Background(), c.AppContext, report.ID); err != nil {
 		slog.Error("common-report enqueue failed", "report_id", report.ID, "err", err)
 	}
 	c.JSON(report)
@@ -128,7 +128,7 @@ func Clone(c *serverctx.Context) {
 		c.InternalError()
 		return
 	}
-	if _, err := commonreportjob.Enqueue(context.Background(), c.AppContext, report.ID); err != nil {
+	if _, err := commonreport.Enqueue(context.Background(), c.AppContext, report.ID); err != nil {
 		slog.Error("common-report enqueue failed", "report_id", report.ID, "err", err)
 	}
 	c.JSON(report)
@@ -144,7 +144,7 @@ func Rerun(c *serverctx.Context) {
 		c.InternalError()
 		return
 	}
-	if _, err := commonreportjob.Enqueue(context.Background(), c.AppContext, id); err != nil {
+	if _, err := commonreport.Enqueue(context.Background(), c.AppContext, id); err != nil {
 		slog.Error("common-report enqueue failed", "report_id", id, "err", err)
 	}
 	c.JSON(map[string]bool{"ok": true})

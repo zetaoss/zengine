@@ -9,27 +9,39 @@ import (
 
 	"github.com/zetaoss/zengine/goapp/app/config"
 
+	"github.com/hibiken/asynq"
 	goredis "github.com/redis/go-redis/v9"
 )
 
-func Open(cfg *config.Config) (*goredis.Client, error) {
+func Address(cfg *config.Config) string {
 	addr := "127.0.0.1:6379"
-	if cfg != nil {
-		if cfg.Redis.Host != "" {
-			host := strings.TrimSpace(cfg.Redis.Host)
-			port := cfg.Redis.Port
-			if port <= 0 {
-				port = 6379
-			}
-			if host != "" {
-				if strings.HasPrefix(host, "redis://") || strings.HasPrefix(host, "rediss://") || strings.Contains(host, ":") {
-					addr = host
-				} else {
-					addr = net.JoinHostPort(host, fmt.Sprintf("%d", port))
-				}
-			}
-		}
+	if cfg == nil || cfg.Redis.Host == "" {
+		return addr
 	}
+	host := strings.TrimSpace(cfg.Redis.Host)
+	port := cfg.Redis.Port
+	if port <= 0 {
+		port = 6379
+	}
+	if host == "" {
+		return addr
+	}
+	if strings.HasPrefix(host, "redis://") || strings.HasPrefix(host, "rediss://") || strings.Contains(host, ":") {
+		return host
+	}
+	return net.JoinHostPort(host, fmt.Sprintf("%d", port))
+}
+
+func AsynqConnOpt(cfg *config.Config) (asynq.RedisConnOpt, error) {
+	addr := Address(cfg)
+	if strings.HasPrefix(addr, "redis://") || strings.HasPrefix(addr, "rediss://") {
+		return asynq.ParseRedisURI(addr)
+	}
+	return asynq.RedisClientOpt{Addr: addr}, nil
+}
+
+func Open(cfg *config.Config) (*goredis.Client, error) {
+	addr := Address(cfg)
 
 	var opts *goredis.Options
 	var err error

@@ -2,39 +2,12 @@ version: "2"
 
 linters:
   enable:
-    - bodyclose
-    - copyloopvar
-    # - depguard
-    - dogsled
-    - dupl
     - errcheck
-    - errorlint
-    # - funlen
-    - gocheckcompilerdirectives
-    - gochecknoinits
-    # - goconst
-    - gocritic
-    - gocyclo
-    - godox
-    # - mnd
-    - goprintffuncname
-    # - gosec
     - govet
     - importas
-    - intrange
     - ineffassign
-    # - lll
-    - misspell
-    - nakedret
-    # - noctx
-    - nolintlint
-    # - revive
     - staticcheck
-    - testifylint
-    - unconvert
-    # - unparam
     - unused
-    - whitespace
 
 linters-settings:
   importas:

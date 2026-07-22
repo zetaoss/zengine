@@ -8,22 +8,20 @@ import (
 
 	"github.com/zetaoss/zengine/goapp/app/appctx"
 	"github.com/zetaoss/zengine/goapp/app/config"
-	"github.com/zetaoss/zengine/goapp/app/job"
 	appredis "github.com/zetaoss/zengine/goapp/app/redis"
-	"github.com/zetaoss/zengine/goapp/worker/queue"
 	"github.com/zetaoss/zengine/goapp/worker/registry"
-	"github.com/zetaoss/zengine/goapp/worker/scheduler"
+
+	"github.com/hibiken/asynq"
 )
 
+const shutdownTimeout = 30 * time.Second
+
 type Worker struct {
-	appCtx    *appctx.AppContext
-	ctx       context.Context
-	cancel    context.CancelFunc
-	registry  *registry.Registry
-	queue     *queue.RedisQueue
-	scheduler *scheduler.Scheduler
-	specs     []registry.Spec
-	queues    []string
+	appCtx   *appctx.AppContext
+	client   *asynq.Client
+	registry *registry.Registry
+	server   *asynq.Server
+	mux      *asynq.ServeMux
 }
 
 func New(cfg *config.Config) (*Worker, error) {
@@ -31,140 +29,53 @@ func New(cfg *config.Config) (*Worker, error) {
 	if err != nil {
 		return nil, err
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-
-	redisClient, err := appredis.Open(cfg)
+	conn, err := appredis.AsynqConnOpt(cfg)
 	if err != nil {
-		cancel()
-		return nil, err
+		return nil, fmt.Errorf("configure asynq redis: %w", err)
 	}
 	reg := registry.New()
-	specs := reg.AllSpecs()
-	q := queue.New(redisClient)
-	appCtx.JobEnqueuer = q
-	s := scheduler.New(ctx, q, specs)
-	queues := registry.ConsumeQueues(specs)
+	client := asynq.NewClient(conn)
+	appCtx.TaskEnqueuer = client
 
-	return &Worker{
-		appCtx:    appCtx,
-		ctx:       ctx,
-		cancel:    cancel,
-		registry:  reg,
-		queue:     q,
-		scheduler: s,
-		specs:     specs,
-		queues:    queues,
-	}, nil
-}
-
-func (w *Worker) Run() {
-	go w.scheduler.Run()
-	for _, queue := range w.queues {
-		go w.consumeQueueLoop(queue)
+	w := &Worker{appCtx: appCtx, client: client, registry: reg, mux: asynq.NewServeMux()}
+	w.registerHandlers()
+	queues := make(map[string]int)
+	for _, queueName := range registry.ConsumeQueues(reg.AllSpecs()) {
+		queues[queueName] = 1
 	}
-	<-w.ctx.Done()
+	w.server = asynq.NewServer(conn, asynq.Config{
+		Concurrency:     1,
+		Queues:          queues,
+		ShutdownTimeout: shutdownTimeout,
+		ErrorHandler: asynq.ErrorHandlerFunc(func(ctx context.Context, task *asynq.Task, err error) {
+			retried, _ := asynq.GetRetryCount(ctx)
+			maxRetry, _ := asynq.GetMaxRetry(ctx)
+			slog.Error("task failed", "task", task.Type(), "retry", retried, "max_retry", maxRetry, "err", err)
+		}),
+	})
+	return w, nil
 }
 
-func (w *Worker) consumeQueueLoop(queue string) {
-	for {
-		select {
-		case <-w.ctx.Done():
-			return
-		default:
-		}
-
-		row, err := w.queue.ClaimPending(queue)
-		if err != nil {
-			slog.Error("worker queue claim error", "queue", queue, "err", err)
-			time.Sleep(2 * time.Second)
-			continue
-		}
-		if row == nil {
-			time.Sleep(1 * time.Second)
-			continue
-		}
-
-		_, runErr := w.executeJob(w.ctx, row.JobName, row.Payload)
-		if runErr == nil {
-			if err := w.queue.MarkSucceeded(row.ID); err != nil {
-				slog.Error("worker queue mark success failed", "id", row.ID, "err", err)
-			}
-			continue
-		}
-		if err := w.queue.MarkRetryOrFailed(row, runErr); err != nil {
-			slog.Error("worker queue mark retry/failed error", "id", row.ID, "err", err)
-		}
+func (w *Worker) registerHandlers() {
+	for _, spec := range w.registry.AllSpecs() {
+		name := spec.Type
+		w.mux.HandleFunc(name, func(ctx context.Context, task *asynq.Task) error {
+			return w.registry.Process(ctx, w.appCtx, task)
+		})
 	}
 }
 
-func (w *Worker) RunJob(name string) error {
-	_, err := w.RunJobWithResult(name, nil)
-	return err
-}
-
-func (w *Worker) RunJobWithInput(name string, input []byte) error {
-	_, err := w.RunJobWithResult(name, input)
-	return err
-}
-
-func (w *Worker) RunJobWithResult(name string, input []byte) ([]byte, error) {
-	runID, err := w.queue.StartDirectRun(name)
-	if err != nil {
-		return nil, err
+func (w *Worker) Run(ctx context.Context) error {
+	if err := w.server.Start(w.mux); err != nil {
+		return fmt.Errorf("start asynq server: %w", err)
 	}
-	output, err := w.executeJob(w.ctx, name, input)
-	if err != nil {
-		_ = w.queue.MarkFailed(runID, err)
-		return nil, err
-	}
-	_ = w.queue.MarkSucceeded(runID)
-	return output, nil
+	<-ctx.Done()
+	w.Shutdown()
+	return nil
 }
 
-func (w *Worker) JobNames() []string {
-	return w.registry.Names()
+func (w *Worker) Shutdown() {
+	w.server.Shutdown()
 }
 
-func (w *Worker) Executors() []job.Job {
-	return w.registry.Jobs()
-}
-
-func (w *Worker) Specs() []registry.Spec {
-	return w.specs
-}
-
-func (w *Worker) RunningJobs(limit int) ([]queue.RunningJob, error) {
-	return w.queue.ListRunning(limit)
-}
-
-func (w *Worker) PendingJobs(queue string, limit int) ([]queue.PendingJob, error) {
-	return w.queue.ListPending(queue, limit)
-}
-
-func (w *Worker) Stop() {
-	w.cancel()
-}
-
-func (w *Worker) FlushRunning(reason string) (int64, error) {
-	return w.queue.FlushRunning(reason)
-}
-
-func (w *Worker) FlushPending(reason string) (int64, error) {
-	return w.queue.FlushPending(reason)
-}
-
-func (w *Worker) Done() <-chan struct{} {
-	return w.ctx.Done()
-}
-
-func (w *Worker) executeJob(ctx context.Context, name string, rawInput []byte) ([]byte, error) {
-	jobItem, ok := w.registry.Find(name)
-	if !ok {
-		return nil, fmt.Errorf("unknown job: %s", name)
-	}
-	input, err := jobItem.Decode(rawInput)
-	if err != nil {
-		return nil, err
-	}
-	return w.registry.Run(ctx, w.appCtx, job.Request{JobName: name, Input: input})
-}
+func (w *Worker) Close() error { return w.client.Close() }

@@ -105,16 +105,17 @@ This guide helps coding agents quickly understand the monorepo and choose where 
 
 ## Subsystem Docs
 
-- Go backend details (including AIEdit and write-request specifics): `goapp/AGENTS.md`
+- GoApp development and task execution guide: `docs/goapp.md`
 
 ## Dev Process Notes
 
-- Go server/worker in this environment are supervised by `supervisor` and run through `air`.
+- Go server, worker, and scheduler in this environment are supervised by `supervisor` and run through `air` when their programs are configured.
 - Canonical Air configs are in `goapp/` root:
   - `.air.server.toml`
   - `.air.worker.toml`
-- Avoid ad-hoc Air configs in `cmd/server` or `cmd/worker` for routine development; they can cause partial watch coverage and stale binaries.
+  - `.air.scheduler.toml`
+- Avoid ad-hoc Air configs in `cmd/server`, `cmd/worker`, or `cmd/scheduler` for routine development; they can cause partial watch coverage and stale binaries.
 - If backend code edits appear unapplied, verify:
-  1. `supervisor` program commands point to `/app/goapp/.air.server.toml` and `/app/goapp/.air.worker.toml`.
+  1. `supervisor` program commands point to the canonical `.air.server.toml`, `.air.worker.toml`, and `.air.scheduler.toml` configs for the processes being run.
   2. `directory` is `/app/goapp`.
-  3. `/app/tmp/goserver.log` shows `watching server/...` and a fresh `building...` after file edits.
+  3. The corresponding `/app/tmp/go*.log` shows the expected watch paths and a fresh `building...` after file edits.
