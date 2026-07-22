@@ -9,12 +9,18 @@ w
 .env.backup
 .env.production
 
+goapp/adm
 goapp/ctl
+goapp/main
 goapp/bin/
+goapp/cmd/adm/adm
+goapp/cmd/ctl/ctl
 goapp/server/server
 goapp/worker/worker
+goapp/scheduler/scheduler
 goapp/cmd/server/server
 goapp/cmd/server/goserver
 goapp/cmd/worker/worker
 goapp/cmd/worker/goworker
-goapp/cmd/ctl/ctl
+goapp/cmd/scheduler/scheduler
+goapp/cmd/scheduler/goscheduler
