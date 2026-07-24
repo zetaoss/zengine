@@ -219,7 +219,7 @@
                 <input
                   type="text"
                   bind:value={currentRow.title}
-                  class="z-input text-lg font-semibold {hasError ? 'border-a-red-500! focus:ring-a-red-500/20!' : ''}"
+                  class="border-border rounded p-1 bg-background text-lg font-semibold {hasError ? 'border-a-red-500! focus:ring-a-red-500/20!' : ''}"
                   placeholder="프롬프트 제목"
                 />
               {/snippet}
@@ -272,7 +272,7 @@
       {#if isEditing}
         <textarea
           bind:value={row.content}
-          class="z-input min-h-[500px] w-full font-mono text-sm leading-relaxed"
+          class="border-border rounded p-1 bg-background min-h-[500px] w-full font-mono text-sm leading-relaxed"
           placeholder={'프롬프트 내용을 입력하세요. {제목}, {기존 문서 내용} 변수를 사용할 수 있습니다.'}
         ></textarea>
       {:else}

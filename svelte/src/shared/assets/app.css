@@ -7,7 +7,6 @@
 @import './appcolor-mw.css';
 @import './appcolor-a.css';
 
-@import './base-border.css';
 @import './base-elements.css';
 
 @import './navbar.css';
@@ -16,3 +15,7 @@
 @import './z-select.css';
 @import './z-utils.css';
 @import './z-table.css';
+
+:root {
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+}

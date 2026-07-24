@@ -35,7 +35,23 @@
     queueMicrotask(adjustHeight)
   }
 
-  onMount(adjustHeight)
+  onMount(() => {
+    adjustHeight()
+
+    if (!textareaEl || typeof ResizeObserver === 'undefined') return
+
+    let lastWidth = textareaEl.getBoundingClientRect().width
+    const resizeObserver = new ResizeObserver(([entry]) => {
+      const width = entry?.contentRect.width ?? 0
+      if (width <= 0 || width === lastWidth) return
+
+      lastWidth = width
+      adjustHeight()
+    })
+    resizeObserver.observe(textareaEl)
+
+    return () => resizeObserver.disconnect()
+  })
   $: scheduleAdjust({ modelValue, maxHeight })
 </script>
 

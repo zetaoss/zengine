@@ -375,6 +375,6 @@
 >
   <label class="flex flex-col gap-2 text-sm text-a-slate-700">
     <span class="font-semibold">프롬프트 제목</span>
-    <input class="z-input" bind:value={saveAsTitle} placeholder="새 프롬프트 제목" />
+    <input class="border-border rounded p-1 bg-background" bind:value={saveAsTitle} placeholder="새 프롬프트 제목" />
   </label>
 </ZModal>
