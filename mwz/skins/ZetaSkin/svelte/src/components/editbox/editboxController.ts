@@ -264,7 +264,7 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
     }
 
     toggleAiEdit = (visible: boolean) => {
-      if (!ensureAiEditPanel()) return
+      if (visible && !ensureAiEditPanel()) return
       applyAiEditVisible(visible)
     }
       ; (window as typeof window & { __aiEditDebug?: Record<string, unknown> }).__aiEditDebug = {
