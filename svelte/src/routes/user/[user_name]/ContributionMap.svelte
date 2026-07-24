@@ -40,6 +40,11 @@
     return `'${y}.${m}`
   }
 
+  function normalizeStatsDateKey(key: string): string | null {
+    const match = key.match(/^(\d{4}-\d{2}-\d{2})(?:T.*)?$/)
+    return match?.[1] ?? null
+  }
+
   function addDays(base: Date, delta: number): Date {
     return toDateOnly(new Date(base.getTime() + delta * MS_PER_DAY))
   }
@@ -55,7 +60,10 @@
     const src = stats || {}
 
     for (const [k, v] of Object.entries(src)) {
-      map[k] = Number(v) || 0
+      const dateKey = normalizeStatsDateKey(k)
+      if (!dateKey) continue
+
+      map[dateKey] = (map[dateKey] ?? 0) + (Number(v) || 0)
     }
 
     return map
