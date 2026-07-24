@@ -37,6 +37,7 @@
   let aiEditVisible = false
   let loadSelectItems: LoadSelectItem[]
   const isSysop = (getRLCONF()?.wgUserGroups || []).includes('sysop')
+  const aiEditVisibleStorageKey = 'ai-edit-visible'
 
   $: loadSelectItems = [
     ...titles.map((title) => ({ group: 'Templates', label: toBoilerplateLabel(title), value: `template:${title}` })),
@@ -92,6 +93,15 @@
   onMount(() => {
     originalContent = getWikiEditorContent()
     void fetchRevisions()
+
+    if (isSysop) {
+      try {
+        aiEditVisible = window.localStorage.getItem(aiEditVisibleStorageKey) === 'true'
+      } catch {
+        // Keep AI edit hidden when storage is unavailable.
+      }
+      onToggleAiEdit(aiEditVisible)
+    }
   })
 
   async function handleSelectChange(nextValue: string) {
@@ -157,6 +167,11 @@
 
   function handleAiEditToggle(event: { checked: boolean }) {
     aiEditVisible = event.checked
+    try {
+      window.localStorage.setItem(aiEditVisibleStorageKey, String(aiEditVisible))
+    } catch {
+      // Continue with the in-memory setting when storage is unavailable.
+    }
     onToggleAiEdit(aiEditVisible)
   }
 

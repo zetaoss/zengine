@@ -79,18 +79,22 @@
 }
 
 @layer base {
+
   *,
   ::after,
   ::before {
     border-color: var(--color-border);
   }
+
   html {
     @apply overscroll-y-none;
   }
+
   body {
     font-synthesis-weight: none;
     text-rendering: optimizeLegibility;
   }
+
   .cn-font-heading {
     @apply font-heading;
   }

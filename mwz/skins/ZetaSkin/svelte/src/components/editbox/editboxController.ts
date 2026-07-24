@@ -242,7 +242,7 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
   }
 
   function injectAiEdit() {
-    ;(window as typeof window & { __aiEditDebug?: Record<string, unknown> }).__aiEditDebug = {
+    ; (window as typeof window & { __aiEditDebug?: Record<string, unknown> }).__aiEditDebug = {
       stage: 'inject:start',
       action: getRLCONF().wgAction,
       hasWpSave: !!document.querySelector('#wpSave'),
@@ -254,26 +254,26 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
     const saveButton = findSaveButton()
     if (!saveButton) {
       toggleAiEdit = null
-      ;(window as typeof window & { __aiEditDebug?: Record<string, unknown> }).__aiEditDebug = {
-        stage: 'inject:no-save-button',
-        action: getRLCONF().wgAction,
-        hasWpSave: false,
-        url: window.location.href,
-      }
+        ; (window as typeof window & { __aiEditDebug?: Record<string, unknown> }).__aiEditDebug = {
+          stage: 'inject:no-save-button',
+          action: getRLCONF().wgAction,
+          hasWpSave: false,
+          url: window.location.href,
+        }
       return false
     }
 
     toggleAiEdit = (visible: boolean) => {
-      if (!ensureAiEditPanel()) return
+      if (visible && !ensureAiEditPanel()) return
       applyAiEditVisible(visible)
     }
-    ;(window as typeof window & { __aiEditDebug?: Record<string, unknown> }).__aiEditDebug = {
-      stage: 'inject:done',
-      action: getRLCONF().wgAction,
-      hasWpSave: true,
-      buttonId: 'zeta-ai-edit-button',
-      url: window.location.href,
-    }
+      ; (window as typeof window & { __aiEditDebug?: Record<string, unknown> }).__aiEditDebug = {
+        stage: 'inject:done',
+        action: getRLCONF().wgAction,
+        hasWpSave: true,
+        buttonId: 'zeta-ai-edit-button',
+        url: window.location.href,
+      }
     return true
   }
 
