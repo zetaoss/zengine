@@ -3,7 +3,6 @@ import js from '@eslint/js'
 import betterTailwindcss from 'eslint-plugin-better-tailwindcss'
 import { getDefaultSelectors } from 'eslint-plugin-better-tailwindcss/api/defaults'
 import { MatcherType, SelectorKind } from 'eslint-plugin-better-tailwindcss/api/types'
-import simpleImportSort from 'eslint-plugin-simple-import-sort'
 import svelte from 'eslint-plugin-svelte'
 import globals from 'globals'
 import ts from 'typescript-eslint'
@@ -44,16 +43,6 @@ export default ts.config(
     rules: {
       'svelte/block-lang': ['error', { script: 'ts', style: [null, 'postcss'] }],
       '@typescript-eslint/no-deprecated': 'error',
-    },
-  },
-  {
-    name: 'app/import-sorting',
-    plugins: {
-      'simple-import-sort': simpleImportSort,
-    },
-    rules: {
-      'simple-import-sort/imports': 'error',
-      'simple-import-sort/exports': 'error',
     },
   },
   {
