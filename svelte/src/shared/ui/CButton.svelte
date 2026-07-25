@@ -91,6 +91,7 @@ import { cn } from "./utils"
 
   let isCooling = $state(false)
   let cooldownTimeout: ReturnType<typeof setTimeout> | undefined = undefined
+  let cooldownStartTimeout: ReturnType<typeof setTimeout> | undefined = undefined
 
   let isDisabled = $derived(disabled || isCooling)
   let isLink = $derived(href !== undefined)
@@ -107,10 +108,16 @@ import { cn } from "./utils"
 
     // Keep native navigation intact for anchor buttons.
     if (!isLink && cooldown > 0) {
-      isCooling = true
       if (cooldownTimeout !== undefined) {
         clearTimeout(cooldownTimeout)
       }
+      if (cooldownStartTimeout !== undefined) {
+        clearTimeout(cooldownStartTimeout)
+      }
+      cooldownStartTimeout = setTimeout(() => {
+        isCooling = true
+        cooldownStartTimeout = undefined
+      }, 0)
       cooldownTimeout = setTimeout(() => {
         isCooling = false
         cooldownTimeout = undefined
@@ -119,6 +126,9 @@ import { cn } from "./utils"
   }
 
   onDestroy(() => {
+    if (cooldownStartTimeout !== undefined) {
+      clearTimeout(cooldownStartTimeout)
+    }
     if (cooldownTimeout !== undefined) {
       clearTimeout(cooldownTimeout)
     }
