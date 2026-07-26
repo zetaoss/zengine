@@ -1,11 +1,27 @@
 @reference 'tailwindcss';
 
-#mw-content-text {
-  @apply text-base leading-7;
-}
-
 fieldset {
   @apply border my-4 p-4 pt-2;
+}
+
+.oo-ui-textInputWidget input {
+  @apply border rounded bg-background text-foreground;
+
+  &:disabled {
+    @apply opacity-60 cursor-not-allowed bg-muted/20;
+  }
+}
+
+.mw-input {
+
+  &>input,
+  &>select {
+    @apply border rounded p-1 px-2;
+  }
+}
+
+.mw-htmlform-submit {
+  @apply border rounded p-1 px-2 cursor-pointer;
 }
 
 #mw-content-text form {
@@ -13,21 +29,12 @@ fieldset {
     padding: 1px;
   }
 
-  input:not([type='submit']):not([type='file']):not([type='checkbox']):not([type='radio']),
-  select,
-  textarea {
-    @apply border rounded p-2 py-1 bg-background text-foreground;
-
-    &:disabled {
-      @apply opacity-60 cursor-not-allowed bg-muted/20;
-    }
-  }
 
   input[type='file'] {
     @apply border-0 cursor-pointer;
 
     &::file-selector-button {
-      @apply border rounded p-2 py-1 mx-2 cursor-pointer border-border bg-secondary text-secondary-foreground hover:bg-accent;
+      @apply border rounded p-1 px-2 mx-1 cursor-pointer border-border bg-secondary text-secondary-foreground hover:bg-accent;
     }
   }
 
