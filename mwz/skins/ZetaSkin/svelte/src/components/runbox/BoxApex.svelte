@@ -58,69 +58,67 @@
 </script>
 
 {#if jobValue}
-  <div>
-    <div class="bg-a-gray-50 border rounded-lg pt-0.5">
-      <svelte:component this={CurrentComponent} {job} {seq} {wrapped}>
-        <div class="sticky top-0 z-10 h-0">
-          <div class="flex justify-end items-center pr-0.5">
-            <CButton variant="ghost" size="sm" onclick={onCopy}>
-              {#if !copied}
-                <ZIcon path={mdiContentCopy} />
-                <span>Copy</span>
-              {:else}
-                <ZIcon path={mdiCheck} />
-                <span>Copied</span>
-              {/if}
-            </CButton>
-            <CMenu>
-              {#snippet trigger({ toggle })}
-                <CButton variant="ghost" size="sm" aria-label="Runbox menu" onclick={toggle}>
-                  <ZIcon path={mdiDotsVertical} />
-                </CButton>
-              {/snippet}
-              {#snippet menu({ close })}
+  <div class="bg-a-gray-50 border rounded-lg pt-0.5">
+    <svelte:component this={CurrentComponent} {job} {seq} {wrapped}>
+      <div class="sticky top-0 z-10 h-0">
+        <div class="flex justify-end items-center pr-0.5">
+          <CButton variant="ghost" size="sm" onclick={onCopy}>
+            {#if !copied}
+              <ZIcon path={mdiContentCopy} />
+              <span>Copy</span>
+            {:else}
+              <ZIcon path={mdiCheck} />
+              <span>Copied</span>
+            {/if}
+          </CButton>
+          <CMenu>
+            {#snippet trigger({ toggle })}
+              <CButton variant="ghost" size="sm" aria-label="Runbox menu" onclick={toggle}>
+                <ZIcon path={mdiDotsVertical} />
+              </CButton>
+            {/snippet}
+            {#snippet menu({ close })}
+              <CMenuItem
+                onclick={() => {
+                  wrapped = !wrapped
+                  close()
+                }}
+              >
+                <ZIcon size={14} path={wrapped ? mdiWrapDisabled : mdiWrap} />
+                <span>{wrapped ? 'Unwrap' : 'Wrap'}</span>
+              </CMenuItem>
+              {#if isSysop && (isMain || jobValue.type === 'notebook') && (jobValue.phase === 'pending' || jobValue.phase === 'failed' || jobValue.phase === 'succeeded')}
                 <CMenuItem
                   onclick={() => {
-                    wrapped = !wrapped
+                    void rerunJob(job)
                     close()
                   }}
                 >
-                  <ZIcon size={14} path={wrapped ? mdiWrapDisabled : mdiWrap} />
-                  <span>{wrapped ? 'Unwrap' : 'Wrap'}</span>
+                  <ZIcon size={14} path={mdiReplay} />
+                  <span>Rerun</span>
                 </CMenuItem>
-                {#if isSysop && (isMain || jobValue.type === 'notebook') && (jobValue.phase === 'pending' || jobValue.phase === 'failed' || jobValue.phase === 'succeeded')}
-                  <CMenuItem
-                    onclick={() => {
-                      void rerunJob(job)
-                      close()
-                    }}
-                  >
-                    <ZIcon size={14} path={mdiReplay} />
-                    <span>Rerun</span>
-                  </CMenuItem>
-                {/if}
-              {/snippet}
-            </CMenu>
-          </div>
+              {/if}
+            {/snippet}
+          </CMenu>
         </div>
+      </div>
 
-        <div class="text-xs text-muted-foreground select-none flex items-center gap-2">
-          <span class="pl-4">{box.lang}</span>
-          {#if jobValue.boxes.length > 1}
-            <span>
-              {#each jobValue.boxes as boxItem, i (i)}
-                <span title={boxItem.lang || ''} class={i !== seq ? 'opacity-30' : ''}>●</span>
-              {/each}
-            </span>
-          {/if}
-        </div>
+      <div class="text-xs text-muted-foreground select-none flex items-center gap-2">
+        <span class="pl-4">{box.lang}</span>
+        {#if jobValue.boxes.length > 1}
+          <span>
+            {#each jobValue.boxes as boxItem, i (i)}
+              <span title={boxItem.lang || ''} class={i !== seq ? 'opacity-30' : ''}>●</span>
+            {/each}
+          </span>
+        {/if}
+      </div>
 
-        <div class:code-wrapped={wrapped} class:code-unwrapped={!wrapped} class="px-4 py-3">
-          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-          {@html rendered}
-        </div>
-      </svelte:component>
-    </div>
+      <div class:code-wrapped={wrapped} class:code-unwrapped={!wrapped} class="px-4 py-3">
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+        {@html rendered}
+      </div>
+    </svelte:component>
   </div>
 {/if}
 

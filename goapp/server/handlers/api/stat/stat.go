@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/zetaoss/zengine/goapp/app"
-	"github.com/zetaoss/zengine/goapp/models/stat"
+	statmodels "github.com/zetaoss/zengine/goapp/models/stat"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
 
 	"gorm.io/gorm"
@@ -15,7 +15,7 @@ import (
 
 func parseDays(r *http.Request) (int, bool) {
 	days, err := strconv.Atoi(r.PathValue("days"))
-	if err != nil || (days != 15 && days != 90) {
+	if err != nil || (days != 15 && days != 120) {
 		return 0, false
 	}
 	return days, true

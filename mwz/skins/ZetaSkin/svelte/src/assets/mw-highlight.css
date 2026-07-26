@@ -2,3 +2,7 @@
 .mw-highlight {
   background: none;
 }
+
+.skin-theme-clientpref-night .mw-highlight {
+  background: none;
+}

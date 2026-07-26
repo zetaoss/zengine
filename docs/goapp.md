@@ -6,7 +6,7 @@
 
 | 역할 | 경로 |
 | --- | --- |
-| Process 및 CLI entrypoint | `goapp/cmd/{server,worker,scheduler,ctl,adm}` |
+| Process 및 CLI entrypoint | `goapp/cmd/{server,worker,scheduler,tool}` |
 | API route registry | `goapp/server/routes.go` |
 | API·인증 handler | `goapp/server/handlers/**` |
 | Router와 middleware | `goapp/server/router/**` |
@@ -38,7 +38,7 @@ go run ./cmd/scheduler
 - Scheduler를 둘 이상 실행하면 각 instance가 동일 cron task를 enqueue한다. 배포 replica는 반드시 1로 고정하고 worker deployment에 합치지 않는다.
 - Scheduler가 중단되어도 이미 enqueue된 task는 계속 처리되지만 중단 중 cron task는 생성되지 않는다.
 
-Dockerfile은 `server`, `worker`, `scheduler` 바이너리를 빌드해 image에 포함하기만 한다. 실제 process는 Kubernetes의 container `command`로 선택하며, scheduler deployment는 `/app/goapp/scheduler`를 정확히 1 replica로 실행한다.
+Dockerfile은 `server`, `worker`, `scheduler`, `tool` 바이너리를 빌드해 image에 포함한다. 실제 process는 Kubernetes의 container `command`로 선택하며, scheduler deployment는 `/app/goapp/scheduler`를 정확히 1 replica로 실행한다.
 
 ## 개발 Runtime
 
@@ -57,7 +57,7 @@ Dockerfile은 `server`, `worker`, `scheduler` 바이너리를 빌드해 image에
 Route는 다음 명령으로 확인한다.
 
 ```bash
-go run ./cmd/ctl routes
+go run ./cmd/tool routes
 ```
 
 ## HTTP Runtime
@@ -139,7 +139,7 @@ Asynq Scheduler -------------> asynq task ----^                |
 | Type, timeout, retry, queue, cron catalog | `goapp/worker/registry/registry.go` |
 | Worker lifecycle | `goapp/worker/worker.go` |
 | Scheduler lifecycle | `goapp/worker/scheduler/scheduler.go` |
-| 조회·직접 실행·flush CLI | `goapp/cmd/ctl/**` |
+| 조회·직접 실행·flush CLI | `goapp/cmd/tool/**` |
 
 Server와 worker는 `asynq.Client`와 `asynq.Server`를 직접 사용한다. 별도의 queue client wrapper, request/result adapter, task factory package는 없다. Registry는 task를 `ServeMux`에 연결하고 scheduler와 CLI가 공유하는 정적 spec을 관리한다.
 
@@ -157,7 +157,7 @@ func (t *ExampleTask) Execute(
 ) (app.H, error)
 ```
 
-Registry의 generic adapter가 Asynq JSON payload를 구체 payload type으로 decode한다. 잘못된 JSON은 `asynq.SkipRetry`로 archive한다. 실행 error, panic, timeout은 Asynq retry 정책을 따른다. 반환 `app.H`는 비동기 실행에서 저장하지 않고 `ctl` 직접 실행 출력에만 사용한다.
+Registry의 generic adapter가 Asynq JSON payload를 구체 payload type으로 decode한다. 잘못된 JSON은 `asynq.SkipRetry`로 archive한다. 실행 error, panic, timeout은 Asynq retry 정책을 따른다. 반환 `app.H`는 비동기 실행에서 저장하지 않고 `tool` 직접 실행 출력에만 사용한다.
 
 새 task 추가 절차:
 
@@ -226,26 +226,26 @@ SIGINT/SIGTERM 시 active handler를 최대 30초 drain한다.
 
 ```bash
 cd /app/goapp
-go run ./cmd/ctl tasks
-go run ./cmd/ctl tasks --watch
-go run ./cmd/ctl ai-edit '{"task_id":123}'
-go run ./cmd/ctl flush active
-go run ./cmd/ctl flush pending
-go run ./cmd/ctl flush scheduled
-go run ./cmd/ctl flush retry
-go run ./cmd/ctl flush all
+go run ./cmd/tool tasks
+go run ./cmd/tool tasks --watch
+go run ./cmd/tool ai-edit '{"task_id":123}'
+go run ./cmd/tool flush active
+go run ./cmd/tool flush pending
+go run ./cmd/tool flush scheduled
+go run ./cmd/tool flush retry
+go run ./cmd/tool flush all
 ```
 
 `flush active`는 active task에 cancellation을 전달한다. `flush pending`, `flush scheduled`, `flush retry`는 해당 Asynq 상태의 task만 archive하며 `flush all`은 네 상태를 모두 처리한다. Asynq Redis key를 application code에서 직접 수정하지 말고 `asynq.Inspector` 또는 공식 도구를 사용한다.
 
 ## MediaWiki Extension 관리 CLI
 
-`cmd/adm`은 GoApp task가 아니라 로컬 MediaWiki extension을 관리하는 관리자용 CLI다. `MW_INSTALL_PATH`가 MediaWiki 설치 경로를 가리켜야 하며, 이 값의 상위 디렉터리를 repository root로 사용한다. 일반 개발 환경에서는 `MW_INSTALL_PATH=/app/w`를 사용한다.
+`cmd/tool extensions`는 GoApp task와 별개로 로컬 MediaWiki extension을 관리한다. `MW_INSTALL_PATH`가 MediaWiki 설치 경로를 가리켜야 하며, 이 값의 상위 디렉터리를 repository root로 사용한다. 일반 개발 환경에서는 `MW_INSTALL_PATH=/app/w`를 사용한다.
 
 ```bash
 cd /app/goapp
-go run ./cmd/adm extensions list
-go run ./cmd/adm extensions upgrade
+go run ./cmd/tool extensions list
+go run ./cmd/tool extensions upgrade
 ```
 
 - `extensions list`: `w/extensions/*/extension.json`의 이름과 version을 읽고 `mwz/extensions/extensions.yaml`의 repo/tag 정보와 합쳐 출력한다. 설치 version과 지정 tag가 다르면 해당 행을 빨간색으로 표시한다.

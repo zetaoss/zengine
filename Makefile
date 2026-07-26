@@ -80,6 +80,10 @@ define run_cached
 	fi'
 endef
 
+.PHONY: version
+version:
+	node hack/version.mjs
+
 # checks hierarchy (USE_CACHE=1)
 # GROUP          TARGET              CACHEDIR        CHECKS
 # check-php      check-extension     ZetaExtension   lint

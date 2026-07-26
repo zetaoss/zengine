@@ -27,7 +27,7 @@ These migrations are packaged into the application binary using Go's `embed` pac
 To apply pending migrations, run the following command in your terminal within the application context:
 
 ```bash
-ctl migrate
+tool migrate
 ```
 
 The runner will check the `schema_migrations` table and apply any unapplied migration files sequentially in order of their filename version.

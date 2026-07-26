@@ -3,6 +3,7 @@ import { mount, unmount } from 'svelte'
 import getCurrentTitle from '$lib/utils/getCurrentTitle'
 import mwapi from '$lib/utils/mwapi'
 import getRLCONF from '$lib/utils/rlconf'
+import { useRetrier } from '$shared/utils/retrier'
 import httpy from '$shared/utils/httpy'
 
 import AiEditPanel from './aiedit/AiEditPanel.svelte'
@@ -129,20 +130,19 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
     return true
   }
 
-  function placeEditHeaderInRoot() {
-    if (!rootElement.parentElement) return false
-
-    const targetNode = rootElement.children[1] ?? null
-    if (editHeaderMountElement.parentElement !== rootElement || editHeaderMountElement !== targetNode) {
-      rootElement.insertBefore(editHeaderMountElement, targetNode)
-    }
-    return true
-  }
+  let hasLoggedMissingWikiEditor = false
 
   function placeEditHeader() {
     const wikiEditorTop = findWikiEditorTop()
-    if (!wikiEditorTop) return placeEditHeaderInRoot()
+    if (!wikiEditorTop) {
+      if (!hasLoggedMissingWikiEditor) {
+        console.info('WikiEditor was not found. Retrying...')
+        hasLoggedMissingWikiEditor = true
+      }
+      return false
+    }
 
+    hasLoggedMissingWikiEditor = false
     if (editHeaderMountElement.parentElement !== wikiEditorTop || wikiEditorTop.firstChild !== editHeaderMountElement) {
       wikiEditorTop.insertBefore(editHeaderMountElement, wikiEditorTop.firstChild)
     }
@@ -277,30 +277,54 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
     return true
   }
 
-  placeRootBeforeEditForm()
-  placeEditAreaBeforeEditForm()
-  placeEditHeader()
-
-  let attempts = 0
-  const maxAttempts = 20
   let aiEditReady = false
   let editHeaderReady = false
-  const timer = window.setInterval(() => {
-    placeRootBeforeEditForm()
-    placeEditHeader()
-    aiEditReady = injectAiEdit() || aiEditReady
-    void injectEditHeader().then((mounted) => {
-      editHeaderReady = mounted || editHeaderReady
-    })
-    attempts += 1
-    if ((aiEditReady && editHeaderReady) || attempts >= maxAttempts) {
-      window.clearInterval(timer)
-    }
-  }, 100)
+
+  const retrier = useRetrier(
+    () => {
+      if (isDisposed) return
+      placeRootBeforeEditForm()
+      placeEditAreaBeforeEditForm()
+      const headerPlaced = placeEditHeader()
+      aiEditReady = injectAiEdit() || aiEditReady
+
+      if (headerPlaced) {
+        void injectEditHeader()
+          .then((mounted) => {
+            editHeaderReady = mounted || editHeaderReady
+            if (aiEditReady && editHeaderReady) {
+              retrier.clear()
+            } else {
+              retrier.schedule()
+            }
+          })
+          .catch((err) => {
+            console.error('Failed to inject edit header:', err)
+            if (aiEditReady && editHeaderReady) {
+              retrier.clear()
+            } else {
+              retrier.schedule()
+            }
+          })
+      } else {
+        if (aiEditReady && editHeaderReady) {
+          retrier.clear()
+        } else {
+          retrier.schedule()
+        }
+      }
+    },
+    100,
+    5000,
+    1.5,
+    20,
+  )
+
+  retrier.start()
 
   return () => {
     isDisposed = true
-    window.clearInterval(timer)
+    retrier.clear()
     const editForm = findEditForm()
     if (editForm && editAreaMountElement.parentElement) {
       editAreaMountElement.parentElement.insertBefore(editForm, editAreaMountElement)

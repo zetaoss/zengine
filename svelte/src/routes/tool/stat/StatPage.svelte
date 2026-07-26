@@ -101,11 +101,11 @@
 
   function parseRange(value: string | undefined) {
     const r = value ?? ''
-    if (r === '15d' || r === '90d') return r
+    if (r === '15d' || r === '120d') return r
     return '48h'
   }
 
-  let range = $derived.by<'48h' | '15d' | '90d'>(() => parseRange(page.params.range))
+  let range = $derived.by<'48h' | '15d' | '120d'>(() => parseRange(page.params.range))
 
   let observedRouteRange: string | null = null
 
@@ -122,7 +122,7 @@
   const rangeTabs = $derived.by(() => [
     { value: '48h', label: '48 Hours', href: resolve('/tool/stat/48h') },
     { value: '15d', label: '15 Days', href: resolve('/tool/stat/15d') },
-    { value: '90d', label: '90 Days', href: resolve('/tool/stat/90d') },
+    { value: '120d', label: '120 Days', href: resolve('/tool/stat/120d') },
   ])
 
   const labels = $derived.by(() => (range === '48h' ? data.timeslots : data.timeslots.map((v) => normalizeDateKey(v))))
@@ -141,7 +141,7 @@
     return mwData.timeslots
   })
 
-  async function fetchData(selectedRange: '48h' | '15d' | '90d') {
+  async function fetchData(selectedRange: '48h' | '15d' | '120d') {
     const version = ++fetchVersion
     loading = true
     failed = null
@@ -182,7 +182,7 @@
       return
     }
 
-    const days = selectedRange === '15d' ? 15 : 90
+    const days = selectedRange === '15d' ? 15 : 120
     const [[cfResp, cfErr], [gaResp, gaErr], [gscResp, gscErr], [mwResp, mwErr]] = await Promise.all([
       httpy.get<AnalyticsResp>(`/api/stat/cf-analytics/daily/${days}`),
       httpy.get<GaResp>(`/api/stat/ga/daily/${days}`),

@@ -1,16 +1,13 @@
 {
   "require-dev": {
-    "mediawiki/minus-x": "2.0.1",
-    "laravel/pint": "^1.29"
+    "mediawiki/minus-x": "2.0.1"
   },
   "scripts": {
     "fix": [
-      "minus-x fix .",
-      "pint"
+      "minus-x fix ."
     ],
     "test": [
-      "minus-x check .",
-      "pint --test"
+      "minus-x check ."
     ]
   }
 }
