@@ -12,7 +12,7 @@ import (
 
 func Run(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("usage: adm extensions <command>")
+		return fmt.Errorf("usage: tool extensions <command>")
 	}
 
 	switch args[0] {
@@ -30,7 +30,7 @@ func Run(args []string) error {
 
 func Usage() {
 	fmt.Println("usage:")
-	fmt.Println("  adm extensions <command>")
+	fmt.Println("  tool extensions <command>")
 	fmt.Println()
 	fmt.Println("available commands:")
 	fmt.Println("  list     show MediaWiki extension names and versions")

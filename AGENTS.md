@@ -28,7 +28,7 @@ This guide helps coding agents quickly understand the monorepo and choose where 
 - `goapp/`: Go backend application
   - `server`: API server handling HTTP requests, routing, and auth
   - `worker`: Background worker for processing jobs and scheduled tasks
-  - `ctl`: Command-line tool for managing jobs (list, exec, flush)
+  - `tool`: Command-line tool for managing jobs and MediaWiki extensions
 - `mwz/`: MediaWiki customization
   - `mwz/extensions/ZetaExtension/`: MediaWiki extension hooks
   - `mwz/skins/ZetaSkin/`: MediaWiki skin integration

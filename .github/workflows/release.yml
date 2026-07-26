@@ -22,6 +22,12 @@ jobs:
             ghcr.io/${{ github.repository }}
           tags: |
             type=ref,event=tag
+      - name: Generate version.json
+        env:
+          APP_VERSION: ${{ steps.meta.outputs.version }}
+          GIT_COMMIT: ${{ github.sha }}
+        run: |
+          BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)" node -e "const fs = require('node:fs'); fs.writeFileSync('svelte/src/shared/version.json', JSON.stringify({ gitVersion: process.env.APP_VERSION, gitCommit: process.env.GIT_COMMIT, buildDate: process.env.BUILD_DATE }, null, 2) + '\n')"
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Login to GitHub Container Registry
@@ -35,9 +41,5 @@ jobs:
         with:
           push: true
           context: .
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            APP_VERSION=${{ steps.meta.outputs.version }}

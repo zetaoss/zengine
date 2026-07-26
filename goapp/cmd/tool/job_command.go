@@ -55,13 +55,14 @@ func runTaskCommand(cfg *config.Config, reg *registry.Registry, taskType string,
 
 func printUsage(reg *registry.Registry) {
 	_, _ = fmt.Println("usage:")
-	_, _ = fmt.Println("  ctl <command> [options]")
+	_, _ = fmt.Println("  tool <command> [options]")
 	_, _ = fmt.Println()
 	_, _ = fmt.Println("available commands:")
 	_, _ = fmt.Printf("  %-30s %s\n", "migrate", "run database migrations")
 	_, _ = fmt.Printf("  %-30s %s\n", "tasks [--watch|-w]", "show task specs and queue state")
 	_, _ = fmt.Printf("  %-30s %s\n", "flush (all|active|pending|scheduled|retry)", "cancel or archive tasks by Asynq state")
 	_, _ = fmt.Printf("  %-30s %s\n", "routes", "show api routes")
+	_, _ = fmt.Printf("  %-30s %s\n", "extensions <command>", "manage MediaWiki extensions")
 	_, _ = fmt.Printf("  %-30s %s\n", "help", "show this help message")
 	_, _ = fmt.Printf("  %-30s %s\n", "<task> [json-input]", "run a task immediately (direct run)")
 	_, _ = fmt.Println()

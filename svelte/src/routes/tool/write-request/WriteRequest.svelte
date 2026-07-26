@@ -223,7 +223,7 @@
 
 </script>
 
-<div class="p-5">
+<div class="p-3 md:p-5">
   <h2 class="my-5 text-2xl font-bold">작성 요청</h2>
   <WriteRequestNew show={showModal} onClose={closeModal} />
 
@@ -233,90 +233,100 @@
     <CButton variant="outline" onclick={openModal}>등록</CButton>
   </div>
 
-  <table class="z-table">
-    <thead>
-      <tr>
-        <th>번호</th>
-        <th>제목</th>
-        <th>추천</th>
-        <th>검색</th>
-        <th>역링크</th>
-        {#if mode === 'done'}
-          <th>요청</th>
-          <th>작성</th>
-        {:else}
-          <th>요청자</th>
-          <th>요청일</th>
-        {/if}
-        <th></th>
-      </tr>
-    </thead>
-    {#if loading}
+  <div class="overflow-x-auto">
+    <table class="z-table">
       <thead>
         <tr>
-          <th colspan={8} class="p-0!">
-            <div class="progress-wrap">
-              <div class="progress-bar"></div>
-            </div>
-            {#if !respData.data.length}
-              <div class="flex h-32 items-center justify-center">
-                <ZSpinner />
-              </div>
-            {/if}
-          </th>
-        </tr>
-      </thead>
-    {/if}
-
-    <tbody>
-      {#each respData.data as row (row.id)}
-        <tr>
-          <td class="text-center">{row.id}</td>
-          <td class="w-[35%]">
-            <div class="flex items-center gap-2">
-              <a href={getTitleHref(row)} rel="external" class={mode === 'done' ? '' : 'new'}>{row.title}</a>
-              {#if $canDelete(row.user_id)}
-                <CButton variant="ghost" size="small" title="삭제" onclick={() => del(row)}>
-                  <ZIcon path={mdiDelete} />
-                </CButton>
-              {/if}
-            </div>
-          </td>
-          <td class="text-center">
-            {#if mode === 'done'}
-              {row.rate}
-            {:else}
-              <CButton variant="outline" class="min-w-10 px-2 py-1" onclick={() => recommend(row)}>{row.rate}</CButton>
-            {/if}
-          </td>
-          <td class="text-center">{row.hit}</td>
-          <td class="text-center">
-            <a href={`/wiki/특수:가리키는문서/${row.title}`} rel="external" class="btn">{row.ref}</a>
-          </td>
+          <th class="hidden md:table-cell">번호</th>
+          <th>제목</th>
+          <th>추천</th>
+          <th>검색</th>
+          <th>역링크</th>
           {#if mode === 'done'}
-            <td class="text-center">
-              <div>{getDateText(row)}</div>
-              <div class="mt-1">
-                <AvatarUser user={getRequestUser(row)} />
-              </div>
-            </td>
-            <td class="text-center">
-              <div>{getWrittenDateText(row)}</div>
-              <div class="mt-1">
-                <AvatarUser user={getDisplayUser(row)} />
-              </div>
-            </td>
+            <th>요청</th>
+            <th>작성</th>
           {:else}
-            <td>
-              <AvatarUser user={getRequestUser(row)} />
-            </td>
-            <td class="text-center">{getDateText(row)}</td>
+            <th class="hidden md:table-cell">요청자</th>
+            <th>
+              <span class="md:hidden">요청</span>
+              <span class="hidden md:inline">요청일</span>
+            </th>
           {/if}
-          <td></td>
         </tr>
-      {/each}
-    </tbody>
-  </table>
+        {#if loading}
+          <tr>
+            <th colspan={7} class="p-0!">
+              <div class="progress-wrap">
+                <div class="progress-bar"></div>
+              </div>
+              {#if !respData.data.length}
+                <div class="flex h-32 items-center justify-center">
+                  <ZSpinner />
+                </div>
+              {/if}
+            </th>
+          </tr>
+        {/if}
+      </thead>
+
+      <tbody>
+        {#each respData.data as row (row.id)}
+          <tr>
+            <td class="hidden text-center md:table-cell">{row.id}</td>
+            <td class="w-[35%]">
+              <span class="text-xs shrink-0 md:hidden">{row.id}</span>
+              <br class="md:hidden" />
+              <div class="flex items-center gap-2">
+                <a href={getTitleHref(row)} rel="external" class={mode === 'done' ? '' : 'new'}>{row.title}</a>
+                {#if $canDelete(row.user_id)}
+                  <CButton variant="ghost" size="small" title="삭제" onclick={() => del(row)}>
+                    <ZIcon path={mdiDelete} />
+                  </CButton>
+                {/if}
+              </div>
+            </td>
+            <td class="text-center">
+              {#if mode === 'done'}
+                {row.rate}
+              {:else}
+                <CButton variant="outline" class="min-w-10 px-2 py-1" onclick={() => recommend(row)}>{row.rate}</CButton>
+              {/if}
+            </td>
+            <td class="text-center">{row.hit}</td>
+            <td class="text-center">
+              <a href={`/wiki/특수:가리키는문서/${row.title}`} rel="external" class="btn">{row.ref}</a>
+            </td>
+            {#if mode === 'done'}
+              <td class="text-center">
+                <div>{getDateText(row)}</div>
+                <div class="mt-1">
+                  <AvatarUser user={getRequestUser(row)} />
+                </div>
+              </td>
+              <td class="text-center">
+                <div>{getWrittenDateText(row)}</div>
+                <div class="mt-1">
+                  <AvatarUser user={getDisplayUser(row)} />
+                </div>
+              </td>
+            {:else}
+              <td class="hidden md:table-cell">
+                <AvatarUser user={getRequestUser(row)} />
+              </td>
+              <td class="text-center">
+                <div class="md:hidden">
+                  <AvatarUser user={getRequestUser(row)} />
+                  <br />
+                  <span class="text-xs">{getDateText(row)}</span>
+                </div>
+                <div class="hidden md:block">{getDateText(row)}</div>
+              </td>
+            {/if}
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+  </div>
 
   <div class="py-4 text-right">
     <CButton variant="outline" onclick={openModal}>등록</CButton>
