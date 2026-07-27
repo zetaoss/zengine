@@ -228,6 +228,103 @@ func MWDaily(c *serverctx.Context) {
 	}))
 }
 
+func K8sHourly(c *serverctx.Context) {
+	to := hourlyEndUTC(time.Now().UTC(), 10)
+	from := to.Add(-47 * time.Hour)
+	var rows []statmodels.K8sHourly
+	if c.DB.Migrator().HasTable("stat_k8s_hourly") {
+		if err := c.DB.Table("stat_k8s_hourly").Where("timeslot >= ? AND timeslot <= ?", from.Format("2006-01-02 15:04:05"), to.Format("2006-01-02 15:04:05")).Order("timeslot ASC").Find(&rows).Error; err != nil {
+			http.Error(c.W, "internal server error", http.StatusInternalServerError)
+			return
+		}
+	}
+	c.JSON(buildK8sHourlyPayload(from, to, rows))
+}
+
+func K8sDaily(c *serverctx.Context) {
+	days, ok := parseDays(c.R)
+	if !ok {
+		http.NotFound(c.W, c.R)
+		return
+	}
+	to := dailyEndUTC(time.Now().UTC())
+	from := to.AddDate(0, 0, -(days - 1))
+	var rows []statmodels.K8sDaily
+	if c.DB.Migrator().HasTable("stat_k8s_daily") {
+		if err := c.DB.Table("stat_k8s_daily").Where("timeslot >= ? AND timeslot <= ?", from.Format("2006-01-02"), to.Format("2006-01-02")).Order("timeslot ASC").Find(&rows).Error; err != nil {
+			http.Error(c.W, "internal server error", http.StatusInternalServerError)
+			return
+		}
+	}
+	c.JSON(buildK8sDailyPayload(from, to, rows))
+}
+
+func buildK8sHourlyPayload(from time.Time, to time.Time, rows []statmodels.K8sHourly) app.H {
+	timeslots := make([]string, 0, 48)
+	indexByTimeslot := map[string]int{}
+	for cursor := from; !cursor.After(to); cursor = cursor.Add(time.Hour) {
+		k := cursor.UTC().Format(time.RFC3339)
+		indexByTimeslot[k] = len(timeslots)
+		timeslots = append(timeslots, k)
+	}
+	series := emptySeriesByNames(statmodels.StatK8sMetricNames, len(timeslots))
+	rowMap := map[string]statmodels.K8sHourly{}
+	for _, r := range rows {
+		tsStr := r.Timeslot
+		var t time.Time
+		var err error
+		if t, err = time.Parse(time.RFC3339, tsStr); err != nil {
+			if t, err = time.Parse("2006-01-02 15:04:05", tsStr); err != nil {
+				t, err = time.Parse("2006-01-02T15:04:05", tsStr)
+			}
+		}
+		if err == nil {
+			rowMap[t.UTC().Format(time.RFC3339)] = r
+		}
+	}
+
+	for timeslot, idx := range indexByTimeslot {
+		if r, ok := rowMap[timeslot]; ok {
+			series["node_cpu_usage"][idx] = r.NodeCPUUsage
+			series["node_cpu_allocatable"][idx] = r.NodeCPUAllocatable
+			series["node_memory_usage"][idx] = r.NodeMemoryUsage
+			series["node_memory_allocatable"][idx] = r.NodeMemoryAllocatable
+			series["pod_cpu_usage"][idx] = r.PodCPUUsage
+			series["pod_memory_usage"][idx] = r.PodMemoryUsage
+			series["pod_count"][idx] = float64(r.PodCount)
+		}
+	}
+	return mergePayload(timeslots, series, statmodels.StatK8sMetricNames)
+}
+
+func buildK8sDailyPayload(from time.Time, to time.Time, rows []statmodels.K8sDaily) app.H {
+	timeslots := make([]string, 0, 90)
+	indexByDate := map[string]int{}
+	for cursor := from; !cursor.After(to); cursor = cursor.AddDate(0, 0, 1) {
+		k := cursor.Format("2006-01-02")
+		indexByDate[k] = len(timeslots)
+		timeslots = append(timeslots, k)
+	}
+	series := emptySeriesByNames(statmodels.StatK8sMetricNames, len(timeslots))
+	rowMap := map[string]statmodels.K8sDaily{}
+	for _, r := range rows {
+		rowMap[r.Timeslot] = r
+	}
+
+	for dateKey, idx := range indexByDate {
+		if r, ok := rowMap[dateKey]; ok {
+			series["node_cpu_usage"][idx] = r.NodeCPUUsage
+			series["node_cpu_allocatable"][idx] = r.NodeCPUAllocatable
+			series["node_memory_usage"][idx] = r.NodeMemoryUsage
+			series["node_memory_allocatable"][idx] = r.NodeMemoryAllocatable
+			series["pod_cpu_usage"][idx] = r.PodCPUUsage
+			series["pod_memory_usage"][idx] = r.PodMemoryUsage
+			series["pod_count"][idx] = float64(r.PodCount)
+		}
+	}
+	return mergePayload(timeslots, series, statmodels.StatK8sMetricNames)
+}
+
 func selectCFRows(db *gorm.DB, tables []string, from time.Time, to time.Time, dateOnly bool) ([]statmodels.StatCF, error) {
 	merged := map[string]statmodels.StatCF{}
 	for _, table := range tables {

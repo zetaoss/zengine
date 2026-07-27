@@ -94,6 +94,8 @@ func RegisterRoutes(mux *http.ServeMux, serverCtx *serverctx.Context, components
 	r.GET("/api/stat/ga/daily/{days}", stat.GADaily)
 	r.GET("/api/stat/gsc/hourly", stat.GSCHourly)
 	r.GET("/api/stat/gsc/daily/{days}", stat.GSCDaily)
+	r.GET("/api/stat/k8s/hourly", stat.K8sHourly)
+	r.GET("/api/stat/k8s/daily/{days}", stat.K8sDaily)
 	r.GET("/api/stat/mw-statistics/hourly", stat.MWHourly)
 	r.GET("/api/stat/mw-statistics/daily/{days}", stat.MWDaily)
 
