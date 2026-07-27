@@ -56,6 +56,8 @@ func run(cfg *config.Config, reg *registry.Registry, args []string) error {
 		})
 	case "routes":
 		return runRoutes(cfg)
+	case "metrics":
+		return runMetrics(cfg, args[1:])
 	case "help", "-h", "--help":
 		printUsage(reg)
 		return nil

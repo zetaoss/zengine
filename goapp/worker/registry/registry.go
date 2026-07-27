@@ -21,6 +21,7 @@ import (
 	"github.com/zetaoss/zengine/goapp/tasks/stat/cf"
 	"github.com/zetaoss/zengine/goapp/tasks/stat/ga"
 	"github.com/zetaoss/zengine/goapp/tasks/stat/gsc"
+	"github.com/zetaoss/zengine/goapp/tasks/stat/k8s"
 	"github.com/zetaoss/zengine/goapp/tasks/stat/mw"
 	"github.com/zetaoss/zengine/goapp/tasks/writerequest"
 )
@@ -53,6 +54,8 @@ func New() *Registry {
 	register(r, "stat-ga-hourly", 5*time.Minute, ga.NewHourlyTask(), cron("5 * * * *"))
 	register(r, "stat-gsc-daily", 5*time.Minute, gsc.NewDailyTask(), cron("5 * * * *"))
 	register(r, "stat-gsc-hourly", 5*time.Minute, gsc.NewHourlyTask(), cron("5 * * * *"))
+	register(r, "stat-k8s-daily", 5*time.Minute, k8s.NewDailyTask(), cron("5 * * * *"))
+	register(r, "stat-k8s-hourly", 5*time.Minute, k8s.NewHourlyTask(), cron("5 * * * *"))
 	register(r, "stat-mw-daily", 5*time.Minute, mw.NewDailyTask(), cron("5 * * * *"))
 	register(r, "stat-mw-hourly", 5*time.Minute, mw.NewHourlyTask(), cron("5 * * * *"))
 	register(r, "common-report", 5*time.Minute, commonreport.NewCommonReportTask())

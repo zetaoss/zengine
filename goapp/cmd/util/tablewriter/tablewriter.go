@@ -23,7 +23,7 @@ func (t *TableWriter) Header() error {
 	}
 	cols := make([]string, 0, len(t.headers))
 	for _, h := range t.headers {
-		cols = append(cols, strings.ToUpper(strings.TrimSpace(h)))
+		cols = append(cols, strings.TrimSpace(h))
 	}
 	_, err := fmt.Fprintln(t.w, strings.Join(cols, "\t"))
 	return err

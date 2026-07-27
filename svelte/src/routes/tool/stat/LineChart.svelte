@@ -133,6 +133,10 @@
       return value.toFixed(1)
     }
 
+    if (!Number.isInteger(value)) {
+      return value.toFixed(3).replace(/\.?0+$/, '')
+    }
+
     const rounded = Math.round(value)
     const abs = Math.abs(rounded)
     if (abs >= 1_000_000_000) return `${(rounded / 1_000_000_000).toFixed(1)}B`
@@ -141,7 +145,7 @@
     return `${rounded}`
   }
 
-  function formatExactNumber(value: number, maxFractionDigits = 0) {
+  function formatExactNumber(value: number, maxFractionDigits = 4) {
     return value.toLocaleString('en-US', {
       maximumFractionDigits: maxFractionDigits,
     })

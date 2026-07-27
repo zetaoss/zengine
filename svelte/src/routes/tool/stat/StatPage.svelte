@@ -54,6 +54,26 @@
     jobs: Array<unknown>
   }
 
+  type K8sMetricKey =
+    | 'node_cpu_usage'
+    | 'node_cpu_allocatable'
+    | 'node_memory_usage'
+    | 'node_memory_allocatable'
+    | 'pod_cpu_usage'
+    | 'pod_memory_usage'
+    | 'pod_count'
+
+  interface K8sResp {
+    timeslots: string[]
+    node_cpu_usage: Array<unknown>
+    node_cpu_allocatable: Array<unknown>
+    node_memory_usage: Array<unknown>
+    node_memory_allocatable: Array<unknown>
+    pod_cpu_usage: Array<unknown>
+    pod_memory_usage: Array<unknown>
+    pod_count: Array<unknown>
+  }
+
   interface RowDef {
     key: string
     label: string
@@ -94,6 +114,16 @@
     admins: [],
     jobs: [],
   }
+  const EMPTY_K8S: K8sResp = {
+    timeslots: [],
+    node_cpu_usage: [],
+    node_cpu_allocatable: [],
+    node_memory_usage: [],
+    node_memory_allocatable: [],
+    pod_cpu_usage: [],
+    pod_memory_usage: [],
+    pod_count: [],
+  }
   const DEFAULT_LINE_COLOR = '#0891b2'
 
   let loading = $state(true)
@@ -117,6 +147,7 @@
   let gaData = $state<GaResp>(EMPTY_GA)
   let gscData = $state<GscResp>(EMPTY_GSC)
   let mwData = $state<MwStatisticsResp>(EMPTY_MW)
+  let k8sData = $state<K8sResp>(EMPTY_K8S)
   let fetchVersion = 0
 
   const rangeTabs = $derived.by(() => [
@@ -134,10 +165,13 @@
   const gscSharesTimeAxis = $derived.by(() => sameLabels(labelsGsc, labels))
   const labelsMw = $derived.by(() => (range === '48h' ? mwData.timeslots : mwData.timeslots.map((v) => normalizeDateKey(v))))
   const mwRows = $derived.by<RowDef[]>(() => buildMwRows(mwData))
+  const labelsK8s = $derived.by(() => (range === '48h' ? k8sData.timeslots : k8sData.timeslots.map((v) => normalizeDateKey(v))))
+  const k8sRows = $derived.by<RowDef[]>(() => buildK8sRows(k8sData))
   const visibleTimeslots = $derived.by(() => {
     if (data.timeslots.length > 0) return data.timeslots
     if (gaData.timeslots.length > 0) return gaData.timeslots
     if (gscData.timeslots.length > 0) return gscData.timeslots
+    if (k8sData.timeslots.length > 0) return k8sData.timeslots
     return mwData.timeslots
   })
 
@@ -147,11 +181,12 @@
     failed = null
 
     if (selectedRange === '48h') {
-      const [[cfResp, cfErr], [gaResp, gaErr], [gscResp, gscErr], [mwResp, mwErr]] = await Promise.all([
+      const [[cfResp, cfErr], [gaResp, gaErr], [gscResp, gscErr], [mwResp, mwErr], [k8sResp]] = await Promise.all([
         httpy.get<AnalyticsResp>('/api/stat/cf-analytics/hourly'),
         httpy.get<GaResp>('/api/stat/ga/hourly'),
         httpy.get<GscResp>('/api/stat/gsc/hourly'),
         httpy.get<MwStatisticsResp>('/api/stat/mw-statistics/hourly'),
+        httpy.get<K8sResp>('/api/stat/k8s/hourly'),
       ])
       if (version !== fetchVersion) return
       if (cfErr) {
@@ -178,16 +213,18 @@
       gaData = normalizeGaResp(gaResp)
       gscData = normalizeGscResp(gscResp)
       mwData = normalizeMwResp(mwResp)
+      k8sData = normalizeK8sResp(k8sResp)
       loading = false
       return
     }
 
     const days = selectedRange === '15d' ? 15 : 120
-    const [[cfResp, cfErr], [gaResp, gaErr], [gscResp, gscErr], [mwResp, mwErr]] = await Promise.all([
+    const [[cfResp, cfErr], [gaResp, gaErr], [gscResp, gscErr], [mwResp, mwErr], [k8sResp]] = await Promise.all([
       httpy.get<AnalyticsResp>(`/api/stat/cf-analytics/daily/${days}`),
       httpy.get<GaResp>(`/api/stat/ga/daily/${days}`),
       httpy.get<GscResp>(`/api/stat/gsc/daily/${days}`),
       httpy.get<MwStatisticsResp>(`/api/stat/mw-statistics/daily/${days}`),
+      httpy.get<K8sResp>(`/api/stat/k8s/daily/${days}`),
     ])
     if (version !== fetchVersion) return
 
@@ -216,6 +253,7 @@
     gaData = normalizeGaResp(gaResp)
     gscData = normalizeGscResp(gscResp)
     mwData = normalizeMwResp(mwResp)
+    k8sData = normalizeK8sResp(k8sResp)
     loading = false
   }
 
@@ -270,6 +308,20 @@
       impressions: Array.isArray(input.impressions) ? input.impressions : [],
       ctr: Array.isArray(input.ctr) ? input.ctr : [],
       position: Array.isArray(input.position) ? input.position : [],
+    }
+  }
+
+  function normalizeK8sResp(input: K8sResp | null): K8sResp {
+    if (!input) return EMPTY_K8S
+    return {
+      timeslots: Array.isArray(input.timeslots) ? input.timeslots.map((v) => String(v)) : [],
+      node_cpu_usage: Array.isArray(input.node_cpu_usage) ? input.node_cpu_usage : [],
+      node_cpu_allocatable: Array.isArray(input.node_cpu_allocatable) ? input.node_cpu_allocatable : [],
+      node_memory_usage: Array.isArray(input.node_memory_usage) ? input.node_memory_usage : [],
+      node_memory_allocatable: Array.isArray(input.node_memory_allocatable) ? input.node_memory_allocatable : [],
+      pod_cpu_usage: Array.isArray(input.pod_cpu_usage) ? input.pod_cpu_usage : [],
+      pod_memory_usage: Array.isArray(input.pod_memory_usage) ? input.pod_memory_usage : [],
+      pod_count: Array.isArray(input.pod_count) ? input.pod_count : [],
     }
   }
 
@@ -437,6 +489,39 @@
     ]
   }
 
+  function buildK8sRows(resp: K8sResp): RowDef[] {
+    return [
+      {
+        key: 'k8s-node-cpu',
+        label: 'Nodepool CPU',
+        value: lastK8sMetric(resp, 'node_cpu_usage'),
+        unit: 'count',
+        series: [{ label: 'Nodepool CPU Usage', values: seriesOfK8s(resp, 'node_cpu_usage') }],
+      },
+      {
+        key: 'k8s-node-memory',
+        label: 'Nodepool Memory',
+        value: lastK8sMetric(resp, 'node_memory_usage'),
+        unit: 'bytes',
+        series: [{ label: 'Nodepool Memory Usage', values: seriesOfK8s(resp, 'node_memory_usage') }],
+      },
+      {
+        key: 'k8s-pod-cpu',
+        label: 'Namespace CPU',
+        value: lastK8sMetric(resp, 'pod_cpu_usage'),
+        unit: 'count',
+        series: [{ label: 'Namespace CPU Usage', values: seriesOfK8s(resp, 'pod_cpu_usage') }],
+      },
+      {
+        key: 'k8s-pod-memory',
+        label: 'Namespace Memory',
+        value: lastK8sMetric(resp, 'pod_memory_usage'),
+        unit: 'bytes',
+        series: [{ label: 'Namespace Memory Usage', values: seriesOfK8s(resp, 'pod_memory_usage') }],
+      },
+    ]
+  }
+
   function seriesOf(resp: AnalyticsResp, key: MetricKey): Array<number | null> {
     const src = resp[key] ?? []
     return resp.timeslots.map((_, idx) => toNumber(src[idx] ?? null))
@@ -510,6 +595,20 @@
     return resp.timeslots.map((_, idx) => toNumber(src[idx] ?? null))
   }
 
+  function seriesOfK8s(resp: K8sResp, key: K8sMetricKey): Array<number | null> {
+    const src = resp[key] ?? []
+    return resp.timeslots.map((_, idx) => toNumber(src[idx] ?? null))
+  }
+
+  function lastK8sMetric(resp: K8sResp, key: K8sMetricKey): number | null {
+    const src = resp[key] ?? []
+    for (let i = src.length - 1; i >= 0; i -= 1) {
+      const value = toNumber(src[i] ?? null)
+      if (value != null) return value
+    }
+    return null
+  }
+
   function lastMetric(resp: MwStatisticsResp, key: MwMetricKey): number | null {
     const src = resp[key] ?? []
     for (let i = src.length - 1; i >= 0; i -= 1) {
@@ -573,6 +672,7 @@
     if (abs >= 1_000_000_000) return `${stripZero((value / 1_000_000_000).toFixed(1))}B`
     if (abs >= 1_000_000) return `${stripZero((value / 1_000_000).toFixed(1))}M`
     if (abs >= 1_000) return `${stripZero((value / 1_000).toFixed(1))}k`
+    if (!Number.isInteger(value)) return `${stripZero(value.toFixed(3))}`
     return `${Math.round(value).toLocaleString('en-US')}`
   }
 
@@ -609,6 +709,9 @@
     if (unit === 'rank') {
       return value.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 2 })
     }
+    if (!Number.isInteger(value)) {
+      return value.toLocaleString('en-US', { maximumFractionDigits: 4 })
+    }
     return value.toLocaleString('en-US', { maximumFractionDigits: 0 })
   }
 
@@ -621,7 +724,10 @@
   }
 
   function stripZero(value: string) {
-    return value.endsWith('.0') ? value.slice(0, -2) : value
+    if (value.includes('.')) {
+      return value.replace(/\.?0+$/, '')
+    }
+    return value
   }
 
   function normalizeDateKey(value: string) {
@@ -782,6 +888,35 @@
           />
         </div>
         {#if idx < mwRows.length - 1}
+          <hr class="border-0 border-t border-a-gray-200" />
+        {/if}
+      {/each}
+    </section>
+
+    <section class="mt-8">
+      <p class="mb-2 text-a-gray-500">Kubernetes Metrics</p>
+      {#each k8sRows as row, idx (row.key)}
+        <div class="grid items-center md:grid-cols-[180px_minmax(0,1fr)]">
+          <aside class="rounded">
+            <div class="text-a-gray-500">{row.label}</div>
+            <div class="text-[1.2rem] font-bold">{formatStatValue(row.value, row.unit)}</div>
+          </aside>
+
+          <LineChart
+            title={row.label}
+            labels={labelsK8s}
+            unit={row.unit}
+            color={DEFAULT_LINE_COLOR}
+            {valueMode}
+            selectedLabelMode={range === '48h' ? 'hour' : 'date'}
+            hoveredIndex={syncedHoverIndex}
+            onHoverIndex={(index) => {
+              syncedHoverIndex = index
+            }}
+            series={row.series}
+          />
+        </div>
+        {#if idx < k8sRows.length - 1}
           <hr class="border-0 border-t border-a-gray-200" />
         {/if}
       {/each}
