@@ -96,6 +96,10 @@
     margin: 0;
   }
 
+  legend {
+    padding: 0.2em 0.5em;
+  }
+
   pre {
     white-space: pre-wrap;
     word-break: break-all;
