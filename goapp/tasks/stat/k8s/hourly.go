@@ -96,6 +96,12 @@ func (j *HourlyTask) Execute(ctx context.Context, taskCtx taskctx.Context, input
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch k8s metrics: %w", err)
 	}
+	if len(nodes) == 0 {
+		return nil, fmt.Errorf("no nodes metrics scraped for nodepool %s", nodepool)
+	}
+	if len(pods) == 0 {
+		return nil, fmt.Errorf("no pods metrics scraped for namespace %s", namespace)
+	}
 
 	ts := input.Timeslot
 	if ts == "" {

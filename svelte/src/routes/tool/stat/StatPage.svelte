@@ -181,7 +181,7 @@
     failed = null
 
     if (selectedRange === '48h') {
-      const [[cfResp, cfErr], [gaResp, gaErr], [gscResp, gscErr], [mwResp, mwErr], [k8sResp]] = await Promise.all([
+      const [[cfResp, cfErr], [gaResp, gaErr], [gscResp, gscErr], [mwResp, mwErr], [k8sResp, k8sErr]] = await Promise.all([
         httpy.get<AnalyticsResp>('/api/stat/cf-analytics/hourly'),
         httpy.get<GaResp>('/api/stat/ga/hourly'),
         httpy.get<GscResp>('/api/stat/gsc/hourly'),
@@ -209,6 +209,11 @@
         loading = false
         return
       }
+      if (k8sErr) {
+        failed = k8sErr.message
+        loading = false
+        return
+      }
       data = normalizeResp(cfResp)
       gaData = normalizeGaResp(gaResp)
       gscData = normalizeGscResp(gscResp)
@@ -219,7 +224,7 @@
     }
 
     const days = selectedRange === '15d' ? 15 : 120
-    const [[cfResp, cfErr], [gaResp, gaErr], [gscResp, gscErr], [mwResp, mwErr], [k8sResp]] = await Promise.all([
+    const [[cfResp, cfErr], [gaResp, gaErr], [gscResp, gscErr], [mwResp, mwErr], [k8sResp, k8sErr]] = await Promise.all([
       httpy.get<AnalyticsResp>(`/api/stat/cf-analytics/daily/${days}`),
       httpy.get<GaResp>(`/api/stat/ga/daily/${days}`),
       httpy.get<GscResp>(`/api/stat/gsc/daily/${days}`),
@@ -245,6 +250,11 @@
     }
     if (gaErr) {
       failed = gaErr.message
+      loading = false
+      return
+    }
+    if (k8sErr) {
+      failed = k8sErr.message
       loading = false
       return
     }

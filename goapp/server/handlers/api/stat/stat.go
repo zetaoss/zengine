@@ -229,11 +229,14 @@ func MWDaily(c *serverctx.Context) {
 }
 
 func K8sHourly(c *serverctx.Context) {
-	to := hourlyEndUTC(time.Now().UTC(), 0)
+	to := hourlyEndUTC(time.Now().UTC(), 10)
 	from := to.Add(-47 * time.Hour)
 	var rows []statmodels.K8sHourly
 	if c.DB.Migrator().HasTable("stat_k8s_hourly") {
-		_ = c.DB.Table("stat_k8s_hourly").Where("timeslot >= ? AND timeslot <= ?", from.Format("2006-01-02 15:04:05"), to.Format("2006-01-02 15:04:05")).Order("timeslot ASC").Find(&rows).Error
+		if err := c.DB.Table("stat_k8s_hourly").Where("timeslot >= ? AND timeslot <= ?", from.Format("2006-01-02 15:04:05"), to.Format("2006-01-02 15:04:05")).Order("timeslot ASC").Find(&rows).Error; err != nil {
+			http.Error(c.W, "internal server error", http.StatusInternalServerError)
+			return
+		}
 	}
 	c.JSON(buildK8sHourlyPayload(from, to, rows))
 }
@@ -248,7 +251,10 @@ func K8sDaily(c *serverctx.Context) {
 	from := to.AddDate(0, 0, -(days - 1))
 	var rows []statmodels.K8sDaily
 	if c.DB.Migrator().HasTable("stat_k8s_daily") {
-		_ = c.DB.Table("stat_k8s_daily").Where("timeslot >= ? AND timeslot <= ?", from.Format("2006-01-02"), to.Format("2006-01-02")).Order("timeslot ASC").Find(&rows).Error
+		if err := c.DB.Table("stat_k8s_daily").Where("timeslot >= ? AND timeslot <= ?", from.Format("2006-01-02"), to.Format("2006-01-02")).Order("timeslot ASC").Find(&rows).Error; err != nil {
+			http.Error(c.W, "internal server error", http.StatusInternalServerError)
+			return
+		}
 	}
 	c.JSON(buildK8sDailyPayload(from, to, rows))
 }
