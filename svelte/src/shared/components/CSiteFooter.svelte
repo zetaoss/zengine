@@ -67,10 +67,10 @@
           <a href="/wiki/제타위키:개인정보처리방침">개인정보처리방침</a>
         </li>
         <li>
-          <a href="/wiki/제타위키:면책_조항">면책조항</a>
+          <a href="/wiki/제타위키">제타위키 소개</a>
         </li>
         <li>
-          <a href="/wiki/제타위키">제타위키 소개</a>
+          <a href="/wiki/제타위키:면책_조항">면책조항</a>
         </li>
         {#if showCookieSettings}
           <li>
