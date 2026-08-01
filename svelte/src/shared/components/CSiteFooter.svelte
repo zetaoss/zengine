@@ -22,7 +22,7 @@
   <div class="mx-auto max-w-8xl">
     <section class="flex flex-col gap-6 pb-4 md:flex-row md:items-end md:justify-between">
       <div>
-        <img class="h-8" src="/zeta2.svg" />
+        <img class="h-8" src="/zeta2.svg" alt="" />
         <div class="text-xl font-bold text-foreground pt-4 pb-2">제타위키</div>
         <div class="text-sm text-a-gray-600" title="{versionData.buildDate}">세상의 각주, 기록하고 연결합니다.</div>
       </div>
