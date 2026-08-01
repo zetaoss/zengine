@@ -132,6 +132,11 @@ endif
 check-svelte:
 	@$(MAKE) USE_CACHE=$(USE_CACHE) check-main-svelte check-skin-svelte
 
+.PHONY: svfmt
+svfmt:
+	$(call run_pnpm,svelte,format:fix)
+	$(call run_pnpm,mwz/skins/ZetaSkin/svelte,format:fix)
+
 .PHONY: svelte-common-deps
 svelte-common-deps:
 	@echo "➡️  svelte: common dependency specs"
