@@ -36,7 +36,7 @@
   onMount(load)
 </script>
 
-<ul class="py-2 pl-5">
+<ul>
   {#each rows as r (r.title)}
     <li>
       <a href="/wiki/{r.title}" data-sveltekit-reload>{r.title}</a>
