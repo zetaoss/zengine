@@ -10,7 +10,7 @@ class RebuildBinders extends Maintenance
     {
         parent::__construct();
 
-        $this->addDescription('Rebuild all enabled binders.');
+        $this->addDescription('Rebuild all binders.');
     }
 
     public function execute()

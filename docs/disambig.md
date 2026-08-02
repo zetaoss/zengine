@@ -87,6 +87,22 @@ ZetaExtension은 다음 이름공간을 등록한다.
 
 두 테이블의 생성 SQL과 기존 개발 스키마를 일반 이름공간 전용 구조로 변환하는 호환 처리는 `goapp/app/database/migrations/202608010001_collection_page_indexes.up.sql`에서 함께 관리한다. 테이블을 MediaWiki 기본 DB로 이전하거나 Extension 스키마 업데이트로 관리하도록 변경할 경우, 서비스와 Skin의 `ldb.` 참조 및 배포 시 마이그레이션 실행 주체를 함께 변경해야 한다.
 
+## 일회성 `202608010001_collection_page_indexes` 마이그 후속 작업
+
+새 application image에 포함된 `tool`로 마이그레이션을 적용한다.
+
+```bash
+tool migrate
+```
+
+처음 적용한 뒤에는 기존 Binder 문서를 모두 다시 파싱해 과거 redlink와 redirect dependency를 채운다.
+
+```bash
+MW_INSTALL_PATH=/app/w php /app/mwz/extensions/ZetaExtension/maintenance/RebuildBinders.php --server localhost
+```
+
+구버전 PHP와 변경된 `binder_pages` 스키마는 서로 호환되지 않으므로 마이그레이션과 소스 전환 중에는 MediaWiki 쓰기 요청과 관련 Job 처리를 중단한다.
+
 ## 동기화 과정
 
 `CollectionHooks`가 MediaWiki 페이지 생명주기를 `DisambigService`에 연결한다.

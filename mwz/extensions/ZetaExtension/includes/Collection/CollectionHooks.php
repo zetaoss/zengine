@@ -12,7 +12,7 @@ final class CollectionHooks
     {
         $pageId = (int) $wikiPage->getId();
         $title = $wikiPage->getTitle();
-        BinderService::attachPage($title, $pageId);
+        BinderService::refreshByTitle($title, $pageId, $wikiPage->isRedirect());
         DisambigService::attachPage($title, $pageId);
 
         if ($wikiPage->getNamespace() === NS_BINDER) {
@@ -41,14 +41,14 @@ final class CollectionHooks
             DisambigService::deleteDisambig($pageId);
         }
 
-        BinderService::clearPageId($pageId);
+        BinderService::refreshByTitle($page, $pageId, true);
         DisambigService::clearPageId($pageId);
     }
 
     public static function onPageUndeleteComplete($page, $restorer, $reason, $restoredRev, $logEntry, $restoredRevisionCount, $created, $restoredPageIds): void
     {
         $pageId = (int) $page->getId();
-        BinderService::attachPage($page, $pageId);
+        BinderService::refreshByTitle($page, $pageId, true);
         DisambigService::attachPage($page, $pageId);
 
         if ($page->getNamespace() === NS_BINDER) {
@@ -60,13 +60,12 @@ final class CollectionHooks
 
     public static function onPageMoveComplete($old, $new, $user, $pageId, $redirectId, $reason, $revision): void
     {
-        BinderService::clearPageId($pageId);
+        BinderService::refreshByTitle($old, $pageId, true);
+        BinderService::refreshByTitle($new, $pageId, true);
         DisambigService::clearPageId($pageId);
-        BinderService::attachPage($new, $pageId);
         DisambigService::attachPage($new, $pageId);
 
         if ($redirectId > 0) {
-            BinderService::attachPage($old, $redirectId);
             DisambigService::attachPage($old, $redirectId);
         }
 

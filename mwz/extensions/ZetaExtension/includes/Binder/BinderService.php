@@ -7,6 +7,8 @@ use Wikimedia\Rdbms\IDatabase;
 
 final class BinderService
 {
+    private const MAX_REDIRECT_HOPS = 9;
+
     private static function dbw(): IDatabase
     {
         return MediaWikiServices::getInstance()->getConnectionProvider()->getPrimaryDatabase();
@@ -23,7 +25,6 @@ final class BinderService
             ->select(['A.id', 'B.page_title', 'A.docs', 'A.links', 'A.title_doc'])
             ->from('ldb.binders', 'A')
             ->leftJoin('page', 'B', 'A.id = B.page_id')
-            ->where(['A.enabled' => 1])
             ->caller(__METHOD__)
             ->fetchResultSet();
 
@@ -164,52 +165,29 @@ final class BinderService
         $dbw->delete('ldb.binders', ['id' => $binderId]);
     }
 
-    public static function attachPage($title, int $pageId): void
+    public static function refreshByTitle($title, int $pageId = 0, bool $force = false): void
     {
-        if ($pageId < 1) {
-            return;
-        }
-
         $dbw = self::dbw();
-        $binderIds = $dbw->newSelectQueryBuilder()
-            ->select('binder_id')
+        $relations = $dbw->newSelectQueryBuilder()
+            ->select(['binder_id', 'page_id'])
             ->from('ldb.binder_pages')
             ->where([
                 'page_namespace' => $title->getNamespace(),
                 'page_title' => $title->getDBkey(),
-                'page_id' => null,
             ])
             ->caller(__METHOD__)
-            ->fetchFieldValues();
+            ->fetchResultSet();
 
-        if (! $binderIds) {
-            return;
+        $binderIds = [];
+        foreach ($relations as $relation) {
+            $indexedPageId = $relation->page_id !== null ? (int) $relation->page_id : 0;
+            if ($force || $pageId < 1 || $indexedPageId !== $pageId) {
+                $binderIds[] = (int) $relation->binder_id;
+            }
         }
 
         foreach (array_unique($binderIds) as $binderId) {
-            self::ensureBinder((int) $binderId);
-        }
-    }
-
-    public static function clearPageId(int $pageId): void
-    {
-        if ($pageId < 1) {
-            return;
-        }
-
-        $dbw = self::dbw();
-        $binderIds = $dbw->newSelectQueryBuilder()
-            ->select('binder_id')
-            ->from('ldb.binder_pages')
-            ->where(['page_id' => $pageId])
-            ->caller(__METHOD__)
-            ->fetchFieldValues();
-        if (! $binderIds) {
-            return;
-        }
-
-        foreach (array_unique($binderIds) as $binderId) {
-            self::ensureBinder((int) $binderId);
+            self::ensureBinder($binderId);
         }
     }
 
@@ -240,7 +218,7 @@ final class BinderService
         return $page;
     }
 
-    private static function resolveRedirects(\Title $t, int $maxHops = 9): ?\Title
+    private static function resolveRedirects(\Title $t, int $maxHops = self::MAX_REDIRECT_HOPS): ?\Title
     {
         $svc = MediaWikiServices::getInstance();
         $tf = $svc->getTitleFactory();
@@ -459,8 +437,7 @@ final class BinderService
             }
 
             if (isset($node['title']) && is_string($node['title'])) {
-                $reference = self::titleToReference($node['title']);
-                if ($reference !== null) {
+                foreach (self::titleToReferences($node['title']) as $reference) {
                     $references[] = $reference;
                 }
             }
@@ -475,20 +452,59 @@ final class BinderService
         return $references;
     }
 
-    private static function titleToReference(string $titleText): ?array
+    private static function titleToReferences(string $titleText): array
     {
-        $title = MediaWikiServices::getInstance()->getTitleFactory()->newFromText($titleText);
+        $services = MediaWikiServices::getInstance();
+        $titleFactory = $services->getTitleFactory();
+        $redirectLookup = $services->getRedirectLookup();
+        $title = $titleFactory->newFromText($titleText);
         if (! $title) {
-            return null;
+            return [];
         }
 
-        $resolved = self::resolveRedirects($title);
+        $dependencies = [];
+        $seen = [];
+        $resolvedPageId = null;
+        $redirectHops = 0;
+        while (true) {
+            $key = $title->getNamespace().':'.$title->getDBkey();
+            if (isset($seen[$key])) {
+                break;
+            }
 
-        return [
-            'page_namespace' => $title->getNamespace(),
-            'page_title' => $title->getDBkey(),
-            'page_id' => $resolved && $resolved->getId() > 0 ? (int) $resolved->getId() : null,
-        ];
+            $seen[$key] = true;
+            $dependencies[] = $title;
+            if (! $title->exists() || $title->getId() === 0) {
+                break;
+            }
+
+            $target = $redirectLookup->getRedirectTarget($title);
+            if (! $target) {
+                $resolvedPageId = (int) $title->getId();
+                break;
+            }
+            if ($redirectHops >= self::MAX_REDIRECT_HOPS) {
+                break;
+            }
+
+            $next = $titleFactory->newFromLinkTarget($target);
+            if (! $next) {
+                break;
+            }
+            $title = $next;
+            $redirectHops++;
+        }
+
+        $references = [];
+        foreach ($dependencies as $dependency) {
+            $references[] = [
+                'page_namespace' => $dependency->getNamespace(),
+                'page_title' => $dependency->getDBkey(),
+                'page_id' => $resolvedPageId ?: null,
+            ];
+        }
+
+        return $references;
     }
 
     private static function countLinks(array $nodes): int
