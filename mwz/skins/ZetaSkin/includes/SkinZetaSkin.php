@@ -11,6 +11,7 @@ class SkinZetaSkin extends SkinMustache
     private static $pageId;
     private static $binders;
     private static $dataToc;
+    private static $disambig;
     private static $lastModified;
     private static $isArticleView;
 
@@ -31,7 +32,9 @@ class SkinZetaSkin extends SkinMustache
         self::$isArticleView = $data['is-article'] && self::$action == 'view';
         $data['hasMeta'] = self::$isArticleView;
         self::$binders = self::$isArticleView ? PageDataProvider::fetchBinders(self::$pageId) : [];
+        self::$disambig = self::$isArticleView ? PageDataProvider::fetchDisambig(self::$pageId) : null;
         $data['hasBinders'] = ! empty(self::$binders);
+        $data['hasDisambig'] = ! empty(self::$disambig);
 
         self::$dataToc = $data['data-toc'] ?? [];
         $data['hasToc'] = ! empty(self::$dataToc);
@@ -58,6 +61,7 @@ class SkinZetaSkin extends SkinMustache
     {
         $vars['binders'] = self::$binders;
         $vars['dataToc'] = self::$dataToc;
+        $vars['disambig'] = self::$disambig;
         $vars['contributors'] = self::$isArticleView ? PageDataProvider::fetchContributors(self::$pageId) : [];
         $vars['lastModified'] = self::$lastModified;
         $vars['menu'] = self::$menu;

@@ -10,6 +10,7 @@
 
   export let headerOffset: number | string = 64
   export let side: boolean | string = false
+  export let contained: boolean | string = false
 
   let tocRef: HTMLElement | null = null
   let isTocPast = false
@@ -27,6 +28,7 @@
   }
 
   $: isSide = coerceBool(side)
+  $: isContained = coerceBool(contained)
   $: headerOffsetNum = coerceNumber(headerOffset, 64)
 
   const flattenAnchors = (root?: DataToc | null): string[] => {
@@ -183,11 +185,15 @@
 
 {#if dataToc}
   {#if isSide}
-    <div class="flex-none shrink-0 z-30 transition-[width] sticky" style={stickyStyle}>
-      <div class="z-scrollbar h-full w-full overflow-y-auto">
-        <TocTree {dataToc} {activeIds} headerOffset={headerOffsetNum} />
+    {#if isContained}
+      <TocTree {dataToc} {activeIds} headerOffset={headerOffsetNum} />
+    {:else}
+      <div class="flex-none shrink-0 z-30 transition-[width] sticky" style={stickyStyle}>
+        <div class="z-scrollbar h-full w-full overflow-y-auto">
+          <TocTree {dataToc} {activeIds} headerOffset={headerOffsetNum} />
+        </div>
       </div>
-    </div>
+    {/if}
   {:else}
     <div bind:this={tocRef}>
       <div class="inline-block rounded w-full border border-[#9995] p-3 my-3">

@@ -1,12 +1,22 @@
 import type { Binder } from '$lib/types/binder'
 import type { Contributor } from '$lib/types/contributor'
+import type { Disambig } from '$lib/types/disambig'
 import type { DataToc } from '$lib/types/toc'
 import type { Menu } from '$shared/types/menu'
+
+type DisambigRegistration = {
+  baseTitle: string
+  exists: boolean
+  sourceTitle: string
+  targetTitle: string
+}
 
 type RLConfig = {
   binders: Binder[]
   contributors: Contributor[]
   dataToc: DataToc
+  disambig?: Disambig | null
+  disambigRegistration?: DisambigRegistration | null
   lastModified: string
   menu: Menu
   wgAction: string

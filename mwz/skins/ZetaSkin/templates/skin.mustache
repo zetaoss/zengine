@@ -59,6 +59,10 @@
           </div>
           <hr />
 
+          {{#hasDisambig}}
+          <disambig-apex></disambig-apex>
+          {{/hasDisambig}}
+
           {{#hasToc}}
           <div class="toc-inline">
             <toc-apex></toc-apex>
@@ -84,7 +88,9 @@
 
       {{#hasToc}}
       <div class="toc-side flex-none w-60 pr-3">
-        <toc-apex side></toc-apex>
+        <div class="toc-side-inner z-scrollbar z-30 overflow-y-auto">
+          <toc-apex side contained></toc-apex>
+        </div>
       </div>
       {{/hasToc}}
 

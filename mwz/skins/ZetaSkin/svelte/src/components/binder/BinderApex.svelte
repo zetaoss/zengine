@@ -1,7 +1,7 @@
 <svelte:options customElement={{ tag: 'binder-apex', shadow: 'none' }} />
 
 <script lang="ts">
-  import { mdiChevronLeft, mdiChevronRight, mdiMenu, mdiRefresh } from '@mdi/js'
+  import { mdiChevronLeft, mdiChevronRight, mdiMenu } from '@mdi/js'
   import { onMount } from 'svelte'
 
   import type { Binder } from '$lib/types/binder'
@@ -22,17 +22,14 @@
     return Array.isArray(value) ? value.filter(isBinder) : []
   }
 
-  const { wgArticleId, wgUserId, binders } = getRLCONF()
+  const { wgArticleId, binders } = getRLCONF()
 
-  let bindersRef: Binder[] = toBinders(binders)
+  const bindersRef: Binder[] = toBinders(binders)
   let isCollapsed = false
   let isDrawer = false
-  let refreshingId: number | null = null
   let root: HTMLElement | null = null
   let scrollEl: HTMLElement | null = null
   let isScrolledToBottom = true
-
-  const isLoggedIn = wgUserId > 0
 
   const toggle = () => {
     isCollapsed = !isCollapsed
@@ -56,21 +53,6 @@
     }
 
     isScrolledToBottom = scrollEl.scrollTop + scrollEl.clientHeight >= scrollEl.scrollHeight - 1
-  }
-
-  async function refreshBinder() {
-    if (refreshingId !== null) return
-    refreshingId = wgArticleId
-    try {
-      const res = await fetch(`/w/rest.php/binder/${wgArticleId}?refresh=1`)
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      await res.json()
-      window.location.reload()
-    } catch (e) {
-      console.error(e)
-    } finally {
-      refreshingId = null
-    }
   }
 
   $: isMobile = !$isMdOrLargerStore
@@ -138,17 +120,6 @@
               <a href={`/wiki/Binder:${binder.text}`} class="binder-title-link inline-flex min-w-0 flex-1 items-center px-3 py-2">
                 <span class="wrap-break-word">{binder.text}</span>
               </a>
-              {#if isLoggedIn}
-                <CButton
-                  variant="ghost"
-                  class="w-9! self-stretch rounded-none! p-0!"
-                  disabled={refreshingId !== null}
-                  title="바인더 새로고침"
-                  onclick={refreshBinder}
-                >
-                  <ZIcon path={mdiRefresh} class={refreshingId === wgArticleId ? 'animate-spin' : ''} />
-                </CButton>
-              {/if}
               {#if !isDrawer}
                 <CButton variant="ghost" class="w-9! self-stretch rounded-none! p-0!" title="바인더 접기" onclick={toggle}>
                   <ZIcon path={mdiChevronLeft} />

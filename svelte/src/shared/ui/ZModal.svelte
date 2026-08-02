@@ -9,8 +9,6 @@
 
   export let show = false
   export let title = ''
-  export let titleIconPath: string | undefined = undefined
-  export let titleIconAtEnd = false
   export let okText = '확인'
   export let okVariant: ButtonVariant = 'destructive'
   export let okDisabled = false
@@ -47,16 +45,10 @@
       aria-modal="true"
       class={`relative flex max-h-[calc(100dvh-2rem)] w-full min-h-0 flex-col overflow-hidden rounded-md border bg-background ${panelClass}`}
     >
-      {#if title}
+      {#if title || $$slots.title}
         <header class="flex min-h-12 items-stretch justify-between gap-2 border-b pl-5">
           <div role="heading" aria-level="2" class="m-0 flex min-w-0 items-center gap-2 py-3 text-base font-semibold leading-tight">
-            {#if titleIconPath && !titleIconAtEnd}
-              <ZIcon path={titleIconPath} />
-            {/if}
-            <span>{title}</span>
-            {#if titleIconPath && titleIconAtEnd}
-              <ZIcon path={titleIconPath} />
-            {/if}
+            <slot name="title"><span>{title}</span></slot>
           </div>
           {#if closable}
             <CButton variant="ghost" class="self-stretch rounded-none px-4 py-0" onclick={() => void onCancel?.()}>

@@ -25,8 +25,6 @@ class RestBinder extends SimpleHandler
             return [];
         }
 
-        $refresh = $this->getRequest()->getVal('refresh') !== null;
-
-        return BinderService::getTreesForPageId($id, $refresh);
+        return BinderService::getTreesForPageId($id);
     }
 }

@@ -9,6 +9,13 @@
   @apply hidden md:block;
 }
 
+.toc-side-inner {
+  position: sticky;
+  top: calc(var(--navbar-visible-height) + 16px);
+  height: calc(100vh - (var(--navbar-visible-height) + var(--footer-visible-height) + 32px));
+  margin-top: 16px;
+}
+
 .has-binders {
   .toc-inline {
     @apply md:block lg:hidden;

@@ -14,6 +14,28 @@
   "AutoloadNamespaces": {
     "ZetaExtension\\": "includes/"
   },
+  "namespaces": [
+    {
+      "id": 3000,
+      "constant": "NS_BINDER",
+      "name": "Binder"
+    },
+    {
+      "id": 3001,
+      "constant": "NS_BINDER_TALK",
+      "name": "Binder_talk"
+    },
+    {
+      "id": 3002,
+      "constant": "NS_DISAMBIG",
+      "name": "Disambig"
+    },
+    {
+      "id": 3003,
+      "constant": "NS_DISAMBIG_TALK",
+      "name": "Disambig_talk"
+    }
+  ],
   "AuthManagerAutoConfig": {
     "primaryauth": {
       "OTPAuthProvider": {
@@ -26,14 +48,22 @@
   },
   "Hooks": {
     "InternalParseBeforeLinks": "ZetaExtension\\Toc\\Toc::onInternalParseBeforeLinks",
-    "PageSaveComplete": "ZetaExtension\\Binder\\BinderHooks::onPageSaveComplete",
-    "PageDeleteComplete": "ZetaExtension\\Binder\\BinderHooks::onPageDeleteComplete",
-    "PageUndeleteComplete": "ZetaExtension\\Binder\\BinderHooks::onPageUndeleteComplete",
+    "MakeGlobalVariablesScript": "ZetaExtension\\Disambig\\DisambigHooks::onMakeGlobalVariablesScript",
+    "PageSaveComplete": "ZetaExtension\\Collection\\CollectionHooks::onPageSaveComplete",
+    "PageDeleteComplete": "ZetaExtension\\Collection\\CollectionHooks::onPageDeleteComplete",
+    "PageUndeleteComplete": "ZetaExtension\\Collection\\CollectionHooks::onPageUndeleteComplete",
+    "PageMoveComplete": "ZetaExtension\\Collection\\CollectionHooks::onPageMoveComplete",
     "SpecialSearchNogomatch": "ZetaExtension\\WriteRequest\\SearchHooks::onSpecialSearchNogomatch",
     "ParserFirstCallInit": "ZetaExtension\\Tag\\Tag::onParserFirstCallInit",
     "PostLoginRedirect": "ZetaExtension\\Auth\\Hooks::onPostLoginRedirect",
     "SpecialPageBeforeExecute": "ZetaExtension\\Auth\\Hooks::onSpecialPageBeforeExecute",
     "UserLogoutComplete": "ZetaExtension\\Auth\\Hooks::onUserLogoutComplete"
+  },
+  "JobClasses": {
+    "zetaCleanupLegacyDisambig": {
+      "class": "ZetaExtension\\Disambig\\CleanupLegacyDisambigJob",
+      "services": ["UserFactory", "WikiPageFactory"]
+    }
   },
   "RestRoutes": [
     {
