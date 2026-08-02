@@ -5,10 +5,15 @@
   import { onMount } from 'svelte'
 
   import getLinks from '$lib/utils/getLinks'
+  import getRLCONF from '$lib/utils/rlconf'
   import ZIcon from '$shared/ui/ZIcon.svelte'
 
-  let root: HTMLDetailsElement | null = null
+  import DisambigModal from './disambig/DisambigModal.svelte'
 
+  let root: HTMLDetailsElement | null = null
+  let showDisambigModal = false
+
+  const { disambig, disambigRegistration } = getRLCONF()
   const links = getLinks(
     ['views.history', { accesskey: 'h' }],
     ['actions.delete', { accesskey: 'd' }],
@@ -25,6 +30,11 @@
   const close = () => {
     if (!root) return
     root.open = false
+  }
+
+  const openDisambigModal = () => {
+    close()
+    showDisambigModal = true
   }
 
   const onMouseDown = (e: MouseEvent) => {
@@ -59,9 +69,25 @@
         <!-- svelte-ignore a11y_accesskey -->
         <li><a href={l.href} accesskey={l.accesskey} title={l.title}>{l.text}</a></li>
       {/each}
+      {#if disambigRegistration && !disambig?.nodes?.length}
+        <li>
+          <button type="button" onclick={openDisambigModal}>동음이의 {disambigRegistration.exists ? '등록' : '생성'}</button>
+        </li>
+      {/if}
     </ul>
   </div>
 </details>
+
+{#if disambigRegistration && !disambig?.nodes?.length && showDisambigModal}
+  <DisambigModal
+    show
+    baseTitle={disambigRegistration.baseTitle}
+    targetExists={disambigRegistration.exists}
+    sourceTitle={disambigRegistration.sourceTitle}
+    targetTitle={disambigRegistration.targetTitle}
+    onClose={() => (showDisambigModal = false)}
+  />
+{/if}
 
 <style>
   .page-menu summary {
@@ -87,7 +113,8 @@
     list-style: none;
   }
 
-  .page-menu-items a {
+  .page-menu-items a,
+  .page-menu-items button {
     display: block;
     width: 100%;
     padding: 0.25rem 1.5rem;
@@ -96,7 +123,12 @@
     white-space: nowrap;
   }
 
-  .page-menu-items a:hover {
+  .page-menu-items button {
+    cursor: pointer;
+  }
+
+  .page-menu-items a:hover,
+  .page-menu-items button:hover {
     background-color: #8883;
     text-decoration: none;
   }

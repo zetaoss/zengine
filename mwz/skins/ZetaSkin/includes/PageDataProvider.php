@@ -37,6 +37,29 @@ class PageDataProvider
         return $binders;
     }
 
+    public static function fetchDisambig(int $pageId): ?array
+    {
+        if ($pageId < 1) {
+            return null;
+        }
+
+        $cache = self::dbr()->newSelectQueryBuilder()
+            ->select('D.cache')
+            ->from('ldb.disambig_pages', 'DP')
+            ->join('ldb.disambigs', 'D', 'D.id = DP.disambig_id')
+            ->where(['DP.page_id' => $pageId])
+            ->caller(__METHOD__)
+            ->fetchField();
+
+        if (! is_string($cache) || $cache === '') {
+            return null;
+        }
+
+        $disambig = json_decode($cache, true);
+
+        return is_array($disambig) ? $disambig : null;
+    }
+
     public static function fetchContributors(int $pageId): array
     {
         if ($pageId < 1) {

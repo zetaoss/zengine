@@ -6,20 +6,14 @@
   interface Props {
     disabled?: boolean
     open?: boolean
+    side?: 'top' | 'bottom'
     onOpenChange?: (open: boolean) => void
     trigger?: Snippet<[{ open: boolean; toggle: () => void; close: () => void }]>
     menu?: Snippet<[{ close: () => void }]>
     children?: Snippet
   }
 
-  let {
-    disabled = false,
-    open: controlledOpen,
-    onOpenChange,
-    trigger,
-    menu,
-    children,
-  }: Props = $props()
+  let { disabled = false, open: controlledOpen, side = 'bottom', onOpenChange, trigger, menu, children }: Props = $props()
 
   let rootEl = $state<HTMLElement | null>(null)
   let innerOpen = $state(false)
@@ -54,7 +48,9 @@
 
   {#if open}
     <div
-      class="bg-card ring-1 ring-border absolute right-0 top-full z-50 mt-1 inline-flex w-max flex-col rounded py-1 shadow-lg"
+      class="bg-card ring-1 ring-border absolute right-0 z-50 inline-flex w-max flex-col rounded py-1 shadow-lg"
+      style:top={side === 'bottom' ? 'calc(100% + 0.25rem)' : 'auto'}
+      style:bottom={side === 'top' ? 'calc(100% + 0.25rem)' : 'auto'}
       role="menu"
       tabindex="-1"
       onclick={(e) => e.stopPropagation()}

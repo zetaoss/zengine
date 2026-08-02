@@ -41,37 +41,15 @@ final class BinderService
         return $rows;
     }
 
-    public static function getTreesForPageId(int $pageId, bool $refresh = false): array
+    public static function getTreesForPageId(int $pageId): array
     {
         if ($pageId < 1) {
             return [];
         }
 
-        if (! $refresh) {
-            $caches = self::dbr()->newSelectQueryBuilder()
-                ->select('B.cache')
-                ->from('ldb.binder_pages', 'BP')
-                ->join('ldb.binders', 'B', 'B.id = BP.binder_id')
-                ->where([
-                    'BP.page_id' => $pageId,
-                    'B.enabled' => 1,
-                ])
-                ->caller(__METHOD__)
-                ->fetchFieldValues();
-
-            $out = [];
-            foreach ($caches as $cache) {
-                $tree = self::decodeCache($cache);
-                if ($tree !== []) {
-                    $out[] = $tree;
-                }
-            }
-
-            return $out;
-        }
-
-        $binderIds = self::dbw()->newSelectQueryBuilder()
-            ->select('B.id')
+        $caches = self::dbr()->newSelectQueryBuilder()
+            ->select('B.cache')
+            ->distinct()
             ->from('ldb.binder_pages', 'BP')
             ->join('ldb.binders', 'B', 'B.id = BP.binder_id')
             ->where([
@@ -81,14 +59,9 @@ final class BinderService
             ->caller(__METHOD__)
             ->fetchFieldValues();
 
-        if (! $binderIds) {
-            return [];
-        }
-
         $out = [];
-        foreach ($binderIds as $id) {
-            $binder = self::rebuildBinder((int) $id);
-            $tree = self::decodeCache($binder['cache'] ?? null);
+        foreach ($caches as $cache) {
+            $tree = self::decodeCache($cache);
             if ($tree !== []) {
                 $out[] = $tree;
             }
@@ -99,16 +72,7 @@ final class BinderService
 
     public static function rebuildBinder(int $binderId): ?array
     {
-        if ($binderId < 1) {
-            return null;
-        }
-
-        $tree = self::buildTree($binderId);
-        if ($tree === null) {
-            return null;
-        }
-
-        return self::storeBinder($binderId, $tree);
+        return self::ensureBinder($binderId);
     }
 
     public static function ensureBinder(int $binderId): ?array
@@ -131,27 +95,39 @@ final class BinderService
             return null;
         }
 
-        $nodes = $tree['nodes'] ?? [];
-        $pageIds = self::collectNodePageIds($nodes);
-
-        self::syncRelations($realBinderId, $pageIds);
-
-        $row = self::storeBinder($realBinderId, $tree);
+        $dbw = self::dbw();
+        $dbw->startAtomic(__METHOD__);
+        try {
+            self::syncRelations($realBinderId, self::collectNodeReferences($tree['nodes'] ?? []));
+            $row = self::storeBinder($realBinderId, $tree);
+            $dbw->endAtomic(__METHOD__);
+        } catch (\Throwable $e) {
+            $dbw->cancelAtomic(__METHOD__);
+            throw $e;
+        }
 
         return $row;
     }
 
-    private static function syncRelations(int $binderId, array $pageIds): void
+    private static function syncRelations(int $binderId, array $references): void
     {
         $dbw = self::dbw();
 
         $seen = [];
         $rows = [];
-        foreach ($pageIds as $pid) {
-            if ($pid > 0 && ! isset($seen[$pid])) {
-                $seen[$pid] = true;
-                $rows[] = ['binder_id' => $binderId, 'page_id' => $pid];
+        foreach ($references as $reference) {
+            $key = $reference['page_namespace'].':'.$reference['page_title'];
+            if (isset($seen[$key])) {
+                continue;
             }
+
+            $seen[$key] = true;
+            $rows[] = [
+                'binder_id' => $binderId,
+                'page_namespace' => $reference['page_namespace'],
+                'page_title' => $reference['page_title'],
+                'page_id' => $reference['page_id'],
+            ];
         }
 
         $dbw->delete('ldb.binder_pages', ['binder_id' => $binderId]);
@@ -162,7 +138,8 @@ final class BinderService
 
     private static function storeBinder(int $binderId, array $tree): array
     {
-        $now = date('Y-m-d H:i:s');
+        $dbw = self::dbw();
+        $now = $dbw->timestamp();
         $row = [
             'id' => $binderId,
             'cache' => json_encode($tree, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
@@ -175,7 +152,7 @@ final class BinderService
         $updateRow = $row;
         unset($updateRow['id']);
         unset($updateRow['created_at']);
-        self::dbw()->upsert('ldb.binders', $row, ['id'], $updateRow, __METHOD__);
+        $dbw->upsert('ldb.binders', $row, ['id'], $updateRow, __METHOD__);
 
         return $row;
     }
@@ -185,6 +162,55 @@ final class BinderService
         $dbw = self::dbw();
         $dbw->delete('ldb.binder_pages', ['binder_id' => $binderId]);
         $dbw->delete('ldb.binders', ['id' => $binderId]);
+    }
+
+    public static function attachPage($title, int $pageId): void
+    {
+        if ($pageId < 1) {
+            return;
+        }
+
+        $dbw = self::dbw();
+        $binderIds = $dbw->newSelectQueryBuilder()
+            ->select('binder_id')
+            ->from('ldb.binder_pages')
+            ->where([
+                'page_namespace' => $title->getNamespace(),
+                'page_title' => $title->getDBkey(),
+                'page_id' => null,
+            ])
+            ->caller(__METHOD__)
+            ->fetchFieldValues();
+
+        if (! $binderIds) {
+            return;
+        }
+
+        foreach (array_unique($binderIds) as $binderId) {
+            self::ensureBinder((int) $binderId);
+        }
+    }
+
+    public static function clearPageId(int $pageId): void
+    {
+        if ($pageId < 1) {
+            return;
+        }
+
+        $dbw = self::dbw();
+        $binderIds = $dbw->newSelectQueryBuilder()
+            ->select('binder_id')
+            ->from('ldb.binder_pages')
+            ->where(['page_id' => $pageId])
+            ->caller(__METHOD__)
+            ->fetchFieldValues();
+        if (! $binderIds) {
+            return;
+        }
+
+        foreach (array_unique($binderIds) as $binderId) {
+            self::ensureBinder((int) $binderId);
+        }
     }
 
     private static function decodeCache($raw): array
@@ -333,7 +359,7 @@ final class BinderService
             if ($link) {
                 $text = trim($link->textContent);
                 $href = $link->getAttribute('href');
-                $titleAttr = $link->getAttribute('title');
+                $titleAttr = self::linkTitleText($link);
 
                 $node['text'] = $text;
                 if ($href !== '') {
@@ -344,10 +370,20 @@ final class BinderService
                     $titleText = html_entity_decode($titleAttr, ENT_QUOTES | ENT_HTML5, 'UTF-8');
                     $node['title'] = $titleText;
                     $targetId = self::titleToIdByText($titleText);
+                    $linkTitle = MediaWikiServices::getInstance()->getTitleFactory()->newFromText($titleText);
                     if ($targetId > 0) {
                         $node['id'] = $targetId;
+                        if ($linkTitle) {
+                            $node['href'] = $linkTitle->getLocalURL();
+                        }
                     } else {
                         $node['new'] = 1;
+                        if ($linkTitle) {
+                            $node['href'] = $linkTitle->getLocalURL([
+                                'action' => 'edit',
+                                'redlink' => 1,
+                            ]);
+                        }
                     }
                 }
             } else {
@@ -377,6 +413,21 @@ final class BinderService
         return $nodes;
     }
 
+    private static function linkTitleText(\DOMElement $link): string
+    {
+        if (in_array('new', preg_split('/\s+/', $link->getAttribute('class')) ?: [], true)) {
+            $query = parse_url(html_entity_decode($link->getAttribute('href'), ENT_QUOTES | ENT_HTML5, 'UTF-8'), PHP_URL_QUERY);
+            if (is_string($query)) {
+                parse_str($query, $params);
+                if (isset($params['title']) && is_string($params['title'])) {
+                    return str_replace('_', ' ', $params['title']);
+                }
+            }
+        }
+
+        return $link->getAttribute('title');
+    }
+
     private static function countDocs(array $nodes): int
     {
         $count = 0;
@@ -398,27 +449,46 @@ final class BinderService
         return $count;
     }
 
-    private static function collectNodePageIds(array $nodes): array
+    private static function collectNodeReferences(array $nodes): array
     {
-        $ids = [];
+        $references = [];
 
         foreach ($nodes as $node) {
             if (! is_array($node)) {
                 continue;
             }
 
-            if (isset($node['id']) && (int) $node['id'] > 0) {
-                $ids[] = (int) $node['id'];
+            if (isset($node['title']) && is_string($node['title'])) {
+                $reference = self::titleToReference($node['title']);
+                if ($reference !== null) {
+                    $references[] = $reference;
+                }
             }
 
             if (isset($node['nodes']) && is_array($node['nodes'])) {
-                foreach (self::collectNodePageIds($node['nodes']) as $childId) {
-                    $ids[] = $childId;
+                foreach (self::collectNodeReferences($node['nodes']) as $childReference) {
+                    $references[] = $childReference;
                 }
             }
         }
 
-        return $ids;
+        return $references;
+    }
+
+    private static function titleToReference(string $titleText): ?array
+    {
+        $title = MediaWikiServices::getInstance()->getTitleFactory()->newFromText($titleText);
+        if (! $title) {
+            return null;
+        }
+
+        $resolved = self::resolveRedirects($title);
+
+        return [
+            'page_namespace' => $title->getNamespace(),
+            'page_title' => $title->getDBkey(),
+            'page_id' => $resolved && $resolved->getId() > 0 ? (int) $resolved->getId() : null,
+        ];
     }
 
     private static function countLinks(array $nodes): int

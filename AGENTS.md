@@ -109,6 +109,13 @@ This guide helps coding agents quickly understand the monorepo and choose where 
 
 ## Dev Process Notes
 
+- Check the installed MediaWiki version from the repository root with:
+
+  ```bash
+  php w/maintenance/run.php Version --server localhost
+  ```
+
+  The current development environment runs MediaWiki 1.43.9 LTS. Prefer this command over inferring the runtime version from source files or dependency metadata.
 - Go server, worker, and scheduler in this environment are supervised by `supervisor` and run through `air` when their programs are configured.
 - Canonical Air configs are in `goapp/` root:
   - `.air.server.toml`

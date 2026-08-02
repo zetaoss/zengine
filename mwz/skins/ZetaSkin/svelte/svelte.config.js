@@ -4,6 +4,7 @@ const customElementFiles = [
   'src/components/PageMeta.svelte',
   'src/components/UserMenu.svelte',
   'src/components/binder/BinderApex.svelte',
+  'src/components/disambig/DisambigApex.svelte',
   'src/components/editbox/EditBox.svelte',
   'src/components/toc/TocApex.svelte',
   'src/shared/components/CAdsenseSlot.svelte',
