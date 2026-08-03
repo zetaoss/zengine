@@ -61,8 +61,8 @@
     </section>
 
     <!-- Bottom Section -->
-    <section class="flex flex-col gap-4 border-t border-border/60 pt-4 md:flex-row md:items-center md:justify-between">
-      <ul class="list-none pl-0 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+    <section class="flex flex-col gap-4 border-t border-border/60 pb-2 md:flex-row md:items-center md:justify-between">
+      <ul class="list-none pt-4 pl-0 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
         <li>
           <a href="/wiki/제타위키:개인정보처리방침">개인정보처리방침</a>
         </li>
@@ -80,7 +80,9 @@
           </li>
         {/if}
       </ul>
-      <nav id="footer-icons" class="noprint" aria-label="Footer Icons"></nav>
+      <nav>
+        <span class="text-xs text-a-gray-400" title="{versionData.buildDate}">zengine {versionData.gitVersion}</span>
+      </nav>
     </section>
   </div>
 

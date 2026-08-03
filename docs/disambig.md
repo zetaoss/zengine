@@ -141,6 +141,32 @@ Disambig 문서 저장
 
 Job 실행 상태와 실패는 MediaWiki Job queue에서 확인한다. 편집 사용자를 복원할 수 없거나 revision 저장이 실패하면 Job은 실패를 반환한다.
 
+## 일괄 레거시 동음이의 변환 (Batch Migration)
+
+위키 내 기존 `{{다른뜻}}` / `{{다른 뜻}}` 틀을 사용하는 문서들을 탐색하여 일괄 처리한다.
+
+```bash
+# 모의 실행 (변경 사항 사전 검증)
+MW_INSTALL_PATH=/app/w php /app/mwz/extensions/ZetaExtension/maintenance/BatchConvertLegacyDisambigs.php --dry-run --server localhost
+
+# 실제 일괄 실행
+MW_INSTALL_PATH=/app/w php /app/mwz/extensions/ZetaExtension/maintenance/BatchConvertLegacyDisambigs.php --server localhost
+```
+
+### 일괄 변환 규칙
+1. `{{다른뜻}}` 틀이 포함된 문서를 기본 제목별로 그룹화한다.
+2. 각 기본 제목을 공유하는 넘겨주기(redirect)가 아닌 실존 일반 문서를 탐색한다.
+3. **실존 후보 문서가 2개 이상이거나 이미 `Disambig` 문서가 존재하는 경우**:
+   - `Disambig:<기본제목>` 문서가 없으면 자동 생성하고 DB 관계 및 캐시를 동기화한다.
+   - 대상 문서들의 본문에서 `{{다른뜻}}` 틀을 제거한다.
+4. **실존 후보 문서가 2개 미만인 경우**:
+   - `Disambig` 문서를 생성하지 않고, 대상 문서 본문의 `{{다른뜻}}` 틀만 제거한다.
+
+옵션:
+- `--dry-run`: 실제 수정 없이 생성/제거 대상 목록만 모의 출력한다.
+- `--user=<UserName>`: 마이그레이션 편집 기여자로 남길 사용자 이름을 지정한다. (기본값: `Jmnote bot`)
+- `--limit=<N>`: 처리할 기본 제목의 최대 개수를 제한한다.
+
 ## 전체 재구축
 
 모든 `Disambig` 문서를 다시 파싱해 관계와 캐시를 재구축한다.

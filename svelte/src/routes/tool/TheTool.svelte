@@ -15,6 +15,7 @@
 
   const navItems: NavItem[] = [
     { key: '/tool/binder', href: resolve('/tool/binder'), label: '바인더' },
+    { key: '/tool/disambig', href: resolve('/tool/disambig'), label: '동음이의' },
     { key: '/tool/common-report', href: resolve('/tool/common-report'), label: '통용' },
     { key: '/tool/article-tpl', href: resolve('/tool/article-tpl'), label: '템플릿' },
     { key: '/tool/write-request', href: resolve('/tool/write-request'), label: '작성요청' },

@@ -11,6 +11,7 @@ import (
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/binder"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/comments"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/commonreport"
+	"github.com/zetaoss/zengine/goapp/server/handlers/api/disambig"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/internalprofile"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/me"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/oneline"
@@ -43,6 +44,7 @@ func RegisterRoutes(mux *http.ServeMux, serverCtx *serverctx.Context, components
 
 	r.GET("/api/binders", binder.Index)
 	r.PUT("/api/binders/{binder}", binder.Update, r.Unblocked())
+	r.GET("/api/disambigs", disambig.Index)
 	r.GET("/api/article-tpl", articletpl.GetArticleTpl)
 	r.GET("/api/article-tpl/enabled", articletpl.GetEnabledArticleTpl)
 	r.PUT("/api/article-tpl", articletpl.PutArticleTpl, r.Sysop())
