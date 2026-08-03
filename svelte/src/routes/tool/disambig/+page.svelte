@@ -208,7 +208,7 @@
               <td class="px-4 py-3 align-top">
                 {#if item.nodes && item.nodes.length > 0}
                   <div class="flex flex-wrap items-center gap-y-1 my-0.5">
-                    {#each item.nodes as node, i (node.title + (node.href || ''))}
+                    {#each item.nodes as node, i (i)}
                       {#if i > 0}
                         <span class="inline-block px-2 text-muted-foreground/40 select-none text-xs">|</span>
                       {/if}

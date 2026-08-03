@@ -356,6 +356,9 @@ class BatchConvertLegacyDisambigs extends Maintenance
                 $label = $second !== '' ? $first : '';
 
                 if ($targetTitle !== '' && $this->isValidCandidateTitle($targetTitle, $baseTitle)) {
+                    if ($label !== '' && !$this->isValidCandidateTitle($label, $baseTitle)) {
+                        $label = '';
+                    }
                     $meanings[] = [
                         'title' => $targetTitle,
                         'label' => $label,
