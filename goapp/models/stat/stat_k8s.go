@@ -7,6 +7,8 @@ var StatK8sMetricNames = []string{
 	"node_memory_allocatable",
 	"pod_cpu_usage",
 	"pod_memory_usage",
+	"pvc_storage_usage",
+	"pvc_storage_capacity",
 	"pod_count",
 }
 
@@ -18,6 +20,8 @@ type K8sHourly struct {
 	NodeMemoryAllocatable float64 `gorm:"column:node_memory_allocatable"`
 	PodCPUUsage           float64 `gorm:"column:pod_cpu_usage"`
 	PodMemoryUsage        float64 `gorm:"column:pod_memory_usage"`
+	PVCStorageUsage       float64 `gorm:"column:pvc_storage_usage"`
+	PVCStorageCapacity    float64 `gorm:"column:pvc_storage_capacity"`
 	PodCount              int     `gorm:"column:pod_count"`
 }
 
@@ -29,5 +33,7 @@ type K8sDaily struct {
 	NodeMemoryAllocatable float64 `gorm:"column:node_memory_allocatable"`
 	PodCPUUsage           float64 `gorm:"column:pod_cpu_usage"`
 	PodMemoryUsage        float64 `gorm:"column:pod_memory_usage"`
+	PVCStorageUsage       float64 `gorm:"column:pvc_storage_usage"`
+	PVCStorageCapacity    float64 `gorm:"column:pvc_storage_capacity"`
 	PodCount              int     `gorm:"column:pod_count"`
 }

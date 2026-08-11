@@ -15,7 +15,7 @@
 
   type MetricKey = 'uniq_uniques' | 'sum_requests' | 'sum_bytes' | 'sum_cachedBytes'
   type GaMetricKey = 'active_users' | 'screen_page_views' | 'sessions'
-  type ChartUnit = 'count' | 'bytes' | 'percent' | 'rank'
+  type ChartUnit = 'count' | 'bytes' | 'cores' | 'percent' | 'rank'
 
   interface AnalyticsResp {
     timeslots: string[]
@@ -61,6 +61,8 @@
     | 'node_memory_allocatable'
     | 'pod_cpu_usage'
     | 'pod_memory_usage'
+    | 'pvc_storage_usage'
+    | 'pvc_storage_capacity'
     | 'pod_count'
 
   interface K8sResp {
@@ -71,6 +73,8 @@
     node_memory_allocatable: Array<unknown>
     pod_cpu_usage: Array<unknown>
     pod_memory_usage: Array<unknown>
+    pvc_storage_usage: Array<unknown>
+    pvc_storage_capacity: Array<unknown>
     pod_count: Array<unknown>
   }
 
@@ -78,8 +82,9 @@
     key: string
     label: string
     value: number | null
+    secondaryValue?: number | null
     unit: ChartUnit
-    series: Array<{ label: string; color?: string; values: Array<number | null> }>
+    series: Array<{ label: string; color?: string; area?: boolean; layer?: 'main' | 'sub'; values: Array<number | null> }>
     diffValues?: Array<number | null>
   }
 
@@ -122,9 +127,12 @@
     node_memory_allocatable: [],
     pod_cpu_usage: [],
     pod_memory_usage: [],
+    pvc_storage_usage: [],
+    pvc_storage_capacity: [],
     pod_count: [],
   }
   const DEFAULT_LINE_COLOR = '#0891b2'
+  const SUB_LINE_COLOR = 'var(--color-a-gray-300)'
 
   let loading = $state(true)
   let failed = $state<string | null>(null)
@@ -331,6 +339,8 @@
       node_memory_allocatable: Array.isArray(input.node_memory_allocatable) ? input.node_memory_allocatable : [],
       pod_cpu_usage: Array.isArray(input.pod_cpu_usage) ? input.pod_cpu_usage : [],
       pod_memory_usage: Array.isArray(input.pod_memory_usage) ? input.pod_memory_usage : [],
+      pvc_storage_usage: Array.isArray(input.pvc_storage_usage) ? input.pvc_storage_usage : [],
+      pvc_storage_capacity: Array.isArray(input.pvc_storage_capacity) ? input.pvc_storage_capacity : [],
       pod_count: Array.isArray(input.pod_count) ? input.pod_count : [],
     }
   }
@@ -505,21 +515,29 @@
         key: 'k8s-node-cpu',
         label: 'Nodepool CPU',
         value: lastK8sMetric(resp, 'node_cpu_usage'),
-        unit: 'count',
-        series: [{ label: 'Nodepool CPU Usage', values: seriesOfK8s(resp, 'node_cpu_usage') }],
+        secondaryValue: lastK8sMetric(resp, 'node_cpu_allocatable'),
+        unit: 'cores',
+        series: [
+          { label: 'Nodepool CPU Usage', area: true, layer: 'main', values: seriesOfK8s(resp, 'node_cpu_usage') },
+          { label: 'Nodepool CPU Allocatable', color: SUB_LINE_COLOR, area: true, layer: 'sub', values: seriesOfK8s(resp, 'node_cpu_allocatable') },
+        ],
       },
       {
         key: 'k8s-node-memory',
         label: 'Nodepool Memory',
         value: lastK8sMetric(resp, 'node_memory_usage'),
+        secondaryValue: lastK8sMetric(resp, 'node_memory_allocatable'),
         unit: 'bytes',
-        series: [{ label: 'Nodepool Memory Usage', values: seriesOfK8s(resp, 'node_memory_usage') }],
+        series: [
+          { label: 'Nodepool Memory Usage', area: true, layer: 'main', values: seriesOfK8s(resp, 'node_memory_usage') },
+          { label: 'Nodepool Memory Allocatable', color: SUB_LINE_COLOR, area: true, layer: 'sub', values: seriesOfK8s(resp, 'node_memory_allocatable') },
+        ],
       },
       {
         key: 'k8s-pod-cpu',
         label: 'Namespace CPU',
         value: lastK8sMetric(resp, 'pod_cpu_usage'),
-        unit: 'count',
+        unit: 'cores',
         series: [{ label: 'Namespace CPU Usage', values: seriesOfK8s(resp, 'pod_cpu_usage') }],
       },
       {
@@ -528,6 +546,17 @@
         value: lastK8sMetric(resp, 'pod_memory_usage'),
         unit: 'bytes',
         series: [{ label: 'Namespace Memory Usage', values: seriesOfK8s(resp, 'pod_memory_usage') }],
+      },
+      {
+        key: 'k8s-pvc-storage',
+        label: 'PVC Storage',
+        value: lastK8sMetric(resp, 'pvc_storage_usage'),
+        secondaryValue: lastK8sMetric(resp, 'pvc_storage_capacity'),
+        unit: 'bytes',
+        series: [
+          { label: 'PVC Storage Usage', area: true, layer: 'main', values: seriesOfK8s(resp, 'pvc_storage_usage') },
+          { label: 'PVC Storage Capacity', color: SUB_LINE_COLOR, area: true, layer: 'sub', values: seriesOfK8s(resp, 'pvc_storage_capacity') },
+        ],
       },
     ]
   }
@@ -682,7 +711,7 @@
     if (abs >= 1_000_000_000) return `${stripZero((value / 1_000_000_000).toFixed(1))}B`
     if (abs >= 1_000_000) return `${stripZero((value / 1_000_000).toFixed(1))}M`
     if (abs >= 1_000) return `${stripZero((value / 1_000).toFixed(1))}k`
-    if (!Number.isInteger(value)) return `${stripZero(value.toFixed(3))}`
+    if (!Number.isInteger(value)) return `${stripZero(value.toFixed(1))}`
     return `${Math.round(value).toLocaleString('en-US')}`
   }
 
@@ -726,11 +755,18 @@
   }
 
   function formatStatValue(value: number | null, unit: ChartUnit) {
+    if (unit === 'cores') return value == null ? '-' : `${Math.round(value * 1000)}m`
     if (valueMode === 'exact') return fmtExact(value, unit)
     if (unit === 'bytes') return fmtBytes(value)
     if (unit === 'percent') return fmtPercent(value)
     if (unit === 'rank') return fmtRank(value)
     return fmtCount(value)
+  }
+
+  function formatUsagePercent(usage: number | null, limit: number | null | undefined) {
+    if (usage == null || limit == null || limit <= 0) return '-'
+    const percentage = (usage / limit) * 100
+    return `${percentage.toFixed(1)}%`
   }
 
   function stripZero(value: string) {
@@ -909,7 +945,14 @@
         <div class="grid items-center md:grid-cols-[180px_minmax(0,1fr)]">
           <aside class="rounded">
             <div class="text-a-gray-500">{row.label}</div>
-            <div class="text-[1.2rem] font-bold">{formatStatValue(row.value, row.unit)}</div>
+            <div class="text-[1.2rem] font-bold">
+              {formatStatValue(row.value, row.unit)}
+              {#if row.secondaryValue !== undefined}
+                <span class="text-[0.9rem] font-medium text-a-gray-500">
+                  / {formatStatValue(row.secondaryValue, row.unit)} ({formatUsagePercent(row.value, row.secondaryValue)})
+                </span>
+              {/if}
+            </div>
           </aside>
 
           <LineChart
@@ -918,6 +961,8 @@
             unit={row.unit}
             color={DEFAULT_LINE_COLOR}
             {valueMode}
+            fillArea={row.series.length === 1}
+            showRatioPercent={row.secondaryValue !== undefined}
             selectedLabelMode={range === '48h' ? 'hour' : 'date'}
             hoveredIndex={syncedHoverIndex}
             onHoverIndex={(index) => {

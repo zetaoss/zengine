@@ -25,6 +25,8 @@ type dailyGroup struct {
 	nodeMemAllocs []float64
 	podCPUUsages  []float64
 	podMemUsages  []float64
+	pvcStorages   []float64
+	pvcCapacities []float64
 	podCounts     []int
 }
 
@@ -62,6 +64,14 @@ func (j *DailyTask) Execute(ctx context.Context, taskCtx taskctx.Context, _ any)
 		g.nodeMemAllocs = append(g.nodeMemAllocs, h.NodeMemoryAllocatable)
 		g.podCPUUsages = append(g.podCPUUsages, h.PodCPUUsage)
 		g.podMemUsages = append(g.podMemUsages, h.PodMemoryUsage)
+		// Rows collected before PVC storage tracking was introduced contain the
+		// column's zero value. Exclude those missing historical samples.
+		if h.PVCStorageUsage > 0 {
+			g.pvcStorages = append(g.pvcStorages, h.PVCStorageUsage)
+		}
+		if h.PVCStorageCapacity > 0 {
+			g.pvcCapacities = append(g.pvcCapacities, h.PVCStorageCapacity)
+		}
 		g.podCounts = append(g.podCounts, h.PodCount)
 	}
 
@@ -75,6 +85,8 @@ func (j *DailyTask) Execute(ctx context.Context, taskCtx taskctx.Context, _ any)
 			NodeMemoryAllocatable: medianFloat64(g.nodeMemAllocs),
 			PodCPUUsage:           medianFloat64(g.podCPUUsages),
 			PodMemoryUsage:        medianFloat64(g.podMemUsages),
+			PVCStorageUsage:       medianFloat64(g.pvcStorages),
+			PVCStorageCapacity:    medianFloat64(g.pvcCapacities),
 			PodCount:              medianInt(g.podCounts),
 		}
 		rows = append(rows, d)
@@ -122,5 +134,5 @@ func medianInt(vals []int) int {
 	if n%2 == 1 {
 		return sorted[n/2]
 	}
-	return int((float64(sorted[(n-1)/2]) + float64(sorted[n/2])) / 2.0 + 0.5)
+	return int((float64(sorted[(n-1)/2])+float64(sorted[n/2]))/2.0 + 0.5)
 }

@@ -6,11 +6,13 @@
   import { onDestroy, onMount } from 'svelte'
   import uPlot from 'uplot'
 
-  type Unit = 'count' | 'bytes' | 'percent' | 'rank'
+  type Unit = 'count' | 'bytes' | 'cores' | 'percent' | 'rank'
 
   interface LineSeries {
     label: string
     color?: string
+    area?: boolean
+    layer?: 'main' | 'sub'
     values: Array<number | null>
   }
 
@@ -23,6 +25,7 @@
     barColor?: string
     color?: string
     fillArea?: boolean
+    showRatioPercent?: boolean
     valueMode?: 'compact' | 'exact'
     height?: number
     hoveredIndex?: number | null
@@ -39,6 +42,7 @@
     barColor = '#0891b2',
     color = '#0891b2',
     fillArea = true,
+    showRatioPercent = false,
     valueMode = 'compact',
     height = 80,
     hoveredIndex = null,
@@ -49,8 +53,11 @@
   let hostEl = $state<HTMLDivElement | null>(null)
   let chartEl = $state<HTMLDivElement | null>(null)
   let valueLabelEl = $state<HTMLDivElement | null>(null)
+  let grayStrokeProbeEl = $state<HTMLSpanElement | null>(null)
+  let grayFillProbeEl = $state<HTMLSpanElement | null>(null)
   let chart = $state<uPlot | null>(null)
   let resizeObserver = $state<ResizeObserver | null>(null)
+  let themeObserver = $state<MutationObserver | null>(null)
   let width = $state(0)
   let renderedSignature = $state('')
   let applyingExternalSync = $state(false)
@@ -58,8 +65,10 @@
   let valueLabelY = $state(0)
   let destroyed = false
 
+  const renderedSeries = $derived.by(() => [...series].sort((a, b) => Number(a.layer === 'main') - Number(b.layer === 'main')))
+
   const structureSignature = $derived.by(
-    () => `${unit}::${series.map((s) => `${s.label}:${s.color ?? color}`).join('|')}::${barColor}::${barValues ? barValues.length : 0}`,
+    () => `${unit}::${renderedSeries.map((s) => `${s.label}:${s.color ?? color}:${s.area ?? fillArea}:${s.layer ?? ''}`).join('|')}::${barColor}::${barValues ? barValues.length : 0}`,
   )
 
   const hasAnyData = $derived.by(() => series.some((line) => line.values.some((v) => typeof v === 'number' && Number.isFinite(v))))
@@ -83,20 +92,16 @@
 
   const tooltipRows = $derived.by(() => {
     if (selectedIdx == null) return [] as Array<{ line: LineSeries; value: number | null }>
-    return series
-      .map((line) => ({
-        line,
-        value: toNumber(line.values[selectedIdx] ?? null),
-      }))
-      .sort((a, b) => {
-        const av = a.value == null ? Number.NEGATIVE_INFINITY : a.value
-        const bv = b.value == null ? Number.NEGATIVE_INFINITY : b.value
-        return bv - av
-      })
+    return series.map((line) => ({
+      line,
+      value: toNumber(line.values[selectedIdx] ?? null),
+    }))
   })
 
   function formatValue(value: number | null) {
     if (value == null) return '-'
+
+    if (unit === 'cores') return `${Math.round(value * 1000)}m`
 
     if (valueMode === 'exact') {
       if (unit === 'percent') {
@@ -126,22 +131,22 @@
         n /= 1024
         u += 1
       }
-      return `${n.toFixed(1)}${units[u]}`
+      return `${stripZero(n.toFixed(1))}${units[u]}`
     }
 
     if (unit === 'rank') {
-      return value.toFixed(1)
+      return stripZero(value.toFixed(1))
     }
 
     if (!Number.isInteger(value)) {
-      return value.toFixed(3).replace(/\.?0+$/, '')
+      return stripZero(value.toFixed(1))
     }
 
     const rounded = Math.round(value)
     const abs = Math.abs(rounded)
-    if (abs >= 1_000_000_000) return `${(rounded / 1_000_000_000).toFixed(1)}B`
-    if (abs >= 1_000_000) return `${(rounded / 1_000_000).toFixed(1)}M`
-    if (abs >= 1_000) return `${(rounded / 1_000).toFixed(1)}k`
+    if (abs >= 1_000_000_000) return `${stripZero((rounded / 1_000_000_000).toFixed(1))}B`
+    if (abs >= 1_000_000) return `${stripZero((rounded / 1_000_000).toFixed(1))}M`
+    if (abs >= 1_000) return `${stripZero((rounded / 1_000).toFixed(1))}k`
     return `${rounded}`
   }
 
@@ -149,6 +154,16 @@
     return value.toLocaleString('en-US', {
       maximumFractionDigits: maxFractionDigits,
     })
+  }
+
+  function formatRatioPercent(usage: number | null, limit: number | null) {
+    if (usage == null || limit == null || limit <= 0) return '-'
+    const percentage = (usage / limit) * 100
+    return `${percentage.toFixed(1)}%`
+  }
+
+  function stripZero(value: string) {
+    return value.replace(/\.?0+$/, '')
   }
 
   function formatDateLabel(value: string | undefined) {
@@ -197,9 +212,22 @@
     return color
   }
 
+  function resolveCanvasColor(value: string) {
+    if (value !== 'var(--color-a-gray-300)' || !grayStrokeProbeEl) return value
+    return getComputedStyle(grayStrokeProbeEl).color || value
+  }
+
+  function resolveCanvasFill(value: string) {
+    if (!value.includes('var(')) return fillColor(value)
+    if (value === 'var(--color-a-gray-300)' && grayFillProbeEl) {
+      return getComputedStyle(grayFillProbeEl).color || value
+    }
+    return value
+  }
+
   function buildData(): uPlot.AlignedData {
     const x = labels.map((_, i) => i)
-    const ys = series.map((line) => line.values.map((v) => (typeof v === 'number' && Number.isFinite(v) ? v : null)))
+    const ys = renderedSeries.map((line) => line.values.map((v) => (typeof v === 'number' && Number.isFinite(v) ? v : null)))
     return [x, ...ys]
   }
 
@@ -399,16 +427,20 @@
       ],
       series: [
         {},
-        ...series.map((line) => ({
-          stroke: line.color ?? color,
-          fill: fillArea ? fillColor(line.color ?? color) : 'transparent',
-          fillTo: (_u: uPlot, _seriesIdx: number, min: number, max: number) => {
-            if (destroyed) return 0
-            return unit === 'rank' ? max : 0
-          },
-          width: 2.2,
-          points: { show: false },
-        })),
+        ...renderedSeries.map((line) => {
+          const colorToken = line.color ?? color
+          const seriesColor = resolveCanvasColor(colorToken)
+          return {
+            stroke: seriesColor,
+            fill: (line.area ?? fillArea) ? resolveCanvasFill(colorToken) : 'transparent',
+            fillTo: (_u: uPlot, _seriesIdx: number, min: number, max: number) => {
+              if (destroyed) return 0
+              return unit === 'rank' ? max : 0
+            },
+            width: 2.2,
+            points: { show: false },
+          }
+        }),
       ],
       cursor: {
         drag: { x: false, y: false },
@@ -451,11 +483,17 @@
       })
       resizeObserver.observe(chartEl)
     }
+
+    themeObserver = new MutationObserver(() => {
+      if (!destroyed) createChart()
+    })
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
   })
 
   onDestroy(() => {
     destroyed = true
     resizeObserver?.disconnect()
+    themeObserver?.disconnect()
     chart?.destroy()
     chart = null
   })
@@ -490,6 +528,8 @@
 </script>
 
 <div class="relative" bind:this={hostEl}>
+  <span class="hidden text-a-gray-300" bind:this={grayStrokeProbeEl}></span>
+  <span class="hidden text-a-gray-300/16" bind:this={grayFillProbeEl}></span>
   <div
     bind:this={chartEl}
     class="relative"
@@ -510,7 +550,13 @@
       {#if tooltipRows.length === 1}
         <span>{formatValue(tooltipRows[0]?.value ?? null)}</span>
       {:else}
-        <span>{formatValue(tooltipRows[0]?.value ?? null)} / {formatValue(tooltipRows[1]?.value ?? null)}</span>
+        <span>{formatValue(tooltipRows[0]?.value ?? null)}</span>
+        <span class="ml-1 text-[0.85rem] font-medium text-a-gray-500">
+          / {formatValue(tooltipRows[1]?.value ?? null)}
+          {#if showRatioPercent}
+            ({formatRatioPercent(tooltipRows[0]?.value ?? null, tooltipRows[1]?.value ?? null)})
+          {/if}
+        </span>
       {/if}
     </div>
   {/if}
