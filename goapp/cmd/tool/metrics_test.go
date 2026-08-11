@@ -12,12 +12,13 @@ func TestRunMetricsRejectsEndpointFlag(t *testing.T) {
 }
 
 func TestRunMetricsReturnsErrorOnMissingEnv(t *testing.T) {
-	t.Setenv("K8SMETRICS_ENDPOINT", "")
-	t.Setenv("K8SMETRICS_NODEPOOL", "")
-	t.Setenv("K8SMETRICS_NAMESPACE", "")
+	t.Setenv("MONITORING_ENDPOINT", "")
+	t.Setenv("MONITORING_NODEPOOL", "")
+	t.Setenv("MONITORING_NAMESPACE", "")
+	t.Setenv("MONITORING_PVC", "")
 
 	if err := runMetrics(nil, nil); err == nil {
-		t.Fatal("expected error when K8SMETRICS env vars are missing")
+		t.Fatal("expected error when MONITORING env vars are missing")
 	}
 }
 
@@ -160,5 +161,8 @@ func TestFixedMetricUnits(t *testing.T) {
 	}
 	if got := formatMemoryMi(8.24303616e+09); got != "7861Mi" {
 		t.Errorf("formatMemoryMi(8.24303616e+09) = %s, expected 7861Mi", got)
+	}
+	if got := formatStorageGi(11 * 1024 * 1024 * 1024); got != "11Gi" {
+		t.Errorf("formatStorageGi(11 GiB) = %s, expected 11Gi", got)
 	}
 }

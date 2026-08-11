@@ -15,6 +15,7 @@ import (
 
 type NodeMetric = k8s.NodeMetric
 type PodMetric = k8s.PodMetric
+type PVCMetric = k8s.PVCMetric
 
 func runMetrics(cfg *config.Config, args []string) error {
 	fs := flag.NewFlagSet("metrics", flag.ContinueOnError)
@@ -31,28 +32,36 @@ func runMetrics(cfg *config.Config, args []string) error {
 	endpoint := ""
 	nodepool := ""
 	namespace := ""
+	pvc := ""
 	if cfg != nil {
-		endpoint = cfg.API.K8sMetricsEndpoint
-		nodepool = cfg.API.K8sMetricsNodepool
-		namespace = cfg.API.K8sMetricsNamespace
+		endpoint = cfg.API.MonitoringEndpoint
+		nodepool = cfg.API.MonitoringNodepool
+		namespace = cfg.API.MonitoringNamespace
+		pvc = cfg.API.MonitoringPVC
 	}
 	if endpoint == "" {
-		endpoint = os.Getenv("K8SMETRICS_ENDPOINT")
+		endpoint = os.Getenv("MONITORING_ENDPOINT")
 	}
 	if endpoint == "" {
-		return fmt.Errorf("missing K8SMETRICS_ENDPOINT")
+		return fmt.Errorf("missing MONITORING_ENDPOINT")
 	}
 	if nodepool == "" {
-		nodepool = os.Getenv("K8SMETRICS_NODEPOOL")
+		nodepool = os.Getenv("MONITORING_NODEPOOL")
 	}
 	if nodepool == "" {
-		return fmt.Errorf("missing K8SMETRICS_NODEPOOL")
+		return fmt.Errorf("missing MONITORING_NODEPOOL")
 	}
 	if namespace == "" {
-		namespace = os.Getenv("K8SMETRICS_NAMESPACE")
+		namespace = os.Getenv("MONITORING_NAMESPACE")
 	}
 	if namespace == "" {
-		return fmt.Errorf("missing K8SMETRICS_NAMESPACE")
+		return fmt.Errorf("missing MONITORING_NAMESPACE")
+	}
+	if pvc == "" {
+		pvc = os.Getenv("MONITORING_PVC")
+	}
+	if pvc == "" {
+		return fmt.Errorf("missing MONITORING_PVC")
 	}
 
 	show := func() error {
@@ -64,11 +73,19 @@ func runMetrics(cfg *config.Config, args []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to fetch metrics from %s: %w", endpoint, err)
 		}
+		pvcs, err := fetchPVCMetrics(endpoint, namespace, pvc)
+		if err != nil {
+			return fmt.Errorf("failed to fetch PVC metrics from %s: %w", endpoint, err)
+		}
 		if err := printNodeMetrics(nodes); err != nil {
 			return err
 		}
 		_, _ = fmt.Println()
-		return printPodMetrics(pods, namespace)
+		if err := printPodMetrics(pods, namespace); err != nil {
+			return err
+		}
+		_, _ = fmt.Println()
+		return printPVCMetrics(pvcs, namespace)
 	}
 
 	if err := show(); err != nil {
@@ -91,6 +108,10 @@ func runMetrics(cfg *config.Config, args []string) error {
 
 func fetchAndParseMetrics(endpoint, nodepool, namespace string) ([]NodeMetric, []PodMetric, error) {
 	return k8s.FetchAndParseMetrics(context.Background(), endpoint, nodepool, namespace)
+}
+
+func fetchPVCMetrics(endpoint, namespace, pvc string) ([]PVCMetric, error) {
+	return k8s.FetchPVCMetrics(context.Background(), endpoint, namespace, pvc)
 }
 
 func parsePrometheusNodeMetrics(r io.Reader, nodepool string) ([]NodeMetric, error) {
@@ -172,6 +193,30 @@ func printPodMetrics(pods []PodMetric, namespace string) error {
 	return tw.Flush()
 }
 
+func printPVCMetrics(pvcs []PVCMetric, namespace string) error {
+	if len(pvcs) == 0 {
+		_, _ = fmt.Printf("No %s PVC metrics found.\n", namespace)
+		return nil
+	}
+
+	tw := tablewriter.New(os.Stdout, "NAMESPACE", "PVC", "STORAGE(bytes)", "STORAGE(%)")
+	if err := tw.Header(); err != nil {
+		return err
+	}
+
+	for _, pvc := range pvcs {
+		if err := tw.Row(
+			pvc.Namespace,
+			pvc.Name,
+			formatStorageGi(pvc.Usage),
+			fmt.Sprintf("%.2f%%", pvc.UsagePercent),
+		); err != nil {
+			return err
+		}
+	}
+	return tw.Flush()
+}
+
 func formatCPU(cores float64) string {
 	return fmt.Sprintf("%.0fm", cores*1000)
 }
@@ -179,6 +224,11 @@ func formatCPU(cores float64) string {
 func formatMemoryMi(bytes float64) string {
 	const MiB = 1024 * 1024
 	return fmt.Sprintf("%.0fMi", bytes/MiB)
+}
+
+func formatStorageGi(bytes float64) string {
+	const GiB = 1024 * 1024 * 1024
+	return fmt.Sprintf("%.0fGi", bytes/GiB)
 }
 
 func formatPct(used, alloc float64) string {

@@ -55,9 +55,10 @@ type AnalyticsConfig struct {
 }
 
 type APIConfig struct {
-	K8sMetricsEndpoint  string
-	K8sMetricsNamespace string
-	K8sMetricsNodepool  string
+	MonitoringEndpoint  string
+	MonitoringNamespace string
+	MonitoringNodepool  string
+	MonitoringPVC       string
 	LLMEndpoint         string
 	RunboxEndpoint      string
 	SearchEndpoint      string
@@ -125,9 +126,10 @@ func Load() (*Config, error) {
 	cfg.Analytics.GATimezone = lookup(overrides, "GA_TIMEZONE")
 	cfg.Analytics.GSCSiteURL = lookup(overrides, "GSC_SITE_URL")
 
-	cfg.API.K8sMetricsEndpoint = lookup(overrides, "K8SMETRICS_ENDPOINT")
-	cfg.API.K8sMetricsNamespace = lookup(overrides, "K8SMETRICS_NAMESPACE")
-	cfg.API.K8sMetricsNodepool = lookup(overrides, "K8SMETRICS_NODEPOOL")
+	cfg.API.MonitoringEndpoint = lookup(overrides, "MONITORING_ENDPOINT")
+	cfg.API.MonitoringNamespace = lookup(overrides, "MONITORING_NAMESPACE")
+	cfg.API.MonitoringNodepool = lookup(overrides, "MONITORING_NODEPOOL")
+	cfg.API.MonitoringPVC = lookup(overrides, "MONITORING_PVC")
 	cfg.API.LLMEndpoint = lookup(overrides, "LLM_ENDPOINT")
 	cfg.API.RunboxEndpoint = lookup(overrides, "RUNBOX_ENDPOINT")
 	cfg.API.SearchEndpoint = lookup(overrides, "SEARCH_ENDPOINT")
