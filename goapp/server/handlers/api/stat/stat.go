@@ -291,8 +291,10 @@ func buildK8sHourlyPayload(from time.Time, to time.Time, rows []statmodels.K8sHo
 			series["node_memory_allocatable"][idx] = r.NodeMemoryAllocatable
 			series["pod_cpu_usage"][idx] = r.PodCPUUsage
 			series["pod_memory_usage"][idx] = r.PodMemoryUsage
-			series["pvc_storage_usage"][idx] = r.PVCStorageUsage
-			series["pvc_storage_capacity"][idx] = r.PVCStorageCapacity
+			if r.PVCStorageCapacity > 0 {
+				series["pvc_storage_usage"][idx] = r.PVCStorageUsage
+				series["pvc_storage_capacity"][idx] = r.PVCStorageCapacity
+			}
 			series["pod_count"][idx] = float64(r.PodCount)
 		}
 	}
@@ -321,8 +323,10 @@ func buildK8sDailyPayload(from time.Time, to time.Time, rows []statmodels.K8sDai
 			series["node_memory_allocatable"][idx] = r.NodeMemoryAllocatable
 			series["pod_cpu_usage"][idx] = r.PodCPUUsage
 			series["pod_memory_usage"][idx] = r.PodMemoryUsage
-			series["pvc_storage_usage"][idx] = r.PVCStorageUsage
-			series["pvc_storage_capacity"][idx] = r.PVCStorageCapacity
+			if r.PVCStorageCapacity > 0 {
+				series["pvc_storage_usage"][idx] = r.PVCStorageUsage
+				series["pvc_storage_capacity"][idx] = r.PVCStorageCapacity
+			}
 			series["pod_count"][idx] = float64(r.PodCount)
 		}
 	}

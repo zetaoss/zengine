@@ -145,3 +145,28 @@ func TestFetchPVCMetricsRejectsMissingCapacity(t *testing.T) {
 		t.Fatalf("expected missing capacity error, got %v", err)
 	}
 }
+
+func TestFetchAndParseMetricsAggregatesContainerMemoryByPod(t *testing.T) {
+	const aggregateQuery = `sum by (pod, namespace) (container_memory_working_set_bytes{namespace="prod3", container!=""})`
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		res := prometheusQueryResponse{Status: "success"}
+		if r.URL.Query().Get("query") == aggregateQuery {
+			res.Data.Result = []prometheusQueryResult{
+				{
+					Metric: map[string]string{"pod": "multi-container-pod", "namespace": "prod3"},
+					Value:  []any{1712345678.0, "314572800"},
+				},
+			}
+		}
+		_ = json.NewEncoder(w).Encode(res)
+	}))
+	defer ts.Close()
+
+	_, pods, err := FetchAndParseMetrics(context.Background(), ts.URL, "pool-a", "prod3")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(pods) != 1 || pods[0].Name != "multi-container-pod" || pods[0].MemoryUsage != 314572800 {
+		t.Fatalf("unexpected pod metrics: %+v", pods)
+	}
+}

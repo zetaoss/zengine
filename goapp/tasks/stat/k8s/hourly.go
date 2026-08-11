@@ -540,7 +540,7 @@ func FetchAndParseMetrics(ctx context.Context, endpoint, nodepool, namespace str
 	// Pod Memory Usage (bytes)
 	podMemRes := queryPrometheusMetric(reqCtx, client, endpoint, []string{
 		fmt.Sprintf(`pod_memory_working_set_bytes{namespace="%s"}`, namespace),
-		fmt.Sprintf(`container_memory_working_set_bytes{namespace="%s", container!=""}`, namespace),
+		fmt.Sprintf(`sum by (pod, namespace) (container_memory_working_set_bytes{namespace="%s", container!=""})`, namespace),
 		fmt.Sprintf(`pod_memory_usage_bytes{namespace="%s"}`, namespace),
 		fmt.Sprintf(`k8s_top_pod_memory_bytes{namespace="%s"}`, namespace),
 	})

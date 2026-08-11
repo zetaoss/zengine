@@ -56,6 +56,7 @@ func TestBuildK8sHourlyPayloadIncludesPVCStorage(t *testing.T) {
 	to := from.Add(time.Hour)
 	rows := []statmodels.K8sHourly{
 		{Timeslot: from.Format("2006-01-02 15:04:05"), PVCStorageUsage: 11 * 1024 * 1024 * 1024, PVCStorageCapacity: 100 * 1024 * 1024 * 1024},
+		{Timeslot: to.Format("2006-01-02 15:04:05"), PVCStorageUsage: 1},
 	}
 
 	payload := buildK8sHourlyPayload(from, to, rows)
@@ -66,9 +67,15 @@ func TestBuildK8sHourlyPayloadIncludesPVCStorage(t *testing.T) {
 	if storage[0] != float64(11*1024*1024*1024) {
 		t.Fatalf("pvc_storage_usage[0]=%v", storage[0])
 	}
+	if storage[1] != nil {
+		t.Fatalf("pvc_storage_usage[1]=%v, expected nil", storage[1])
+	}
 	capacity, ok := payload["pvc_storage_capacity"].([]any)
 	if !ok || capacity[0] != float64(100*1024*1024*1024) {
 		t.Fatalf("pvc_storage_capacity=%v", payload["pvc_storage_capacity"])
+	}
+	if capacity[1] != nil {
+		t.Fatalf("pvc_storage_capacity[1]=%v, expected nil", capacity[1])
 	}
 }
 
@@ -79,6 +86,7 @@ func TestBuildK8sDailyPayloadIncludesPVCStorage(t *testing.T) {
 	to := from.AddDate(0, 0, 1)
 	rows := []statmodels.K8sDaily{
 		{Timeslot: from.Format("2006-01-02"), PVCStorageUsage: 12 * 1024 * 1024 * 1024, PVCStorageCapacity: 100 * 1024 * 1024 * 1024},
+		{Timeslot: to.Format("2006-01-02"), PVCStorageUsage: 1},
 	}
 
 	payload := buildK8sDailyPayload(from, to, rows)
@@ -89,8 +97,14 @@ func TestBuildK8sDailyPayloadIncludesPVCStorage(t *testing.T) {
 	if storage[0] != float64(12*1024*1024*1024) {
 		t.Fatalf("pvc_storage_usage[0]=%v", storage[0])
 	}
+	if storage[1] != nil {
+		t.Fatalf("pvc_storage_usage[1]=%v, expected nil", storage[1])
+	}
 	capacity, ok := payload["pvc_storage_capacity"].([]any)
 	if !ok || capacity[0] != float64(100*1024*1024*1024) {
 		t.Fatalf("pvc_storage_capacity=%v", payload["pvc_storage_capacity"])
+	}
+	if capacity[1] != nil {
+		t.Fatalf("pvc_storage_capacity[1]=%v, expected nil", capacity[1])
 	}
 }
