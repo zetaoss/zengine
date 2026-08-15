@@ -274,7 +274,7 @@ func fetchDefenderMetricsAt(ctx context.Context, endpoint string, evaluationTime
 		evaluationTime,
 	)
 	levelRes := queryPrometheusMetric(ctx, prometheusHTTPClient, endpoint,
-		`max_over_time(zeta_defender_level[1h])`,
+		`max(max_over_time(zeta_defender_level[1h]))`,
 		evaluationTime,
 	)
 

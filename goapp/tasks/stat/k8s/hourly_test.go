@@ -162,7 +162,7 @@ func TestFetchDefenderMetrics(t *testing.T) {
 		switch r.URL.Query().Get("query") {
 		case `increase(zeta_defender_fighting_seconds_total[1h]) / 3600`:
 			res.Data.Result = []prometheusQueryResult{{Value: []any{1712345678.0, "0.25"}}}
-		case `max_over_time(zeta_defender_level[1h])`:
+		case `max(max_over_time(zeta_defender_level[1h]))`:
 			res.Data.Result = []prometheusQueryResult{{Value: []any{1712345678.0, "7"}}}
 		}
 		_ = json.NewEncoder(w).Encode(res)
