@@ -1,7 +1,7 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-  import { mdiChevronDown, mdiChevronUp, mdiSend } from '@mdi/js'
+  import { mdiChevronDown, mdiChevronUp, mdiRefresh, mdiSend } from '@mdi/js'
   import { onDestroy } from 'svelte'
 
   import CButton from '$shared/ui/CButton.svelte'
@@ -45,6 +45,7 @@
   let selectedTaskId = $state('')
   let resultOutput = $state('')
   let tasksLoading = $state(false)
+  let tasksLoadFailed = $state(false)
   let initialLoad = $state(true)
   let resultsExpanded = $state(false)
   let resultExpansionInitialized = $state(false)
@@ -198,8 +199,10 @@
     if (err) {
       showToast(err.message || 'AI 편집 목록을 불러오지 못했습니다.')
       tasks = []
+      tasksLoadFailed = true
     } else {
       tasks = data ?? []
+      tasksLoadFailed = false
       if (initialLoad && resultTasks.length > 0) {
         selectedTaskId = String(resultTasks[0].id)
         initialLoad = false
@@ -224,32 +227,40 @@
 
 </script>
 
-{#if resultTasks.length > 0}
+{#if resultTasks.length > 0 || tasksLoadFailed}
   <section class="flex min-h-0 flex-col gap-2 border bg-a-gray-100 p-4">
     <div class="flex items-center gap-2">
       <span class="shrink-0 text-sm">AI 작성본</span>
-      <ZSelect bind:value={selectedTaskId} items={taskSelectItems} class="flex-1" placeholder="-- AI 작성본 목록 --">
-        {#snippet item(task: TaskSelectItem)}
-          <div class="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3">
-            <span class="truncate">{task.label}</span>
-            <span class="text-right text-xs tabular-nums opacity-50">{task.secondaryLabel ?? ''}</span>
-            <span class="text-right text-xs tabular-nums opacity-50">{task.dateLabel ?? ''}</span>
-          </div>
-        {/snippet}
-      </ZSelect>
-      {#if tasksLoading}
-        <ZSpinner size="0.875rem" />
+      {#if resultTasks.length > 0}
+        <ZSelect bind:value={selectedTaskId} items={taskSelectItems} class="flex-1" placeholder="-- AI 작성본 목록 --">
+          {#snippet item(task: TaskSelectItem)}
+            <div class="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3">
+              <span class="truncate">{task.label}</span>
+              <span class="text-right text-xs tabular-nums opacity-50">{task.secondaryLabel ?? ''}</span>
+              <span class="text-right text-xs tabular-nums opacity-50">{task.dateLabel ?? ''}</span>
+            </div>
+          {/snippet}
+        </ZSelect>
+        {#if tasksLoading}
+          <ZSpinner size="0.875rem" />
+        {/if}
+        <CButton
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          title={resultsExpanded ? '접기' : '펼치기'}
+          aria-label={resultsExpanded ? 'AI 작성본 접기' : 'AI 작성본 펼치기'}
+          onclick={() => (resultsExpanded = !resultsExpanded)}
+        >
+          <ZIcon path={resultsExpanded ? mdiChevronUp : mdiChevronDown} />
+        </CButton>
+      {:else}
+        <span class="flex-1 text-sm text-red-600" role="alert">AI 작성본 목록을 불러오지 못했습니다.</span>
+        <CButton type="button" variant="outline" size="small" onclick={() => void fetchTasks()} disabled={tasksLoading}>
+          <ZIcon path={mdiRefresh} />
+          다시 시도
+        </CButton>
       {/if}
-      <CButton
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        title={resultsExpanded ? '접기' : '펼치기'}
-        aria-label={resultsExpanded ? 'AI 작성본 접기' : 'AI 작성본 펼치기'}
-        onclick={() => (resultsExpanded = !resultsExpanded)}
-      >
-        <ZIcon path={resultsExpanded ? mdiChevronUp : mdiChevronDown} />
-      </CButton>
     </div>
     {#if selectedTaskId && resultsExpanded}
       <div class="relative">

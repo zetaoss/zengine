@@ -16,7 +16,7 @@ SET @stat_k8s_hourly_fighting_ratio_sql := IF(
     SELECT 1 FROM information_schema.tables
     WHERE table_schema = DATABASE() AND table_name = 'stat_k8s_hourly'
   ),
-  'ALTER TABLE `stat_k8s_hourly` ADD COLUMN `defender_fighting_ratio` DOUBLE NOT NULL DEFAULT 0 AFTER `pvc_storage_capacity`',
+  'ALTER TABLE `stat_k8s_hourly` ADD COLUMN `defender_fighting_ratio` DOUBLE NOT NULL DEFAULT 0',
   'SELECT 1'
 );
 PREPARE stmt FROM @stat_k8s_hourly_fighting_ratio_sql;
@@ -36,7 +36,7 @@ SET @stat_k8s_hourly_max_level_sql := IF(
     SELECT 1 FROM information_schema.tables
     WHERE table_schema = DATABASE() AND table_name = 'stat_k8s_hourly'
   ),
-  'ALTER TABLE `stat_k8s_hourly` ADD COLUMN `defender_max_level` DOUBLE NOT NULL DEFAULT 0 AFTER `defender_fighting_ratio`',
+  'ALTER TABLE `stat_k8s_hourly` ADD COLUMN `defender_max_level` DOUBLE NOT NULL DEFAULT 0',
   'SELECT 1'
 );
 PREPARE stmt FROM @stat_k8s_hourly_max_level_sql;
@@ -56,7 +56,7 @@ SET @stat_k8s_daily_fighting_ratio_sql := IF(
     SELECT 1 FROM information_schema.tables
     WHERE table_schema = DATABASE() AND table_name = 'stat_k8s_daily'
   ),
-  'ALTER TABLE `stat_k8s_daily` ADD COLUMN `defender_fighting_ratio` DOUBLE NOT NULL DEFAULT 0 AFTER `pvc_storage_capacity`',
+  'ALTER TABLE `stat_k8s_daily` ADD COLUMN `defender_fighting_ratio` DOUBLE NOT NULL DEFAULT 0',
   'SELECT 1'
 );
 PREPARE stmt FROM @stat_k8s_daily_fighting_ratio_sql;
@@ -76,7 +76,7 @@ SET @stat_k8s_daily_max_level_sql := IF(
     SELECT 1 FROM information_schema.tables
     WHERE table_schema = DATABASE() AND table_name = 'stat_k8s_daily'
   ),
-  'ALTER TABLE `stat_k8s_daily` ADD COLUMN `defender_max_level` DOUBLE NOT NULL DEFAULT 0 AFTER `defender_fighting_ratio`',
+  'ALTER TABLE `stat_k8s_daily` ADD COLUMN `defender_max_level` DOUBLE NOT NULL DEFAULT 0',
   'SELECT 1'
 );
 PREPARE stmt FROM @stat_k8s_daily_max_level_sql;
