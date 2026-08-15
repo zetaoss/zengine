@@ -111,7 +111,16 @@ func (j *HourlyTask) Execute(ctx context.Context, taskCtx taskctx.Context, input
 		return nil, fmt.Errorf("missing MONITORING_PVC")
 	}
 
-	nodes, pods, err := FetchAndParseMetrics(ctx, endpoint, nodepool, namespace)
+	ts := input.Timeslot
+	if ts == "" {
+		ts = timeutil.HourlyEndUTC(time.Now().UTC(), 0).Format("2006-01-02 15:04:05")
+	}
+	evaluationTime, err := parseHourlyTimeslot(ts)
+	if err != nil {
+		return nil, fmt.Errorf("invalid timeslot %q: %w", ts, err)
+	}
+
+	nodes, pods, err := fetchAndParseMetricsAt(ctx, endpoint, nodepool, namespace, &evaluationTime)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch k8s metrics: %w", err)
 	}
@@ -121,18 +130,14 @@ func (j *HourlyTask) Execute(ctx context.Context, taskCtx taskctx.Context, input
 	if len(pods) == 0 {
 		return nil, fmt.Errorf("no pods metrics scraped for namespace %s", namespace)
 	}
-	pvcs, err := FetchPVCMetrics(ctx, endpoint, namespace, pvcName)
+	pvcs, err := fetchPVCMetricsAt(ctx, endpoint, namespace, pvcName, &evaluationTime)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch PVC metrics: %w", err)
 	}
 	if len(pvcs) == 0 {
 		return nil, fmt.Errorf("no PVC metrics scraped for %s/%s", namespace, pvcName)
 	}
-
-	ts := input.Timeslot
-	if ts == "" {
-		ts = timeutil.HourlyEndUTC(time.Now().UTC(), 0).Format("2006-01-02 15:04:05")
-	}
+	defenderFightingRatio, defenderMaxLevel := fetchDefenderMetricsAt(ctx, endpoint, &evaluationTime)
 
 	var totNodeCPUUsage, totNodeCPUAlloc, totNodeMemUsage, totNodeMemAlloc float64
 	for _, n := range nodes {
@@ -159,6 +164,8 @@ func (j *HourlyTask) Execute(ctx context.Context, taskCtx taskctx.Context, input
 		PVCStorageUsage:       pvcs[0].Usage,
 		PVCStorageCapacity:    pvcs[0].Capacity,
 		PodCount:              len(pods),
+		DefenderFightingRatio: defenderFightingRatio,
+		DefenderMaxLevel:      defenderMaxLevel,
 	}
 
 	if err := db.Table("stat_k8s_hourly").AutoMigrate(&statmodels.K8sHourly{}); err != nil {
@@ -189,7 +196,17 @@ type prometheusQueryResponse struct {
 	Data   prometheusQueryData `json:"data"`
 }
 
-func queryPrometheusURL(endpoint, queryStr string) string {
+func parseHourlyTimeslot(value string) (time.Time, error) {
+	for _, layout := range []string{time.RFC3339, "2006-01-02 15:04:05", "2006-01-02T15:04:05"} {
+		parsed, err := time.Parse(layout, value)
+		if err == nil {
+			return parsed.UTC(), nil
+		}
+	}
+	return time.Time{}, fmt.Errorf("expected RFC3339 or 2006-01-02 15:04:05")
+}
+
+func queryPrometheusURL(endpoint, queryStr string, evaluationTime *time.Time) string {
 	baseURL := endpoint
 	if !strings.Contains(baseURL, "/api/v1/query") {
 		baseURL = strings.TrimRight(baseURL, "/") + "/api/v1/query"
@@ -200,12 +217,15 @@ func queryPrometheusURL(endpoint, queryStr string) string {
 	}
 	q := u.Query()
 	q.Set("query", queryStr)
+	if evaluationTime != nil {
+		q.Set("time", evaluationTime.UTC().Format(time.RFC3339))
+	}
 	u.RawQuery = q.Encode()
 	return u.String()
 }
 
-func queryPrometheusAPI(ctx context.Context, client *http.Client, endpoint, queryStr string) ([]prometheusQueryResult, error) {
-	reqURL := queryPrometheusURL(endpoint, queryStr)
+func queryPrometheusAPI(ctx context.Context, client *http.Client, endpoint, queryStr string, evaluationTime *time.Time) ([]prometheusQueryResult, error) {
+	reqURL := queryPrometheusURL(endpoint, queryStr, evaluationTime)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
 	if err != nil {
 		return nil, err
@@ -232,17 +252,40 @@ func queryPrometheusAPI(ctx context.Context, client *http.Client, endpoint, quer
 	return res.Data.Result, nil
 }
 
-func queryPrometheusMetric(ctx context.Context, client *http.Client, endpoint string, queries []string) []prometheusQueryResult {
-	for _, q := range queries {
-		if q == "" {
-			continue
-		}
-		res, err := queryPrometheusAPI(ctx, client, endpoint, q)
-		if err == nil && len(res) > 0 {
-			return res
-		}
+func queryPrometheusMetric(ctx context.Context, client *http.Client, endpoint, query string, evaluationTime *time.Time) []prometheusQueryResult {
+	if query == "" {
+		return nil
 	}
-	return nil
+
+	res, err := queryPrometheusAPI(ctx, client, endpoint, query, evaluationTime)
+	if err != nil {
+		return nil
+	}
+	return res
+}
+
+func FetchDefenderMetrics(ctx context.Context, endpoint string) (float64, float64) {
+	return fetchDefenderMetricsAt(ctx, endpoint, nil)
+}
+
+func fetchDefenderMetricsAt(ctx context.Context, endpoint string, evaluationTime *time.Time) (float64, float64) {
+	fightingRes := queryPrometheusMetric(ctx, prometheusHTTPClient, endpoint,
+		`increase(zeta_defender_fighting_seconds_total[1h]) / 3600`,
+		evaluationTime,
+	)
+	levelRes := queryPrometheusMetric(ctx, prometheusHTTPClient, endpoint,
+		`max(max_over_time(zeta_defender_level[1h]))`,
+		evaluationTime,
+	)
+
+	var fightingRatio, maxLevel float64
+	if len(fightingRes) > 0 {
+		fightingRatio, _ = parsePrometheusValue(fightingRes[0].Value)
+	}
+	if len(levelRes) > 0 {
+		maxLevel, _ = parsePrometheusValue(levelRes[0].Value)
+	}
+	return fightingRatio, maxLevel
 }
 
 func extractNodeName(m map[string]string) string {
@@ -323,6 +366,10 @@ func parsePrometheusValue(val []any) (float64, bool) {
 }
 
 func FetchPVCMetrics(ctx context.Context, endpoint, namespace, pvcName string) ([]PVCMetric, error) {
+	return fetchPVCMetricsAt(ctx, endpoint, namespace, pvcName, nil)
+}
+
+func fetchPVCMetricsAt(ctx context.Context, endpoint, namespace, pvcName string, evaluationTime *time.Time) ([]PVCMetric, error) {
 	if namespace == "" {
 		return nil, fmt.Errorf("missing namespace parameter")
 	}
@@ -356,6 +403,7 @@ func FetchPVCMetrics(ctx context.Context, endpoint, namespace, pvcName string) (
 			namespace,
 			pvcName,
 		),
+		evaluationTime,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("query PVC usage: %w", err)
@@ -381,6 +429,7 @@ func FetchPVCMetrics(ctx context.Context, endpoint, namespace, pvcName string) (
 			namespace,
 			pvcName,
 		),
+		evaluationTime,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("query PVC capacity: %w", err)
@@ -421,6 +470,10 @@ func FetchPVCMetrics(ctx context.Context, endpoint, namespace, pvcName string) (
 }
 
 func FetchAndParseMetrics(ctx context.Context, endpoint, nodepool, namespace string) ([]NodeMetric, []PodMetric, error) {
+	return fetchAndParseMetricsAt(ctx, endpoint, nodepool, namespace, nil)
+}
+
+func fetchAndParseMetricsAt(ctx context.Context, endpoint, nodepool, namespace string, evaluationTime *time.Time) ([]NodeMetric, []PodMetric, error) {
 	reqCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
@@ -454,12 +507,10 @@ func FetchAndParseMetrics(ctx context.Context, endpoint, nodepool, namespace str
 
 	// PromQL Queries based on MONITORING_ENDPOINT Prometheus API
 	// Node CPU Usage (cores)
-	cpuUsageRes := queryPrometheusMetric(reqCtx, client, endpoint, []string{
+	cpuUsageRes := queryPrometheusMetric(reqCtx, client, endpoint,
 		fmt.Sprintf(`rate(node_cpu_usage_seconds_total{node=~".*%s.*"}[5m])`, nodepoolFilter),
-		`rate(node_cpu_usage_seconds_total[5m])`,
-		`sum by (node) (rate(node_cpu_usage_seconds_total[5m]))`,
-		`k8s_top_node_cpu_cores`,
-	})
+		evaluationTime,
+	)
 	for _, r := range cpuUsageRes {
 		nodeName := extractNodeName(r.Metric)
 		if filterNode(nodeName, nodepool) {
@@ -470,13 +521,10 @@ func FetchAndParseMetrics(ctx context.Context, endpoint, nodepool, namespace str
 	}
 
 	// Node CPU Allocatable (cores)
-	cpuAllocRes := queryPrometheusMetric(reqCtx, client, endpoint, []string{
+	cpuAllocRes := queryPrometheusMetric(reqCtx, client, endpoint,
 		fmt.Sprintf(`kube_node_status_allocatable{node=~".*%s.*", resource="cpu", unit="core"}`, nodepoolFilter),
-		fmt.Sprintf(`kube_node_status_allocatable{node=~".*%s.*", resource="cpu"}`, nodepoolFilter),
-		`kube_node_status_allocatable{resource="cpu", unit="core"}`,
-		`kube_node_status_allocatable{resource="cpu"}`,
-		`k8s_top_node_allocatable_cpu_cores`,
-	})
+		evaluationTime,
+	)
 	for _, r := range cpuAllocRes {
 		nodeName := extractNodeName(r.Metric)
 		if filterNode(nodeName, nodepool) {
@@ -487,12 +535,10 @@ func FetchAndParseMetrics(ctx context.Context, endpoint, nodepool, namespace str
 	}
 
 	// Node Memory Usage (bytes)
-	memUsageRes := queryPrometheusMetric(reqCtx, client, endpoint, []string{
+	memUsageRes := queryPrometheusMetric(reqCtx, client, endpoint,
 		fmt.Sprintf(`node_memory_working_set_bytes{node=~".*%s.*"}`, nodepoolFilter),
-		`node_memory_working_set_bytes`,
-		`node_memory_usage_bytes`,
-		`k8s_top_node_memory_bytes`,
-	})
+		evaluationTime,
+	)
 	for _, r := range memUsageRes {
 		nodeName := extractNodeName(r.Metric)
 		if filterNode(nodeName, nodepool) {
@@ -503,11 +549,10 @@ func FetchAndParseMetrics(ctx context.Context, endpoint, nodepool, namespace str
 	}
 
 	// Node Memory Allocatable (bytes)
-	memAllocRes := queryPrometheusMetric(reqCtx, client, endpoint, []string{
+	memAllocRes := queryPrometheusMetric(reqCtx, client, endpoint,
 		fmt.Sprintf(`kube_node_status_allocatable{node=~".*%s.*", resource="memory"}`, nodepoolFilter),
-		`kube_node_status_allocatable{resource="memory"}`,
-		`k8s_top_node_allocatable_memory_bytes`,
-	})
+		evaluationTime,
+	)
 	for _, r := range memAllocRes {
 		nodeName := extractNodeName(r.Metric)
 		if filterNode(nodeName, nodepool) {
@@ -518,12 +563,10 @@ func FetchAndParseMetrics(ctx context.Context, endpoint, nodepool, namespace str
 	}
 
 	// Pod CPU Usage (cores)
-	podCPURes := queryPrometheusMetric(reqCtx, client, endpoint, []string{
+	podCPURes := queryPrometheusMetric(reqCtx, client, endpoint,
 		fmt.Sprintf(`rate(pod_cpu_usage_seconds_total{namespace="%s"}[5m])`, namespace),
-		fmt.Sprintf(`sum by (pod, namespace) (rate(pod_cpu_usage_seconds_total{namespace="%s"}[5m]))`, namespace),
-		fmt.Sprintf(`sum by (pod, namespace) (rate(container_cpu_usage_seconds_total{namespace="%s", container!=""}[5m]))`, namespace),
-		fmt.Sprintf(`k8s_top_pod_cpu_cores{namespace="%s"}`, namespace),
-	})
+		evaluationTime,
+	)
 	for _, r := range podCPURes {
 		podName := extractPodName(r.Metric)
 		podNS := r.Metric["namespace"]
@@ -538,12 +581,10 @@ func FetchAndParseMetrics(ctx context.Context, endpoint, nodepool, namespace str
 	}
 
 	// Pod Memory Usage (bytes)
-	podMemRes := queryPrometheusMetric(reqCtx, client, endpoint, []string{
+	podMemRes := queryPrometheusMetric(reqCtx, client, endpoint,
 		fmt.Sprintf(`pod_memory_working_set_bytes{namespace="%s"}`, namespace),
-		fmt.Sprintf(`sum by (pod, namespace) (container_memory_working_set_bytes{namespace="%s", container!=""})`, namespace),
-		fmt.Sprintf(`pod_memory_usage_bytes{namespace="%s"}`, namespace),
-		fmt.Sprintf(`k8s_top_pod_memory_bytes{namespace="%s"}`, namespace),
-	})
+		evaluationTime,
+	)
 	for _, r := range podMemRes {
 		podName := extractPodName(r.Metric)
 		podNS := r.Metric["namespace"]

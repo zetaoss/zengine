@@ -19,15 +19,17 @@ func NewDailyTask() *DailyTask {
 }
 
 type dailyGroup struct {
-	nodeCPUUsages []float64
-	nodeCPUAllocs []float64
-	nodeMemUsages []float64
-	nodeMemAllocs []float64
-	podCPUUsages  []float64
-	podMemUsages  []float64
-	pvcStorages   []float64
-	pvcCapacities []float64
-	podCounts     []int
+	nodeCPUUsages  []float64
+	nodeCPUAllocs  []float64
+	nodeMemUsages  []float64
+	nodeMemAllocs  []float64
+	podCPUUsages   []float64
+	podMemUsages   []float64
+	pvcStorages    []float64
+	pvcCapacities  []float64
+	podCounts      []int
+	fightingRatios []float64
+	maxLevels      []float64
 }
 
 func (j *DailyTask) Execute(ctx context.Context, taskCtx taskctx.Context, _ any) (app.H, error) {
@@ -73,6 +75,8 @@ func (j *DailyTask) Execute(ctx context.Context, taskCtx taskctx.Context, _ any)
 			g.pvcCapacities = append(g.pvcCapacities, h.PVCStorageCapacity)
 		}
 		g.podCounts = append(g.podCounts, h.PodCount)
+		g.fightingRatios = append(g.fightingRatios, h.DefenderFightingRatio)
+		g.maxLevels = append(g.maxLevels, h.DefenderMaxLevel)
 	}
 
 	rows := make([]statmodels.K8sDaily, 0, len(grouped))
@@ -88,6 +92,8 @@ func (j *DailyTask) Execute(ctx context.Context, taskCtx taskctx.Context, _ any)
 			PVCStorageUsage:       medianFloat64(g.pvcStorages),
 			PVCStorageCapacity:    medianFloat64(g.pvcCapacities),
 			PodCount:              medianInt(g.podCounts),
+			DefenderFightingRatio: meanFloat64(g.fightingRatios),
+			DefenderMaxLevel:      maxFloat64(g.maxLevels),
 		}
 		rows = append(rows, d)
 	}
@@ -120,6 +126,32 @@ func medianFloat64(vals []float64) float64 {
 		return sorted[n/2]
 	}
 	return (sorted[(n-1)/2] + sorted[n/2]) / 2.0
+}
+
+func meanFloat64(vals []float64) float64 {
+	if len(vals) == 0 {
+		return 0
+	}
+
+	var total float64
+	for _, val := range vals {
+		total += val
+	}
+	return total / float64(len(vals))
+}
+
+func maxFloat64(vals []float64) float64 {
+	if len(vals) == 0 {
+		return 0
+	}
+
+	max := vals[0]
+	for _, val := range vals[1:] {
+		if val > max {
+			max = val
+		}
+	}
+	return max
 }
 
 func medianInt(vals []int) int {

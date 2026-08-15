@@ -10,6 +10,8 @@ var StatK8sMetricNames = []string{
 	"pvc_storage_usage",
 	"pvc_storage_capacity",
 	"pod_count",
+	"defender_fighting_ratio",
+	"defender_max_level",
 }
 
 type K8sHourly struct {
@@ -23,6 +25,8 @@ type K8sHourly struct {
 	PVCStorageUsage       float64 `gorm:"column:pvc_storage_usage"`
 	PVCStorageCapacity    float64 `gorm:"column:pvc_storage_capacity"`
 	PodCount              int     `gorm:"column:pod_count"`
+	DefenderFightingRatio float64 `gorm:"column:defender_fighting_ratio"`
+	DefenderMaxLevel      float64 `gorm:"column:defender_max_level"`
 }
 
 type K8sDaily struct {
@@ -36,4 +40,6 @@ type K8sDaily struct {
 	PVCStorageUsage       float64 `gorm:"column:pvc_storage_usage"`
 	PVCStorageCapacity    float64 `gorm:"column:pvc_storage_capacity"`
 	PodCount              int     `gorm:"column:pod_count"`
+	DefenderFightingRatio float64 `gorm:"column:defender_fighting_ratio"`
+	DefenderMaxLevel      float64 `gorm:"column:defender_max_level"`
 }

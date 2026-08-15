@@ -59,6 +59,7 @@ func printUsage(reg *registry.Registry) {
 	_, _ = fmt.Println()
 	_, _ = fmt.Println("available commands:")
 	_, _ = fmt.Printf("  %-30s %s\n", "migrate", "run database migrations")
+	_, _ = fmt.Printf("  %-30s %s\n", "stat-interpolate-daily [--dry-run]", "fill missing daily stat rows with linear interpolation")
 	_, _ = fmt.Printf("  %-30s %s\n", "tasks [--watch|-w]", "show task specs and queue state")
 	_, _ = fmt.Printf("  %-30s %s\n", "flush (all|active|pending|scheduled|retry)", "cancel or archive tasks by Asynq state")
 	_, _ = fmt.Printf("  %-30s %s\n", "routes", "show api routes")

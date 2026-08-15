@@ -55,7 +55,7 @@ func TestBuildK8sHourlyPayloadIncludesPVCStorage(t *testing.T) {
 	from := time.Date(2026, 3, 16, 0, 0, 0, 0, time.UTC)
 	to := from.Add(time.Hour)
 	rows := []statmodels.K8sHourly{
-		{Timeslot: from.Format("2006-01-02 15:04:05"), PVCStorageUsage: 11 * 1024 * 1024 * 1024, PVCStorageCapacity: 100 * 1024 * 1024 * 1024},
+		{Timeslot: from.Format("2006-01-02 15:04:05"), PVCStorageUsage: 11 * 1024 * 1024 * 1024, PVCStorageCapacity: 100 * 1024 * 1024 * 1024, DefenderFightingRatio: 0.25, DefenderMaxLevel: 7},
 		{Timeslot: to.Format("2006-01-02 15:04:05"), PVCStorageUsage: 1},
 	}
 
@@ -77,6 +77,14 @@ func TestBuildK8sHourlyPayloadIncludesPVCStorage(t *testing.T) {
 	if capacity[1] != nil {
 		t.Fatalf("pvc_storage_capacity[1]=%v, expected nil", capacity[1])
 	}
+	fightingRatio, ok := payload["defender_fighting_ratio"].([]any)
+	if !ok || fightingRatio[0] != 0.25 {
+		t.Fatalf("defender_fighting_ratio=%v", payload["defender_fighting_ratio"])
+	}
+	maxLevel, ok := payload["defender_max_level"].([]any)
+	if !ok || maxLevel[0] != float64(7) {
+		t.Fatalf("defender_max_level=%v", payload["defender_max_level"])
+	}
 }
 
 func TestBuildK8sDailyPayloadIncludesPVCStorage(t *testing.T) {
@@ -85,7 +93,7 @@ func TestBuildK8sDailyPayloadIncludesPVCStorage(t *testing.T) {
 	from := time.Date(2026, 3, 16, 0, 0, 0, 0, time.UTC)
 	to := from.AddDate(0, 0, 1)
 	rows := []statmodels.K8sDaily{
-		{Timeslot: from.Format("2006-01-02"), PVCStorageUsage: 12 * 1024 * 1024 * 1024, PVCStorageCapacity: 100 * 1024 * 1024 * 1024},
+		{Timeslot: from.Format("2006-01-02"), PVCStorageUsage: 12 * 1024 * 1024 * 1024, PVCStorageCapacity: 100 * 1024 * 1024 * 1024, DefenderFightingRatio: 0.5, DefenderMaxLevel: 9},
 		{Timeslot: to.Format("2006-01-02"), PVCStorageUsage: 1},
 	}
 
@@ -106,5 +114,13 @@ func TestBuildK8sDailyPayloadIncludesPVCStorage(t *testing.T) {
 	}
 	if capacity[1] != nil {
 		t.Fatalf("pvc_storage_capacity[1]=%v, expected nil", capacity[1])
+	}
+	fightingRatio, ok := payload["defender_fighting_ratio"].([]any)
+	if !ok || fightingRatio[0] != 0.5 {
+		t.Fatalf("defender_fighting_ratio=%v", payload["defender_fighting_ratio"])
+	}
+	maxLevel, ok := payload["defender_max_level"].([]any)
+	if !ok || maxLevel[0] != float64(9) {
+		t.Fatalf("defender_max_level=%v", payload["defender_max_level"])
 	}
 }

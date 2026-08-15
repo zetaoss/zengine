@@ -77,6 +77,7 @@ func runMetrics(cfg *config.Config, args []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to fetch PVC metrics from %s: %w", endpoint, err)
 		}
+		defenderFightingRatio, defenderMaxLevel := fetchDefenderMetrics(endpoint)
 		if err := printNodeMetrics(nodes); err != nil {
 			return err
 		}
@@ -85,7 +86,11 @@ func runMetrics(cfg *config.Config, args []string) error {
 			return err
 		}
 		_, _ = fmt.Println()
-		return printPVCMetrics(pvcs, namespace)
+		if err := printPVCMetrics(pvcs, namespace); err != nil {
+			return err
+		}
+		_, _ = fmt.Println()
+		return printDefenderMetrics(defenderFightingRatio, defenderMaxLevel)
 	}
 
 	if err := show(); err != nil {
@@ -112,6 +117,10 @@ func fetchAndParseMetrics(endpoint, nodepool, namespace string) ([]NodeMetric, [
 
 func fetchPVCMetrics(endpoint, namespace, pvc string) ([]PVCMetric, error) {
 	return k8s.FetchPVCMetrics(context.Background(), endpoint, namespace, pvc)
+}
+
+func fetchDefenderMetrics(endpoint string) (float64, float64) {
+	return k8s.FetchDefenderMetrics(context.Background(), endpoint)
 }
 
 func parsePrometheusNodeMetrics(r io.Reader, nodepool string) ([]NodeMetric, error) {
@@ -217,6 +226,20 @@ func printPVCMetrics(pvcs []PVCMetric, namespace string) error {
 	return tw.Flush()
 }
 
+func printDefenderMetrics(fightingRatio, maxLevel float64) error {
+	tw := tablewriter.New(os.Stdout, "METRIC", "VALUE")
+	if err := tw.Header(); err != nil {
+		return err
+	}
+	if err := tw.Row("Fighting Ratio (1h)", formatDefenderFightingRatio(fightingRatio)); err != nil {
+		return err
+	}
+	if err := tw.Row("Max Level (1h)", formatDefenderMaxLevel(maxLevel)); err != nil {
+		return err
+	}
+	return tw.Flush()
+}
+
 func formatCPU(cores float64) string {
 	return fmt.Sprintf("%.0fm", cores*1000)
 }
@@ -236,4 +259,12 @@ func formatPct(used, alloc float64) string {
 		return "0.00%"
 	}
 	return fmt.Sprintf("%.2f%%", (used/alloc)*100)
+}
+
+func formatDefenderFightingRatio(ratio float64) string {
+	return fmt.Sprintf("%.2f%%", ratio*100)
+}
+
+func formatDefenderMaxLevel(level float64) string {
+	return fmt.Sprintf("%.0f", level)
 }

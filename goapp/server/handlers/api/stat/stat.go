@@ -15,7 +15,7 @@ import (
 
 func parseDays(r *http.Request) (int, bool) {
 	days, err := strconv.Atoi(r.PathValue("days"))
-	if err != nil || (days != 15 && days != 120) {
+	if err != nil || (days != 28 && days != 180) {
 		return 0, false
 	}
 	return days, true
@@ -51,7 +51,7 @@ func CFDaily(c *serverctx.Context) {
 func GAHourly(c *serverctx.Context) {
 	to := hourlyEndUTC(time.Now().UTC(), 10)
 	from := to.Add(-47 * time.Hour)
-	rows, err := selectNumericRows(c.DB, []string{"stat_hourly_ga", "stat_ga_hourly"}, []string{"active_users", "screen_page_views", "sessions"}, from, to, false)
+	rows, err := selectNumericRows(c.DB, "stat_ga_hourly", []string{"active_users", "screen_page_views", "sessions"}, from, to, false)
 	if err != nil {
 		http.Error(c.W, "internal server error", http.StatusInternalServerError)
 		return
@@ -86,7 +86,7 @@ func GADaily(c *serverctx.Context) {
 	}
 	to := dailyEndInLocation(time.Now(), loc)
 	from := to.AddDate(0, 0, -(days - 1))
-	rows, err := selectNumericRows(c.DB, []string{"stat_daily_ga", "stat_ga_daily"}, []string{"active_users", "screen_page_views", "sessions"}, from, to, true)
+	rows, err := selectNumericRows(c.DB, "stat_ga_daily", []string{"active_users", "screen_page_views", "sessions"}, from, to, true)
 	if err != nil {
 		http.Error(c.W, "internal server error", http.StatusInternalServerError)
 		return
@@ -108,7 +108,7 @@ func GADaily(c *serverctx.Context) {
 func GSCHourly(c *serverctx.Context) {
 	to := hourlyEndUTC(time.Now().UTC(), 10)
 	from := to.Add(-47 * time.Hour)
-	rows, err := selectNumericRows(c.DB, []string{"stat_hourly_gsc", "stat_gsc_hourly"}, []string{"clicks", "impressions", "ctr", "position"}, from, to, false)
+	rows, err := selectNumericRows(c.DB, "stat_gsc_hourly", []string{"clicks", "impressions", "ctr", "position"}, from, to, false)
 	if err != nil {
 		http.Error(c.W, "internal server error", http.StatusInternalServerError)
 		return
@@ -138,7 +138,7 @@ func GSCDaily(c *serverctx.Context) {
 	gscLoc, _ := time.LoadLocation("America/Los_Angeles")
 	to := dailyEndInLocation(time.Now(), gscLoc)
 	from := to.AddDate(0, 0, -(days - 1))
-	rows, err := selectNumericRows(c.DB, []string{"stat_daily_gsc", "stat_gsc_daily"}, []string{"clicks", "impressions", "ctr", "position"}, from, to, true)
+	rows, err := selectNumericRows(c.DB, "stat_gsc_daily", []string{"clicks", "impressions", "ctr", "position"}, from, to, true)
 	if err != nil {
 		http.Error(c.W, "internal server error", http.StatusInternalServerError)
 		return
@@ -162,7 +162,7 @@ func GSCDaily(c *serverctx.Context) {
 func MWHourly(c *serverctx.Context) {
 	to := hourlyEndUTC(time.Now().UTC(), 10)
 	from := to.Add(-47 * time.Hour)
-	rows, err := selectNumericRows(c.DB, []string{"stat_hourly_mw", "stat_mw_hourly"}, []string{"pages", "articles", "edits", "images", "users", "activeusers", "admins", "jobs"}, from, to, false)
+	rows, err := selectNumericRows(c.DB, "stat_mw_hourly", []string{"pages", "articles", "edits", "images", "users", "activeusers", "admins", "jobs"}, from, to, false)
 	if err != nil {
 		http.Error(c.W, "internal server error", http.StatusInternalServerError)
 		return
@@ -199,7 +199,7 @@ func MWDaily(c *serverctx.Context) {
 	}
 	to := dailyEndUTC(time.Now().UTC())
 	from := to.AddDate(0, 0, -(days - 1))
-	rows, err := selectNumericRows(c.DB, []string{"stat_daily_mw", "stat_mw_daily"}, []string{"pages", "articles", "edits", "images", "users", "activeusers", "admins", "jobs"}, from, to, true)
+	rows, err := selectNumericRows(c.DB, "stat_mw_daily", []string{"pages", "articles", "edits", "images", "users", "activeusers", "admins", "jobs"}, from, to, true)
 	if err != nil {
 		http.Error(c.W, "internal server error", http.StatusInternalServerError)
 		return
@@ -296,6 +296,8 @@ func buildK8sHourlyPayload(from time.Time, to time.Time, rows []statmodels.K8sHo
 				series["pvc_storage_capacity"][idx] = r.PVCStorageCapacity
 			}
 			series["pod_count"][idx] = float64(r.PodCount)
+			series["defender_fighting_ratio"][idx] = r.DefenderFightingRatio
+			series["defender_max_level"][idx] = r.DefenderMaxLevel
 		}
 	}
 	return mergePayload(timeslots, series, statmodels.StatK8sMetricNames)
@@ -328,6 +330,8 @@ func buildK8sDailyPayload(from time.Time, to time.Time, rows []statmodels.K8sDai
 				series["pvc_storage_capacity"][idx] = r.PVCStorageCapacity
 			}
 			series["pod_count"][idx] = float64(r.PodCount)
+			series["defender_fighting_ratio"][idx] = r.DefenderFightingRatio
+			series["defender_max_level"][idx] = r.DefenderMaxLevel
 		}
 	}
 	return mergePayload(timeslots, series, statmodels.StatK8sMetricNames)
@@ -360,32 +364,22 @@ func selectCFRows(db *gorm.DB, tables []string, from time.Time, to time.Time, da
 	return out, nil
 }
 
-func selectNumericRows(db *gorm.DB, tables []string, columns []string, from time.Time, to time.Time, dateOnly bool) ([]statmodels.StatNumeric, error) {
-	merged := map[string]statmodels.StatNumeric{}
+func selectNumericRows(db *gorm.DB, table string, columns []string, from time.Time, to time.Time, dateOnly bool) ([]statmodels.StatNumeric, error) {
+	if !db.Migrator().HasTable(table) {
+		return nil, nil
+	}
 	selectCols := append([]string{"timeslot"}, columns...)
-	for _, table := range tables {
-		if !db.Migrator().HasTable(table) {
-			continue
-		}
-		rows := make([]statmodels.StatNumeric, 0, 256)
-		q := db.Table(table).Select(selectCols).Order("timeslot")
-		if dateOnly {
-			q = q.Where("DATE(timeslot) >= ?", from.Format("2006-01-02")).Where("DATE(timeslot) <= ?", to.Format("2006-01-02"))
-		} else {
-			q = q.Where("timeslot BETWEEN ? AND ?", from.Format("2006-01-02 15:04:05"), to.Format("2006-01-02 15:04:05"))
-		}
-		if err := q.Find(&rows).Error; err != nil {
-			return nil, err
-		}
-		for _, row := range rows {
-			merged[row.Timeslot.Format("2006-01-02 15:04:05")] = row
-		}
+	rows := make([]statmodels.StatNumeric, 0, 256)
+	q := db.Table(table).Select(selectCols).Order("timeslot")
+	if dateOnly {
+		q = q.Where("DATE(timeslot) >= ?", from.Format("2006-01-02")).Where("DATE(timeslot) <= ?", to.Format("2006-01-02"))
+	} else {
+		q = q.Where("timeslot BETWEEN ? AND ?", from.Format("2006-01-02 15:04:05"), to.Format("2006-01-02 15:04:05"))
 	}
-	out := make([]statmodels.StatNumeric, 0, len(merged))
-	for _, row := range merged {
-		out = append(out, row)
+	if err := q.Find(&rows).Error; err != nil {
+		return nil, err
 	}
-	return out, nil
+	return rows, nil
 }
 
 func buildCFHourlyPayload(from time.Time, to time.Time, rows []statmodels.StatCF) app.H {

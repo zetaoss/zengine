@@ -64,6 +64,8 @@
     | 'pvc_storage_usage'
     | 'pvc_storage_capacity'
     | 'pod_count'
+    | 'defender_fighting_ratio'
+    | 'defender_max_level'
 
   interface K8sResp {
     timeslots: string[]
@@ -76,6 +78,8 @@
     pvc_storage_usage: Array<unknown>
     pvc_storage_capacity: Array<unknown>
     pod_count: Array<unknown>
+    defender_fighting_ratio: Array<unknown>
+    defender_max_level: Array<unknown>
   }
 
   interface RowDef {
@@ -130,6 +134,8 @@
     pvc_storage_usage: [],
     pvc_storage_capacity: [],
     pod_count: [],
+    defender_fighting_ratio: [],
+    defender_max_level: [],
   }
   const DEFAULT_LINE_COLOR = '#0891b2'
   const SUB_LINE_COLOR = 'var(--color-a-gray-300)'
@@ -139,11 +145,11 @@
 
   function parseRange(value: string | undefined) {
     const r = value ?? ''
-    if (r === '15d' || r === '120d') return r
+    if (r === '28d' || r === '180d') return r
     return '48h'
   }
 
-  let range = $derived.by<'48h' | '15d' | '120d'>(() => parseRange(page.params.range))
+  let range = $derived.by<'48h' | '28d' | '180d'>(() => parseRange(page.params.range))
 
   let observedRouteRange: string | null = null
 
@@ -160,8 +166,8 @@
 
   const rangeTabs = $derived.by(() => [
     { value: '48h', label: '48 Hours', href: resolve('/tool/stat/48h') },
-    { value: '15d', label: '15 Days', href: resolve('/tool/stat/15d') },
-    { value: '120d', label: '120 Days', href: resolve('/tool/stat/120d') },
+    { value: '28d', label: '28 Days', href: resolve('/tool/stat/28d') },
+    { value: '180d', label: '180 Days', href: resolve('/tool/stat/180d') },
   ])
 
   const labels = $derived.by(() => (range === '48h' ? data.timeslots : data.timeslots.map((v) => normalizeDateKey(v))))
@@ -183,7 +189,7 @@
     return mwData.timeslots
   })
 
-  async function fetchData(selectedRange: '48h' | '15d' | '120d') {
+  async function fetchData(selectedRange: '48h' | '28d' | '180d') {
     const version = ++fetchVersion
     loading = true
     failed = null
@@ -231,7 +237,7 @@
       return
     }
 
-    const days = selectedRange === '15d' ? 15 : 120
+    const days = selectedRange === '28d' ? 28 : 180
     const [[cfResp, cfErr], [gaResp, gaErr], [gscResp, gscErr], [mwResp, mwErr], [k8sResp, k8sErr]] = await Promise.all([
       httpy.get<AnalyticsResp>(`/api/stat/cf-analytics/daily/${days}`),
       httpy.get<GaResp>(`/api/stat/ga/daily/${days}`),
@@ -342,6 +348,8 @@
       pvc_storage_usage: Array.isArray(input.pvc_storage_usage) ? input.pvc_storage_usage : [],
       pvc_storage_capacity: Array.isArray(input.pvc_storage_capacity) ? input.pvc_storage_capacity : [],
       pod_count: Array.isArray(input.pod_count) ? input.pod_count : [],
+      defender_fighting_ratio: Array.isArray(input.defender_fighting_ratio) ? input.defender_fighting_ratio : [],
+      defender_max_level: Array.isArray(input.defender_max_level) ? input.defender_max_level : [],
     }
   }
 
@@ -558,6 +566,20 @@
           { label: 'PVC Storage Capacity', color: SUB_LINE_COLOR, area: true, layer: 'sub', values: seriesOfK8s(resp, 'pvc_storage_capacity') },
         ],
       },
+      {
+        key: 'defender-fighting-ratio',
+        label: 'Defender Fighting Time',
+        value: defenderFightingPercent(resp),
+        unit: 'percent',
+        series: [{ label: 'Fighting Ratio', values: defenderFightingPercentSeries(resp) }],
+      },
+      {
+        key: 'defender-max-level',
+        label: 'Defender Max Level',
+        value: lastK8sMetric(resp, 'defender_max_level'),
+        unit: 'count',
+        series: [{ label: 'Highest Defender Level', values: seriesOfK8s(resp, 'defender_max_level') }],
+      },
     ]
   }
 
@@ -646,6 +668,15 @@
       if (value != null) return value
     }
     return null
+  }
+
+  function defenderFightingPercent(resp: K8sResp): number | null {
+    const ratio = lastK8sMetric(resp, 'defender_fighting_ratio')
+    return ratio == null ? null : ratio * 100
+  }
+
+  function defenderFightingPercentSeries(resp: K8sResp): Array<number | null> {
+    return seriesOfK8s(resp, 'defender_fighting_ratio').map((ratio) => (ratio == null ? null : ratio * 100))
   }
 
   function lastMetric(resp: MwStatisticsResp, key: MwMetricKey): number | null {
@@ -940,7 +971,7 @@
     </section>
 
     <section class="mt-8">
-      <p class="mb-2 text-a-gray-500">Kubernetes Metrics</p>
+      <p class="mb-2 text-a-gray-500">Prom Metrics</p>
       {#each k8sRows as row, idx (row.key)}
         <div class="grid items-center md:grid-cols-[180px_minmax(0,1fr)]">
           <aside class="rounded">
