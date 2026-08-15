@@ -10,6 +10,14 @@ export function replaceWikiEditorContent(content: string): boolean {
   const textarea = findWikiEditor()
   if (!textarea) return false
 
+  textarea.focus()
+  textarea.select()
+  try {
+    if (document.execCommand('insertText', false, content)) return true
+  } catch {
+    // Fall back to setting the value when the browser does not support insertText.
+  }
+
   textarea.value = content
   textarea.dispatchEvent(new Event('input', { bubbles: true }))
   return true

@@ -77,6 +77,7 @@ func MyIndex(c *serverctx.Context) {
 	default:
 		q = q.Where("page_title = ?", pageTitle)
 	}
+	q = q.Where("phase = ? AND TRIM(llm_output) <> ''", models.AIEditPhaseCompleted)
 
 	if err := q.Order("id DESC").Limit(limit).Find(&rows).Error; err != nil {
 		c.InternalError()
