@@ -9,6 +9,7 @@
     group?: string
     value: string
     label: string
+    secondaryLabel?: string
   }
 
   let {

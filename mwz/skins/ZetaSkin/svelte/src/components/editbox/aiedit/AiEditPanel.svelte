@@ -1,13 +1,10 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-  import { mdiRefresh } from '@mdi/js'
-
-  import CButton from '$shared/ui/CButton.svelte'
   import { showToast } from '$shared/ui/toast/toast'
-  import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZSelect from '$shared/ui/ZSelect.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
+  import getRLCONF from '$lib/utils/rlconf'
   import httpy from '$shared/utils/httpy'
 
   import { subscribeWikiEditorContent } from '../wikiEditor'
@@ -21,6 +18,8 @@
     content: string
     request_type: string
     use_count: number
+    user_name: string
+    created_at: string
   }
 
   interface PromptSelectItem {
@@ -133,6 +132,14 @@
     }
   }
 
+  function formatPromptDate(value: string) {
+    const datePart = value.match(/^\d{4}-\d{2}-\d{2}/)?.[0]
+    if (datePart) return datePart
+
+    const date = new Date(value)
+    return Number.isNaN(date.getTime()) ? '' : date.toISOString().slice(0, 10)
+  }
+
   async function fetchPromptList() {
     promptListLoading = true
     try {
@@ -170,7 +177,7 @@
   }
 </script>
 
-<div class="flex h-full min-h-0 flex-col gap-3 border bg-a-gray-100 p-4">
+{#snippet promptHeader()}
   <div class="flex items-center gap-2">
     <a href="/tool/ai-prompts" target="_blank" rel="noopener noreferrer" class="external text-xs" title="프롬프트 관리 새 창에서 열기">
       프롬프트
@@ -181,35 +188,35 @@
       <ZSelect bind:value={promptTitle} items={promptSelectItems} class="min-w-0 flex-1" onchange={storePromptTitle}>
         {#snippet item(p: PromptSelectItem)}
           {@const promptMeta = promptItems.find((item) => item.title === p.value)}
-          <div class="flex flex-1 items-center justify-between gap-2 overflow-hidden">
+          {@const promptAuthor = promptMeta && promptMeta.user_id !== getRLCONF()?.wgUserId ? promptMeta.user_name : ''}
+          <div class="grid flex-1 grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-3 overflow-hidden">
             <div class="truncate">{p.label}</div>
-            <div class="w-20 shrink-0 text-right text-xs opacity-50">
-              {promptMeta?.use_count ?? 0} runs
-            </div>
+            <span class="truncate text-right text-xs opacity-50">{promptAuthor}</span>
+            <span class="text-right text-xs tabular-nums opacity-50">{promptMeta?.use_count ?? 0} runs</span>
+            <span class="text-right text-xs tabular-nums opacity-50">{promptMeta ? formatPromptDate(promptMeta.created_at) : ''}</span>
           </div>
         {/snippet}
       </ZSelect>
-      <div class="flex shrink-0 items-center gap-1">
-        <CButton type="button" variant="outline" size="small" title="새로고침" onclick={() => void refreshPromptList()}>
-          <ZIcon path={mdiRefresh} />
-        </CButton>
-      </div>
     {/if}
   </div>
+{/snippet}
 
-  {#if currentRunnerPrompt}
-    <AiEditRunner
-      prompt={currentRunnerPrompt}
-      {title}
-      {pageId}
-      editorContent={mwEditorContent}
-      submit={submitRunner}
-      onPromptListChanged={refreshPromptList}
-      onRequestTypeChange={handleRequestTypeChange}
-    />
-  {:else if !promptListLoading}
+{#if currentRunnerPrompt}
+  <AiEditRunner
+    prompt={currentRunnerPrompt}
+    {title}
+    {pageId}
+    editorContent={mwEditorContent}
+    submit={submitRunner}
+    {promptHeader}
+    onPromptListChanged={refreshPromptList}
+    onRequestTypeChange={handleRequestTypeChange}
+  />
+{:else if !promptListLoading}
+  <div class="flex h-full min-h-0 flex-col gap-3 border bg-a-gray-100 p-4">
+    {@render promptHeader()}
     <div class="flex min-h-0 flex-1 items-center justify-center rounded border border-dashed border-a-slate-300 text-sm text-a-slate-500">
       사용할 수 있는 프롬프트가 없습니다.
     </div>
-  {/if}
-</div>
+  </div>
+{/if}

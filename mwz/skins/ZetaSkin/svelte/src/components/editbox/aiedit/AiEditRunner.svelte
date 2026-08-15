@@ -2,12 +2,11 @@
 
 <script lang="ts">
   import { mdiDotsVertical, mdiPlay } from '@mdi/js'
-  import { untrack } from 'svelte'
+  import { untrack, type Snippet } from 'svelte'
 
   import getRLCONF from '$lib/utils/rlconf'
   import CButton from '$shared/ui/CButton.svelte'
   import CMenu from '$shared/ui/CMenu.svelte'
-  import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZModal from '$shared/ui/ZModal.svelte'
@@ -33,6 +32,7 @@
     pageId,
     editorContent,
     submit,
+    promptHeader = undefined,
     onPromptListChanged = undefined,
     onRequestTypeChange = undefined,
   }: {
@@ -41,6 +41,7 @@
     pageId: number | undefined
     editorContent: string
     submit: SubmitHandler
+    promptHeader?: Snippet
     onPromptListChanged?: () => void | Promise<void>
     onRequestTypeChange?: (newType: AIEditRequestType) => void
   } = $props()
@@ -60,7 +61,6 @@
   let saveAsModalOpen = $state(false)
   let saveAsTitle = $state('')
   let savingPromptAs = $state(false)
-  let deletingPrompt = $state(false)
 
   const promptTextareaMaxHeight = 500
 
@@ -74,8 +74,6 @@
   )
   let hasPromptContent = $derived(workingTemplate.trim().length > 0)
   let canSavePrompt = $derived((getRLCONF()?.wgUserId ?? 0) > 0 && prompt.userId === getRLCONF()?.wgUserId)
-  let isSysop = $derived((getRLCONF()?.wgUserGroups || []).includes('sysop'))
-  let canDeletePrompt = $derived(prompt.id && (getRLCONF()?.wgUserId ?? 0) > 0 && (prompt.userId === getRLCONF()?.wgUserId || isSysop))
   let trimmedTitle = $derived(title.trim())
   let canSubmit = $derived(hasPromptContent && trimmedTitle.length > 0 && renderedLlmInput.trim().length > 0 && !submitting)
   let displayedTaskStatus = $derived(submitting ? 'Creating' : submittedTaskPhase === 'Completed' ? undefined : submittedTaskPhase)
@@ -202,37 +200,22 @@
     }
   }
 
-  async function deletePrompt() {
-    if (!prompt.id) {
-      showToast('삭제할 프롬프트 정보가 없습니다.')
-      return
-    }
-    if (!canDeletePrompt) {
-      showToast('자신의 프롬프트만 삭제할 수 있습니다.')
-      return
-    }
-
-    const ok = await showConfirm(`'${prompt.title}' 프롬프트를 삭제하시겠습니까?`)
-    if (!ok) return
-
-    deletingPrompt = true
-    try {
-      const [, err] = await httpy.delete(`/api/ai-prompts/${prompt.id}`)
-      if (err) {
-        showToast(err.message || '프롬프트 삭제에 실패했습니다.')
-        return
-      }
-      showToast('프롬프트를 삭제했습니다.')
-      void onPromptListChanged?.()
-    } catch (error) {
-      showToast(error instanceof Error && error.message ? error.message : '프롬프트 삭제에 실패했습니다.')
-    } finally {
-      deletingPrompt = false
-    }
-  }
 </script>
 
 <div class="flex h-full min-h-0 flex-col gap-3">
+  <AiEditTaskResults
+    {pageId}
+    {submittedTaskId}
+    resetToken={taskResetToken}
+    requestType={prompt.requestType}
+    title={trimmedTitle}
+    onPollingChange={(value) => (polling = value)}
+    onPhaseChange={(phase) => (submittedTaskPhase = phase)}
+    {onRequestTypeChange}
+  />
+
+  <div class="flex min-h-0 flex-1 flex-col gap-3 border bg-a-gray-100 p-4">
+    {@render promptHeader?.()}
   {#if !hasPromptContent}
     <div class="rounded border border-a-amber-200 bg-a-amber-50 px-3 py-2 text-sm text-a-amber-700">프롬프트 내용이 없습니다.</div>
   {/if}
@@ -248,22 +231,34 @@
           maxHeight={promptTextareaMaxHeight}
           onUpdateModelValue={handlePromptUpdate}
         />
-        <div class="absolute right-4 top-1 flex items-center">
+        <div class="absolute right-5 top-1 flex items-center">
           {#if displayedTaskStatus}
-            <div class="flex items-center text-xs text-a-slate-500">
+            <div class="flex items-center rounded-lg bg-a-gray-500/20 px-2 py-1 text-xs text-a-slate-500">
               {#if submitting || polling}
                 <ZSpinner size="0.875rem" extraClass="mr-1" />
               {/if}
               {displayedTaskStatus}
             </div>
           {/if}
-          <CButton type="button" variant="ghost" size="small" disabled={!canSubmit || polling} onclick={() => void handleSubmitClick()}>
+          <CButton
+            type="button"
+            variant="subtle"
+            size="small"
+            disabled={!canSubmit || polling}
+            onclick={() => void handleSubmitClick()}
+          >
             <ZIcon path={mdiPlay} />
             Run
           </CButton>
           <CMenu>
             {#snippet trigger({ toggle })}
-              <CButton type="button" variant="ghost" size="icon-sm" aria-label="프롬프트 메뉴" onclick={toggle}>
+              <CButton
+                type="button"
+                variant="subtle"
+                size="icon-sm"
+                aria-label="프롬프트 메뉴"
+                onclick={toggle}
+              >
                 <ZIcon path={mdiDotsVertical} />
               </CButton>
             {/snippet}
@@ -305,20 +300,6 @@
                 >
                   Save As...
                 </CButton>
-                {#if canDeletePrompt}
-                  <CButton
-                    type="button"
-                    variant="destructive"
-                    class="w-full justify-start! rounded-none!"
-                    disabled={deletingPrompt}
-                    onclick={() => {
-                      void deletePrompt()
-                      close()
-                    }}
-                  >
-                    {deletingPrompt ? '삭제 중...' : 'Delete'}
-                  </CButton>
-                {/if}
               </div>
             {/snippet}
           </CMenu>
@@ -332,17 +313,7 @@
       <div class="text-sm text-a-red-500">{submitError}</div>
     {/if}
   </div>
-
-  <AiEditTaskResults
-    {pageId}
-    {submittedTaskId}
-    resetToken={taskResetToken}
-    requestType={prompt.requestType}
-    title={trimmedTitle}
-    onPollingChange={(value) => (polling = value)}
-    onPhaseChange={(phase) => (submittedTaskPhase = phase)}
-    {onRequestTypeChange}
-  />
+  </div>
 </div>
 
 <ZModal

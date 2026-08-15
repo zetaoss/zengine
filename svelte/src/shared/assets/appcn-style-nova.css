@@ -49,6 +49,10 @@
   @apply bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--color-secondary),var(--color-foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground;
 }
 
+.cn-button-variant-subtle {
+  @apply bg-a-gray-500/20 hover:bg-a-gray-500/50;
+}
+
 .cn-button-variant-ghost {
   @apply hover:bg-a-gray-500/50 hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground;
 }

@@ -6,7 +6,7 @@ import type { HTMLAnchorAttributes, HTMLButtonAttributes } from "svelte/elements
 
 import { cn } from "./utils"
 
-  export type ButtonVariant = "default" | "outline" | "secondary" | "ghost" | "destructive" | "link"
+  export type ButtonVariant = "default" | "outline" | "secondary" | "subtle" | "ghost" | "destructive" | "link"
   export type ButtonSize =
     | "default"
     | "xs"
@@ -23,6 +23,7 @@ import { cn } from "./utils"
     default: "cn-button-variant-default",
     outline: "cn-button-variant-outline",
     secondary: "cn-button-variant-secondary",
+    subtle: "cn-button-variant-subtle",
     ghost: "cn-button-variant-ghost",
     destructive: "cn-button-variant-destructive",
     link: "cn-button-variant-link",
