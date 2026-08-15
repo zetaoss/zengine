@@ -8,7 +8,17 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
+
+func TestQueryPrometheusURLIncludesEvaluationTime(t *testing.T) {
+	evaluationTime := time.Date(2026, 8, 15, 12, 0, 0, 0, time.UTC)
+	queryURL := queryPrometheusURL("http://prometheus.example", "up", &evaluationTime)
+
+	if !strings.Contains(queryURL, "time=2026-08-15T12%3A00%3A00Z") {
+		t.Fatalf("query URL does not include evaluation time: %s", queryURL)
+	}
+}
 
 func TestFetchAndParseMetricsPrometheusAPI(t *testing.T) {
 	pvcQueryCount := 0
@@ -146,27 +156,21 @@ func TestFetchPVCMetricsRejectsMissingCapacity(t *testing.T) {
 	}
 }
 
-func TestFetchAndParseMetricsAggregatesContainerMemoryByPod(t *testing.T) {
-	const aggregateQuery = `sum by (pod, namespace) (container_memory_working_set_bytes{namespace="prod3", container!=""})`
+func TestFetchDefenderMetrics(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		res := prometheusQueryResponse{Status: "success"}
-		if r.URL.Query().Get("query") == aggregateQuery {
-			res.Data.Result = []prometheusQueryResult{
-				{
-					Metric: map[string]string{"pod": "multi-container-pod", "namespace": "prod3"},
-					Value:  []any{1712345678.0, "314572800"},
-				},
-			}
+		switch r.URL.Query().Get("query") {
+		case `increase(zeta_defender_fighting_seconds_total[1h]) / 3600`:
+			res.Data.Result = []prometheusQueryResult{{Value: []any{1712345678.0, "0.25"}}}
+		case `max_over_time(zeta_defender_level[1h])`:
+			res.Data.Result = []prometheusQueryResult{{Value: []any{1712345678.0, "7"}}}
 		}
 		_ = json.NewEncoder(w).Encode(res)
 	}))
 	defer ts.Close()
 
-	_, pods, err := FetchAndParseMetrics(context.Background(), ts.URL, "pool-a", "prod3")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(pods) != 1 || pods[0].Name != "multi-container-pod" || pods[0].MemoryUsage != 314572800 {
-		t.Fatalf("unexpected pod metrics: %+v", pods)
+	fightingRatio, maxLevel := FetchDefenderMetrics(context.Background(), ts.URL)
+	if fightingRatio != 0.25 || maxLevel != 7 {
+		t.Fatalf("unexpected defender metrics: fightingRatio=%v maxLevel=%v", fightingRatio, maxLevel)
 	}
 }

@@ -21,6 +21,21 @@ func TestMedianFloat64(t *testing.T) {
 	}
 }
 
+func TestDefenderDailyAggregations(t *testing.T) {
+	if got := meanFloat64([]float64{0, 0.25, 0.75}); got != 1.0/3.0 {
+		t.Errorf("meanFloat64() = %f, expected %f", got, 1.0/3.0)
+	}
+	if got := meanFloat64(nil); got != 0 {
+		t.Errorf("meanFloat64(nil) = %f, expected 0", got)
+	}
+	if got := maxFloat64([]float64{2, 9, 4}); got != 9 {
+		t.Errorf("maxFloat64() = %f, expected 9", got)
+	}
+	if got := maxFloat64(nil); got != 0 {
+		t.Errorf("maxFloat64(nil) = %f, expected 0", got)
+	}
+}
+
 func TestMedianInt(t *testing.T) {
 	odd := []int{10, 1, 5}
 	if got := medianInt(odd); got != 5 {

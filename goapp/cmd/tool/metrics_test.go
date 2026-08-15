@@ -166,3 +166,12 @@ func TestFixedMetricUnits(t *testing.T) {
 		t.Errorf("formatStorageGi(11 GiB) = %s, expected 11Gi", got)
 	}
 }
+
+func TestDefenderMetricFormatting(t *testing.T) {
+	if got := formatDefenderFightingRatio(0.25); got != "25.00%" {
+		t.Errorf("fighting ratio format = %s, expected 25.00%%", got)
+	}
+	if got := formatDefenderMaxLevel(7); got != "7" {
+		t.Errorf("max level format = %s, expected 7", got)
+	}
+}

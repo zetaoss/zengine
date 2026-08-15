@@ -46,6 +46,8 @@ func run(cfg *config.Config, reg *registry.Registry, args []string) error {
 	switch args[0] {
 	case "migrate":
 		return database.RunMigrate(cfg)
+	case "stat-interpolate-daily":
+		return runStatInterpolateDaily(cfg, args[1:])
 	case "tasks":
 		return withInspector(cfg, func(inspector *asynq.Inspector) error {
 			return runTasks(reg, inspector, args[1:])
