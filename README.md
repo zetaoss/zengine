@@ -21,3 +21,15 @@ Monorepo for ZetaWiki services.
 
 - Agent execution guide: `AGENTS.md`
 - GoApp development and task system: `docs/goapp.md`
+
+## Kubernetes Development Workspace
+
+After cloning or switching branches in the dev3 workspace, synchronize the
+checkout-specific dependencies without changing Git state:
+
+```sh
+./hack/dev-sync
+```
+
+The command reuses pnpm and Go caches under `.runtime-cache/`. Database
+migrations are reported but are never run automatically.

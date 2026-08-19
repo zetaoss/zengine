@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(git -C "$(dirname -- "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
+cache_dir="$repo_root/.runtime-cache"
+pnpm_store="$cache_dir/pnpm-store"
+
+mkdir -p "$pnpm_store" "$cache_dir/go-build" "$cache_dir/go-mod"
+
+echo "sync main Svelte dependencies"
+pnpm -C "$repo_root/svelte" install \
+  --frozen-lockfile \
+  --store-dir "$pnpm_store"
+
+echo "sync skin Svelte dependencies"
+pnpm -C "$repo_root/mwz/skins/ZetaSkin/svelte" install \
+  --frozen-lockfile \
+  --store-dir "$pnpm_store"
+
+echo "download Go modules"
+GOCACHE="$cache_dir/go-build" \
+GOMODCACHE="$cache_dir/go-mod" \
+  go -C "$repo_root/goapp" mod download
+
+check_link() {
+  local link_path="$1"
+  local expected_target="$2"
+
+  if [[ ! -L "$link_path" ]]; then
+    echo "missing MediaWiki link: $link_path" >&2
+    return 1
+  fi
+  if [[ "$(readlink -f -- "$link_path")" != "$(readlink -f -- "$expected_target")" ]]; then
+    echo "unexpected MediaWiki link target: $link_path" >&2
+    return 1
+  fi
+}
+
+check_link "$repo_root/w/extensions/ZetaExtension" "$repo_root/mwz/extensions/ZetaExtension"
+check_link "$repo_root/w/skins/ZetaSkin" "$repo_root/mwz/skins/ZetaSkin"
+
+cat <<'EOF'
+dependency sync complete
+Database migrations are not run automatically.
+Review pending migrations and run `ctl migrate` when appropriate.
+EOF
