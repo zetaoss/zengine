@@ -1,6 +1,6 @@
 .bootstrapped
 .pnpm-store
-.runtime-cache/
+.runtime-cache
 node_modules
 vendor
 tmp
