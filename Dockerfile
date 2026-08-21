@@ -1,3 +1,7 @@
+# syntax=docker/dockerfile:1
+
+ARG ZBASE_VERSION=0.2.0
+
 FROM node:24-trixie-slim AS nodebuild
 
 RUN corepack enable && corepack prepare pnpm@11 --activate
@@ -12,32 +16,33 @@ RUN pnpm -C mwz/skins/ZetaSkin/svelte run build
 
 FROM --platform=$BUILDPLATFORM golang:1.25-trixie AS gobuild
 
-ARG TARGETOS
-ARG TARGETARCH
-
 WORKDIR /src/goapp
 COPY goapp/go.* ./
 RUN go mod download
 COPY goapp/ ./
-	RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-$(go env GOARCH)} go build -trimpath -ldflags="-s -w" -o /out/server ./cmd/server
-	RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-$(go env GOARCH)} go build -trimpath -ldflags="-s -w" -o /out/worker ./cmd/worker
-	RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-$(go env GOARCH)} go build -trimpath -ldflags="-s -w" -o /out/scheduler ./cmd/scheduler
-	RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-$(go env GOARCH)} go build -trimpath -ldflags="-s -w" -o /out/tool ./cmd/tool
+RUN mkdir -p /out/bin \
+    && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+        go build -trimpath -ldflags="-s -w" -o /out/bin/ \
+        ./cmd/server \
+        ./cmd/worker \
+        ./cmd/scheduler \
+        ./cmd/tool
 
 # https://github.com/zetaoss/zbase/pkgs/container/zbase
-FROM ghcr.io/zetaoss/zbase:v0.43.900
+FROM ghcr.io/zetaoss/zbase:${ZBASE_VERSION}
 
 ENV MW_INSTALL_PATH=/app/w
 
-COPY --from=nodebuild /app           /app
-COPY --from=gobuild   /out/server    /app/goapp/server
-COPY --from=gobuild   /out/worker    /app/goapp/worker
-COPY --from=gobuild   /out/scheduler /app/goapp/scheduler
-COPY --from=gobuild   /out/tool      /app/goapp/tool
+COPY --from=nodebuild /app      /app
+COPY --from=gobuild   /out/bin/ /app/bin/
 
-RUN set -eux \
+RUN --mount=from=composer:2.10,source=/usr/bin/composer,target=/usr/bin/composer \
+    set -eux \
     && mv /var/www/html                         /app/w \
     && ln -rs /app/mwz/extensions/ZetaExtension /app/w/extensions/ \
     && ln -rs /app/mwz/skins/ZetaSkin           /app/w/skins/ \
-    && /app/goapp/tool extensions upgrade \
+    && /app/bin/tool extensions upgrade \
+    && cd /app/w \
+    && cp composer.local.json-sample composer.local.json \
+    && composer update --no-dev --no-scripts --optimize-autoloader \
     && chown www-data:www-data -R /app/*
