@@ -140,7 +140,7 @@ export function renderGeneratedBlock(overrides) {
   }
   lines.push(
     "    && cd /app/w \\",
-    "    && composer update --no-dev --no-scripts --optimize-autoloader \\",
+    "    && composer update --minimal-changes --no-dev --no-scripts --optimize-autoloader \\",
     "    && chown www-data:www-data -R /app/*",
     GENERATED_END,
   );
