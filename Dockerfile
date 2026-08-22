@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-ARG ZBASE_VERSION=0.2.0
+ARG ZBASE_VERSION=0.2.2
 
 FROM node:24-trixie-slim AS nodebuild
 
@@ -10,7 +10,7 @@ WORKDIR /app
 COPY . .
 RUN pnpm -C svelte                    install --frozen-lockfile
 RUN pnpm -C mwz/skins/ZetaSkin/svelte install --frozen-lockfile
-RUN node hack/version.mjs
+RUN node hack/version-sync.mjs
 RUN pnpm -C svelte                    run build
 RUN pnpm -C mwz/skins/ZetaSkin/svelte run build
 
@@ -36,13 +36,20 @@ ENV MW_INSTALL_PATH=/app/w
 COPY --from=nodebuild /app      /app
 COPY --from=gobuild   /out/bin/ /app/bin/
 
-RUN --mount=from=composer:2.10,source=/usr/bin/composer,target=/usr/bin/composer \
-    set -eux \
+RUN set -eux \
     && mv /var/www/html                         /app/w \
     && ln -rs /app/mwz/extensions/ZetaExtension /app/w/extensions/ \
     && ln -rs /app/mwz/skins/ZetaSkin           /app/w/skins/ \
-    && /app/bin/tool extensions upgrade \
+    && chown www-data:www-data -R /app/*
+
+# extensions-sync: generated; do not edit
+RUN --mount=from=composer:2.10,source=/usr/bin/composer,target=/usr/bin/composer \
+    set -eux \
+    && cd /app/w/extensions \
+    && rm -rf 'MailAPI' 'SimpleMermaid' \
+    && git clone --depth=1 --branch 'v0.1.1' 'https://github.com/mailapi/mediawiki-extensions-MailAPI.git' 'MailAPI' \
+    && git clone --depth=1 --branch 'v0.1.4' 'https://github.com/jmnote/SimpleMermaid.git' 'SimpleMermaid' \
     && cd /app/w \
-    && cp composer.local.json-sample composer.local.json \
     && composer update --no-dev --no-scripts --optimize-autoloader \
     && chown www-data:www-data -R /app/*
+# /extensions-sync: generated; do not edit

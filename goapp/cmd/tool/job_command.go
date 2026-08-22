@@ -64,7 +64,6 @@ func printUsage(reg *registry.Registry) {
 	_, _ = fmt.Printf("  %-30s %s\n", "flush (all|active|pending|scheduled|retry)", "cancel or archive tasks by Asynq state")
 	_, _ = fmt.Printf("  %-30s %s\n", "routes", "show api routes")
 	_, _ = fmt.Printf("  %-30s %s\n", "metrics [--watch|-w]", "show node resource metrics")
-	_, _ = fmt.Printf("  %-30s %s\n", "extensions <command>", "manage MediaWiki extensions")
 	_, _ = fmt.Printf("  %-30s %s\n", "help", "show this help message")
 	_, _ = fmt.Printf("  %-30s %s\n", "<task> [json-input]", "run a task immediately (direct run)")
 	_, _ = fmt.Println()

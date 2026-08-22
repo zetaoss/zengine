@@ -237,18 +237,3 @@ go run ./cmd/tool flush all
 ```
 
 `flush active`는 active task에 cancellation을 전달한다. `flush pending`, `flush scheduled`, `flush retry`는 해당 Asynq 상태의 task만 archive하며 `flush all`은 네 상태를 모두 처리한다. Asynq Redis key를 application code에서 직접 수정하지 말고 `asynq.Inspector` 또는 공식 도구를 사용한다.
-
-## MediaWiki Extension 관리 CLI
-
-`cmd/tool extensions`는 GoApp task와 별개로 로컬 MediaWiki extension을 관리한다. `MW_INSTALL_PATH`가 MediaWiki 설치 경로를 가리켜야 하며, 이 값의 상위 디렉터리를 repository root로 사용한다. 일반 개발 환경에서는 `MW_INSTALL_PATH=/app/w`를 사용한다.
-
-```bash
-cd /app/goapp
-go run ./cmd/tool extensions list
-go run ./cmd/tool extensions upgrade
-```
-
-- `extensions list`: `w/extensions/*/extension.json`의 이름과 version을 읽고 `mwz/extensions/extensions.yaml`의 repo/tag 정보와 합쳐 출력한다. 설치 version과 지정 tag가 다르면 해당 행을 빨간색으로 표시한다.
-- `extensions upgrade`: `mwz/extensions/extensions.yaml`을 기준으로 누락된 extension을 clone한다. 설치 version이 지정 tag와 다르면 기존 `w/extensions/<name>` 디렉터리를 삭제한 뒤 `git clone --depth=1 -b <tag>`로 다시 받는다.
-
-`upgrade`는 관리 대상 extension 디렉터리의 로컬 변경도 함께 삭제하므로 실행 전에 필요한 변경이 없는지 확인한다. YAML에 없는 extension은 삭제하거나 갱신하지 않는다.
