@@ -50,6 +50,6 @@ RUN --mount=from=composer:2.10,source=/usr/bin/composer,target=/usr/bin/composer
     && git clone --depth=1 --branch 'v0.1.1' 'https://github.com/mailapi/mediawiki-extensions-MailAPI.git' 'MailAPI' \
     && git clone --depth=1 --branch 'v0.1.4' 'https://github.com/jmnote/SimpleMermaid.git' 'SimpleMermaid' \
     && cd /app/w \
-    && composer update --no-dev --no-scripts --optimize-autoloader \
+    && composer update --minimal-changes --no-dev --no-scripts --optimize-autoloader \
     && chown www-data:www-data -R /app/*
 # /extensions-sync: generated; do not edit
