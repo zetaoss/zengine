@@ -8,7 +8,6 @@ import (
 	"github.com/zetaoss/zengine/goapp/app/config"
 	"github.com/zetaoss/zengine/goapp/app/database"
 	appredis "github.com/zetaoss/zengine/goapp/app/redis"
-	"github.com/zetaoss/zengine/goapp/cmd/tool/extensions"
 	"github.com/zetaoss/zengine/goapp/worker/registry"
 
 	"github.com/hibiken/asynq"
@@ -16,15 +15,6 @@ import (
 
 func main() {
 	args := os.Args[1:]
-	if len(args) > 0 && args[0] == "extensions" {
-		if err := extensions.Run(args[1:]); err != nil {
-			slog.Error("tool failed", "err", err)
-			fmt.Fprintln(os.Stderr, err.Error())
-			os.Exit(1)
-		}
-		return
-	}
-
 	cfg, err := config.Load()
 	if err != nil {
 		slog.Error("failed to load config", "err", err)
