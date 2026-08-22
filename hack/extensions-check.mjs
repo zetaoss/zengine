@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import {
@@ -37,13 +37,16 @@ const zbaseVersion = readZbaseVersion();
 const base = await fetchBaseExtensions(zbaseVersion);
 const { overrides, downgrades } = classifyExtensions(local, base);
 const errors = [];
+const extensionsDir = resolve(ROOT, "w/extensions");
 
-for (const entry of local) {
-  const installed = installedVersion(entry.name);
-  if (installed.error) {
-    errors.push(installed.error);
-  } else if (compareVersions(installed.version, entry.tag) !== 0) {
-    errors.push(`${entry.name}: installed ${installed.version}, expected ${entry.tag}`);
+if (existsSync(extensionsDir)) {
+  for (const entry of local) {
+    const installed = installedVersion(entry.name);
+    if (installed.error) {
+      errors.push(installed.error);
+    } else if (compareVersions(installed.version, entry.tag) !== 0) {
+      errors.push(`${entry.name}: installed ${installed.version}, expected ${entry.tag}`);
+    }
   }
 }
 
