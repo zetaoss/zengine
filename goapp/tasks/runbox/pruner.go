@@ -23,15 +23,12 @@ func (j *PrunerTask) Execute(ctx context.Context, taskCtx taskctx.Context, _ any
 	}
 
 	now := time.Now()
-	pendingBefore := now.Add(-staleRunboxTimeout)
 	runningBefore := now.Add(-staleRunboxTimeout)
 	res := db.WithContext(ctx).Table("runboxes").
-		Where("(phase = ? AND updated_at < ?) OR (phase = ? AND updated_at < ?)",
-			"pending", pendingBefore,
-			"running", runningBefore,
-		).
+		Where("phase = ? AND updated_at < ?", "running", runningBefore).
 		Updates(app.H{
 			"phase":      "failed",
+			"outs":       toJSON(app.H{"error": "worker timeout"}),
 			"updated_at": now,
 		})
 	if res.Error != nil {
@@ -41,7 +38,6 @@ func (j *PrunerTask) Execute(ctx context.Context, taskCtx taskctx.Context, _ any
 	return app.H{
 		"failed_at":      now.UTC().Format(time.RFC3339),
 		"updated":        res.RowsAffected,
-		"pending_before": pendingBefore.UTC().Format(time.RFC3339),
 		"running_before": runningBefore.UTC().Format(time.RFC3339),
 	}, nil
 }

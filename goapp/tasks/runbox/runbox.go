@@ -3,6 +3,8 @@ package runbox
 import (
 	"bytes"
 	"context"
+	cryptorand "crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -59,15 +61,16 @@ func (j *RunboxTask) Execute(ctx context.Context, taskCtx taskctx.Context, p pay
 	if err = db.WithContext(ctx).Table("runboxes").Select("type, payload").Where("hash = ?", hash).Take(&row).Error; err != nil {
 		return nil, err
 	}
-	// The existing runboxes.updated_at column is second-precision in the
-	// deployed database. Normalize the lease timestamp before both writes so
-	// the conditional terminal update matches the claimed row.
-	claimAt := time.Now().UTC().Truncate(time.Second)
+	leaseID, err := newLeaseID()
+	if err != nil {
+		return nil, fmt.Errorf("create runbox lease: %w", err)
+	}
+	leaseMarker := toJSON(app.H{"lease_id": leaseID})
 	claim := db.WithContext(ctx).Table("runboxes").Where(
 		"hash = ? AND phase IN ?",
 		hash,
 		[]string{"pending", "failed"},
-	).Updates(app.H{"phase": "running", "updated_at": claimAt})
+	).Updates(app.H{"phase": "running", "outs": leaseMarker, "updated_at": time.Now()})
 	if claim.Error != nil {
 		return nil, claim.Error
 	}
@@ -80,13 +83,13 @@ func (j *RunboxTask) Execute(ctx context.Context, taskCtx taskctx.Context, p pay
 	ep := taskCtx.Config().API.RunboxEndpoint
 	if ep == "" {
 		err := fmt.Errorf("RUNBOX_URL is required")
-		_ = markFailed(ctx, db, hash, claimAt, err.Error())
+		_ = markFailed(ctx, db, hash, leaseMarker, err.Error())
 		return nil, err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, ep+"/"+row.Type, bytes.NewBufferString(row.Payload))
 	if err != nil {
-		_ = markFailed(ctx, db, hash, claimAt, err.Error())
+		_ = markFailed(ctx, db, hash, leaseMarker, err.Error())
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -102,7 +105,7 @@ func (j *RunboxTask) Execute(ctx context.Context, taskCtx taskctx.Context, p pay
 		if err == nil {
 			err = fmt.Errorf("empty response from runbox")
 		}
-		_ = markFailed(ctx, db, hash, claimAt, err.Error())
+		_ = markFailed(ctx, db, hash, leaseMarker, err.Error())
 		return nil, err
 	}
 	defer func() {
@@ -112,7 +115,7 @@ func (j *RunboxTask) Execute(ctx context.Context, taskCtx taskctx.Context, p pay
 	bodyBytes, readErr := io.ReadAll(resp.Body)
 	if readErr != nil {
 		err := fmt.Errorf("read runbox response: %w", readErr)
-		_ = markFailed(ctx, db, hash, claimAt, err.Error())
+		_ = markFailed(ctx, db, hash, leaseMarker, err.Error())
 		return nil, err
 	}
 	slog.Info("[runbox-job] response",
@@ -131,7 +134,7 @@ func (j *RunboxTask) Execute(ctx context.Context, taskCtx taskctx.Context, p pay
 		if message, ok := data["error"].(string); ok && strings.TrimSpace(message) != "" {
 			err = fmt.Errorf("%s", message)
 		}
-		_ = markFailed(ctx, db, hash, claimAt, err.Error())
+		_ = markFailed(ctx, db, hash, leaseMarker, err.Error())
 		if resp.StatusCode >= http.StatusBadRequest && resp.StatusCode < http.StatusInternalServerError {
 			return nil, fmt.Errorf("%w: %v", asynq.SkipRetry, err)
 		}
@@ -149,7 +152,7 @@ func (j *RunboxTask) Execute(ctx context.Context, taskCtx taskctx.Context, p pay
 		"has_outputs_list", data["outputsList"] != nil,
 	)
 
-	result := db.WithContext(ctx).Table("runboxes").Where("hash = ? AND phase = ? AND updated_at = ?", hash, "running", claimAt).Updates(app.H{
+	result := db.WithContext(ctx).Table("runboxes").Where("hash = ? AND phase = ? AND outs = ?", hash, "running", leaseMarker).Updates(app.H{
 		"cpu":        data["cpu"],
 		"mem":        data["mem"],
 		"time":       data["time"],
@@ -167,8 +170,8 @@ func (j *RunboxTask) Execute(ctx context.Context, taskCtx taskctx.Context, p pay
 	return app.H{"hash": hash, "phase": "succeeded"}, nil
 }
 
-func markFailed(ctx context.Context, db *gorm.DB, hash string, claimAt time.Time, reason string) error {
-	result := db.WithContext(ctx).Table("runboxes").Where("hash = ? AND phase = ? AND updated_at = ?", hash, "running", claimAt).Updates(app.H{
+func markFailed(ctx context.Context, db *gorm.DB, hash, leaseMarker, reason string) error {
+	result := db.WithContext(ctx).Table("runboxes").Where("hash = ? AND phase = ? AND outs = ?", hash, "running", leaseMarker).Updates(app.H{
 		"phase":      "failed",
 		"outs":       toJSON(app.H{"error": reason}),
 		"updated_at": time.Now(),
@@ -177,6 +180,14 @@ func markFailed(ctx context.Context, db *gorm.DB, hash string, claimAt time.Time
 		slog.Error("[runbox-job] failed to mark job failed", "hash", hash, "error", result.Error)
 	}
 	return result.Error
+}
+
+func newLeaseID() (string, error) {
+	b := make([]byte, 16)
+	if _, err := cryptorand.Read(b); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(b), nil
 }
 
 func toJSON(v any) string {
