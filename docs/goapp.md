@@ -216,8 +216,8 @@ SIGINT/SIGTERM 시 active handler를 최대 30초 drain한다.
 | `ping-redis` | 5초 | 3 | - | 수동 |
 | `request-matcher` | 5분 | 3 | `15 * * * *` | `default` |
 | `request-pruner` | 5분 | 3 | `0 0 * * *` | `default` |
-| `runbox` | 5분 | 3 | - | `runbox`, API |
-| `runbox-pruner` | 1분 | 3 | - | 수동 |
+| `runbox` | 2분 | 0 | - | `runbox`, API |
+| `runbox-pruner` | 1분 | 3 | `* * * * *` | `default`, 매분 |
 | `stat-{cf,ga,gsc,mw}-{daily,hourly}` | 5분 | 3 | `5 * * * *` | `default` |
 
 `daily` 통계 task도 현재 매시 05분 실행되며 task 내부에서 수집 시간 범위를 결정한다.

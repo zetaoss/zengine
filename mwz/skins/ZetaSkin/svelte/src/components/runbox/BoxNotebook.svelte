@@ -37,22 +37,26 @@
   </div>
 {/if}
 
-{#if loaded && (lowerPhase === 'succeeded' || lowerPhase === 'failed') && nbouts.length}
+{#if loaded && (lowerPhase === 'succeeded' || lowerPhase === 'failed')}
   {#if lowerPhase === 'failed'}
-    <div class="flex items-center gap-1 text-xs text-a-red-500 font-medium mb-2 mt-1">
-      <ZIcon size={14} path={mdiAlert} />
-      {#if updatedAtLabel}
-        <time datetime={jobValue.updatedAt ?? undefined} title={jobValue.updatedAt ?? undefined}>
-          Failed · {updatedAtLabel}
-        </time>
-      {:else}
-        <span>Failed</span>
-      {/if}
+    <div class="{containerClass} text-xs text-a-red-500 font-medium mt-1">
+      <div class="flex items-center gap-1">
+        <ZIcon size={14} path={mdiAlert} />
+        {#if updatedAtLabel}
+          <time datetime={jobValue.updatedAt ?? undefined} title={jobValue.updatedAt ?? undefined}>
+            Runbox job failed{jobValue.failureReason ? `: ${jobValue.failureReason}` : ''} · {updatedAtLabel}
+          </time>
+        {:else}
+          <span>Runbox job failed{jobValue.failureReason ? `: ${jobValue.failureReason}` : ''}</span>
+        {/if}
+      </div>
     </div>
   {/if}
-  <div class={containerClass}>
-    {#each nbouts as nbout, i (i)}
-      <NBOutput out={nbout} {wrapped} />
-    {/each}
-  </div>
+  {#if nbouts.length}
+    <div class={containerClass}>
+      {#each nbouts as nbout, i (i)}
+        <NBOutput out={nbout} {wrapped} />
+      {/each}
+    </div>
+  {/if}
 {/if}
