@@ -49,6 +49,12 @@ function normalizeLangOuts(parsed: unknown): { logs: string[]; images: string[] 
   return { logs, images }
 }
 
+function normalizeFailureReason(parsed: unknown): string | null {
+  if (!parsed || typeof parsed !== 'object') return null
+  const reason = (parsed as Record<string, unknown>).error
+  return typeof reason === 'string' && reason.trim() !== '' ? reason : null
+}
+
 function normalizeNotebookOuts(parsed: unknown): Job['notebookOuts'] {
   const outputsList =
     parsed && typeof parsed === 'object' && 'outputsList' in parsed ? (parsed as Record<string, unknown>).outputsList : parsed
@@ -100,6 +106,7 @@ async function getJob(store: JobStore): Promise<void> {
     j.isLoading = false
     j.phase = phase
     j.updatedAt = typeof data.updated_at === 'string' ? data.updated_at : null
+    j.failureReason = phase === 'failed' ? normalizeFailureReason(parsedOuts) : null
   })
 
   if (phase === 'none') {
@@ -116,10 +123,14 @@ async function getJob(store: JobStore): Promise<void> {
 
   if (phase === 'failed') {
     updateJob(store, (j) => {
-      if (j.type === JobType.Lang && j.langOuts == null) {
+      if (j.type === JobType.Lang && j.langOuts == null && !j.failureReason) {
         j.langOuts = { logs: ['2Runbox job failed.'], images: [] }
       }
-      if (j.type === JobType.Notebook && (!Array.isArray(j.notebookOuts) || j.notebookOuts.length === 0)) {
+      if (
+        j.type === JobType.Notebook &&
+        (!Array.isArray(j.notebookOuts) || j.notebookOuts.length === 0) &&
+        !j.failureReason
+      ) {
         j.notebookOuts = [[{ output_type: 'stream', text: ['Runbox job failed.'] }]]
       }
     })
@@ -229,6 +240,7 @@ export function mountRunbox() {
         phase: null,
         isLoading: false,
         updatedAt: null,
+        failureReason: null,
         payload: null,
         langOuts: null,
         notebookOuts: [],

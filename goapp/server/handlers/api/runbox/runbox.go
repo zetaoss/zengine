@@ -4,13 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/zetaoss/zengine/goapp/app"
-	"github.com/zetaoss/zengine/goapp/tasks/runbox"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
+	"github.com/zetaoss/zengine/goapp/tasks/runbox"
 
 	"gorm.io/gorm"
 )
@@ -71,6 +73,7 @@ func Store(c *serverctx.Context) {
 	}
 
 	if _, err := runbox.Enqueue(context.Background(), c.AppContext, body.Hash); err != nil {
+		markEnqueueFailed(c, body.Hash, err)
 		http.Error(c.W, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -96,10 +99,24 @@ func Rerun(c *serverctx.Context) {
 	}
 	_ = c.DB.Table("runboxes").Where("hash = ?", hash).Updates(app.H{"phase": "pending", "updated_at": time.Now()}).Error
 	if _, err := runbox.Enqueue(context.Background(), c.AppContext, hash); err != nil {
+		markEnqueueFailed(c, hash, err)
 		http.Error(c.W, "internal server error", http.StatusInternalServerError)
 		return
 	}
 	c.JSON(map[string]bool{"ok": true})
+}
+
+func markEnqueueFailed(c *serverctx.Context, hash string, err error) {
+	result := c.DB.Table("runboxes").Where("hash = ? AND phase = ?", hash, "pending").Updates(app.H{
+		"phase":      "failed",
+		"outs":       toJSON(app.H{"error": fmt.Sprintf("enqueue runbox task: %v", err)}),
+		"updated_at": time.Now(),
+	})
+	if result.Error != nil {
+		// The original enqueue error is still returned to the caller; log only
+		// the best-effort state update failure here.
+		log.Printf("failed to mark runbox enqueue error: hash=%s error=%v", hash, result.Error)
+	}
 }
 
 func toJSON(v any) string {

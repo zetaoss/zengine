@@ -68,6 +68,7 @@ export interface Job {
   phase: JobPhase | null
   isLoading: boolean
   updatedAt: string | null
+  failureReason: string | null
   payload: Payload | null
   langOuts: LangOut | null
   notebookOuts: Output[][]

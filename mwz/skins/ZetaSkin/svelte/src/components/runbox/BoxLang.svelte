@@ -54,10 +54,10 @@
         <ZIcon size={14} path={mdiAlert} />
         {#if updatedAtLabel}
           <time datetime={jobValue.updatedAt ?? undefined} title={jobValue.updatedAt ?? undefined}>
-            Failed · {updatedAtLabel}
+            Runbox job failed{jobValue.failureReason ? `: ${jobValue.failureReason}` : ''} · {updatedAtLabel}
           </time>
         {:else}
-          <span>Failed</span>
+          <span>Runbox job failed{jobValue.failureReason ? `: ${jobValue.failureReason}` : ''}</span>
         {/if}
       </div>
     {/if}

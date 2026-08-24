@@ -65,8 +65,8 @@ func New() *Registry {
 	register(r, "inspire", 5*time.Second, inspire.NewInspireTask())
 	register(r, "ping-db", 10*time.Second, pingdb.NewPingDBTask())
 	register(r, "ping-redis", 5*time.Second, pingredis.NewPingRedisTask())
-	register(r, "runbox-pruner", time.Minute, runbox.NewPrunerTask())
-	register(r, "runbox", 5*time.Minute, runbox.NewRunboxTask(), queue("runbox"))
+	register(r, "runbox-pruner", time.Minute, runbox.NewPrunerTask(), cron("* * * * *"))
+	register(r, "runbox", 2*time.Minute, runbox.NewRunboxTask(), queue("runbox"), maxRetry(0))
 	register(r, "request-pruner", 5*time.Minute, writerequest.NewPrunerTask(), cron("0 0 * * *"))
 	register(r, "request-matcher", 5*time.Minute, writerequest.NewMatcherTask(), cron("15 * * * *"))
 	return r
@@ -76,6 +76,7 @@ type option func(*Spec)
 
 func cron(value string) option  { return func(s *Spec) { s.Cron = value } }
 func queue(value string) option { return func(s *Spec) { s.Queue = value } }
+func maxRetry(value int) option { return func(s *Spec) { s.MaxRetries = value } }
 
 func register[I any](r *Registry, taskType string, timeout time.Duration, task executor[I], opts ...option) {
 	spec := Spec{Type: taskType, Timeout: timeout, MaxRetries: 3}

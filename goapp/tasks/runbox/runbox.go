@@ -3,6 +3,8 @@ package runbox
 import (
 	"bytes"
 	"context"
+	cryptorand "crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,6 +16,7 @@ import (
 	"github.com/hibiken/asynq"
 	"github.com/zetaoss/zengine/goapp/app"
 	"github.com/zetaoss/zengine/goapp/app/taskctx"
+	"gorm.io/gorm"
 )
 
 type payload struct {
@@ -24,7 +27,7 @@ type RunboxTask struct{}
 
 const (
 	runboxTaskType    = "runbox"
-	runboxTaskTimeout = 5 * time.Minute
+	runboxTaskTimeout = 2 * time.Minute
 	runboxTaskQueue   = "runbox"
 )
 
@@ -37,7 +40,7 @@ func Enqueue(ctx context.Context, taskCtx taskctx.Context, hash string) (*asynq.
 	if err != nil {
 		return nil, err
 	}
-	return taskCtx.EnqueueTask(ctx, asynq.NewTask(runboxTaskType, raw), asynq.Queue(runboxTaskQueue), asynq.MaxRetry(3), asynq.Timeout(runboxTaskTimeout))
+	return taskCtx.EnqueueTask(ctx, asynq.NewTask(runboxTaskType, raw), asynq.Queue(runboxTaskQueue), asynq.MaxRetry(0), asynq.Timeout(runboxTaskTimeout))
 }
 
 func (j *RunboxTask) Execute(ctx context.Context, taskCtx taskctx.Context, p payload) (app.H, error) {
@@ -58,17 +61,35 @@ func (j *RunboxTask) Execute(ctx context.Context, taskCtx taskctx.Context, p pay
 	if err = db.WithContext(ctx).Table("runboxes").Select("type, payload").Where("hash = ?", hash).Take(&row).Error; err != nil {
 		return nil, err
 	}
-	_ = db.WithContext(ctx).Table("runboxes").Where("hash = ?", hash).Updates(app.H{"phase": "running", "updated_at": time.Now()}).Error
+	leaseID, err := newLeaseID()
+	if err != nil {
+		return nil, fmt.Errorf("create runbox lease: %w", err)
+	}
+	leaseMarker := toJSON(app.H{"lease_id": leaseID})
+	claim := db.WithContext(ctx).Table("runboxes").Where(
+		"hash = ? AND phase IN ?",
+		hash,
+		[]string{"pending", "failed"},
+	).Updates(app.H{"phase": "running", "outs": leaseMarker, "updated_at": time.Now()})
+	if claim.Error != nil {
+		return nil, claim.Error
+	}
+	if claim.RowsAffected == 0 {
+		// A duplicate delivery may observe a job already running or completed.
+		// It must not execute the same hash concurrently.
+		return app.H{"hash": hash, "phase": "skipped"}, nil
+	}
 
 	ep := taskCtx.Config().API.RunboxEndpoint
 	if ep == "" {
-		_ = db.WithContext(ctx).Table("runboxes").Where("hash = ?", hash).Updates(app.H{"phase": "failed", "updated_at": time.Now()}).Error
-		return nil, fmt.Errorf("RUNBOX_URL is required")
+		err := fmt.Errorf("RUNBOX_URL is required")
+		_ = markFailed(ctx, db, hash, leaseMarker, err.Error())
+		return nil, err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, ep+"/"+row.Type, bytes.NewBufferString(row.Payload))
 	if err != nil {
-		_ = db.WithContext(ctx).Table("runboxes").Where("hash = ?", hash).Updates(app.H{"phase": "failed", "updated_at": time.Now()}).Error
+		_ = markFailed(ctx, db, hash, leaseMarker, err.Error())
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -81,10 +102,10 @@ func (j *RunboxTask) Execute(ctx context.Context, taskCtx taskctx.Context, p pay
 
 	resp, err := (&http.Client{Timeout: 60 * time.Second}).Do(req)
 	if err != nil || resp == nil {
-		_ = db.WithContext(ctx).Table("runboxes").Where("hash = ?", hash).Updates(app.H{"phase": "failed", "updated_at": time.Now()}).Error
 		if err == nil {
 			err = fmt.Errorf("empty response from runbox")
 		}
+		_ = markFailed(ctx, db, hash, leaseMarker, err.Error())
 		return nil, err
 	}
 	defer func() {
@@ -93,8 +114,9 @@ func (j *RunboxTask) Execute(ctx context.Context, taskCtx taskctx.Context, p pay
 
 	bodyBytes, readErr := io.ReadAll(resp.Body)
 	if readErr != nil {
-		_ = db.WithContext(ctx).Table("runboxes").Where("hash = ?", hash).Updates(app.H{"phase": "failed", "updated_at": time.Now()}).Error
-		return nil, fmt.Errorf("read runbox response: %w", readErr)
+		err := fmt.Errorf("read runbox response: %w", readErr)
+		_ = markFailed(ctx, db, hash, leaseMarker, err.Error())
+		return nil, err
 	}
 	slog.Info("[runbox-job] response",
 		"hash", hash,
@@ -103,10 +125,18 @@ func (j *RunboxTask) Execute(ctx context.Context, taskCtx taskctx.Context, p pay
 	)
 
 	var data app.H
-	if err := json.Unmarshal(bodyBytes, &data); err != nil || resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		_ = db.WithContext(ctx).Table("runboxes").Where("hash = ?", hash).Updates(app.H{"phase": "failed", "updated_at": time.Now()}).Error
+	decodeErr := json.Unmarshal(bodyBytes, &data)
+	if decodeErr != nil || resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		err := decodeErr
 		if err == nil {
 			err = fmt.Errorf("runbox http status=%d", resp.StatusCode)
+		}
+		if message, ok := data["error"].(string); ok && strings.TrimSpace(message) != "" {
+			err = fmt.Errorf("%s", message)
+		}
+		_ = markFailed(ctx, db, hash, leaseMarker, err.Error())
+		if resp.StatusCode >= http.StatusBadRequest && resp.StatusCode < http.StatusInternalServerError {
+			return nil, fmt.Errorf("%w: %v", asynq.SkipRetry, err)
 		}
 		return nil, err
 	}
@@ -122,16 +152,42 @@ func (j *RunboxTask) Execute(ctx context.Context, taskCtx taskctx.Context, p pay
 		"has_outputs_list", data["outputsList"] != nil,
 	)
 
-	_ = db.WithContext(ctx).Table("runboxes").Where("hash = ?", hash).Updates(app.H{
+	result := db.WithContext(ctx).Table("runboxes").Where("hash = ? AND phase = ? AND outs = ?", hash, "running", leaseMarker).Updates(app.H{
 		"cpu":        data["cpu"],
 		"mem":        data["mem"],
 		"time":       data["time"],
 		"outs":       toJSON(outs),
 		"phase":      "succeeded",
 		"updated_at": time.Now(),
-	}).Error
+	})
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	if result.RowsAffected == 0 {
+		return nil, fmt.Errorf("runbox job was superseded: %s", hash)
+	}
 
 	return app.H{"hash": hash, "phase": "succeeded"}, nil
+}
+
+func markFailed(ctx context.Context, db *gorm.DB, hash, leaseMarker, reason string) error {
+	result := db.WithContext(ctx).Table("runboxes").Where("hash = ? AND phase = ? AND outs = ?", hash, "running", leaseMarker).Updates(app.H{
+		"phase":      "failed",
+		"outs":       toJSON(app.H{"error": reason}),
+		"updated_at": time.Now(),
+	})
+	if result.Error != nil {
+		slog.Error("[runbox-job] failed to mark job failed", "hash", hash, "error", result.Error)
+	}
+	return result.Error
+}
+
+func newLeaseID() (string, error) {
+	b := make([]byte, 16)
+	if _, err := cryptorand.Read(b); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(b), nil
 }
 
 func toJSON(v any) string {
