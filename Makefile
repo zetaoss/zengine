@@ -7,7 +7,6 @@ version-sync:
 
 # checks hierarchy
 # GROUP            TARGET              CACHE PATHS                    CHECKS
-# extensions-check extensions-check    -                              configuration and installation
 # check-php        check-extension     ZetaExtension                  lint
 #                  check-skin          ZetaSkin                       lint
 # check-svelte     check-main-svelte   main svelte                    deps, install, peers, lint, build
@@ -26,17 +25,9 @@ checks-no-cache:
 clear:
 	node hack/checks.mjs clear
 
-.PHONY: extensions-check
-extensions-check:
-	node hack/extensions-check.mjs
-
-.PHONY: extensions-sync
-extensions-sync:
-	node hack/extensions-sync.mjs
-
-.PHONY: extensions-recreate
-extensions-recreate:
-	node hack/extensions-recreate.mjs
+.PHONY: extensions
+extensions:
+	node hack/extensions.mjs
 
 .PHONY: check-php
 check-php:

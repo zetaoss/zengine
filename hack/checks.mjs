@@ -18,10 +18,6 @@ function run(command, args, { cwd = ROOT, fix } = {}) {
   }
 }
 
-function runMake(target) {
-  run("make", [target]);
-}
-
 function checkExtension(path) {
   run("composer", ["install", "--no-interaction", "--prefer-dist"], { cwd: resolve(ROOT, path) });
   run("composer", ["test"], { cwd: resolve(ROOT, path), fix: `cd ${path} && composer fix` });
@@ -107,7 +103,6 @@ function runCached(check) {
 }
 
 function runAll(useCache) {
-  runMake("extensions-check");
   for (const check of cachedChecks) {
     if (useCache) runCached(check);
     else check.action();
