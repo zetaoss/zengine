@@ -5,7 +5,7 @@ ARG ZBASE_VERSION=0.2.2
 FROM node:24-trixie-slim AS nodebuild
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git \
+    && apt-get install -y --no-install-recommends git ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
     && corepack enable \
     && corepack prepare pnpm@11 --activate
