@@ -1,3 +1,6 @@
+- name: CrawlerProtection
+  repo: https://github.com/mywikis/CrawlerProtection.git
+  tag: latest
 - name: MailAPI
   repo: https://github.com/mailapi/mediawiki-extensions-MailAPI.git
   tag: v0.1.1
