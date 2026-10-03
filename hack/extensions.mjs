@@ -127,7 +127,10 @@ for (const entry of entries) {
   }
 
   console.log(`Installing ${entry.name} (${entry.tag})`);
-  run("git", ["clone", "--depth=1", "--branch", entry.tag, entry.repo, target]);
+  const cloneArgs = ["clone", "--depth=1"];
+  if (entry.tag !== "latest") cloneArgs.push("--branch", entry.tag);
+  cloneArgs.push(entry.repo, target);
+  run("git", cloneArgs);
   if (applyOverrides(entry)) {
     console.log(`Applying local overrides for ${entry.name}`);
   }
