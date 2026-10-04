@@ -1,6 +1,6 @@
 // Extra (non-bundled) MediaWiki extensions from mw/extensions.yaml (see the header of that file).
 //
-//   node hack/extensions.mjs [install]      clone extra extensions with repo/tag into EXTENSIONS_DIR
+//   node hack/extensions.mjs [install]      clone the extensions into EXTENSIONS_DIR
 //   node hack/extensions.mjs settings [out] write ExtraExtensionSettings.php (stdout when out is omitted)
 //
 // Requires hack/node_modules (pnpm -C hack install).
@@ -24,8 +24,8 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const MW_DIR = resolve(ROOT, "mw");
 const CONFIG = resolve(MW_DIR, "extensions.yaml");
 const COMMIT_SHA = /^[0-9a-f]{40}$/;
-const NAME = /^[A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)?$/;
-const FIELDS = new Set(["name", "repo", "tag", "local", "load"]);
+const NAME = /^[A-Za-z0-9._-]+$/;
+const FIELDS = new Set(["name", "repo", "tag"]);
 const EXTENSIONS_DIR = resolve(process.env.EXTENSIONS_DIR ?? resolve(ROOT, "w/extensions"));
 
 function fail(message) {
@@ -43,21 +43,13 @@ function loadExtensions() {
     for (const key of Object.keys(entry)) {
       if (!FIELDS.has(key)) fail(`${where}: unknown field ${key}`);
     }
-    if (typeof entry.name !== "string" || !NAME.test(entry.name) || entry.name.includes("/")) {
+    if (typeof entry.name !== "string" || !NAME.test(entry.name)) {
       fail(`${where}: invalid name ${JSON.stringify(entry.name)}`);
     }
     if (names.has(entry.name)) fail(`duplicate extension ${entry.name}`);
     names.add(entry.name);
 
-    if ((entry.repo === undefined) !== (entry.tag === undefined)) fail(`${where}: set both repo and tag`);
-    if (entry.repo !== undefined && entry.local) fail(`${where}: repo/tag and local are exclusive`);
-    if (entry.local !== undefined && entry.local !== true) fail(`${where}: local must be true when set`);
-    if (entry.repo === undefined && !entry.local) fail(`${where}: set repo/tag, or local: true`);
-    if (entry.load !== undefined) {
-      if (!Array.isArray(entry.load) || entry.load.length === 0 || !entry.load.every((n) => NAME.test(n))) {
-        fail(`${where}: load must be a non-empty list of extension names`);
-      }
-    }
+    if (typeof entry.repo !== "string" || typeof entry.tag !== "string") fail(`${where}: repo and tag are required`);
   }
   return entries;
 }
@@ -125,7 +117,7 @@ function moveToBackup(path) {
 }
 
 function install(entries) {
-  const targets = entries.filter((entry) => entry.repo);
+  const targets = entries;
   mkdirSync(EXTENSIONS_DIR, { recursive: true });
 
   for (const entry of targets) {
@@ -167,12 +159,7 @@ function settings(entries) {
   ];
   for (const entry of entries) {
     lines.push("", `// ${entry.name}`);
-    const load = entry.load ?? [entry.name];
-    if (load.length === 1) {
-      lines.push(`wfLoadExtension(${phpString(load[0])});`);
-    } else {
-      lines.push(`wfLoadExtensions([${load.map(phpString).join(", ")}]);`);
-    }
+    lines.push(`wfLoadExtension(${phpString(entry.name)});`);
   }
   return `${lines.join("\n")}\n`;
 }

@@ -46,8 +46,8 @@ pending migrations and run `ctl migrate` when appropriate.
 
 ## MediaWiki Extensions
 
-`mw/extensions.yaml` lists the extra MediaWiki extensions (not bundled with
-MediaWiki) and where they come from (repo and tag). Listed extensions are
+`mw/extensions.yaml` lists the extra MediaWiki extensions (third-party, not
+bundled with MediaWiki) and where they come from (repo and tag). Listed extensions are
 installed into the image and loaded; comment one out to turn it off.
 `ExtraExtensionSettings.php` (`wfLoadExtension` only) is generated from it.
 Bundled extensions and all extension configuration are provided by the

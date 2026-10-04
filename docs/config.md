@@ -68,7 +68,8 @@ ZetaSkin(`mwz/skins/ZetaSkin/includes/SkinZetaSkin.php`)은 다음 PHP 상수를
 
 ### MediaWiki 확장
 
-- **외부 확장**(MediaWiki 기본 포함이 아닌 것과 ZetaExtension): `mw/extensions.yaml`이 단일 출처다. 목록에 있으면 이미지에 설치되고 로드된다. 끄려면 주석 처리한다. 확장마다 출처(`repo`/`tag` 또는 `local`)와 필요하면 `load`를 둔다.
+- **외부 확장**(git에서 받는, MediaWiki 기본 포함이 아닌 확장): `mw/extensions.yaml`이 단일 출처다. 목록에 있으면 이미지에 설치되고 로드된다. 끄려면 주석 처리한다. 확장마다 출처(`repo`/`tag`)를 둔다.
+- **ZetaExtension, ZetaSkin**: 이 저장소의 일부다. 외부 확장 목록에 넣지 않고 zengine 자체 설정이 로드한다(지금은 배포 환경의 `BaseSettings.php`, TO-BE에서는 `mw/settings/`).
 - **기본 포함 확장**(Cite, VisualEditor 등): 설치할 것이 없으므로 이 저장소에서 다루지 않는다. 배포 환경의 MediaWiki 설정이 로드한다.
 - **설치**: 외부 확장은 이미지(`base` 단계)에 들어간다. PHP 의존성은 `hack/mediawiki-composer.lock`.
 - **로드**: 외부 확장의 `wfLoadExtension`은 `ExtraExtensionSettings.php`로 목록에서 생성된다(`make extension-settings`). 배포 환경의 확장 설정(기본 포함 확장 로드 포함) 다음에 include해서, 기본 포함 → 외부 순서로 로드되게 한다.
