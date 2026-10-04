@@ -39,12 +39,6 @@ extensions-lock:
 	pnpm -C hack install --frozen-lockfile
 	node hack/extensions.mjs lock
 
-# Print the ExtraExtensionSettings.php generated from mwz/extensions.yaml.
-.PHONY: extension-settings
-extension-settings:
-	pnpm -C hack install --frozen-lockfile
-	node hack/extensions.mjs settings
-
 .PHONY: check-php
 check-php:
 	node hack/checks.mjs check-php

@@ -1,7 +1,6 @@
-// Extra (non-bundled) MediaWiki extensions from mwz/extensions.yaml (see the header of that file).
+// Third-party MediaWiki extensions installed into the image, from mwz/extensions.yaml.
 //
 //   node hack/extensions.mjs [install]      clone each extension at its locked commit into EXTENSIONS_DIR
-//   node hack/extensions.mjs settings [out] write ExtraExtensionSettings.php (stdout when out is omitted)
 //   node hack/extensions.mjs lock           resolve each tag/branch to a commit and write mwz/extensions.lock
 //   node hack/extensions.mjs check          verify mwz/extensions.lock matches mwz/extensions.yaml (offline)
 //
@@ -189,40 +188,17 @@ function install(entries) {
   console.log(`✅  Installed ${locked.length} extensions`);
 }
 
-// ---- settings ----
-
-function phpString(value) {
-  return `'${value.replaceAll("\\", "\\\\").replaceAll("'", "\\'")}'`;
-}
-
-function settings(entries) {
-  const lines = [
-    "<?php",
-    "",
-    "// ExtraExtensionSettings.php: generated from mwz/extensions.yaml by hack/extensions.mjs. Do not edit.",
-  ];
-  for (const entry of entries) {
-    lines.push("", `// ${entry.name}`);
-    lines.push(`wfLoadExtension(${phpString(entry.name)});`);
-  }
-  return `${lines.join("\n")}\n`;
-}
-
 // ---- main ----
 
-const [command = "install", out] = process.argv.slice(2);
+const [command = "install"] = process.argv.slice(2);
 const entries = loadExtensions();
 if (command === "install") {
   install(entries);
-} else if (command === "settings") {
-  const php = settings(entries);
-  if (out) writeFileSync(out, php);
-  else process.stdout.write(php);
 } else if (command === "lock") {
   writeLock(entries);
 } else if (command === "check") {
   loadLock(entries);
   console.log(`✅  ${LOCK.slice(ROOT.length + 1)} matches extensions.yaml`);
 } else {
-  throw new Error(`unknown command ${command}; expected install, settings, lock or check`);
+  throw new Error(`unknown command ${command}; expected install, lock or check`);
 }
