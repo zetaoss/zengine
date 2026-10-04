@@ -31,6 +31,14 @@ extensions:
 	pnpm -C hack install --frozen-lockfile
 	node hack/extensions.mjs install
 
+# Resolve each tag/branch in mwz/extensions.yaml to a commit and write mwz/extensions.lock.
+# Run after editing extensions.yaml, or to pick up new commits (e.g. REL1_43 backports); then run
+# composer-lock if an extension's composer.json changed, and commit both.
+.PHONY: extensions-lock
+extensions-lock:
+	pnpm -C hack install --frozen-lockfile
+	node hack/extensions.mjs lock
+
 # Print the ExtraExtensionSettings.php generated from mwz/extensions.yaml.
 .PHONY: extension-settings
 extension-settings:

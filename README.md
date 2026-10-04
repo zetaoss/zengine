@@ -55,6 +55,7 @@ deployment, not this repository (see `docs/config.md`). See the header of the
 file for the fields.
 
 ```sh
+make extensions-lock      # after editing the list, or to pick up new commits; commit the lock
 make extension-settings   # print the generated ExtraExtensionSettings.php
 make composer-lock        # after adding/removing installed extensions; commit the lock
 ```
