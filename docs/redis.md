@@ -35,7 +35,7 @@ zengine은 Redis를 데이터의 성격에 따라 두 역할로 나눠 쓴다. �
 
 ## MediaWiki
 
-MediaWiki의 Redis 연결은 MediaWiki 설정에서 정한다([config.md](config.md)). 역할은 다음과 같이 맞춘다.
+MediaWiki의 Redis 연결은 `mwz/settings/BaseSettings.php`가 위 환경변수에서 읽는다([config.md](config.md)). 역할은 다음과 같다.
 
 | MediaWiki 설정 | 역할 |
 | --- | --- |
@@ -43,4 +43,4 @@ MediaWiki의 Redis 연결은 MediaWiki 설정에서 정한다([config.md](config
 | `$wgObjectCaches['redis-session']` (`$wgSessionCacheType`) | persist |
 | `$wgJobTypeConf['default']` (`JobQueueRedis`) | persist |
 
-`redis-cache`, `redis-session`은 MediaWiki 안의 캐시 이름일 뿐 Redis 서버 이름과는 관계없다. MediaWiki 설정이 환경변수를 읽게 되면(config.md의 TO-BE) 서버 주소도 위 환경변수에서 읽는다.
+`redis-cache`, `redis-session`은 MediaWiki 안의 캐시 이름일 뿐 Redis 서버 이름과는 관계없다.
