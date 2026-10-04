@@ -52,9 +52,9 @@ goapp은 시작할 때 이 값을 읽어 프런트엔드에 `window.ZCONF`(`avat
 
 | 파일 | 복사 위치 | 내용 |
 | --- | --- | --- |
-| `LocalSettings.php` | MediaWiki 디렉터리 | 환경별 설정. `BaseSettings.php`, 그다음 `/files/ExtensionSettings.php`를 `require` |
+| `LocalSettings.php` | MediaWiki 디렉터리 | 환경별 설정. `BaseSettings.php`, 그다음 `ExtensionSettings.php`를 `require` |
 | `BaseSettings.php` | MediaWiki 디렉터리 | 공통 설정: 사이트, DB, 캐시, 파일 저장소, 스킨(ZetaSkin). 확장은 로드하지 않는다 |
-| `ExtensionSettings.php` | 복사하지 않음 (`/files`에서 바로 `require`) | **모든 확장**(기본 포함, 외부, ZetaExtension)의 `wfLoadExtension`과 설정. 없으면 확장이 하나도 로드되지 않는다 |
+| `ExtensionSettings.php` | MediaWiki 디렉터리 | 외부 주입(필수). **모든 확장**(기본 포함, 외부, ZetaExtension)의 `wfLoadExtension`과 설정. 없으면 확장이 하나도 로드되지 않는다 |
 | `nginx.conf`, `php-fpm.conf`, `php.ini` | `/etc/nginx`, `/usr/local/etc` | 웹 서버, PHP |
 | `supervisord.conf` | `/etc` | 프로세스 구성 (개발 이미지) |
 | `dist_ads.txt`, `dist_robots.txt`, `dist_config.js` | `/app/svelte/dist/` | 정적 파일 |
@@ -73,7 +73,7 @@ ZetaSkin(`mwz/skins/ZetaSkin/includes/SkinZetaSkin.php`)은 다음 PHP 상수를
 - **ZetaExtension**: 이 저장소의 일부(`mwz/extensions/ZetaExtension`)라 설치 목록에 없다. **ZetaSkin**은 스킨이라 확장과 별도로 MediaWiki 기본 설정이 로드한다.
 - **기본 포함 확장**(Cite, VisualEditor 등): 설치할 것이 없다.
 - **설치**: 외부 확장은 이미지(`base` 단계)에 들어간다. PHP 의존성은 `hack/mediawiki-composer.lock`.
-- **로드와 설정**: 모든 확장(기본 포함, 외부, ZetaExtension)의 `wfLoadExtension`과 설정(`$wg…`)은 배포 환경이 제공하는 `/files/ExtensionSettings.php` 하나가 맡고, `LocalSettings.php`가 `BaseSettings.php` 다음에 이를 `require`한다(위 표). 이 저장소는 설치만 한다. 설치하고 로드하지 않은 확장은 쓰이지 않을 뿐이다.
+- **로드와 설정**: 모든 확장(기본 포함, 외부, ZetaExtension)의 `wfLoadExtension`과 설정(`$wg…`)은 외부에서 주입되는 `ExtensionSettings.php`(필수) 하나가 맡고, `LocalSettings.php`가 `BaseSettings.php` 다음에 이를 `require`한다(위 표). 이 저장소는 설치만 한다. 설치하고 로드하지 않은 확장은 쓰이지 않을 뿐이다.
 - 확장 패키지와 로드·설정을 느슨하게 묶어, 운영 고유의 설정을 공개하지 않는다.
 
 ## TO-BE
