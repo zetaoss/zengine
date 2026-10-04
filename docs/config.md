@@ -74,7 +74,7 @@ ZetaSkin(`mwz/skins/ZetaSkin/includes/SkinZetaSkin.php`)은 다음 PHP 상수를
 - **설치**: 외부 확장은 이미지(`base` 단계)에 들어간다. PHP 의존성은 `hack/mediawiki-composer.lock`.
 - **로드**: 외부 확장의 `wfLoadExtension`은 `ExtraExtensionSettings.php`로 목록에서 생성된다(`make extension-settings`). 배포 환경의 확장 설정(기본 포함 확장 로드 포함) 다음에 include해서, 기본 포함 → 외부 순서로 로드되게 한다.
 - **설정**: 확장별 설정(`$wg…`)은 이 저장소에 두지 않는다. 배포 환경이 제공하는 MediaWiki 설정에 둔다. 확장 패키지와 설정을 느슨하게 묶어, 운영 고유의 설정을 공개하지 않기 위해서다. MediaWiki는 설정 변수가 `wfLoadExtension` 앞뒤 어디에 있어도 같게 처리한다.
-- **현재 상태**: 생성된 파일은 아직 이미지에 연결되지 않았다. 배포 환경이 주는 `BaseSettings.php`의 `wfLoadExtension`이 실제로 쓰인다. 아래 TO-BE에서 `ExtraExtensionSettings.php`로 바뀐다.
+- **이미지 위치**: `ExtraExtensionSettings.php`는 MediaWiki 디렉터리(`dev`: `/var/www/html`, `prod`: `/app/w`)에 들어 있다. MediaWiki 설정이 배포 환경의 확장 설정 다음에 `require "$IP/ExtraExtensionSettings.php"`로 include한다. include하지 않는 배포 환경에는 영향이 없다.
 
 ## TO-BE
 
