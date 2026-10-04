@@ -1,0 +1,24 @@
+--- a/languages/i18n/ko.json
++++ b/languages/i18n/ko.json
+@@ -407,7 +407,7 @@
+ 	"viewsource": "원본 보기",
+ 	"protection-indicator-title-infinity": "이 문서는 \"$1\" 권한이 있는 사용자만 편집할 수 있도록 보호되어 있습니다.",
+ 	"protection-indicator-title": "이 문서는 $2까지 \"$1\" 권한이 있는 사용자만 편집할 수 있도록 보호되어 있습니다.",
+-	"skin-action-viewsource": "원본 보기",
++	"skin-action-viewsource": "소스",
+ 	"viewsource-title": "$1 문서 원본 보기",
+ 	"actionthrottled": "작업 중지됨",
+ 	"actionthrottledtext": "악용을 막기 위해 짧은 시간 동안 이 작업을 너무 많이 수행하는 것을 제한하고 있습니다.\n제한을 넘었으니 몇 분 뒤에 다시 시도하세요.",
+@@ -1592,9 +1592,9 @@
+ 	"hist": "역사",
+ 	"hide": "숨기기",
+ 	"show": "보이기",
+-	"minoreditletter": "잔글",
+-	"newpageletter": "새글",
+-	"boteditletter": "봇",
++	"minoreditletter": "m",
++	"newpageletter": "N",
++	"boteditletter": "b",
+ 	"rc-change-size-new": "바꾼 후 $1 {{PLURAL:$1|바이트}}",
+ 	"newsectionsummary": "/* $1 */ 새 문단",
+ 	"rc-old-title": "처음에 \"$1\"라는 제목으로 만들어졌습니다",

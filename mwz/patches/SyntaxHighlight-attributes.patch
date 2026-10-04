@@ -1,0 +1,11 @@
+--- a/extensions/SyntaxHighlight_GeSHi/includes/SyntaxHighlight.php
++++ b/extensions/SyntaxHighlight_GeSHi/includes/SyntaxHighlight.php
+@@ -432,7 +432,7 @@
+ 
+ 		// Allow certain HTML attributes
+ 		$htmlAttribs = Sanitizer::validateAttributes(
+-			$args, array_flip( [ 'style', 'class', 'id' ] )
++			$args, array_flip( [ 'style', 'class', 'id', 'run', 'fold', 'once', 'hideerr', 'asciinema', 'main', 'title', 'notebook', 'multi', 'file', 'outheight', 'outresize' ] )
+ 		);
+ 
+ 		$dir = ( isset( $args['dir'] ) && $args['dir'] === 'rtl' ) ? 'rtl' : 'ltr';
