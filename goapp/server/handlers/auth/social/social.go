@@ -526,7 +526,7 @@ func putToken(cfg *config.Config, prefix string, payload app.H, ttlSeconds int) 
 	if err != nil {
 		return "", err
 	}
-	client, err := appredis.Open(cfg)
+	client, err := appredis.OpenPersist(cfg)
 	if err != nil {
 		return "", err
 	}

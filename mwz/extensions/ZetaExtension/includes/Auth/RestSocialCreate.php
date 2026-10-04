@@ -44,10 +44,7 @@ class RestSocialCreate extends SimpleHandler
 
     private function redis(): \Redis
     {
-        $r = new \Redis;
-        $r->connect(getenv('REDIS_HOST'));
-
-        return $r;
+        return PersistRedis::connect();
     }
 
     private function putToken(string $prefix, array $payload, int $ttlSeconds): string

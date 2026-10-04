@@ -27,3 +27,47 @@ func TestLoadFromEnv(t *testing.T) {
 		t.Fatalf("Server.AdSlots = %#v, want [a b]", cfg.Ads.Slots)
 	}
 }
+
+func TestLoadRedisRoles(t *testing.T) {
+	tests := []struct {
+		name         string
+		env          map[string]string
+		wantPersist  RedisEndpoint
+		wantVolatile RedisEndpoint
+	}{
+		{
+			name:         "legacy REDIS_HOST serves both roles",
+			env:          map[string]string{"REDIS_HOST": "redis-cache", "REDIS_PORT": "6380"},
+			wantPersist:  RedisEndpoint{Host: "redis-cache", Port: 6380},
+			wantVolatile: RedisEndpoint{Host: "redis-cache", Port: 6380},
+		},
+		{
+			name: "role variables take precedence",
+			env: map[string]string{
+				"REDIS_HOST":          "redis-cache",
+				"REDIS_PERSIST_HOST":  "redis-persist",
+				"REDIS_VOLATILE_HOST": "redis-volatile",
+				"REDIS_VOLATILE_PORT": "6381",
+			},
+			wantPersist:  RedisEndpoint{Host: "redis-persist", Port: 6379},
+			wantVolatile: RedisEndpoint{Host: "redis-volatile", Port: 6381},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			for k, v := range tt.env {
+				t.Setenv(k, v)
+			}
+			cfg, err := Load()
+			if err != nil {
+				t.Fatalf("Load error: %v", err)
+			}
+			if cfg.Redis.Persist != tt.wantPersist {
+				t.Fatalf("Redis.Persist = %+v, want %+v", cfg.Redis.Persist, tt.wantPersist)
+			}
+			if cfg.Redis.Volatile != tt.wantVolatile {
+				t.Fatalf("Redis.Volatile = %+v, want %+v", cfg.Redis.Volatile, tt.wantVolatile)
+			}
+		})
+	}
+}

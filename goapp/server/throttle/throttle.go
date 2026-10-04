@@ -79,7 +79,7 @@ func Allow(r *http.Request, cfg *config.Config, limit int, window time.Duration,
 
 func throttleRedisClient(cfg *config.Config) *goredis.Client {
 	throttleRedisOnce.Do(func() {
-		client, _ := appredis.Open(cfg)
+		client, _ := appredis.OpenPersist(cfg)
 		throttleRedis = client
 	})
 	return throttleRedis
