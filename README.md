@@ -22,14 +22,32 @@ Monorepo for ZetaWiki services.
 - Agent execution guide: `AGENTS.md`
 - GoApp development and task system: `docs/goapp.md`
 
-## Kubernetes Development Workspace
+## Development Container
 
-After cloning or switching branches in the dev3 workspace, synchronize the
-checkout-specific dependencies without changing Git state:
+The development image is the `dev` stage of the Dockerfile:
+
+```sh
+docker build --target dev -t zengine-dev .
+```
+
+Inside the container, after cloning, switching branches, or changing
+dependencies, synchronize the checkout-specific dependencies without changing
+Git state:
 
 ```sh
 ./hack/dev-sync
 ```
 
-The command reuses pnpm and Go caches under `.runtime-cache/`. Database
-migrations are reported but are never run automatically.
+The command reuses pnpm and Go caches under `tmp/` (`tmp/.pnpm-store`,
+`tmp/.runtime-cache/`). Database migrations are not run automatically; review
+pending migrations and run `ctl migrate` when appropriate.
+
+## MediaWiki Extensions
+
+`hack/extensions.yaml` lists the non-bundled MediaWiki extensions installed in
+the image (dev and prod). Pin each to a tag or a full commit SHA, not a branch.
+After changing the list, regenerate the PHP dependency lock and commit it:
+
+```sh
+make composer-lock
+```
