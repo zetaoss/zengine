@@ -43,7 +43,9 @@ func pingVersion(ctx context.Context, openFn func(*config.Config) (*goredis.Clie
 	if err != nil {
 		return "", err
 	}
-	defer client.Close()
+	defer func() {
+		_ = client.Close()
+	}()
 
 	if err := client.Ping(ctx).Err(); err != nil {
 		return "", err
