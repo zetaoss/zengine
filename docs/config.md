@@ -40,17 +40,17 @@ goapp은 시작할 때 이 값을 읽어 프런트엔드에 `window.ZCONF`(`avat
 
 ### MediaWiki (PHP)
 
-대부분 `BaseSettings.php`가 읽는다.
+대부분 `BaseSettings.php`가 읽는다. 기본값이 없으므로 모두 설정한다(`MW_CDN_SERVERS`, `AD_*` 등 목록·선택 값은 비워도 된다). `BaseSettings.php`는 goapp과 달리 `REDIS_HOST`/`REDIS_PORT`로 대체하지 않는다.
 
 | 변수 | 사용처 |
 | --- | --- |
 | `APP_URL` | `$wgServer` |
-| `DB_HOST`, `DB_PORT`(3306), `DB_USERNAME`, `DB_PASSWORD` | `$wgDBserver`, `$wgDBuser`, `$wgDBpassword`. DB 이름은 `zetawiki`로 고정(goapp도 `zetawiki.*`로 참조) |
-| `REDIS_VOLATILE_HOST`, `REDIS_VOLATILE_PORT` (없으면 `REDIS_HOST`, `REDIS_PORT`) | 캐시 `$wgObjectCaches['redis-cache']`. [redis.md](redis.md) |
-| `REDIS_PERSIST_HOST`, `REDIS_PERSIST_PORT` (없으면 `REDIS_HOST`, `REDIS_PORT`) | 세션 `$wgObjectCaches['redis-session']`, 작업 큐 `$wgJobTypeConf`. ZetaExtension 인증 상태(OTP, 소셜 로그인 연계, `includes/Auth/PersistRedis.php`)도 여기서 goapp이 쓴 토큰을 읽는다 |
+| `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD` | `$wgDBserver`, `$wgDBuser`, `$wgDBpassword`. DB 이름은 `zetawiki`로 고정(goapp도 `zetawiki.*`로 참조) |
+| `REDIS_VOLATILE_HOST`, `REDIS_VOLATILE_PORT` | 캐시 `$wgObjectCaches['redis-cache']`. [redis.md](redis.md) |
+| `REDIS_PERSIST_HOST`, `REDIS_PERSIST_PORT` | 세션 `$wgObjectCaches['redis-session']`, 작업 큐 `$wgJobTypeConf`. ZetaExtension 인증 상태(OTP, 소셜 로그인 연계, `includes/Auth/PersistRedis.php`)도 여기서 goapp이 쓴 토큰을 읽는다 |
 | `MW_SECRET_KEY`, `MW_UPGRADE_KEY` | `$wgSecretKey`, `$wgUpgradeKey` (비밀) |
 | `MW_CDN_SERVERS` | `$wgCdnServers` (쉼표 구분) |
-| `SHELLBOX_SCORE_URL`, `SHELLBOX_SECRET_KEY` | `$wgShellboxUrls['score']`, `$wgShellboxSecretKey` (키는 비밀). URL이 없으면 `$wgShellboxUrls`를 설정하지 않는다 |
+| `SHELLBOX_SCORE_URL`, `SHELLBOX_SECRET_KEY` | `$wgShellboxUrls['score']`, `$wgShellboxSecretKey` (키는 비밀) |
 | `AVATAR_BASE_URL`, `GA_MEASUREMENT_ID`, `AD_CLIENT`, `AD_SLOTS` | 스킨 상수(아래) |
 | `MW_INSTALL_PATH` | ZetaExtension 유지보수 스크립트. 운영 이미지(`prod`)에서 `/app/w`로 설정 |
 
