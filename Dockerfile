@@ -62,6 +62,9 @@ RUN --mount=type=bind,from=composer:2.10,source=/usr/bin/composer,target=/usr/lo
     if [ "$COMPOSER_MODE" = update ]; then rm -f composer.lock; fi; \
     composer "$COMPOSER_MODE" --no-dev --no-scripts --optimize-autoloader
 
+# MediaWiki settings (docs/config.md). The deployment provides SiteSettings.php and ExtensionSettings.php.
+COPY mwz/settings/LocalSettings.php mwz/settings/BaseSettings.php /var/www/html/
+
 FROM golang:${GO_VERSION}-trixie AS go-devtools
 
 RUN --mount=type=cache,target=/go/pkg/mod \
@@ -88,7 +91,8 @@ RUN set -eux; \
 
 FROM base AS dev
 
-ENV GOPATH=/go \
+ENV MW_INSTALL_PATH=/var/www/html \
+    GOPATH=/go \
     PATH=/usr/local/go/bin:/go/bin:/root/.local/bin:/root/.local/share/pnpm/bin:${PATH}
 
 RUN set -eux; \

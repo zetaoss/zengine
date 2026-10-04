@@ -40,30 +40,42 @@ goapp은 시작할 때 이 값을 읽어 프런트엔드에 `window.ZCONF`(`avat
 
 ### MediaWiki (PHP)
 
+대부분 `BaseSettings.php`가 읽는다. 기본값이 없으므로 모두 설정한다(`MW_CDN_SERVERS`, `AD_*` 등 목록·선택 값은 비워도 된다). `BaseSettings.php`는 goapp과 달리 `REDIS_HOST`/`REDIS_PORT`로 대체하지 않는다.
+
 | 변수 | 사용처 |
 | --- | --- |
-| `APP_URL` | MediaWiki 설정의 `$wgServer` |
-| `REDIS_PERSIST_HOST`, `REDIS_PERSIST_PORT` (없으면 `REDIS_HOST`, `REDIS_PORT`) | ZetaExtension 인증 상태(OTP, 소셜 로그인 연계, `includes/Auth/PersistRedis.php`). goapp이 쓴 토큰을 읽는다 |
-| `MW_INSTALL_PATH` | ZetaExtension 유지보수 스크립트. 운영 이미지(`prod`)에서 `/app/w`로 설정 |
+| `APP_URL` | `$wgServer` |
+| `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD` | `$wgDBserver`, `$wgDBuser`, `$wgDBpassword`. DB 이름은 `zetawiki`로 고정(goapp도 `zetawiki.*`로 참조) |
+| `REDIS_VOLATILE_HOST`, `REDIS_VOLATILE_PORT` | 캐시 `$wgObjectCaches['redis-cache']`. [redis.md](redis.md) |
+| `REDIS_PERSIST_HOST`, `REDIS_PERSIST_PORT` | 세션 `$wgObjectCaches['redis-session']`, 작업 큐 `$wgJobTypeConf`. ZetaExtension 인증 상태(OTP, 소셜 로그인 연계, `includes/Auth/PersistRedis.php`)도 여기서 goapp이 쓴 토큰을 읽는다 |
+| `MW_SECRET_KEY`, `MW_UPGRADE_KEY` | `$wgSecretKey`, `$wgUpgradeKey` (비밀) |
+| `MW_CDN_SERVERS` | `$wgCdnServers` (쉼표 구분) |
+| `SHELLBOX_SCORE_URL`, `SHELLBOX_SECRET_KEY` | `$wgShellboxUrls['score']`, `$wgShellboxSecretKey` (키는 비밀) |
+| `AVATAR_BASE_URL`, `GA_MEASUREMENT_ID`, `AD_CLIENT`, `AD_SLOTS` | 스킨 상수(아래) |
+| `MW_INSTALL_PATH` | ZetaExtension 유지보수 스크립트. 이미지가 MediaWiki 디렉터리로 설정한다(`dev`: `/var/www/html`, `prod`: `/app/w`) |
 
 ## MediaWiki 설정 파일
 
 모두 MediaWiki 디렉터리(`$IP`)에 놓인다. `LocalSettings.php`가 진입점이며 아래 순서로 `require`한다. 뒤에 오는 파일이 앞의 값을 덮어쓴다.
 
-| 순서 | 파일 | 목표 | 현재 | 역할 |
-| --- | --- | --- | --- | --- |
-| - | `LocalSettings.php` | 자체 보유 | 외부 주입 | 진입점. 아래 파일을 순서대로 부른다 |
-| 1 | `BaseSettings.php` | 자체 보유 | 외부 주입 | 모든 환경 공통: 사이트, DB, 캐시, 파일 저장소, 스킨(ZetaSkin). 값과 비밀값은 `getenv()` |
-| 2 | `SiteSettings.php` | 외부 주입(필수) | 없음(`LocalSettings.php`에 포함) | 환경별 설정(확장 제외). 개발 환경의 디버그 설정 포함 |
-| 3 | `ExtensionSettings.php` | 외부 주입(필수) | 외부 주입(필수) | 모든 확장(기본 포함, 외부, ZetaExtension)의 `wfLoadExtension`과 설정. 없으면 확장이 하나도 로드되지 않는다 |
+| 순서 | 파일 | 구분 | 역할 |
+| --- | --- | --- | --- |
+| - | `LocalSettings.php` | 자체 보유 (`mwz/settings/`) | 진입점. 아래 파일을 순서대로 부른다 |
+| 1 | `BaseSettings.php` | 자체 보유 (`mwz/settings/`) | 모든 환경 공통: 사이트, DB, 캐시·작업 큐, CDN, 업로드, 권한, 스킨(ZetaSkin)과 스킨 상수. 값과 비밀값은 환경변수(위) |
+| 2 | `SiteSettings.php` | 외부 주입(필수) | 환경별 설정(확장 제외). 예: 개발 환경의 디버그 설정, `$wgCdnServersNoPurge` |
+| 3 | `ExtensionSettings.php` | 외부 주입(필수) | 모든 확장(기본 포함, 외부, ZetaExtension)의 `wfLoadExtension`과 설정 |
 
-목표 구조로 옮기면 `LocalSettings.php`와 `BaseSettings.php`가 이미지에 들어가고, 배포 환경은 `SiteSettings.php`, `ExtensionSettings.php`와 환경변수만 준다.
+이미지(`base` 단계)는 `LocalSettings.php`와 `BaseSettings.php`를 MediaWiki 디렉터리에 넣는다. 배포 환경은 `SiteSettings.php`와 `ExtensionSettings.php`를 같은 디렉터리에 넣는다. 둘 중 하나라도 없으면 MediaWiki가 시작하지 않는다. 내용이 없으면 `<?php`만 있는 파일을 둔다.
 
 ### 스킨 상수
 
-ZetaSkin(`mwz/skins/ZetaSkin/includes/SkinZetaSkin.php`)은 다음 PHP 상수를 쓴다. MediaWiki 설정에서 정의되어 있어야 한다. 목표: 상수 대신 환경변수에서 읽는 설정값을 쓴다.
+ZetaSkin(`mwz/skins/ZetaSkin/includes/SkinZetaSkin.php`)이 쓰는 PHP 상수는 `BaseSettings.php`가 정의한다.
 
-`ASSET_HASH`, `AVATAR_BASE_URL`, `GA_MEASUREMENT_ID`, `AD_CLIENT`, `AD_SLOTS`
+| 상수 | 값 |
+| --- | --- |
+| `ASSET_HASH` | 스킨 번들(`skins/ZetaSkin/dist/app.js`)의 수정 시각. 번들을 다시 빌드하면 바뀐다. 파일이 없으면 현재 시각 |
+| `AVATAR_BASE_URL`, `GA_MEASUREMENT_ID`, `AD_CLIENT` | 같은 이름의 환경변수 |
+| `AD_SLOTS` | 환경변수 `AD_SLOTS`(쉼표 구분)를 JSON 배열로 바꾼 값 |
 
 ## MediaWiki 확장
 
@@ -85,16 +97,3 @@ ZetaSkin(`mwz/skins/ZetaSkin/includes/SkinZetaSkin.php`)은 다음 PHP 상수를
 | GA 서비스 계정 JSON | 외부 주입(선택) | 외부 주입 | 비밀 파일. `GA_READER_FILE`이 경로를 가리킨다 |
 
 목표 구조로 옮기면 외부 주입 파일은 `SiteSettings.php`, `ExtensionSettings.php`, 비밀 파일(GA 서비스 계정)만 남는다.
-
-## 추가할 환경변수 (목표)
-
-지금 주입 설정 파일에 들어 있는 값을 `getenv()`로 읽도록 바꾸면서 추가한다(이름은 확정 전). 기존 변수(`DB_*`, `REDIS_PERSIST_*`/`REDIS_VOLATILE_*`([redis.md](redis.md)), `AVATAR_BASE_URL`, `GA_MEASUREMENT_ID`, `AD_*`)는 그대로 쓴다.
-
-| 변수 | 용도 |
-| --- | --- |
-| `MW_SECRET_KEY`, `MW_UPGRADE_KEY` | `$wgSecretKey`, `$wgUpgradeKey` (비밀) |
-| `SHELLBOX_SCORE_URL`, `SHELLBOX_SECRET_KEY` | Score 렌더링 (키는 비밀) |
-| `MW_CDN_SERVERS` | `$wgCdnServers` (쉼표 구분) |
-| `MAILAPI_ENDPOINT` | MailAPI 확장 (`ExtensionSettings.php`가 읽음) |
-
-`config.env.example`에 예시 값(`example-db`, `https://example-avatar.example.com` 등)을 둔다.
