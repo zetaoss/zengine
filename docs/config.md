@@ -1,11 +1,16 @@
 # 설정
 
-zengine 이미지는 설정을 두 경로로 받는다.
+zengine 이미지는 설정을 두 가지로 받는다.
 
 1. **환경변수**: goapp과 MediaWiki(PHP)가 읽는다. 예시는 루트의 `.env.example`.
-2. **배포 환경이 제공하는 파일**: 컨테이너의 `/files`에 마운트된다. 컨테이너 시작 스크립트와 MediaWiki 설정이 여기에 있다.
+2. **외부에서 주입되는 파일**: 이 저장소에 없고, 배포 환경이 넣어 주는 파일. 어떻게 넣는지는 배포 환경이 정한다.
 
-이 문서는 현재 계약(AS-IS)과 예정된 변경(TO-BE)을 정리한다. 값 자체(비밀값 포함)는 배포 환경이 관리하며 이 저장소에 두지 않는다.
+원칙
+
+- 이 저장소는 파일마다 **자체 보유**인지 **외부 주입**(필수/선택)인지만 정한다.
+- 비밀값은 이 저장소에 두지 않는다. 환경변수(외부 주입)로만 받는다.
+- 환경마다 다른 값은 환경변수로 받는다. 환경별로 구조가 다른 설정만 주입 파일(`SiteSettings.php`)로 받는다.
+- 사이트 고유의 운영 설정(확장 설정 등)은 공개하지 않는다. 주입 파일로 받는다.
 
 ## 환경변수
 
@@ -44,50 +49,57 @@ goapp은 시작할 때 이 값을 읽어 프런트엔드에 `window.ZCONF`(`avat
 
 ### `.env.example`에만 있는 키
 
-`EDITBOT_USERNAME`, `EDITBOT_PASSWORD`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`, `AWS_BUCKET`, `AWS_USE_PATH_STYLE_ENDPOINT`는 이 저장소의 코드가 읽지 않는다. 배포 환경이 제공하는 MediaWiki 설정(확장 설정 등)이 읽을 수 있다.
+`EDITBOT_USERNAME`, `EDITBOT_PASSWORD`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`, `AWS_BUCKET`, `AWS_USE_PATH_STYLE_ENDPOINT`는 이 저장소의 코드가 읽지 않는다. 외부 주입 설정(확장 설정 등)이 읽을 수 있다.
 
-## 배포 환경이 제공하는 파일 (`/files`)
+## MediaWiki 설정 파일
 
-배포 환경은 컨테이너 시작 스크립트를 `/files`에 두고 실행한다. 시작 스크립트가 아래 파일을 제자리로 복사한 뒤 서비스(nginx, php-fpm, goapp 등)를 띄운다. MediaWiki 디렉터리는 운영 이미지(`prod`)에서 `/app/w`, 개발 이미지(`dev`)에서 `/var/www/html`이다.
+모두 MediaWiki 디렉터리(`$IP`)에 놓인다. `LocalSettings.php`가 진입점이며 아래 순서로 `require`한다. 뒤에 오는 파일이 앞의 값을 덮어쓴다.
 
-| 파일 | 복사 위치 | 내용 |
-| --- | --- | --- |
-| `LocalSettings.php` | MediaWiki 디렉터리 | 환경별 설정. `BaseSettings.php`, 그다음 `ExtensionSettings.php`를 `require` |
-| `BaseSettings.php` | MediaWiki 디렉터리 | 공통 설정: 사이트, DB, 캐시, 파일 저장소, 스킨(ZetaSkin). 확장은 로드하지 않는다 |
-| `ExtensionSettings.php` | MediaWiki 디렉터리 | 외부 주입(필수). **모든 확장**(기본 포함, 외부, ZetaExtension)의 `wfLoadExtension`과 설정. 없으면 확장이 하나도 로드되지 않는다 |
-| `nginx.conf`, `php-fpm.conf`, `php.ini` | `/etc/nginx`, `/usr/local/etc` | 웹 서버, PHP |
-| `supervisord.conf` | `/etc` | 프로세스 구성 (개발 이미지) |
-| `dist_ads.txt`, `dist_robots.txt`, `dist_config.js` | `/app/svelte/dist/` | 정적 파일 |
-| `SyntaxHighlight.php`, `MsUpload.less`, `mediawiki.skin.defaults.less` | 해당 확장/리소스 경로 | MediaWiki 패치 |
-| GA 서비스 계정 JSON | 그대로 | `GA_READER_FILE`이 가리키는 파일 |
+| 순서 | 파일 | 목표 | 현재 | 역할 |
+| --- | --- | --- | --- | --- |
+| - | `LocalSettings.php` | 자체 보유 | 외부 주입 | 진입점. 아래 파일을 순서대로 부른다 |
+| 1 | `BaseSettings.php` | 자체 보유 | 외부 주입 | 모든 환경 공통: 사이트, DB, 캐시, 파일 저장소, 스킨(ZetaSkin). 값과 비밀값은 `getenv()` |
+| 2 | `SiteSettings.php` | 외부 주입(필수) | 없음(`LocalSettings.php`에 포함) | 환경별 설정(확장 제외). 개발 환경의 디버그 설정 포함 |
+| 3 | `ExtensionSettings.php` | 외부 주입(필수) | 외부 주입(필수) | 모든 확장(기본 포함, 외부, ZetaExtension)의 `wfLoadExtension`과 설정. 없으면 확장이 하나도 로드되지 않는다 |
+
+목표 구조로 옮기면 `LocalSettings.php`와 `BaseSettings.php`가 이미지에 들어가고, 배포 환경은 `SiteSettings.php`, `ExtensionSettings.php`와 환경변수만 준다.
 
 ### 스킨 상수
 
-ZetaSkin(`mwz/skins/ZetaSkin/includes/SkinZetaSkin.php`)은 다음 PHP 상수를 쓴다. MediaWiki 설정에서 정의되어 있어야 한다.
+ZetaSkin(`mwz/skins/ZetaSkin/includes/SkinZetaSkin.php`)은 다음 PHP 상수를 쓴다. MediaWiki 설정에서 정의되어 있어야 한다. 목표: 상수 대신 환경변수에서 읽는 설정값을 쓴다.
 
 `ASSET_HASH`, `AVATAR_BASE_URL`, `GA_MEASUREMENT_ID`, `AD_CLIENT`, `AD_SLOTS`
 
-### MediaWiki 확장
+## MediaWiki 확장
 
-- **외부 확장**(git에서 받는, MediaWiki 기본 포함이 아닌 확장): `mwz/extensions.yaml`이 단일 출처다. 목록에 있으면 이미지에 설치된다. 빼려면 주석 처리한다. 확장마다 출처(`repo`/`tag`)를 둔다. 실제로 설치되는 commit은 `mwz/extensions.lock`에 고정되고(`make extensions-lock`), 브랜치(`REL1_43` 등)가 움직여도 lock을 갱신하기 전까지는 같은 commit이 설치된다.
-- **ZetaExtension**: 이 저장소의 일부(`mwz/extensions/ZetaExtension`)라 설치 목록에 없다. **ZetaSkin**은 스킨이라 확장과 별도로 MediaWiki 기본 설정이 로드한다.
+- **외부 확장**(git에서 받는, MediaWiki 기본 포함이 아닌 확장): `mwz/extensions.yaml`이 설치 목록이다. 목록에 있으면 이미지(`base` 단계)에 설치된다. 빼려면 주석 처리한다. 확장마다 출처(`repo`/`tag`)를 둔다. 설치되는 commit은 `mwz/extensions.lock`에 고정되고(`make extensions-lock`), 브랜치(`REL1_43` 등)가 움직여도 lock을 갱신하기 전까지는 같은 commit이 설치된다. PHP 의존성은 `hack/mediawiki-composer.lock`.
+- **ZetaExtension**: 이 저장소의 일부(`mwz/extensions/ZetaExtension`)라 설치 목록에 없다. **ZetaSkin**은 스킨이라 `BaseSettings.php`가 로드한다.
 - **기본 포함 확장**(Cite, VisualEditor 등): 설치할 것이 없다.
-- **설치**: 외부 확장은 이미지(`base` 단계)에 들어간다. PHP 의존성은 `hack/mediawiki-composer.lock`.
-- **로드와 설정**: 모든 확장(기본 포함, 외부, ZetaExtension)의 `wfLoadExtension`과 설정(`$wg…`)은 외부에서 주입되는 `ExtensionSettings.php`(필수) 하나가 맡고, `LocalSettings.php`가 `BaseSettings.php` 다음에 이를 `require`한다(위 표). 이 저장소는 설치만 한다. 설치하고 로드하지 않은 확장은 쓰이지 않을 뿐이다.
-- 확장 패키지와 로드·설정을 느슨하게 묶어, 운영 고유의 설정을 공개하지 않는다.
+- **로드와 설정**: 모든 확장의 `wfLoadExtension`과 설정(`$wg…`)은 주입되는 `ExtensionSettings.php`가 맡는다. 이 저장소는 설치만 한다. 설치하고 로드하지 않은 확장은 쓰이지 않을 뿐이다. 확장 패키지와 로드·설정을 느슨하게 묶어, 사이트 고유의 설정을 공개하지 않는다.
 
-## TO-BE
+## 그 밖의 외부 주입 파일
 
-원칙: **MediaWiki 설정 PHP 코드는 이 저장소에서 관리하고 이미지에 넣는다. 환경마다 다른 값과 비밀값은 환경변수로만 받는다.**
+| 파일 | 목표 | 현재 | 내용 |
+| --- | --- | --- | --- |
+| 컨테이너 시작 스크립트 | 자체 보유 (dev/prod별) | 외부 주입 | 설정 파일 배치, 서비스 시작 |
+| `nginx.conf`, `php-fpm.conf`, `php.ini` | 자체 보유 (dev/prod별) | 외부 주입 | 웹 서버, PHP |
+| `supervisord.conf` | 자체 보유 (dev) | 외부 주입 | 개발 이미지의 프로세스 구성 |
+| `dist_ads.txt`, `dist_robots.txt` | 자체 보유 | 외부 주입 | 정적 파일(`/app/svelte/dist/`) |
+| `dist_config.js` | 없앰 | 외부 주입 | 쓰이지 않는 것으로 보임. goapp이 같은 값을 `window.ZCONF`로 넣는다 |
+| `SyntaxHighlight.php`, `MsUpload.less`, `mediawiki.skin.defaults.less` | 자체 보유 | 외부 주입 | MediaWiki 패치 |
+| GA 서비스 계정 JSON | 외부 주입(선택) | 외부 주입 | 비밀 파일. `GA_READER_FILE`이 경로를 가리킨다 |
 
-- 설정 PHP 구조: `LocalSettings.php`(이 저장소, 진입점과 호출 순서) → `BaseSettings.php`(이 저장소, 모든 환경 공통) → `/files/SiteSettings.php`(배포 환경 주입, 환경별, 확장 제외) → `/files/ExtensionSettings.php`(배포 환경 주입, 모든 확장의 로드와 설정).
-- 지금 설정 파일에 들어 있는 값은 `getenv()`로 읽는다. 기존 변수(`DB_*`, `REDIS_PERSIST_*`/`REDIS_VOLATILE_*`([redis.md](redis.md)), `AWS_*`, `AVATAR_BASE_URL`, `GA_MEASUREMENT_ID`, `AD_*`)를 재사용하고, 다음을 추가한다(이름은 확정 전).
+목표 구조로 옮기면 외부 주입 파일은 `SiteSettings.php`, `ExtensionSettings.php`, 비밀 파일(GA 서비스 계정)만 남는다.
 
-  | 변수 | 용도 |
-  | --- | --- |
-  | `MW_SECRET_KEY`, `MW_UPGRADE_KEY` | `$wgSecretKey`, `$wgUpgradeKey` |
-  | `SHELLBOX_SCORE_URL`, `SHELLBOX_SECRET_KEY` | Score 렌더링 |
-  | `MW_CDN_SERVERS` | `$wgCdnServers` (쉼표 구분) |
+## 추가할 환경변수 (목표)
 
-  `.env.example`에 예시 값(`example-db`, `https://example-avatar.example.com` 등)을 둔다.
-- 스킨 상수 대신 설정값을 읽어, 배포 환경이 스킨 소스를 고칠 필요가 없게 한다.
+지금 주입 설정 파일에 들어 있는 값을 `getenv()`로 읽도록 바꾸면서 추가한다(이름은 확정 전). 기존 변수(`DB_*`, `REDIS_PERSIST_*`/`REDIS_VOLATILE_*`([redis.md](redis.md)), `AWS_*`, `AVATAR_BASE_URL`, `GA_MEASUREMENT_ID`, `AD_*`)는 그대로 쓴다.
+
+| 변수 | 용도 |
+| --- | --- |
+| `MW_SECRET_KEY`, `MW_UPGRADE_KEY` | `$wgSecretKey`, `$wgUpgradeKey` (비밀) |
+| `SHELLBOX_SCORE_URL`, `SHELLBOX_SECRET_KEY` | Score 렌더링 (키는 비밀) |
+| `MW_CDN_SERVERS` | `$wgCdnServers` (쉼표 구분) |
+| `MAILAPI_ENDPOINT` | MailAPI 확장 (`ExtensionSettings.php`가 읽음) |
+
+`.env.example`에 예시 값(`example-db`, `https://example-avatar.example.com` 등)을 둔다.
