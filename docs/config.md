@@ -47,10 +47,6 @@ goapp은 시작할 때 이 값을 읽어 프런트엔드에 `window.ZCONF`(`avat
 | `REDIS_PERSIST_HOST`, `REDIS_PERSIST_PORT` (없으면 `REDIS_HOST`, `REDIS_PORT`) | ZetaExtension 인증 상태(OTP, 소셜 로그인 연계, `includes/Auth/PersistRedis.php`). goapp이 쓴 토큰을 읽는다 |
 | `MW_INSTALL_PATH` | ZetaExtension 유지보수 스크립트. 운영 이미지(`prod`)에서 `/app/w`로 설정 |
 
-### `.env.example`에만 있는 키
-
-`EDITBOT_USERNAME`, `EDITBOT_PASSWORD`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`, `AWS_BUCKET`, `AWS_USE_PATH_STYLE_ENDPOINT`는 이 저장소의 코드가 읽지 않는다. 외부 주입 설정(확장 설정 등)이 읽을 수 있다.
-
 ## MediaWiki 설정 파일
 
 모두 MediaWiki 디렉터리(`$IP`)에 놓인다. `LocalSettings.php`가 진입점이며 아래 순서로 `require`한다. 뒤에 오는 파일이 앞의 값을 덮어쓴다.
@@ -93,7 +89,7 @@ ZetaSkin(`mwz/skins/ZetaSkin/includes/SkinZetaSkin.php`)은 다음 PHP 상수를
 
 ## 추가할 환경변수 (목표)
 
-지금 주입 설정 파일에 들어 있는 값을 `getenv()`로 읽도록 바꾸면서 추가한다(이름은 확정 전). 기존 변수(`DB_*`, `REDIS_PERSIST_*`/`REDIS_VOLATILE_*`([redis.md](redis.md)), `AWS_*`, `AVATAR_BASE_URL`, `GA_MEASUREMENT_ID`, `AD_*`)는 그대로 쓴다.
+지금 주입 설정 파일에 들어 있는 값을 `getenv()`로 읽도록 바꾸면서 추가한다(이름은 확정 전). 기존 변수(`DB_*`, `REDIS_PERSIST_*`/`REDIS_VOLATILE_*`([redis.md](redis.md)), `AVATAR_BASE_URL`, `GA_MEASUREMENT_ID`, `AD_*`)는 그대로 쓴다.
 
 | 변수 | 용도 |
 | --- | --- |
