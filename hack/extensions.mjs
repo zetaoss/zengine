@@ -14,6 +14,7 @@ import { dirname, resolve } from "node:path";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const CONFIG = resolve(ROOT, "hack/extensions.yaml");
+const COMMIT_SHA = /^[0-9a-f]{40}$/;
 const EXTENSIONS_DIR = resolve(process.env.EXTENSIONS_DIR ?? resolve(ROOT, "w/extensions"));
 
 function parseExtensions(source) {
@@ -127,10 +128,18 @@ for (const entry of entries) {
   }
 
   console.log(`Installing ${entry.name} (${entry.tag})`);
-  const cloneArgs = ["clone", "--depth=1"];
-  if (entry.tag !== "latest") cloneArgs.push("--branch", entry.tag);
-  cloneArgs.push(entry.repo, target);
-  run("git", cloneArgs);
+  if (COMMIT_SHA.test(entry.tag)) {
+    // A branch/tag clone cannot target a commit, so fetch the single commit instead.
+    run("git", ["init", "--quiet", target]);
+    run("git", ["-C", target, "remote", "add", "origin", entry.repo]);
+    run("git", ["-C", target, "fetch", "--quiet", "--depth=1", "origin", entry.tag]);
+    run("git", ["-C", target, "checkout", "--quiet", "FETCH_HEAD"]);
+  } else {
+    const cloneArgs = ["clone", "--depth=1"];
+    if (entry.tag !== "latest") cloneArgs.push("--branch", entry.tag);
+    cloneArgs.push(entry.repo, target);
+    run("git", cloneArgs);
+  }
   if (applyOverrides(entry)) {
     console.log(`Applying local overrides for ${entry.name}`);
   }
