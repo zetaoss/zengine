@@ -91,7 +91,8 @@ RUN set -eux; \
 
 FROM base AS dev
 
-ENV GOPATH=/go \
+ENV MW_INSTALL_PATH=/var/www/html \
+    GOPATH=/go \
     PATH=/usr/local/go/bin:/go/bin:/root/.local/bin:/root/.local/share/pnpm/bin:${PATH}
 
 RUN set -eux; \

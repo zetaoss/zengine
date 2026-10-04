@@ -52,7 +52,7 @@ goapp은 시작할 때 이 값을 읽어 프런트엔드에 `window.ZCONF`(`avat
 | `MW_CDN_SERVERS` | `$wgCdnServers` (쉼표 구분) |
 | `SHELLBOX_SCORE_URL`, `SHELLBOX_SECRET_KEY` | `$wgShellboxUrls['score']`, `$wgShellboxSecretKey` (키는 비밀) |
 | `AVATAR_BASE_URL`, `GA_MEASUREMENT_ID`, `AD_CLIENT`, `AD_SLOTS` | 스킨 상수(아래) |
-| `MW_INSTALL_PATH` | ZetaExtension 유지보수 스크립트. 운영 이미지(`prod`)에서 `/app/w`로 설정 |
+| `MW_INSTALL_PATH` | ZetaExtension 유지보수 스크립트. 이미지가 MediaWiki 디렉터리로 설정한다(`dev`: `/var/www/html`, `prod`: `/app/w`) |
 
 ## MediaWiki 설정 파일
 
