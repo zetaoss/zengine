@@ -27,6 +27,8 @@ COPY hack/extensions.mjs hack/
 COPY mwz/extensions.yaml mwz/extensions.lock mwz/
 COPY mwz/extensions/MsUpload mwz/extensions/MsUpload
 RUN EXTENSIONS_DIR=/extensions node hack/extensions.mjs install
+RUN mkdir -p /extension-settings \
+    && node hack/extensions.mjs settings /extension-settings/ExtraExtensionSettings.php
 
 # https://hub.docker.com/_/mediawiki
 FROM mediawiki:1.43.9-fpm AS base
@@ -48,6 +50,9 @@ RUN set -eux; \
         zip
 
 COPY --from=extensions /extensions/ /var/www/html/extensions/
+# wfLoadExtension for mwz/extensions.yaml. The MediaWiki settings include it after the deployment's
+# extension settings (bundled extensions first).
+COPY --from=extensions /extension-settings/ExtraExtensionSettings.php /var/www/html/
 
 # PHP dependencies of MediaWiki and the extensions above (composer.local.json merges
 # extensions/*/composer.json, e.g. AWS), installed from the committed lock so every build gets the
