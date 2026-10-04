@@ -1,13 +1,14 @@
 # MediaWiki extensions installed into the image (base stage of the Dockerfile).
 # MediaWiki core bundled extensions come with the mediawiki image and are not listed here.
-# tag: a git tag or branch (e.g. REL1_43), or a full 40-character commit SHA for repos without tags.
+# tag: a git tag, or a full 40-character commit SHA. Avoid branches (e.g. REL1_43): they move, so
+# builds would differ over time. For gerrit extensions pin a commit on the REL branch.
 # Local overrides in mwz/extensions/<name> are copied over the clone (see hack/extensions.mjs).
 - name: AWS
   repo: https://github.com/edwardspec/mediawiki-aws-s3.git
   tag: v0.14.0
 - name: CharInsert
   repo: https://gerrit.wikimedia.org/r/mediawiki/extensions/CharInsert.git
-  tag: REL1_43
+  tag: 4690e60fa1ab9aadc142d6b860fa8d9ccf7a8795 # REL1_43
 - name: CrawlerProtection
   repo: https://github.com/mywikis/CrawlerProtection.git
   tag: d033cdbac069db70f825be2f6f731930b7f18de7
@@ -19,10 +20,10 @@
   tag: v0.1.1
 - name: MsUpload
   repo: https://gerrit.wikimedia.org/r/mediawiki/extensions/MsUpload.git
-  tag: REL1_43
+  tag: 0bd00a3c4ec29ccf3d72d80ac02cf0ac41694d76 # REL1_43
 - name: Score
   repo: https://gerrit.wikimedia.org/r/mediawiki/extensions/Score.git
-  tag: REL1_43
+  tag: bedf6c863c1760a378e1508d072a855b54f9228c # REL1_43
 - name: SimpleMaps
   repo: https://github.com/jmnote/SimpleMaps.git
   tag: v0.2.2
@@ -37,4 +38,4 @@
   tag: v0.1.4
 - name: TemplateStyles
   repo: https://gerrit.wikimedia.org/r/mediawiki/extensions/TemplateStyles.git
-  tag: REL1_43
+  tag: 03f870ac750ac6c588eb17ab79802b869c0db145 # REL1_43

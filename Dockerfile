@@ -4,11 +4,10 @@
 #   extensions  MediaWiki extensions from hack/extensions.yaml
 #   base        MediaWiki runtime + PHP extensions + extensions (formerly the zbase image)
 #   dev         base + development tools (formerly the zdev image); `docker build --target dev`
-#   prod        application image (default target)
+#   prod        base + application (default target)
 #
-# prod still builds FROM the published zbase image. Switching it to `FROM base` changes the
-# production runtime and is done as a separate, deliberate step.
-ARG ZBASE_VERSION=0.2.2
+# dev and prod share the base stage, so MediaWiki, PHP extensions and MediaWiki extensions are
+# the same in both.
 ARG GO_VERSION=1.26
 
 FROM node:24-trixie-slim AS extensions
@@ -45,13 +44,18 @@ RUN set -eux; \
 
 COPY --from=extensions /extensions/ /var/www/html/extensions/
 
-# Composer is mounted only for dependency installation and is not retained in the image.
-# composer.local.json merges extensions/*/composer.json (e.g. AWS).
+# PHP dependencies of MediaWiki and the extensions above (composer.local.json merges
+# extensions/*/composer.json, e.g. AWS), installed from the committed lock so every build gets the
+# same versions. Regenerate the lock with `make composer-lock` (COMPOSER_MODE=update).
+# Composer is mounted only for the install and is not retained in the image.
+ARG COMPOSER_MODE=install
+COPY hack/mediawiki-composer.lock /var/www/html/composer.lock
 RUN --mount=type=bind,from=composer:2.10,source=/usr/bin/composer,target=/usr/local/bin/composer \
     set -eux; \
     cd /var/www/html; \
     cp composer.local.json-sample composer.local.json; \
-    composer update --no-dev --no-scripts --optimize-autoloader
+    if [ "$COMPOSER_MODE" = update ]; then rm -f composer.lock; fi; \
+    composer "$COMPOSER_MODE" --no-dev --no-scripts --optimize-autoloader
 
 FROM golang:${GO_VERSION}-trixie AS go-devtools
 
@@ -142,8 +146,7 @@ RUN mkdir -p /out/bin \
         ./cmd/scheduler \
         ./cmd/tool
 
-# https://github.com/zetaoss/zbase/pkgs/container/zbase
-FROM ghcr.io/zetaoss/zbase:${ZBASE_VERSION} AS prod
+FROM base AS prod
 
 ENV MW_INSTALL_PATH=/app/w
 
@@ -155,12 +158,3 @@ RUN set -eux \
     && ln -rs /app/mwz/extensions/ZetaExtension /app/w/extensions/ \
     && ln -rs /app/mwz/skins/ZetaSkin           /app/w/skins/ \
     && chown www-data:www-data -R /app/*
-
-# Same overlay as before the stage split: zbase provides the other extensions, so only these are
-# replaced. Remove this block (and use `FROM base AS prod`) when prod moves to the base stage.
-RUN --mount=type=bind,from=extensions,source=/extensions,target=/tmp/extensions \
-    set -eux; \
-    for name in CrawlerProtection MailAPI MsUpload SimpleMaps SimpleMarkdown SimpleMathJax SimpleMermaid; do \
-        cp -a "/tmp/extensions/$name" /app/w/extensions/; \
-        chown -R www-data:www-data "/app/w/extensions/$name"; \
-    done

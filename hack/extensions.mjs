@@ -23,7 +23,8 @@ function parseExtensions(source) {
 
   for (const [index, rawLine] of source.split("\n").entries()) {
     const lineNumber = index + 1;
-    const line = rawLine.trim();
+    // Drop trailing " # comment" (values never contain " #").
+    const line = rawLine.replace(/\s+#.*$/, "").trim();
     if (!line || line.startsWith("#")) continue;
 
     const field = line.match(/^(?:- )?(name|repo|tag):\s*(.*?)\s*$/);
