@@ -49,7 +49,7 @@ MediaWiki 코드 블록
 
 worker는 전용 `runbox` queue에서 task를 처리하며 retry하지 않는다. 외부 요청 timeout은 60초, task timeout은 2분이다. 실행을 시작한 뒤 오래 갱신되지 않은 `running` 작업은 pruner가 3분 후 실패 처리한다. queue에서 대기 중인 `pending` 작업은 정상적인 지연일 수 있으므로 pruner가 임의로 실패 처리하지 않는다.
 
-`.env` 또는 `ENV_FILE`에 외부 서버 주소를 설정한다.
+환경변수에 외부 서버 주소를 설정한다.
 
 ```dotenv
 RUNBOX_ENDPOINT=https://runbox.example.internal
@@ -69,5 +69,5 @@ RUNBOX_ENDPOINT/notebook
 - API: `goapp/server/handlers/api/runbox/runbox.go`
 - task와 stale 작업 정리: `goapp/tasks/runbox/`
 - task 등록: `goapp/worker/registry/registry.go`
-- 설정: `goapp/app/config/config.go`, `.env.example`
+- 설정: `goapp/app/config/config.go`, `config.env.example`
 - 프론트: `mwz/skins/ZetaSkin/svelte/src/components/runbox/`

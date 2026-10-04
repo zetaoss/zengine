@@ -2,7 +2,7 @@
 
 zengine 이미지는 설정을 두 가지로 받는다.
 
-1. **환경변수**: goapp과 MediaWiki(PHP)가 읽는다. 예시는 루트의 `.env.example`.
+1. **환경변수**: goapp과 MediaWiki(PHP)가 프로세스 환경변수에서 읽는다. env 파일을 직접 읽지 않으므로 배포 환경이 컨테이너 환경변수로 넣는다. 예시는 루트의 `config.env.example`.
 2. **외부에서 주입되는 파일**: 이 저장소에 없고, 배포 환경이 넣어 주는 파일. 어떻게 넣는지는 배포 환경이 정한다.
 
 원칙
@@ -18,7 +18,6 @@ zengine 이미지는 설정을 두 가지로 받는다.
 
 | 변수 | 기본값 | 설명 |
 | --- | --- | --- |
-| `ENV_FILE` | | 이 경로의 env 파일을 읽어 아래 값을 덮어쓴다(선택) |
 | `APP_URL` | | 사이트 URL. MediaWiki `$wgServer`도 이 값을 쓴다 |
 | `API_SERVER` | | 서버 쪽에서 MediaWiki API(`/w/api.php`)를 호출할 때 쓰는 내부 기준 URL (로그인 사용자 확인, 통계 수집 등) |
 | `AVATAR_BASE_URL` | | 아바타 서비스 URL |
@@ -46,10 +45,6 @@ goapp은 시작할 때 이 값을 읽어 프런트엔드에 `window.ZCONF`(`avat
 | `APP_URL` | MediaWiki 설정의 `$wgServer` |
 | `REDIS_PERSIST_HOST`, `REDIS_PERSIST_PORT` (없으면 `REDIS_HOST`, `REDIS_PORT`) | ZetaExtension 인증 상태(OTP, 소셜 로그인 연계, `includes/Auth/PersistRedis.php`). goapp이 쓴 토큰을 읽는다 |
 | `MW_INSTALL_PATH` | ZetaExtension 유지보수 스크립트. 운영 이미지(`prod`)에서 `/app/w`로 설정 |
-
-### `.env.example`에만 있는 키
-
-`EDITBOT_USERNAME`, `EDITBOT_PASSWORD`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`, `AWS_BUCKET`, `AWS_USE_PATH_STYLE_ENDPOINT`는 이 저장소의 코드가 읽지 않는다. 외부 주입 설정(확장 설정 등)이 읽을 수 있다.
 
 ## MediaWiki 설정 파일
 
@@ -93,7 +88,7 @@ ZetaSkin(`mwz/skins/ZetaSkin/includes/SkinZetaSkin.php`)은 다음 PHP 상수를
 
 ## 추가할 환경변수 (목표)
 
-지금 주입 설정 파일에 들어 있는 값을 `getenv()`로 읽도록 바꾸면서 추가한다(이름은 확정 전). 기존 변수(`DB_*`, `REDIS_PERSIST_*`/`REDIS_VOLATILE_*`([redis.md](redis.md)), `AWS_*`, `AVATAR_BASE_URL`, `GA_MEASUREMENT_ID`, `AD_*`)는 그대로 쓴다.
+지금 주입 설정 파일에 들어 있는 값을 `getenv()`로 읽도록 바꾸면서 추가한다(이름은 확정 전). 기존 변수(`DB_*`, `REDIS_PERSIST_*`/`REDIS_VOLATILE_*`([redis.md](redis.md)), `AVATAR_BASE_URL`, `GA_MEASUREMENT_ID`, `AD_*`)는 그대로 쓴다.
 
 | 변수 | 용도 |
 | --- | --- |
@@ -102,4 +97,4 @@ ZetaSkin(`mwz/skins/ZetaSkin/includes/SkinZetaSkin.php`)은 다음 PHP 상수를
 | `MW_CDN_SERVERS` | `$wgCdnServers` (쉼표 구분) |
 | `MAILAPI_ENDPOINT` | MailAPI 확장 (`ExtensionSettings.php`가 읽음) |
 
-`.env.example`에 예시 값(`example-db`, `https://example-avatar.example.com` 등)을 둔다.
+`config.env.example`에 예시 값(`example-db`, `https://example-avatar.example.com` 등)을 둔다.

@@ -1,8 +1,6 @@
 package config
 
 import (
-	"bufio"
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -87,17 +85,6 @@ type OAuthConfig struct {
 }
 
 func Load() (*Config, error) {
-	overrides := map[string]string{}
-	if envFilePath := os.Getenv("ENV_FILE"); envFilePath != "" {
-		if _, err := os.Stat(envFilePath); err == nil {
-			parsed, err := parseEnvFile(envFilePath)
-			if err != nil {
-				return nil, err
-			}
-			overrides = parsed
-		}
-	}
-
 	cfg := &Config{
 		App:        AppConfig{},
 		DB:         DBConfig{},
@@ -109,70 +96,67 @@ func Load() (*Config, error) {
 		OAuth:      OAuthConfig{},
 	}
 
-	cfg.App.APIServer = lookup(overrides, "API_SERVER")
-	cfg.App.AppURL = lookup(overrides, "APP_URL")
-	cfg.App.AvatarBaseURL = lookup(overrides, "AVATAR_BASE_URL")
-	cfg.App.DevMode = lookupBool(overrides, "DEV_MODE", false)
-	cfg.App.InternalSecretKey = lookup(overrides, "INTERNAL_SECRET_KEY")
-	cfg.App.LogLevel = lookupString(overrides, "LOG_LEVEL", "info")
+	cfg.App.APIServer = lookup("API_SERVER")
+	cfg.App.AppURL = lookup("APP_URL")
+	cfg.App.AvatarBaseURL = lookup("AVATAR_BASE_URL")
+	cfg.App.DevMode = lookupBool("DEV_MODE", false)
+	cfg.App.InternalSecretKey = lookup("INTERNAL_SECRET_KEY")
+	cfg.App.LogLevel = lookupString("LOG_LEVEL", "info")
 
-	cfg.DB.Host = lookup(overrides, "DB_HOST")
-	cfg.DB.Port = lookupInt(overrides, "DB_PORT", 3306)
-	cfg.DB.Database = lookup(overrides, "DB_DATABASE")
-	cfg.DB.Username = lookup(overrides, "DB_USERNAME")
-	cfg.DB.Password = lookup(overrides, "DB_PASSWORD")
+	cfg.DB.Host = lookup("DB_HOST")
+	cfg.DB.Port = lookupInt("DB_PORT", 3306)
+	cfg.DB.Database = lookup("DB_DATABASE")
+	cfg.DB.Username = lookup("DB_USERNAME")
+	cfg.DB.Password = lookup("DB_PASSWORD")
 
 	// REDIS_HOST/REDIS_PORT are the legacy single endpoint, used for a role whose own variables are unset.
-	legacyRedisHost := lookup(overrides, "REDIS_HOST")
-	legacyRedisPort := lookupInt(overrides, "REDIS_PORT", 6379)
+	legacyRedisHost := lookup("REDIS_HOST")
+	legacyRedisPort := lookupInt("REDIS_PORT", 6379)
 	cfg.Redis.Persist = RedisEndpoint{
-		Host: lookupString(overrides, "REDIS_PERSIST_HOST", legacyRedisHost),
-		Port: lookupInt(overrides, "REDIS_PERSIST_PORT", legacyRedisPort),
+		Host: lookupString("REDIS_PERSIST_HOST", legacyRedisHost),
+		Port: lookupInt("REDIS_PERSIST_PORT", legacyRedisPort),
 	}
 	cfg.Redis.Volatile = RedisEndpoint{
-		Host: lookupString(overrides, "REDIS_VOLATILE_HOST", legacyRedisHost),
-		Port: lookupInt(overrides, "REDIS_VOLATILE_PORT", legacyRedisPort),
+		Host: lookupString("REDIS_VOLATILE_HOST", legacyRedisHost),
+		Port: lookupInt("REDIS_VOLATILE_PORT", legacyRedisPort),
 	}
 
-	cfg.Ads.Client = lookup(overrides, "AD_CLIENT")
-	cfg.Ads.Slots = lookupList(overrides, "AD_SLOTS")
+	cfg.Ads.Client = lookup("AD_CLIENT")
+	cfg.Ads.Slots = lookupList("AD_SLOTS")
 
-	cfg.Analytics.GAMeasurementID = lookup(overrides, "GA_MEASUREMENT_ID")
-	cfg.Analytics.GAPropertyID = lookup(overrides, "GA_PROPERTY_ID")
-	cfg.Analytics.GAReaderFile = lookup(overrides, "GA_READER_FILE")
-	cfg.Analytics.GATimezone = lookup(overrides, "GA_TIMEZONE")
-	cfg.Analytics.GSCSiteURL = lookup(overrides, "GSC_SITE_URL")
+	cfg.Analytics.GAMeasurementID = lookup("GA_MEASUREMENT_ID")
+	cfg.Analytics.GAPropertyID = lookup("GA_PROPERTY_ID")
+	cfg.Analytics.GAReaderFile = lookup("GA_READER_FILE")
+	cfg.Analytics.GATimezone = lookup("GA_TIMEZONE")
+	cfg.Analytics.GSCSiteURL = lookup("GSC_SITE_URL")
 
-	cfg.API.MonitoringEndpoint = lookup(overrides, "MONITORING_ENDPOINT")
-	cfg.API.MonitoringNamespace = lookup(overrides, "MONITORING_NAMESPACE")
-	cfg.API.MonitoringNodepool = lookup(overrides, "MONITORING_NODEPOOL")
-	cfg.API.MonitoringPVC = lookup(overrides, "MONITORING_PVC")
-	cfg.API.LLMEndpoint = lookup(overrides, "LLM_ENDPOINT")
-	cfg.API.RunboxEndpoint = lookup(overrides, "RUNBOX_ENDPOINT")
-	cfg.API.SearchEndpoint = lookup(overrides, "SEARCH_ENDPOINT")
+	cfg.API.MonitoringEndpoint = lookup("MONITORING_ENDPOINT")
+	cfg.API.MonitoringNamespace = lookup("MONITORING_NAMESPACE")
+	cfg.API.MonitoringNodepool = lookup("MONITORING_NODEPOOL")
+	cfg.API.MonitoringPVC = lookup("MONITORING_PVC")
+	cfg.API.LLMEndpoint = lookup("LLM_ENDPOINT")
+	cfg.API.RunboxEndpoint = lookup("RUNBOX_ENDPOINT")
+	cfg.API.SearchEndpoint = lookup("SEARCH_ENDPOINT")
 
-	cfg.Cloudflare.APIToken = lookup(overrides, "CLOUDFLARE_API_TOKEN")
-	cfg.Cloudflare.ZoneID = lookup(overrides, "CLOUDFLARE_ZONE_ID")
+	cfg.Cloudflare.APIToken = lookup("CLOUDFLARE_API_TOKEN")
+	cfg.Cloudflare.ZoneID = lookup("CLOUDFLARE_ZONE_ID")
 
-	cfg.OAuth.FacebookClientID = lookup(overrides, "FACEBOOK_CLIENT_ID")
-	cfg.OAuth.FacebookClientSecret = lookup(overrides, "FACEBOOK_CLIENT_SECRET")
-	cfg.OAuth.GithubClientID = lookup(overrides, "GITHUB_CLIENT_ID")
-	cfg.OAuth.GithubClientSecret = lookup(overrides, "GITHUB_CLIENT_SECRET")
-	cfg.OAuth.GoogleClientID = lookup(overrides, "GOOGLE_CLIENT_ID")
-	cfg.OAuth.GoogleClientSecret = lookup(overrides, "GOOGLE_CLIENT_SECRET")
+	cfg.OAuth.FacebookClientID = lookup("FACEBOOK_CLIENT_ID")
+	cfg.OAuth.FacebookClientSecret = lookup("FACEBOOK_CLIENT_SECRET")
+	cfg.OAuth.GithubClientID = lookup("GITHUB_CLIENT_ID")
+	cfg.OAuth.GithubClientSecret = lookup("GITHUB_CLIENT_SECRET")
+	cfg.OAuth.GoogleClientID = lookup("GOOGLE_CLIENT_ID")
+	cfg.OAuth.GoogleClientSecret = lookup("GOOGLE_CLIENT_SECRET")
 
 	return cfg, nil
 }
 
-func lookup(overrides map[string]string, key string) string {
-	if v, ok := overrides[key]; ok {
-		return strings.TrimSpace(v)
-	}
+func lookup(key string) string {
 	return strings.TrimSpace(os.Getenv(key))
 }
 
-func lookupInt(overrides map[string]string, key string, def int) int {
-	raw := lookup(overrides, key)
+func lookupInt(key string, def int) int {
+	raw := lookup(key)
 	if raw == "" {
 		return def
 	}
@@ -183,16 +167,16 @@ func lookupInt(overrides map[string]string, key string, def int) int {
 	return n
 }
 
-func lookupString(overrides map[string]string, key string, def string) string {
-	raw := lookup(overrides, key)
+func lookupString(key string, def string) string {
+	raw := lookup(key)
 	if raw == "" {
 		return def
 	}
 	return raw
 }
 
-func lookupBool(overrides map[string]string, key string, def bool) bool {
-	raw := strings.ToLower(lookup(overrides, key))
+func lookupBool(key string, def bool) bool {
+	raw := strings.ToLower(lookup(key))
 	switch raw {
 	case "1", "true", "yes", "on":
 		return true
@@ -203,8 +187,8 @@ func lookupBool(overrides map[string]string, key string, def bool) bool {
 	}
 }
 
-func lookupList(overrides map[string]string, key string) []string {
-	raw := lookup(overrides, key)
+func lookupList(key string) []string {
+	raw := lookup(key)
 	if raw == "" {
 		return nil
 	}
@@ -217,49 +201,4 @@ func lookupList(overrides map[string]string, key string) []string {
 		}
 	}
 	return out
-}
-
-func parseEnvFile(path string) (map[string]string, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("open env file %s: %w", path, err)
-	}
-	defer func() {
-		_ = f.Close()
-	}()
-
-	out := map[string]string{}
-	sc := bufio.NewScanner(f)
-	lineNo := 0
-	for sc.Scan() {
-		lineNo++
-		line := strings.TrimSpace(sc.Text())
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-		if strings.HasPrefix(line, "export ") {
-			line = strings.TrimSpace(strings.TrimPrefix(line, "export "))
-		}
-		i := strings.IndexRune(line, '=')
-		if i < 1 {
-			return nil, fmt.Errorf("invalid env line %d in %s", lineNo, path)
-		}
-		key := strings.TrimSpace(line[:i])
-		val := strings.TrimSpace(line[i+1:])
-		val = trimEnvQuotes(val)
-		out[key] = val
-	}
-	if err := sc.Err(); err != nil {
-		return nil, fmt.Errorf("read env file %s: %w", path, err)
-	}
-	return out, nil
-}
-
-func trimEnvQuotes(v string) string {
-	if len(v) >= 2 {
-		if (v[0] == '\'' && v[len(v)-1] == '\'') || (v[0] == '"' && v[len(v)-1] == '"') {
-			return v[1 : len(v)-1]
-		}
-	}
-	return v
 }
