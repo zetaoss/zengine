@@ -1,6 +1,6 @@
-# Third-party MediaWiki extensions, installed into the image and loaded (wfLoadExtension).
-# Comment one out to disable it. Bundled extensions, ZetaExtension/ZetaSkin and all extension
-# settings are handled elsewhere (docs/config.md).
+# Third-party MediaWiki extensions installed into the image. Comment one out to not install it.
+# Loading (wfLoadExtension) and configuration are up to the deployment's ExtensionSettings.php
+# (docs/config.md); an installed extension that is not loaded is simply unused.
 # tag: git tag, REL branch for gerrit, or commit SHA for repos without tags. The installed commit
 # is pinned in extensions.lock: `make extensions-lock` after editing, or to pick up new commits.
 # Files in mwz/extensions/<name> are copied over the clone.

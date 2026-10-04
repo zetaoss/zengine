@@ -46,16 +46,12 @@ pending migrations and run `ctl migrate` when appropriate.
 
 ## MediaWiki Extensions
 
-`mwz/extensions.yaml` lists the extra MediaWiki extensions (third-party, not
-bundled with MediaWiki) and where they come from (repo and tag). Listed extensions are
-installed into the image and loaded; comment one out to turn it off.
-`ExtraExtensionSettings.php` (`wfLoadExtension` only) is generated from it.
-Bundled extensions and all extension configuration are provided by the
-deployment, not this repository (see `docs/config.md`). See the header of the
-file for the fields.
+`mwz/extensions.yaml` lists the third-party MediaWiki extensions installed into
+the image and where they come from (repo and tag); `mwz/extensions.lock` pins
+the installed commits. Loading and configuring extensions is up to the
+deployment's `ExtensionSettings.php` (see `docs/config.md`).
 
 ```sh
 make extensions-lock      # after editing the list, or to pick up new commits; commit the lock
-make extension-settings   # print the generated ExtraExtensionSettings.php
 make composer-lock        # after adding/removing installed extensions; commit the lock
 ```

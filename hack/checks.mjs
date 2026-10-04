@@ -44,14 +44,10 @@ function checkGoapp() {
   run("go", ["build", "./..."], { cwd });
 }
 
-// mwz/extensions.yaml is valid, mwz/extensions.lock matches it, and the generated
-// ExtraExtensionSettings.php is syntactically valid.
+// mwz/extensions.yaml is valid and mwz/extensions.lock matches it.
 function checkMwExtensions() {
-  const out = "/tmp/make-checks-ExtraExtensionSettings.php";
   run("pnpm", ["-C", "hack", "install", "--frozen-lockfile"]);
   run("node", ["hack/extensions.mjs", "check"], { fix: "make extensions-lock" });
-  run("node", ["hack/extensions.mjs", "settings", out]);
-  run("php", ["-l", out]);
 }
 
 const cachedChecks = [
