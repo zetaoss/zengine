@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Stages:
-#   extensions  MediaWiki extensions from hack/extensions.yaml
+#   extensions  MediaWiki extensions from mwz/extensions.yaml
 #   base        MediaWiki runtime + PHP extensions + extensions (formerly the zbase image)
 #   dev         base + development tools (formerly the zdev image); `docker build --target dev`
 #   prod        base + application (default target)
@@ -19,9 +19,14 @@ RUN apt-get update \
 # Copy only what the installer reads, so application changes do not re-clone extensions.
 # Add a COPY line here when a new override directory is added under mwz/extensions.
 WORKDIR /src
-COPY hack/extensions.yaml hack/extensions.mjs hack/
+COPY hack/package.json hack/pnpm-lock.yaml hack/
+RUN corepack enable \
+    && corepack prepare pnpm@11 --activate \
+    && pnpm -C hack install --frozen-lockfile
+COPY hack/extensions.mjs hack/
+COPY mwz/extensions.yaml mwz/extensions.lock mwz/
 COPY mwz/extensions/MsUpload mwz/extensions/MsUpload
-RUN EXTENSIONS_DIR=/extensions node hack/extensions.mjs
+RUN EXTENSIONS_DIR=/extensions node hack/extensions.mjs install
 
 # https://hub.docker.com/_/mediawiki
 FROM mediawiki:1.43.9-fpm AS base

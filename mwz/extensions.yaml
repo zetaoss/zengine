@@ -1,0 +1,43 @@
+# Third-party MediaWiki extensions, installed into the image and loaded (wfLoadExtension).
+# Comment one out to disable it. Bundled extensions, ZetaExtension/ZetaSkin and all extension
+# settings are handled elsewhere (docs/config.md).
+# tag: git tag, REL branch for gerrit, or commit SHA for repos without tags. The installed commit
+# is pinned in extensions.lock: `make extensions-lock` after editing, or to pick up new commits.
+# Files in mwz/extensions/<name> are copied over the clone.
+
+- name: AWS
+  repo: https://github.com/edwardspec/mediawiki-aws-s3.git
+  tag: v0.14.0
+- name: CharInsert
+  repo: https://gerrit.wikimedia.org/r/mediawiki/extensions/CharInsert.git
+  tag: REL1_43
+- name: CrawlerProtection
+  repo: https://github.com/mywikis/CrawlerProtection.git
+  tag: d033cdbac069db70f825be2f6f731930b7f18de7
+- name: EmbedVideo
+  repo: https://github.com/StarCitizenWiki/mediawiki-extensions-EmbedVideo.git
+  tag: v4.1.0
+- name: MailAPI
+  repo: https://github.com/mailapi/mediawiki-extensions-MailAPI.git
+  tag: v0.1.1
+- name: MsUpload
+  repo: https://gerrit.wikimedia.org/r/mediawiki/extensions/MsUpload.git
+  tag: REL1_43
+- name: Score
+  repo: https://gerrit.wikimedia.org/r/mediawiki/extensions/Score.git
+  tag: REL1_43
+- name: SimpleMaps
+  repo: https://github.com/jmnote/SimpleMaps.git
+  tag: v0.2.2
+- name: SimpleMarkdown
+  repo: https://github.com/jmnote/SimpleMarkdown.git
+  tag: v0.1.1
+- name: SimpleMathJax
+  repo: https://github.com/jmnote/SimpleMathJax.git
+  tag: v0.9.0
+- name: SimpleMermaid
+  repo: https://github.com/jmnote/SimpleMermaid.git
+  tag: v0.1.4
+- name: TemplateStyles
+  repo: https://gerrit.wikimedia.org/r/mediawiki/extensions/TemplateStyles.git
+  tag: REL1_43

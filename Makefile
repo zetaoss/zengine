@@ -25,9 +25,25 @@ checks-no-cache:
 clear:
 	node hack/checks.mjs clear
 
+# MediaWiki extensions from mwz/extensions.yaml (single source; see its header).
 .PHONY: extensions
 extensions:
-	node hack/extensions.mjs
+	pnpm -C hack install --frozen-lockfile
+	node hack/extensions.mjs install
+
+# Resolve each tag/branch in mwz/extensions.yaml to a commit and write mwz/extensions.lock.
+# Run after editing extensions.yaml, or to pick up new commits (e.g. REL1_43 backports); then run
+# composer-lock if an extension's composer.json changed, and commit both.
+.PHONY: extensions-lock
+extensions-lock:
+	pnpm -C hack install --frozen-lockfile
+	node hack/extensions.mjs lock
+
+# Print the ExtraExtensionSettings.php generated from mwz/extensions.yaml.
+.PHONY: extension-settings
+extension-settings:
+	pnpm -C hack install --frozen-lockfile
+	node hack/extensions.mjs settings
 
 .PHONY: check-php
 check-php:
@@ -79,7 +95,7 @@ check-goapp:
 	node hack/checks.mjs check-goapp
 
 # Regenerate hack/mediawiki-composer.lock (PHP deps of MediaWiki + extensions in the image).
-# Run after changing hack/extensions.yaml or the mediawiki base image, then commit the lock.
+# Run after changing mwz/extensions.yaml or the mediawiki base image, then commit the lock.
 .PHONY: composer-lock
 composer-lock:
 	docker build --target base --build-arg COMPOSER_MODE=update -t zengine-base:composer-lock .
