@@ -21,7 +21,7 @@ zengine 이미지는 설정을 두 경로로 받는다.
 | `INTERNAL_SECRET_KEY` | | 내부 API(`/api/internal/*`) 인증 키. 아바타 서비스와 공유 |
 | `LOG_LEVEL` | `info` | 로그 레벨 |
 | `DB_HOST`, `DB_PORT`(3306), `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` | | MariaDB |
-| `REDIS_HOST`, `REDIS_PORT`(6379) | | Redis (캐시) |
+| `REDIS_HOST`, `REDIS_PORT`(6379) | | Redis. goapp 작업 큐(Asynq: server, worker, scheduler, tool) 저장소이자 캐시. 처리 대기 중인 작업이 들어 있으므로 캐시처럼 퇴출(eviction)하거나 비우면 작업이 사라진다 |
 | `AD_CLIENT`, `AD_SLOTS` | | 광고. `AD_SLOTS`는 쉼표 구분 |
 | `GA_MEASUREMENT_ID`, `GA_PROPERTY_ID`, `GA_TIMEZONE`, `GSC_SITE_URL` | | Google Analytics / Search Console |
 | `GA_READER_FILE` | | GA/GSC 조회용 서비스 계정 JSON 파일 경로 |
@@ -37,7 +37,7 @@ goapp은 시작할 때 이 값을 읽어 프런트엔드에 `window.ZCONF`(`avat
 | 변수 | 사용처 |
 | --- | --- |
 | `APP_URL` | MediaWiki 설정의 `$wgServer` |
-| `REDIS_HOST` | ZetaExtension 인증(`includes/Auth/*`) |
+| `REDIS_HOST` | ZetaExtension 인증 상태(OTP, 소셜 로그인 연계, `includes/Auth/*`). goapp과 같은 Redis |
 | `MW_INSTALL_PATH` | ZetaExtension 유지보수 스크립트. 운영 이미지(`prod`)에서 `/app/w`로 설정 |
 
 ### `.env.example`에만 있는 키
