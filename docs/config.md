@@ -44,7 +44,7 @@ goapp은 시작할 때 이 값을 읽어 프런트엔드에 `window.ZCONF`(`avat
 
 ### `.env.example`에만 있는 키
 
-`EDITBOT_USERNAME`, `EDITBOT_PASSWORD`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`, `AWS_BUCKET`, `AWS_USE_PATH_STYLE_ENDPOINT`는 현재 이 저장소의 코드가 읽지 않는다. `AWS_*`는 TO-BE에서 MediaWiki 설정이 읽게 된다.
+`EDITBOT_USERNAME`, `EDITBOT_PASSWORD`, `AWS_USE_PATH_STYLE_ENDPOINT`는 현재 이 저장소의 코드가 읽지 않는다. `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`, `AWS_BUCKET`, `MAILAPI_ENDPOINT`는 `mw/extensions.yaml`의 확장 설정이 읽는다(생성된 `ExtensionSettings.php`가 이미지에 연결된 뒤부터 쓰인다).
 
 ## 배포 환경이 제공하는 파일 (`/files`)
 
@@ -68,23 +68,25 @@ ZetaSkin(`mwz/skins/ZetaSkin/includes/SkinZetaSkin.php`)은 다음 PHP 상수를
 
 ### MediaWiki 확장
 
-- **설치**: 기본 포함이 아닌 확장은 `hack/extensions.yaml` 목록대로 이미지(`base` 단계)에 들어간다. PHP 의존성은 `hack/mediawiki-composer.lock`.
-- **활성화**: MediaWiki 설정(`BaseSettings.php`)의 `wfLoadExtension`. 설치되어 있어도 활성화하지 않으면 로드되지 않는다.
+- **기본 포함 확장**(MediaWiki와 함께 오는 Cite, VisualEditor 등): 따로 관리하지 않는다. MediaWiki 설정에서 `wfLoadExtension`으로 켠다.
+- **외부 확장**(기본 포함이 아닌 것과 ZetaExtension): `mw/extensions.yaml`이 단일 출처다. 확장마다 `enabled`, 출처(`repo`/`tag` 또는 `local`), 설정(`config` 또는 `config_file`)을 둔다. 설정 안의 환경 의존 값과 비밀값은 `getenv()`로 읽는다.
+- **설치**: 활성화된 외부 확장은 이미지(`base` 단계)에 들어간다. PHP 의존성은 `hack/mediawiki-composer.lock`.
+- **외부 확장 활성화**: `ExtraExtensionSettings.php`가 목록에서 생성된다(`make extension-settings`). 확장 설정에 쓰이는 환경변수: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`, `AWS_BUCKET`, `MAILAPI_ENDPOINT`.
+- **현재 상태**: 생성된 파일은 아직 이미지에 연결되지 않았다. 배포 환경이 주는 `BaseSettings.php`의 `wfLoadExtension`이 실제로 쓰인다. 아래 TO-BE에서 외부 확장 부분이 `ExtraExtensionSettings.php`로 바뀐다.
 
 ## TO-BE
 
 원칙: **MediaWiki 설정 PHP 코드는 이 저장소에서 관리하고 이미지에 넣는다. 환경마다 다른 값과 비밀값은 환경변수로만 받는다.**
 
-- `mw/settings/`에 `LocalSettings.php`(진입점), `BaseSettings.php`, `ExtensionSettings.php`를 두고 이미지에 포함한다. 배포 환경은 Settings 파일을 제공하지 않는다.
+- `mw/settings/`에 `LocalSettings.php`(진입점), `BaseSettings.php`(기본 포함 확장 포함), 생성된 `ExtraExtensionSettings.php`를 두고 이미지에 포함한다. 배포 환경은 Settings 파일을 제공하지 않는다.
 - 지금 설정 파일에 들어 있는 값은 `getenv()`로 읽는다. 기존 변수(`DB_*`, `REDIS_PERSIST_*`/`REDIS_VOLATILE_*`([redis.md](redis.md)), `AWS_*`, `AVATAR_BASE_URL`, `GA_MEASUREMENT_ID`, `AD_*`)를 재사용하고, 다음을 추가한다(이름은 확정 전).
 
   | 변수 | 용도 |
   | --- | --- |
   | `MW_SECRET_KEY`, `MW_UPGRADE_KEY` | `$wgSecretKey`, `$wgUpgradeKey` |
   | `SHELLBOX_SCORE_URL`, `SHELLBOX_SECRET_KEY` | Score 렌더링 |
-  | `MAILAPI_ENDPOINT` | MailAPI 확장 |
   | `MW_CDN_SERVERS` | `$wgCdnServers` (쉼표 구분) |
 
   `.env.example`에 예시 값(`example-db`, `https://example-avatar.example.com` 등)을 둔다.
 - 스킨 상수 대신 설정값을 읽어, 배포 환경이 스킨 소스를 고칠 필요가 없게 한다.
-- `make checks`에서 `hack/extensions.yaml`의 확장이 모두 `ExtensionSettings.php`에서 로드되는지, 기본 포함이 아닌데 로드되는 확장이 모두 목록에 있는지 확인한다.
+- `ExtraExtensionSettings.php`는 `mw/extensions.yaml`에서 생성해 이미지에 넣는다(완료: 목록과 생성기, `make checks`의 `check-mw-extensions`. 남음: 이미지 연결).

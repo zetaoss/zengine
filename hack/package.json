@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "type": "module",
+  "description": "Dependencies of the scripts in hack/",
+  "dependencies": {
+    "yaml": "2.8.1"
+  }
+}

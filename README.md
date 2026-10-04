@@ -46,10 +46,13 @@ pending migrations and run `ctl migrate` when appropriate.
 
 ## MediaWiki Extensions
 
-`hack/extensions.yaml` lists the non-bundled MediaWiki extensions installed in
-the image (dev and prod). Pin each to a tag or a full commit SHA, not a branch.
-After changing the list, regenerate the PHP dependency lock and commit it:
+`mw/extensions.yaml` is the single list of extra (non-bundled) MediaWiki extensions: which are
+enabled, where they come from (repo and tag), and their
+configuration. The image installs the enabled ones, and
+`ExtraExtensionSettings.php` (`wfLoadExtension` + configuration) is generated from
+it. See the header of that file for the fields.
 
 ```sh
-make composer-lock
+make extension-settings   # print the generated ExtraExtensionSettings.php
+make composer-lock        # after adding/removing installed extensions; commit the lock
 ```
