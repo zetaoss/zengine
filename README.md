@@ -22,6 +22,7 @@ Monorepo for ZetaWiki services.
 - Agent execution guide: `AGENTS.md`
 - GoApp development and task system: `docs/goapp.md`
 - Runtime configuration (environment variables, files provided at `/files`): `docs/config.md`
+- Redis roles (persist / volatile): `docs/redis.md`
 
 ## Development Container
 

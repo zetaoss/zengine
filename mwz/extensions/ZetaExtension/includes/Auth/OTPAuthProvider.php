@@ -5,7 +5,6 @@ namespace ZetaExtension\Auth;
 use MediaWiki\Auth\AbstractPrimaryAuthenticationProvider;
 use MediaWiki\Auth\AuthenticationRequest;
 use MediaWiki\Auth\AuthenticationResponse;
-use Redis;
 use StatusValue;
 use User;
 
@@ -17,8 +16,7 @@ class OTPAuthProvider extends AbstractPrimaryAuthenticationProvider
         if (! $req) {
             return AuthenticationResponse::newAbstain();
         }
-        $redis = new Redis;
-        $redis->connect(getenv('REDIS_HOST'));
+        $redis = PersistRedis::connect();
         $userID = $redis->get("otp:{$req->password}");
         $user = User::newFromId($userID);
         if (! $user || $req->username != $user->getName()) {

@@ -5,7 +5,6 @@ namespace ZetaExtension\Auth;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Rest\Response;
 use MediaWiki\Rest\SimpleHandler;
-use Redis;
 use Wikimedia\ParamValidator\ParamValidator;
 
 class RestSocialBridge extends SimpleHandler
@@ -97,8 +96,7 @@ class RestSocialBridge extends SimpleHandler
 
     private function popPayload(string $token): ?array
     {
-        $redis = new Redis;
-        $redis->connect(getenv('REDIS_HOST'));
+        $redis = PersistRedis::connect();
 
         $raw = $redis->getDel("mwbridge:{$token}");
         if (! is_string($raw) || $raw === '') {

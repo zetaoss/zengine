@@ -21,7 +21,9 @@ zengine 이미지는 설정을 두 경로로 받는다.
 | `INTERNAL_SECRET_KEY` | | 내부 API(`/api/internal/*`) 인증 키. 아바타 서비스와 공유 |
 | `LOG_LEVEL` | `info` | 로그 레벨 |
 | `DB_HOST`, `DB_PORT`(3306), `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` | | MariaDB |
-| `REDIS_HOST`, `REDIS_PORT`(6379) | | Redis. goapp 작업 큐(Asynq: server, worker, scheduler, tool) 저장소이자 캐시. 처리 대기 중인 작업이 들어 있으므로 캐시처럼 퇴출(eviction)하거나 비우면 작업이 사라진다 |
+| `REDIS_PERSIST_HOST`, `REDIS_PERSIST_PORT` | `REDIS_HOST`, `REDIS_PORT` | 퇴출되면 안 되는 데이터용 Redis: 작업 큐(Asynq), 인증 토큰, 요청 횟수 제한. [redis.md](redis.md) |
+| `REDIS_VOLATILE_HOST`, `REDIS_VOLATILE_PORT` | `REDIS_HOST`, `REDIS_PORT` | 퇴출되어도 되는 데이터용 Redis: 캐시. [redis.md](redis.md) |
+| `REDIS_HOST`, `REDIS_PORT` | (6379) | 이전의 단일 Redis 설정. 역할별 변수가 없을 때만 쓰인다 |
 | `AD_CLIENT`, `AD_SLOTS` | | 광고. `AD_SLOTS`는 쉼표 구분 |
 | `GA_MEASUREMENT_ID`, `GA_PROPERTY_ID`, `GA_TIMEZONE`, `GSC_SITE_URL` | | Google Analytics / Search Console |
 | `GA_READER_FILE` | | GA/GSC 조회용 서비스 계정 JSON 파일 경로 |
@@ -37,7 +39,7 @@ goapp은 시작할 때 이 값을 읽어 프런트엔드에 `window.ZCONF`(`avat
 | 변수 | 사용처 |
 | --- | --- |
 | `APP_URL` | MediaWiki 설정의 `$wgServer` |
-| `REDIS_HOST` | ZetaExtension 인증 상태(OTP, 소셜 로그인 연계, `includes/Auth/*`). goapp과 같은 Redis |
+| `REDIS_PERSIST_HOST`, `REDIS_PERSIST_PORT` (없으면 `REDIS_HOST`, `REDIS_PORT`) | ZetaExtension 인증 상태(OTP, 소셜 로그인 연계, `includes/Auth/PersistRedis.php`). goapp이 쓴 토큰을 읽는다 |
 | `MW_INSTALL_PATH` | ZetaExtension 유지보수 스크립트. 운영 이미지(`prod`)에서 `/app/w`로 설정 |
 
 ### `.env.example`에만 있는 키
@@ -74,11 +76,10 @@ ZetaSkin(`mwz/skins/ZetaSkin/includes/SkinZetaSkin.php`)은 다음 PHP 상수를
 원칙: **MediaWiki 설정 PHP 코드는 이 저장소에서 관리하고 이미지에 넣는다. 환경마다 다른 값과 비밀값은 환경변수로만 받는다.**
 
 - `mw/settings/`에 `LocalSettings.php`(진입점), `BaseSettings.php`, `ExtensionSettings.php`를 두고 이미지에 포함한다. 배포 환경은 Settings 파일을 제공하지 않는다.
-- 지금 설정 파일에 들어 있는 값은 `getenv()`로 읽는다. 기존 변수(`DB_*`, `REDIS_*`, `AWS_*`, `AVATAR_BASE_URL`, `GA_MEASUREMENT_ID`, `AD_*`)를 재사용하고, 다음을 추가한다(이름은 확정 전).
+- 지금 설정 파일에 들어 있는 값은 `getenv()`로 읽는다. 기존 변수(`DB_*`, `REDIS_PERSIST_*`/`REDIS_VOLATILE_*`([redis.md](redis.md)), `AWS_*`, `AVATAR_BASE_URL`, `GA_MEASUREMENT_ID`, `AD_*`)를 재사용하고, 다음을 추가한다(이름은 확정 전).
 
   | 변수 | 용도 |
   | --- | --- |
-  | `REDIS_SESSION_HOST` | 세션용 Redis |
   | `MW_SECRET_KEY`, `MW_UPGRADE_KEY` | `$wgSecretKey`, `$wgUpgradeKey` |
   | `SHELLBOX_SCORE_URL`, `SHELLBOX_SECRET_KEY` | Score 렌더링 |
   | `MAILAPI_ENDPOINT` | MailAPI 확장 |

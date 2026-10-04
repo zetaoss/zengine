@@ -36,7 +36,15 @@ type DBConfig struct {
 	Password string
 }
 
+// RedisConfig holds the two Redis roles.
+// Persist must not evict or lose data: task queues, auth tokens, rate-limit counters.
+// Volatile may evict anything: caches.
 type RedisConfig struct {
+	Persist  RedisEndpoint
+	Volatile RedisEndpoint
+}
+
+type RedisEndpoint struct {
 	Host string
 	Port int
 }
@@ -114,8 +122,17 @@ func Load() (*Config, error) {
 	cfg.DB.Username = lookup(overrides, "DB_USERNAME")
 	cfg.DB.Password = lookup(overrides, "DB_PASSWORD")
 
-	cfg.Redis.Host = lookup(overrides, "REDIS_HOST")
-	cfg.Redis.Port = lookupInt(overrides, "REDIS_PORT", 6379)
+	// REDIS_HOST/REDIS_PORT are the legacy single endpoint, used for a role whose own variables are unset.
+	legacyRedisHost := lookup(overrides, "REDIS_HOST")
+	legacyRedisPort := lookupInt(overrides, "REDIS_PORT", 6379)
+	cfg.Redis.Persist = RedisEndpoint{
+		Host: lookupString(overrides, "REDIS_PERSIST_HOST", legacyRedisHost),
+		Port: lookupInt(overrides, "REDIS_PERSIST_PORT", legacyRedisPort),
+	}
+	cfg.Redis.Volatile = RedisEndpoint{
+		Host: lookupString(overrides, "REDIS_VOLATILE_HOST", legacyRedisHost),
+		Port: lookupInt(overrides, "REDIS_VOLATILE_PORT", legacyRedisPort),
+	}
 
 	cfg.Ads.Client = lookup(overrides, "AD_CLIENT")
 	cfg.Ads.Slots = lookupList(overrides, "AD_SLOTS")

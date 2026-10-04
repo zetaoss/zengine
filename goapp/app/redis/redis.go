@@ -13,18 +13,16 @@ import (
 	goredis "github.com/redis/go-redis/v9"
 )
 
-func Address(cfg *config.Config) string {
+// Address returns host:port (or a redis:// URI) for an endpoint, defaulting to 127.0.0.1:6379.
+func Address(ep config.RedisEndpoint) string {
 	addr := "127.0.0.1:6379"
-	if cfg == nil || cfg.Redis.Host == "" {
-		return addr
-	}
-	host := strings.TrimSpace(cfg.Redis.Host)
-	port := cfg.Redis.Port
-	if port <= 0 {
-		port = 6379
-	}
+	host := strings.TrimSpace(ep.Host)
 	if host == "" {
 		return addr
+	}
+	port := ep.Port
+	if port <= 0 {
+		port = 6379
 	}
 	if strings.HasPrefix(host, "redis://") || strings.HasPrefix(host, "rediss://") || strings.Contains(host, ":") {
 		return host
@@ -32,16 +30,27 @@ func Address(cfg *config.Config) string {
 	return net.JoinHostPort(host, fmt.Sprintf("%d", port))
 }
 
+// AsynqConnOpt connects task queues to the persist Redis: queued tasks must not be evicted.
 func AsynqConnOpt(cfg *config.Config) (asynq.RedisConnOpt, error) {
-	addr := Address(cfg)
+	addr := Address(cfg.Redis.Persist)
 	if strings.HasPrefix(addr, "redis://") || strings.HasPrefix(addr, "rediss://") {
 		return asynq.ParseRedisURI(addr)
 	}
 	return asynq.RedisClientOpt{Addr: addr}, nil
 }
 
-func Open(cfg *config.Config) (*goredis.Client, error) {
-	addr := Address(cfg)
+// OpenPersist opens the Redis for data that must not be lost (tokens, rate-limit counters).
+func OpenPersist(cfg *config.Config) (*goredis.Client, error) {
+	return open(cfg.Redis.Persist)
+}
+
+// OpenVolatile opens the Redis for data that may be evicted (caches).
+func OpenVolatile(cfg *config.Config) (*goredis.Client, error) {
+	return open(cfg.Redis.Volatile)
+}
+
+func open(ep config.RedisEndpoint) (*goredis.Client, error) {
+	addr := Address(ep)
 
 	var opts *goredis.Options
 	var err error

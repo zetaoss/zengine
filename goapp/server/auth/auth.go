@@ -141,7 +141,8 @@ func mwAuthRedisClient(cfg *config.Config) *goredis.Client {
 	if mwAuthRedis != nil {
 		return mwAuthRedis
 	}
-	client, err := appredis.Open(cfg)
+	// The MediaWiki user lookup is a short-lived cache, so it lives on the volatile Redis.
+	client, err := appredis.OpenVolatile(cfg)
 	if err == nil {
 		mwAuthRedis = client
 	}
