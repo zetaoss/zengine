@@ -46,13 +46,13 @@ pending migrations and run `ctl migrate` when appropriate.
 
 ## MediaWiki Extensions
 
-`mw/extensions.yaml` is the single list of extra (non-bundled) MediaWiki extensions: which are
+`mw/extensions.yaml` is the single list of MediaWiki extensions, in two sections (`bundled`, `extra`): which are
 enabled, where they come from (repo and tag), and their
 configuration. The image installs the enabled ones, and
-`ExtraExtensionSettings.php` (`wfLoadExtension` + configuration) is generated from
+`ExtensionSettings.php` (`wfLoadExtension` + configuration) is generated from
 it. See the header of that file for the fields.
 
 ```sh
-make extension-settings   # print the generated ExtraExtensionSettings.php
+make extension-settings   # print the generated ExtensionSettings.php
 make composer-lock        # after adding/removing installed extensions; commit the lock
 ```

@@ -1,7 +1,7 @@
-// Extra (non-bundled) MediaWiki extensions from mw/extensions.yaml (see the header of that file).
+// MediaWiki extensions from mw/extensions.yaml (see the header of that file).
 //
-//   node hack/extensions.mjs [install]      clone enabled git extensions into EXTENSIONS_DIR
-//   node hack/extensions.mjs settings [out] write ExtraExtensionSettings.php (stdout when out is omitted)
+//   node hack/extensions.mjs [install]      clone enabled extra extensions with repo/tag into EXTENSIONS_DIR
+//   node hack/extensions.mjs settings [out] write ExtensionSettings.php (stdout when out is omitted)
 //
 // Requires hack/node_modules (pnpm -C hack install).
 import {
@@ -25,20 +25,31 @@ const MW_DIR = resolve(ROOT, "mw");
 const CONFIG = resolve(MW_DIR, "extensions.yaml");
 const COMMIT_SHA = /^[0-9a-f]{40}$/;
 const NAME = /^[A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)?$/;
-const FIELDS = new Set(["name", "enabled", "repo", "tag", "local", "load", "config", "config_file"]);
+const FIELDS = new Set(["name", "enabled", "repo", "tag", "local", "load", "config"]);
 const EXTENSIONS_DIR = resolve(process.env.EXTENSIONS_DIR ?? resolve(ROOT, "w/extensions"));
 
 function fail(message) {
   throw new Error(`${CONFIG}: ${message}`);
 }
 
+const SECTIONS = ["bundled", "extra"];
+
+// Returns all entries, bundled first, each tagged with its section.
 function loadExtensions() {
-  const entries = parse(readFileSync(CONFIG, "utf8"));
-  if (!Array.isArray(entries)) fail("expected a list of extensions");
+  const doc = parse(readFileSync(CONFIG, "utf8"));
+  if (typeof doc !== "object" || doc === null || Array.isArray(doc)) fail("expected sections bundled and extra");
+  for (const key of Object.keys(doc)) {
+    if (!SECTIONS.includes(key)) fail(`unknown section ${key}`);
+  }
+  const entries = [];
+  for (const section of SECTIONS) {
+    if (!Array.isArray(doc[section])) fail(`${section} must be a list`);
+    for (const entry of doc[section]) entries.push({ section, entry });
+  }
 
   const names = new Set();
-  for (const entry of entries) {
-    const where = entry?.name ? `extension ${entry.name}` : "an extension";
+  for (const { section, entry } of entries) {
+    const where = `${section}: ${entry?.name ?? "an extension"}`;
     if (typeof entry !== "object" || entry === null) fail(`${where}: expected a mapping`);
     for (const key of Object.keys(entry)) {
       if (!FIELDS.has(key)) fail(`${where}: unknown field ${key}`);
@@ -53,21 +64,18 @@ function loadExtensions() {
     if ((entry.repo === undefined) !== (entry.tag === undefined)) fail(`${where}: set both repo and tag`);
     if (entry.repo !== undefined && entry.local) fail(`${where}: repo/tag and local are exclusive`);
     if (entry.local !== undefined && entry.local !== true) fail(`${where}: local must be true when set`);
-    if (entry.repo === undefined && !entry.local) fail(`${where}: set repo/tag, or local: true`);
+    if (section === "bundled" && (entry.repo !== undefined || entry.local)) {
+      fail(`${where}: bundled extensions take no repo/tag/local`);
+    }
+    if (section === "extra" && entry.repo === undefined && !entry.local) fail(`${where}: set repo/tag, or local: true`);
     if (entry.load !== undefined) {
       if (!Array.isArray(entry.load) || entry.load.length === 0 || !entry.load.every((n) => NAME.test(n))) {
         fail(`${where}: load must be a non-empty list of extension names`);
       }
     }
     if (entry.config !== undefined && typeof entry.config !== "string") fail(`${where}: config must be a string`);
-    if (entry.config_file !== undefined) {
-      const path = resolve(MW_DIR, entry.config_file);
-      if (!path.startsWith(`${MW_DIR}/`) || !existsSync(path)) {
-        fail(`${where}: config_file not found under mw/: ${entry.config_file}`);
-      }
-    }
   }
-  return entries;
+  return entries.map(({ section, entry }) => ({ ...entry, section }));
 }
 
 // ---- install ----
@@ -163,10 +171,6 @@ function install(entries) {
 
 // ---- settings ----
 
-function phpBody(path) {
-  return readFileSync(path, "utf8").replace(/^<\?php\s*/, "").trimEnd();
-}
-
 function phpString(value) {
   return `'${value.replaceAll("\\", "\\\\").replaceAll("'", "\\'")}'`;
 }
@@ -175,9 +179,14 @@ function settings(entries) {
   const lines = [
     "<?php",
     "",
-    "// ExtraExtensionSettings.php: generated from mw/extensions.yaml by hack/extensions.mjs. Do not edit.",
+    "// ExtensionSettings.php: generated from mw/extensions.yaml by hack/extensions.mjs. Do not edit.",
   ];
+  let section;
   for (const entry of entries) {
+    if (entry.section !== section) {
+      section = entry.section;
+      lines.push("", `// ==== ${section} ====`);
+    }
     lines.push("", `// ${entry.name}`);
     if (!entry.enabled) {
       lines.push("// disabled");
@@ -189,7 +198,6 @@ function settings(entries) {
     } else {
       lines.push(`wfLoadExtensions([${load.map(phpString).join(", ")}]);`);
     }
-    if (entry.config_file) lines.push(phpBody(resolve(MW_DIR, entry.config_file)));
     if (entry.config) lines.push(entry.config.trimEnd());
   }
   return `${lines.join("\n")}\n`;

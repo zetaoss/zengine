@@ -1,89 +1,198 @@
-# Extra MediaWiki extensions: the ones not bundled with MediaWiki. Single source for what is
-# installed into the image and how it is loaded. Bundled extensions are loaded and configured in
-# the MediaWiki settings (BaseSettings.php), not here.
+# MediaWiki extensions: the single source for which extensions are installed and loaded, and how
+# they are configured. hack/extensions.mjs reads this file to
+#   - install: clone every enabled `extra` entry that has repo/tag (image "extensions" stage)
+#   - settings: generate ExtensionSettings.php (wfLoadExtension + config; bundled, then extra,
+#     each in list order)
 #
-# hack/extensions.mjs reads this file to
-#   - install: clone every enabled entry that has repo/tag (image "extensions" stage)
-#   - settings: generate ExtraExtensionSettings.php (wfLoadExtension + config, in this order)
+# Sections
+#   bundled  ship with MediaWiki. Only loaded and configured; repo/tag/local are not allowed.
+#   extra    not bundled. Installed from repo/tag, or provided by this repository (local: true).
 #
 # Fields
 #   name     extension directory name; also what wfLoadExtension() receives
-#   enabled  false: neither installed nor loaded
-#   repo/tag git source. tag is a git tag, a MediaWiki REL branch for gerrit extensions
+#   enabled  false: not loaded (and, for extra, not installed)
+#   repo/tag git source (extra). tag is a git tag, a MediaWiki REL branch for gerrit extensions
 #            (e.g. REL1_43; follows backports), or a full commit SHA for repositories without tags
-#   local    true: provided by this repository (mwz/extensions/<name>), not cloned
+#   local    true: provided by this repository (mwz/extensions/<name>), not cloned (extra)
 #   load     list of names for wfLoadExtensions() when sub-modules are needed (default: [name])
 #   config   PHP statements emitted after loading (no <?php). Use getenv() for environment values
 #            and secrets; see docs/config.md
-#   config_file  PHP file under mw/, inlined after loading, for long configuration
-# Every entry has either repo/tag or local.
 # Local overrides in mwz/extensions/<name> are copied over a clone (e.g. MsUpload).
 
-# Installed from git
-- name: AWS
-  repo: https://github.com/edwardspec/mediawiki-aws-s3.git
-  tag: v0.14.0
-  enabled: true
-  config_file: extension-settings/AWS.php
-- name: CharInsert
-  repo: https://gerrit.wikimedia.org/r/mediawiki/extensions/CharInsert.git
-  tag: REL1_43
-  enabled: true
-- name: CrawlerProtection
-  repo: https://github.com/mywikis/CrawlerProtection.git
-  tag: d033cdbac069db70f825be2f6f731930b7f18de7
-  enabled: true
-- name: EmbedVideo
-  repo: https://github.com/StarCitizenWiki/mediawiki-extensions-EmbedVideo.git
-  tag: v4.1.0
-  enabled: true
-- name: MailAPI
-  repo: https://github.com/mailapi/mediawiki-extensions-MailAPI.git
-  tag: v0.1.1
-  enabled: true
-  config: |
-    $wgMailAPIEndpoint = getenv('MAILAPI_ENDPOINT');
-- name: MsUpload
-  repo: https://gerrit.wikimedia.org/r/mediawiki/extensions/MsUpload.git
-  tag: REL1_43
-  enabled: true
-  config: |
-    $wgMSU_useDragDrop    = true;
-    $wgMSU_showAutoCat    = true;
-    $wgMSU_checkAutoCat   = true;
-    $wgMSU_useMsLinks     = false;
-    $wgMSU_confirmReplace = true;
-    $wgMSU_imgParams      = '400px';
-- name: Score
-  repo: https://gerrit.wikimedia.org/r/mediawiki/extensions/Score.git
-  tag: REL1_43
-  enabled: true
-  config: |
-    $wgScoreImageMagickConvert = '/usr/bin/convert';
-    $wgScoreFileBackend        = 'AmazonS3';
-    $wgScorePath               = '//' . getenv('AWS_BUCKET') . '.s3.amazonaws.com/lilypond/score-render';
-- name: SimpleMaps
-  repo: https://github.com/jmnote/SimpleMaps.git
-  tag: v0.2.2
-  enabled: true
-- name: SimpleMarkdown
-  repo: https://github.com/jmnote/SimpleMarkdown.git
-  tag: v0.1.1
-  enabled: true
-- name: SimpleMathJax
-  repo: https://github.com/jmnote/SimpleMathJax.git
-  tag: v0.9.0
-  enabled: true
-- name: SimpleMermaid
-  repo: https://github.com/jmnote/SimpleMermaid.git
-  tag: v0.1.4
-  enabled: true
-- name: TemplateStyles
-  repo: https://gerrit.wikimedia.org/r/mediawiki/extensions/TemplateStyles.git
-  tag: REL1_43
-  enabled: true
+bundled:
+  - name: AbuseFilter
+    enabled: true
+  - name: CategoryTree
+    enabled: true
+  - name: Cite
+    enabled: true
+  - name: CiteThisPage
+    enabled: true
+  - name: CodeEditor
+    enabled: true
+  - name: ConfirmEdit
+    # For reCAPTCHA: load: [ConfirmEdit, ConfirmEdit/ReCaptchaNoCaptcha] and set
+    # $wgCaptchaClass, $wgReCaptchaSiteKey, $wgReCaptchaSecretKey in config.
+    enabled: true
+    config: |
+      $wgAutoConfirmAge   = 90 * 86400;
+      $wgAutoConfirmCount = 100;
+  - name: DiscussionTools
+    enabled: true
+  - name: Echo
+    enabled: true
+  - name: Gadgets
+    enabled: true
+  - name: ImageMap
+    enabled: true
+  - name: InputBox
+    enabled: true
+  - name: Interwiki
+    enabled: true
+  - name: Linter
+    enabled: true
+  - name: LoginNotify
+    enabled: true
+  - name: Math
+    # SimpleMathJax (extra) renders <math> instead.
+    enabled: false
+  - name: MultimediaViewer
+    enabled: true
+  - name: Nuke
+    enabled: true
+  - name: OATHAuth
+    enabled: true
+  - name: PageImages
+    enabled: true
+  - name: ParserFunctions
+    enabled: true
+  - name: PdfHandler
+    enabled: true
+  - name: Poem
+    enabled: true
+  - name: ReplaceText
+    enabled: true
+  - name: Scribunto
+    enabled: true
+  - name: SecureLinkFixer
+    enabled: true
+  - name: SpamBlacklist
+    enabled: true
+  - name: SyntaxHighlight_GeSHi
+    enabled: true
+  - name: TemplateData
+    enabled: true
+  - name: TextExtracts
+    enabled: true
+  - name: Thanks
+    enabled: true
+  - name: TitleBlacklist
+    enabled: true
+  - name: VisualEditor
+    enabled: true
+  - name: WikiEditor
+    enabled: true
+    config: |
+      $wgWikiEditorRealtimePreview = true;
 
-# Provided by this repository
-- name: ZetaExtension
-  local: true
-  enabled: true
+extra:
+  - name: AWS
+    # S3 as the file backend for uploads, thumbnails and Score renderings.
+    repo: https://github.com/edwardspec/mediawiki-aws-s3.git
+    tag: v0.14.0
+    enabled: true
+    config: |
+      $wgAWSCredentials = [
+          'key'    => getenv('AWS_ACCESS_KEY_ID'),
+          'secret' => getenv('AWS_SECRET_ACCESS_KEY'),
+          'token'  => false,
+      ];
+      $wgAWSRegion = getenv('AWS_DEFAULT_REGION');
+
+      $zetaS3Bucket = getenv('AWS_BUCKET');
+      $zetaS3Url    = "https://$zetaS3Bucket.s3.amazonaws.com";
+
+      $wgFileBackends['s3']['containerPaths'] = [
+          'zetawiki-local-public'  => $zetaS3Bucket,
+          'zetawiki-local-thumb'   => "$zetaS3Bucket/thumb",
+          'zetawiki-local-deleted' => "$zetaS3Bucket/deleted",
+          'zetawiki-local-temp'    => "$zetaS3Bucket/temp",
+          'zetawiki-score-render'  => "$zetaS3Bucket/lilypond/score-render",
+      ];
+      $wgLocalFileRepo = [
+          'class'      => 'LocalRepo',
+          'name'       => 'local',
+          'backend'    => 'AmazonS3',
+          'url'        => '/w/img_auth.php',
+          'hashLevels' => 2,
+          'zones'      => [
+              'public'       => ['url' => $zetaS3Url],
+              'thumb'        => ['url' => "$zetaS3Url/thumb"],
+              'temp'         => ['url' => false],
+              'deleted'      => ['url' => false],
+              'score-render' => ['url' => "$zetaS3Url/lilypond/score-render"],
+          ],
+      ];
+      unset($zetaS3Bucket, $zetaS3Url);
+  - name: CharInsert
+    repo: https://gerrit.wikimedia.org/r/mediawiki/extensions/CharInsert.git
+    tag: REL1_43
+    enabled: true
+  - name: CrawlerProtection
+    repo: https://github.com/mywikis/CrawlerProtection.git
+    tag: d033cdbac069db70f825be2f6f731930b7f18de7
+    enabled: true
+  - name: EmbedVideo
+    repo: https://github.com/StarCitizenWiki/mediawiki-extensions-EmbedVideo.git
+    tag: v4.1.0
+    enabled: true
+  - name: MailAPI
+    repo: https://github.com/mailapi/mediawiki-extensions-MailAPI.git
+    tag: v0.1.1
+    enabled: true
+    config: |
+      $wgMailAPIEndpoint = getenv('MAILAPI_ENDPOINT');
+  - name: MsUpload
+    repo: https://gerrit.wikimedia.org/r/mediawiki/extensions/MsUpload.git
+    tag: REL1_43
+    enabled: true
+    config: |
+      $wgMSU_useDragDrop    = true;
+      $wgMSU_showAutoCat    = true;
+      $wgMSU_checkAutoCat   = true;
+      $wgMSU_useMsLinks     = false;
+      $wgMSU_confirmReplace = true;
+      $wgMSU_imgParams      = '400px';
+  - name: Score
+    repo: https://gerrit.wikimedia.org/r/mediawiki/extensions/Score.git
+    tag: REL1_43
+    enabled: true
+    config: |
+      $wgScoreImageMagickConvert = '/usr/bin/convert';
+      $wgScoreFileBackend        = 'AmazonS3';
+      $wgScorePath               = '//' . getenv('AWS_BUCKET') . '.s3.amazonaws.com/lilypond/score-render';
+  - name: SimpleMaps
+    repo: https://github.com/jmnote/SimpleMaps.git
+    tag: v0.2.2
+    enabled: true
+  - name: SimpleMarkdown
+    repo: https://github.com/jmnote/SimpleMarkdown.git
+    tag: v0.1.1
+    enabled: true
+  - name: SimpleMathJax
+    repo: https://github.com/jmnote/SimpleMathJax.git
+    tag: v0.9.0
+    enabled: true
+  - name: SimpleMermaid
+    repo: https://github.com/jmnote/SimpleMermaid.git
+    tag: v0.1.4
+    enabled: true
+  - name: TemplateStyles
+    repo: https://gerrit.wikimedia.org/r/mediawiki/extensions/TemplateStyles.git
+    tag: REL1_43
+    enabled: true
+
+    # Provided by this repository
+  - name: ZetaExtension
+    local: true
+    enabled: true

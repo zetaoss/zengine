@@ -31,7 +31,7 @@ extensions:
 	pnpm -C hack install --frozen-lockfile
 	node hack/extensions.mjs install
 
-# Print the ExtraExtensionSettings.php generated from mw/extensions.yaml.
+# Print the ExtensionSettings.php generated from mw/extensions.yaml.
 .PHONY: extension-settings
 extension-settings:
 	pnpm -C hack install --frozen-lockfile

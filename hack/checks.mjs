@@ -44,9 +44,9 @@ function checkGoapp() {
   run("go", ["build", "./..."], { cwd });
 }
 
-// mw/extensions.yaml is valid and generates syntactically valid ExtraExtensionSettings.php.
+// mw/extensions.yaml is valid and generates syntactically valid ExtensionSettings.php.
 function checkMwExtensions() {
-  const out = "/tmp/make-checks-ExtraExtensionSettings.php";
+  const out = "/tmp/make-checks-ExtensionSettings.php";
   run("pnpm", ["-C", "hack", "install", "--frozen-lockfile"]);
   run("node", ["hack/extensions.mjs", "settings", out]);
   run("php", ["-l", out]);

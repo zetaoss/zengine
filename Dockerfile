@@ -25,7 +25,6 @@ RUN corepack enable \
     && pnpm -C hack install --frozen-lockfile
 COPY hack/extensions.mjs hack/
 COPY mw/extensions.yaml mw/
-COPY mw/extension-settings mw/extension-settings
 COPY mwz/extensions/MsUpload mwz/extensions/MsUpload
 RUN EXTENSIONS_DIR=/extensions node hack/extensions.mjs install
 
