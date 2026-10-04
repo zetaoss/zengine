@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Stages:
-#   extensions  MediaWiki extensions from mw/extensions.yaml
+#   extensions  MediaWiki extensions from mwz/extensions.yaml
 #   base        MediaWiki runtime + PHP extensions + extensions (formerly the zbase image)
 #   dev         base + development tools (formerly the zdev image); `docker build --target dev`
 #   prod        base + application (default target)
@@ -24,7 +24,7 @@ RUN corepack enable \
     && corepack prepare pnpm@11 --activate \
     && pnpm -C hack install --frozen-lockfile
 COPY hack/extensions.mjs hack/
-COPY mw/extensions.yaml mw/
+COPY mwz/extensions.yaml mwz/
 COPY mwz/extensions/MsUpload mwz/extensions/MsUpload
 RUN EXTENSIONS_DIR=/extensions node hack/extensions.mjs install
 

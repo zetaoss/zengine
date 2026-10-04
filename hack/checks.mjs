@@ -44,7 +44,7 @@ function checkGoapp() {
   run("go", ["build", "./..."], { cwd });
 }
 
-// mw/extensions.yaml is valid and generates syntactically valid ExtraExtensionSettings.php.
+// mwz/extensions.yaml is valid and generates syntactically valid ExtraExtensionSettings.php.
 function checkMwExtensions() {
   const out = "/tmp/make-checks-ExtraExtensionSettings.php";
   run("pnpm", ["-C", "hack", "install", "--frozen-lockfile"]);
@@ -53,7 +53,7 @@ function checkMwExtensions() {
 }
 
 const cachedChecks = [
-  { name: "check-mw-extensions", paths: ["mw", "hack/extensions.mjs", "hack/package.json", "hack/pnpm-lock.yaml"], action: checkMwExtensions },
+  { name: "check-mw-extensions", paths: ["mwz/extensions.yaml", "hack/extensions.mjs", "hack/package.json", "hack/pnpm-lock.yaml"], action: checkMwExtensions },
   { name: "check-extension", paths: ["mwz/extensions/ZetaExtension"], action: () => checkExtension("mwz/extensions/ZetaExtension") },
   { name: "check-skin", paths: ["mwz/skins/ZetaSkin"], action: () => checkExtension("mwz/skins/ZetaSkin") },
   { name: "check-main-svelte", paths: ["svelte", "hack/svelte-common-deps.mjs", "pnpm-lock.yaml", "package.json"], action: checkMainSvelte },

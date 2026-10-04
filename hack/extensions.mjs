@@ -1,4 +1,4 @@
-// Extra (non-bundled) MediaWiki extensions from mw/extensions.yaml (see the header of that file).
+// Extra (non-bundled) MediaWiki extensions from mwz/extensions.yaml (see the header of that file).
 //
 //   node hack/extensions.mjs [install]      clone the extensions into EXTENSIONS_DIR
 //   node hack/extensions.mjs settings [out] write ExtraExtensionSettings.php (stdout when out is omitted)
@@ -21,7 +21,7 @@ import { dirname, resolve } from "node:path";
 import { parse } from "yaml";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const MW_DIR = resolve(ROOT, "mw");
+const MW_DIR = resolve(ROOT, "mwz");
 const CONFIG = resolve(MW_DIR, "extensions.yaml");
 const COMMIT_SHA = /^[0-9a-f]{40}$/;
 const NAME = /^[A-Za-z0-9._-]+$/;
@@ -155,7 +155,7 @@ function settings(entries) {
   const lines = [
     "<?php",
     "",
-    "// ExtraExtensionSettings.php: generated from mw/extensions.yaml by hack/extensions.mjs. Do not edit.",
+    "// ExtraExtensionSettings.php: generated from mwz/extensions.yaml by hack/extensions.mjs. Do not edit.",
   ];
   for (const entry of entries) {
     lines.push("", `// ${entry.name}`);
