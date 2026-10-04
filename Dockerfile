@@ -25,7 +25,6 @@ RUN corepack enable \
     && pnpm -C hack install --frozen-lockfile
 COPY hack/extensions.mjs hack/
 COPY mwz/extensions.yaml mwz/extensions.lock mwz/
-COPY mwz/extensions/MsUpload mwz/extensions/MsUpload
 RUN EXTENSIONS_DIR=/extensions node hack/extensions.mjs install
 
 # https://hub.docker.com/_/mediawiki
@@ -61,6 +60,14 @@ RUN --mount=type=bind,from=composer:2.10,source=/usr/bin/composer,target=/usr/lo
     cp composer.local.json-sample composer.local.json; \
     if [ "$COMPOSER_MODE" = update ]; then rm -f composer.lock; fi; \
     composer "$COMPOSER_MODE" --no-dev --no-scripts --optimize-autoloader
+
+# Patches to MediaWiki and its extensions (mwz/patches, docs/patches.md). A patch that no longer
+# applies, e.g. after a MediaWiki or extension upgrade, fails the build.
+RUN --mount=type=bind,source=mwz/patches,target=/tmp/patches \
+    set -eux; \
+    for p in /tmp/patches/*.patch; do \
+        patch -d /var/www/html -p1 --forward --fuzz=0 --no-backup-if-mismatch < "$p"; \
+    done
 
 # MediaWiki settings (docs/config.md). The deployment provides SiteSettings.php and ExtensionSettings.php.
 COPY mwz/settings/LocalSettings.php mwz/settings/BaseSettings.php /var/www/html/

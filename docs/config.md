@@ -86,13 +86,14 @@ ZetaSkin(`mwz/skins/ZetaSkin/includes/SkinZetaSkin.php`)이 쓰는 PHP 상수는
 
 ## 그 밖의 외부 주입 파일
 
+MediaWiki 패치는 이미지에 들어 있다([patches.md](patches.md)).
+
 | 파일 | 목표 | 현재 | 내용 |
 | --- | --- | --- | --- |
 | 컨테이너 시작 스크립트 | 자체 보유 (dev/prod별) | 외부 주입 | 설정 파일 배치, 서비스 시작 |
 | `nginx.conf`, `php-fpm.conf`, `php.ini` | 자체 보유 (dev/prod별) | 외부 주입 | 웹 서버, PHP |
 | `supervisord.conf` | 자체 보유 (dev) | 외부 주입 | 개발 이미지의 프로세스 구성 |
 | `dist_ads.txt`, `dist_robots.txt` | 자체 보유 | 외부 주입 | 정적 파일(`/app/svelte/dist/`) |
-| `SyntaxHighlight.php`, `MsUpload.less`, `mediawiki.skin.defaults.less` | 자체 보유 | 외부 주입 | MediaWiki 패치 |
 | GA 서비스 계정 JSON | 외부 주입(선택) | 외부 주입 | 비밀 파일. `GA_READER_FILE`이 경로를 가리킨다 |
 
 목표 구조로 옮기면 외부 주입 파일은 `SiteSettings.php`, `ExtensionSettings.php`, 비밀 파일(GA 서비스 계정)만 남는다.
