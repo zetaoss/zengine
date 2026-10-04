@@ -92,7 +92,6 @@ ZetaSkin(`mwz/skins/ZetaSkin/includes/SkinZetaSkin.php`)이 쓰는 PHP 상수는
 | `nginx.conf`, `php-fpm.conf`, `php.ini` | 자체 보유 (dev/prod별) | 외부 주입 | 웹 서버, PHP |
 | `supervisord.conf` | 자체 보유 (dev) | 외부 주입 | 개발 이미지의 프로세스 구성 |
 | `dist_ads.txt`, `dist_robots.txt` | 자체 보유 | 외부 주입 | 정적 파일(`/app/svelte/dist/`) |
-| `dist_config.js` | 없앰 | 외부 주입 | 쓰이지 않는 것으로 보임. goapp이 같은 값을 `window.ZCONF`로 넣는다 |
 | `SyntaxHighlight.php`, `MsUpload.less`, `mediawiki.skin.defaults.less` | 자체 보유 | 외부 주입 | MediaWiki 패치 |
 | GA 서비스 계정 JSON | 외부 주입(선택) | 외부 주입 | 비밀 파일. `GA_READER_FILE`이 경로를 가리킨다 |
 
