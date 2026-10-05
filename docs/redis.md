@@ -16,9 +16,8 @@ zengine은 Redis를 데이터의 성격에 따라 두 역할로 나눠 쓴다. �
 
 | 변수 | 기본값 |
 | --- | --- |
-| `REDIS_PERSIST_HOST`, `REDIS_PERSIST_PORT` | 없으면 `REDIS_HOST`, `REDIS_PORT` |
-| `REDIS_VOLATILE_HOST`, `REDIS_VOLATILE_PORT` | 없으면 `REDIS_HOST`, `REDIS_PORT` |
-| `REDIS_HOST`, `REDIS_PORT`(6379) | 이전의 단일 Redis 설정. 역할별 변수가 없을 때만 쓰인다. 모든 배포가 역할별 변수로 옮기면 제거한다 |
+| `REDIS_PERSIST_HOST`, `REDIS_PERSIST_PORT` | 호스트 없음, 포트 6379 |
+| `REDIS_VOLATILE_HOST`, `REDIS_VOLATILE_PORT` | 호스트 없음, 포트 6379 |
 
 `REDIS_*_HOST`에는 호스트 이름 대신 `host:port`나 `redis://…` URI를 줄 수도 있다(goapp).
 

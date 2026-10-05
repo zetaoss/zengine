@@ -36,25 +36,29 @@ func TestLoadRedisRoles(t *testing.T) {
 		wantVolatile RedisEndpoint
 	}{
 		{
-			name:         "legacy REDIS_HOST serves both roles",
+			name:         "legacy variables are ignored",
 			env:          map[string]string{"REDIS_HOST": "redis-cache", "REDIS_PORT": "6380"},
-			wantPersist:  RedisEndpoint{Host: "redis-cache", Port: 6380},
-			wantVolatile: RedisEndpoint{Host: "redis-cache", Port: 6380},
+			wantPersist:  RedisEndpoint{Port: 6379},
+			wantVolatile: RedisEndpoint{Port: 6379},
 		},
 		{
-			name: "role variables take precedence",
+			name: "independent role endpoints",
 			env: map[string]string{
 				"REDIS_HOST":          "redis-cache",
 				"REDIS_PERSIST_HOST":  "redis-persist",
+				"REDIS_PERSIST_PORT":  "6382",
 				"REDIS_VOLATILE_HOST": "redis-volatile",
 				"REDIS_VOLATILE_PORT": "6381",
 			},
-			wantPersist:  RedisEndpoint{Host: "redis-persist", Port: 6379},
+			wantPersist:  RedisEndpoint{Host: "redis-persist", Port: 6382},
 			wantVolatile: RedisEndpoint{Host: "redis-volatile", Port: 6381},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			for _, k := range []string{"REDIS_HOST", "REDIS_PORT", "REDIS_PERSIST_HOST", "REDIS_PERSIST_PORT", "REDIS_VOLATILE_HOST", "REDIS_VOLATILE_PORT"} {
+				t.Setenv(k, "")
+			}
 			for k, v := range tt.env {
 				t.Setenv(k, v)
 			}

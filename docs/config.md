@@ -25,9 +25,8 @@ zengine 이미지는 설정을 두 가지로 받는다.
 | `INTERNAL_SECRET_KEY` | | 내부 API(`/api/internal/*`) 인증 키. 아바타 서비스와 공유 |
 | `LOG_LEVEL` | `info` | 로그 레벨 |
 | `DB_HOST`, `DB_PORT`(3306), `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` | | MariaDB |
-| `REDIS_PERSIST_HOST`, `REDIS_PERSIST_PORT` | `REDIS_HOST`, `REDIS_PORT` | 퇴출되면 안 되는 데이터용 Redis: 작업 큐(Asynq), 인증 토큰, 요청 횟수 제한. [redis.md](redis.md) |
-| `REDIS_VOLATILE_HOST`, `REDIS_VOLATILE_PORT` | `REDIS_HOST`, `REDIS_PORT` | 퇴출되어도 되는 데이터용 Redis: 캐시. [redis.md](redis.md) |
-| `REDIS_HOST`, `REDIS_PORT` | (6379) | 이전의 단일 Redis 설정. 역할별 변수가 없을 때만 쓰인다 |
+| `REDIS_PERSIST_HOST`, `REDIS_PERSIST_PORT` | 호스트 없음, 포트 6379 | 퇴출되면 안 되는 데이터용 Redis: 작업 큐(Asynq), 인증 토큰, 요청 횟수 제한. [redis.md](redis.md) |
+| `REDIS_VOLATILE_HOST`, `REDIS_VOLATILE_PORT` | 호스트 없음, 포트 6379 | 퇴출되어도 되는 데이터용 Redis: 캐시. [redis.md](redis.md) |
 | `AD_CLIENT`, `AD_SLOTS` | | 광고. `AD_SLOTS`는 쉼표 구분 |
 | `GA_MEASUREMENT_ID`, `GA_PROPERTY_ID`, `GA_TIMEZONE`, `GSC_SITE_URL` | | Google Analytics / Search Console |
 | `GA_READER_FILE` | | GA/GSC 조회용 서비스 계정 JSON 파일 경로 |
@@ -40,7 +39,7 @@ goapp은 시작할 때 이 값을 읽어 프런트엔드에 `window.ZCONF`(`avat
 
 ### MediaWiki (PHP)
 
-대부분 `BaseSettings.php`가 읽는다. 기본값이 없으므로 모두 설정한다(`MW_CDN_SERVERS`, `AD_*` 등 목록·선택 값은 비워도 된다). `BaseSettings.php`는 goapp과 달리 `REDIS_HOST`/`REDIS_PORT`로 대체하지 않는다.
+대부분 `BaseSettings.php`가 읽는다. 기본값이 없으므로 모두 설정한다(`MW_CDN_SERVERS`, `AD_*` 등 목록·선택 값은 비워도 된다). goapp과 MediaWiki 모두 역할별 Redis 변수를 쓴다.
 
 | 변수 | 사용처 |
 | --- | --- |
