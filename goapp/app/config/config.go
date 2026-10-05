@@ -44,7 +44,6 @@ type RedisConfig struct {
 
 type RedisEndpoint struct {
 	Host string
-	Port int
 }
 
 type AdsConfig struct {
@@ -109,16 +108,12 @@ func Load() (*Config, error) {
 	cfg.DB.Username = lookup("DB_USERNAME")
 	cfg.DB.Password = lookup("DB_PASSWORD")
 
-	// REDIS_HOST/REDIS_PORT are the legacy single endpoint, used for a role whose own variables are unset.
-	legacyRedisHost := lookup("REDIS_HOST")
-	legacyRedisPort := lookupInt("REDIS_PORT", 6379)
+	// Each role has its own host; the Redis port is fixed at 6379.
 	cfg.Redis.Persist = RedisEndpoint{
-		Host: lookupString("REDIS_PERSIST_HOST", legacyRedisHost),
-		Port: lookupInt("REDIS_PERSIST_PORT", legacyRedisPort),
+		Host: lookup("REDIS_PERSIST_HOST"),
 	}
 	cfg.Redis.Volatile = RedisEndpoint{
-		Host: lookupString("REDIS_VOLATILE_HOST", legacyRedisHost),
-		Port: lookupInt("REDIS_VOLATILE_PORT", legacyRedisPort),
+		Host: lookup("REDIS_VOLATILE_HOST"),
 	}
 
 	cfg.Ads.Client = lookup("AD_CLIENT")
