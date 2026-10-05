@@ -18,8 +18,8 @@
   commit: 6982ef6e10a8327a6ecc97eb036f4eb531a6f830
 - name: MailAPI
   repo: https://github.com/mailapi/mediawiki-extensions-MailAPI.git
-  tag: v0.1.1
-  commit: d65c7a98811ca2c96ab5b460b5551af0f7f57bb5
+  tag: v0.3.0
+  commit: 5a5de60a9d8d72e53edecc5e5a543a7cce13315e
 - name: MsUpload
   repo: https://gerrit.wikimedia.org/r/mediawiki/extensions/MsUpload.git
   tag: REL1_43

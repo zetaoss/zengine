@@ -19,7 +19,7 @@
   tag: v4.1.0
 - name: MailAPI
   repo: https://github.com/mailapi/mediawiki-extensions-MailAPI.git
-  tag: v0.1.1
+  tag: v0.3.0
 - name: MsUpload
   repo: https://gerrit.wikimedia.org/r/mediawiki/extensions/MsUpload.git
   tag: REL1_43
