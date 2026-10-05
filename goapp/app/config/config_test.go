@@ -36,13 +36,16 @@ func TestLoadRedisRoles(t *testing.T) {
 		wantVolatile RedisEndpoint
 	}{
 		{
-			name:         "legacy variables are ignored",
-			env:          map[string]string{"REDIS_HOST": "redis-cache", "REDIS_PORT": "6380"},
-			wantPersist:  RedisEndpoint{Port: 6379},
-			wantVolatile: RedisEndpoint{Port: 6379},
+			name: "legacy variables are ignored",
+			env: map[string]string{
+				"REDIS_HOST":          "redis-cache",
+				"REDIS_PORT":          "6380",
+				"REDIS_PERSIST_PORT":  "6381",
+				"REDIS_VOLATILE_PORT": "6382",
+			},
 		},
 		{
-			name: "independent role endpoints",
+			name: "independent role hosts; ports are fixed",
 			env: map[string]string{
 				"REDIS_HOST":          "redis-cache",
 				"REDIS_PERSIST_HOST":  "redis-persist",
@@ -50,8 +53,8 @@ func TestLoadRedisRoles(t *testing.T) {
 				"REDIS_VOLATILE_HOST": "redis-volatile",
 				"REDIS_VOLATILE_PORT": "6381",
 			},
-			wantPersist:  RedisEndpoint{Host: "redis-persist", Port: 6382},
-			wantVolatile: RedisEndpoint{Host: "redis-volatile", Port: 6381},
+			wantPersist:  RedisEndpoint{Host: "redis-persist"},
+			wantVolatile: RedisEndpoint{Host: "redis-volatile"},
 		},
 	}
 	for _, tt := range tests {

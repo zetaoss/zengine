@@ -25,8 +25,8 @@ zengine 이미지는 설정을 두 가지로 받는다.
 | `INTERNAL_SECRET_KEY` | | 내부 API(`/api/internal/*`) 인증 키. 아바타 서비스와 공유 |
 | `LOG_LEVEL` | `info` | 로그 레벨 |
 | `DB_HOST`, `DB_PORT`(3306), `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` | | MariaDB |
-| `REDIS_PERSIST_HOST`, `REDIS_PERSIST_PORT` | 호스트 없음, 포트 6379 | 퇴출되면 안 되는 데이터용 Redis: 작업 큐(Asynq), 인증 토큰, 요청 횟수 제한. [redis.md](redis.md) |
-| `REDIS_VOLATILE_HOST`, `REDIS_VOLATILE_PORT` | 호스트 없음, 포트 6379 | 퇴출되어도 되는 데이터용 Redis: 캐시. [redis.md](redis.md) |
+| `REDIS_PERSIST_HOST` | goapp은 `127.0.0.1`, MediaWiki는 호스트 설정 필요 (포트 `6379` 고정) | 퇴출되면 안 되는 데이터용 Redis: 작업 큐(Asynq), 인증 토큰, 요청 횟수 제한. [redis.md](redis.md) |
+| `REDIS_VOLATILE_HOST` | goapp은 `127.0.0.1`, MediaWiki는 호스트 설정 필요 (포트 `6379` 고정) | 퇴출되어도 되는 데이터용 Redis: 캐시. [redis.md](redis.md) |
 | `AD_CLIENT`, `AD_SLOTS` | | 광고. `AD_SLOTS`는 쉼표 구분 |
 | `GA_MEASUREMENT_ID`, `GA_PROPERTY_ID`, `GA_TIMEZONE`, `GSC_SITE_URL` | | Google Analytics / Search Console |
 | `GA_READER_FILE` | | GA/GSC 조회용 서비스 계정 JSON 파일 경로 |
@@ -45,8 +45,8 @@ goapp은 시작할 때 이 값을 읽어 프런트엔드에 `window.ZCONF`(`avat
 | --- | --- |
 | `APP_URL` | `$wgServer` |
 | `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD` | `$wgDBserver`, `$wgDBuser`, `$wgDBpassword`. DB 이름은 `zetawiki`로 고정(goapp도 `zetawiki.*`로 참조) |
-| `REDIS_VOLATILE_HOST`, `REDIS_VOLATILE_PORT` | 캐시 `$wgObjectCaches['redis-cache']`. [redis.md](redis.md) |
-| `REDIS_PERSIST_HOST`, `REDIS_PERSIST_PORT` | 세션 `$wgObjectCaches['redis-session']`, 작업 큐 `$wgJobTypeConf`. ZetaExtension 인증 상태(OTP, 소셜 로그인 연계, `includes/Auth/PersistRedis.php`)도 여기서 goapp이 쓴 토큰을 읽는다 |
+| `REDIS_VOLATILE_HOST` | 캐시 `$wgObjectCaches['redis-cache']`. 포트는 `6379` 고정. [redis.md](redis.md) |
+| `REDIS_PERSIST_HOST` | 세션 `$wgObjectCaches['redis-session']`, 작업 큐 `$wgJobTypeConf`. ZetaExtension 인증 상태(OTP, 소셜 로그인 연계, `includes/Auth/PersistRedis.php`)도 여기서 goapp이 쓴 토큰을 읽는다. 포트는 `6379` 고정. |
 | `MW_SECRET_KEY`, `MW_UPGRADE_KEY` | `$wgSecretKey`, `$wgUpgradeKey` (비밀) |
 | `MW_CDN_SERVERS` | `$wgCdnServers` (쉼표 구분) |
 | `SHELLBOX_SCORE_URL`, `SHELLBOX_SECRET_KEY` | `$wgShellboxUrls['score']`, `$wgShellboxSecretKey` (키는 비밀) |

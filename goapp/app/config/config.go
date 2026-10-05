@@ -44,7 +44,6 @@ type RedisConfig struct {
 
 type RedisEndpoint struct {
 	Host string
-	Port int
 }
 
 type AdsConfig struct {
@@ -109,14 +108,12 @@ func Load() (*Config, error) {
 	cfg.DB.Username = lookup("DB_USERNAME")
 	cfg.DB.Password = lookup("DB_PASSWORD")
 
-	// Each role has its own endpoint; missing ports default to the Redis port.
+	// Each role has its own host; the Redis port is fixed at 6379.
 	cfg.Redis.Persist = RedisEndpoint{
 		Host: lookup("REDIS_PERSIST_HOST"),
-		Port: lookupInt("REDIS_PERSIST_PORT", 6379),
 	}
 	cfg.Redis.Volatile = RedisEndpoint{
 		Host: lookup("REDIS_VOLATILE_HOST"),
-		Port: lookupInt("REDIS_VOLATILE_PORT", 6379),
 	}
 
 	cfg.Ads.Client = lookup("AD_CLIENT")

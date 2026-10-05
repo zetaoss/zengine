@@ -4,8 +4,8 @@ zengine은 Redis를 데이터의 성격에 따라 두 역할로 나눠 쓴다. �
 
 | 역할 | 요구 | 환경변수 | 데이터 |
 | --- | --- | --- | --- |
-| persist | 퇴출·유실되면 안 된다. 퇴출 정책은 `noeviction`, 영속화(AOF 등) 권장 | `REDIS_PERSIST_HOST`, `REDIS_PERSIST_PORT` | goapp 작업 큐(Asynq: server, worker, scheduler, tool), OTP·소셜 로그인 연계 토큰, 요청 횟수 제한 카운터, MediaWiki 세션, MediaWiki 작업 큐 |
-| volatile | 언제든 퇴출되어도 된다. 퇴출 정책은 `allkeys-lru` 등, 영속화 불필요 | `REDIS_VOLATILE_HOST`, `REDIS_VOLATILE_PORT` | goapp의 MediaWiki 사용자 캐시(TTL 1분), MediaWiki 캐시(main, message, parser, language converter) |
+| persist | 퇴출·유실되면 안 된다. 퇴출 정책은 `noeviction`, 영속화(AOF 등) 권장 | `REDIS_PERSIST_HOST` | goapp 작업 큐(Asynq: server, worker, scheduler, tool), OTP·소셜 로그인 연계 토큰, 요청 횟수 제한 카운터, MediaWiki 세션, MediaWiki 작업 큐 |
+| volatile | 언제든 퇴출되어도 된다. 퇴출 정책은 `allkeys-lru` 등, 영속화 불필요 | `REDIS_VOLATILE_HOST` | goapp의 MediaWiki 사용자 캐시(TTL 1분), MediaWiki 캐시(main, message, parser, language converter) |
 
 - persist의 데이터는 TTL이 있거나 처리 후 지워지므로 계속 쌓이지 않는다. `noeviction`에서 메모리가 차면 쓰기가 오류로 실패하므로, 조용히 데이터를 잃는 대신 바로 드러난다.
 - persist를 캐시처럼(`allkeys-lru` 등) 운영하면 대기 중인 작업이 실행 전에 사라지고, 로그인 연계 토큰이 사라져 로그인이 실패할 수 있다.
@@ -16,10 +16,10 @@ zengine은 Redis를 데이터의 성격에 따라 두 역할로 나눠 쓴다. �
 
 | 변수 | 기본값 |
 | --- | --- |
-| `REDIS_PERSIST_HOST`, `REDIS_PERSIST_PORT` | 호스트 없음, 포트 6379 |
-| `REDIS_VOLATILE_HOST`, `REDIS_VOLATILE_PORT` | 호스트 없음, 포트 6379 |
+| `REDIS_PERSIST_HOST` | goapp은 `127.0.0.1`, MediaWiki는 호스트 설정 필요 |
+| `REDIS_VOLATILE_HOST` | goapp은 `127.0.0.1`, MediaWiki는 호스트 설정 필요 |
 
-`REDIS_*_HOST`에는 호스트 이름 대신 `host:port`나 `redis://…` URI를 줄 수도 있다(goapp).
+두 역할 모두 포트는 `6379`로 고정한다. 호스트 변수에는 호스트명이나 IP 주소만 설정하며, `host:port`와 Redis URI는 지원하지 않는다.
 
 ## 코드
 

@@ -46,8 +46,9 @@ $wgDBpassword = getenv('DB_PASSWORD');
 $wgSharedTables[] = 'actor';
 
 // ---- caches and job queue (docs/redis.md) ----
-$wgObjectCaches['redis-cache']   = ['class' => 'RedisBagOStuff', 'servers' => [getenv('REDIS_VOLATILE_HOST') . ':' . getenv('REDIS_VOLATILE_PORT')]];
-$wgObjectCaches['redis-session'] = ['class' => 'RedisBagOStuff', 'servers' => [getenv('REDIS_PERSIST_HOST') . ':' . getenv('REDIS_PERSIST_PORT')]];
+$redisPort = 6379;
+$wgObjectCaches['redis-cache']   = ['class' => 'RedisBagOStuff', 'servers' => [getenv('REDIS_VOLATILE_HOST') . ':' . $redisPort]];
+$wgObjectCaches['redis-session'] = ['class' => 'RedisBagOStuff', 'servers' => [getenv('REDIS_PERSIST_HOST') . ':' . $redisPort]];
 
 $wgMainCacheType              = 'redis-cache';
 $wgMessageCacheType           = 'redis-cache';
@@ -56,7 +57,7 @@ $wgLanguageConverterCacheType = 'redis-cache';
 $wgSessionCacheType           = 'redis-session';
 $wgMemCachedServers           = [];
 
-$wgJobTypeConf['default'] = ['class' => 'JobQueueRedis', 'redisServer' => getenv('REDIS_PERSIST_HOST') . ':' . getenv('REDIS_PERSIST_PORT'), 'redisConfig' => [], 'claimTTL' => 3600, 'daemonized' => true];
+$wgJobTypeConf['default'] = ['class' => 'JobQueueRedis', 'redisServer' => getenv('REDIS_PERSIST_HOST') . ':' . $redisPort, 'redisConfig' => [], 'claimTTL' => 3600, 'daemonized' => true];
 $wgJobRunRate             = 0;
 
 // ---- CDN ----
