@@ -41,11 +41,6 @@ class OTPAuthProvider extends AbstractPrimaryAuthenticationProvider
         return false;
     }
 
-    public function providerAllowsPropertyChange($property)
-    {
-        return false;
-    }
-
     public function providerAllowsAuthenticationDataChange(AuthenticationRequest $req, $checkData = true)
     {
         return StatusValue::newGood('ignored');
@@ -58,7 +53,7 @@ class OTPAuthProvider extends AbstractPrimaryAuthenticationProvider
 
     public function accountCreationType()
     {
-        return self::TYPE_CREATE;
+        return self::TYPE_NONE;
     }
 
     public function beginPrimaryAccountCreation($user, $creator, $reqs)
