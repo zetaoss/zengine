@@ -45,8 +45,8 @@ goapp은 시작할 때 이 값을 읽어 프런트엔드에 `window.ZCONF`(`avat
 | --- | --- |
 | `APP_URL` | `$wgServer` |
 | `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD` | `$wgDBserver`, `$wgDBuser`, `$wgDBpassword`. DB 이름은 `zetawiki`로 고정(goapp도 `zetawiki.*`로 참조) |
-| `REDIS_VOLATILE_HOST` | 캐시 `$wgObjectCaches['redis-cache']`. 포트는 `6379` 고정. [redis.md](redis.md) |
-| `REDIS_PERSIST_HOST` | 세션 `$wgObjectCaches['redis-session']`, 작업 큐 `$wgJobTypeConf`. ZetaExtension 인증 상태(OTP, 소셜 로그인 연계, `includes/Auth/PersistRedis.php`)도 여기서 goapp이 쓴 토큰을 읽는다. 포트는 `6379` 고정. |
+| `REDIS_VOLATILE_HOST` | 캐시 `$wgObjectCaches['redis-volatile']`. 포트는 `6379` 고정. [redis.md](redis.md) |
+| `REDIS_PERSIST_HOST` | 세션 `$wgObjectCaches['redis-persist']`, 작업 큐 `$wgJobTypeConf`. ZetaExtension 인증 상태(OTP, 소셜 로그인 연계, `includes/Auth/PersistRedis.php`)도 여기서 goapp이 쓴 토큰을 읽는다. 포트는 `6379` 고정. |
 | `MW_SECRET_KEY`, `MW_UPGRADE_KEY` | `$wgSecretKey`, `$wgUpgradeKey` (비밀) |
 | `MW_CDN_SERVERS` | `$wgCdnServers` (쉼표 구분) |
 | `SHELLBOX_SCORE_URL`, `SHELLBOX_SECRET_KEY` | `$wgShellboxUrls['score']`, `$wgShellboxSecretKey` (키는 비밀) |

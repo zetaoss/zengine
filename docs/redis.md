@@ -38,8 +38,8 @@ MediaWiki의 Redis 연결은 `mwz/settings/BaseSettings.php`가 위 환경변수
 
 | MediaWiki 설정 | 역할 |
 | --- | --- |
-| `$wgObjectCaches['redis-cache']` (main, message, parser, language converter 캐시) | volatile |
-| `$wgObjectCaches['redis-session']` (`$wgSessionCacheType`) | persist |
+| `$wgObjectCaches['redis-volatile']` (main, message, parser, language converter 캐시) | volatile |
+| `$wgObjectCaches['redis-persist']` (`$wgSessionCacheType`) | persist |
 | `$wgJobTypeConf['default']` (`JobQueueRedis`) | persist |
 
-`redis-cache`, `redis-session`은 MediaWiki 안의 캐시 이름일 뿐 Redis 서버 이름과는 관계없다.
+`redis-volatile`, `redis-persist`는 MediaWiki 안의 캐시 설정 ID이며, 각각 호스트를 환경변수에서 읽는다.
