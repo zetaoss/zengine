@@ -1,29 +1,29 @@
-# GoApp 개발 및 운영 가이드
+# GoApp Development and Operations Guide
 
-`goapp` Go 백엔드의 구조, 로컬 실행, HTTP runtime과 Asynq task 수행 체계를 정리한다.
+This guide describes the structure of the `goapp` Go backend, local development, HTTP runtime, and Asynq task processing.
 
-## 코드 구조
+## Code structure
 
-| 역할 | 경로 |
+| Role | Path |
 | --- | --- |
-| Process 및 CLI entrypoint | `goapp/cmd/{server,worker,scheduler,tool}` |
+| Process and CLI entry points | `goapp/cmd/{server,worker,scheduler,tool}` |
 | API route registry | `goapp/server/routes.go` |
-| API·인증 handler | `goapp/server/handlers/**` |
-| Router와 middleware | `goapp/server/router/**` |
-| Service | `goapp/services/**` |
-| Background task | `goapp/tasks/**` |
-| Model | `goapp/models/**` |
-| Task registry와 worker | `goapp/worker/**` |
-| DB/config/task context | `goapp/app/**` |
+| API and authentication handlers | `goapp/server/handlers/**` |
+| Router and middleware | `goapp/server/router/**` |
+| Services | `goapp/services/**` |
+| Background tasks | `goapp/tasks/**` |
+| Models | `goapp/models/**` |
+| Task registry and worker | `goapp/worker/**` |
+| Database, configuration, and task context | `goapp/app/**` |
 
-HTTP 요청은 일반적으로 handler -> service/task -> model 순서로 처리하며 DB 작업에는 GORM을 사용한다.
+HTTP requests generally flow from handler to service or task to model. GORM is used for database operations.
 
-## Process와 배포 토폴로지
+## Processes and deployment topology
 
 ```text
-server     N개 가능
-worker     N개 가능
-scheduler  정확히 1개
+server     Any number
+worker     Any number
+scheduler  Exactly one
 ```
 
 ```bash
@@ -33,16 +33,16 @@ go run ./cmd/worker
 go run ./cmd/scheduler
 ```
 
-- Server는 HTTP 요청을 처리하고 task를 enqueue하므로 수평 확장할 수 있다.
-- Worker는 Asynq가 Redis에서 task claim을 조정하므로 수평 확장할 수 있다.
-- Scheduler를 둘 이상 실행하면 각 instance가 동일 cron task를 enqueue한다. 배포 replica는 반드시 1로 고정하고 worker deployment에 합치지 않는다.
-- Scheduler가 중단되어도 이미 enqueue된 task는 계속 처리되지만 중단 중 cron task는 생성되지 않는다.
+- The server handles HTTP requests and enqueues tasks, so it can scale horizontally.
+- Asynq coordinates task claims through Redis, so workers can scale horizontally.
+- Running multiple schedulers enqueues the same cron tasks from each instance. Keep the deployed scheduler at exactly one replica, and do not combine it with the worker deployment.
+- If the scheduler stops, already-enqueued tasks continue to run, but no cron tasks are created while it is down.
 
-Dockerfile은 `server`, `worker`, `scheduler`, `tool` 바이너리를 빌드해 image의 `/app/bin`에 포함한다. 실제 process는 Kubernetes의 container `command`로 선택하며, scheduler deployment는 `/app/bin/scheduler`를 정확히 1 replica로 실행한다.
+The Dockerfile builds `server`, `worker`, `scheduler`, and `tool` binaries into `/app/bin` in the image. Kubernetes selects the process with each container's `command`. The scheduler deployment must run exactly one replica of `/app/bin/scheduler`.
 
-## 개발 Runtime
+## Development runtime
 
-개발 환경에서는 supervisor가 Air를 통해 세 Go process를 관리한다.
+In development, supervisor manages the three Go processes through Air.
 
 | Process | Air config | Log |
 | --- | --- | --- |
@@ -50,80 +50,80 @@ Dockerfile은 `server`, `worker`, `scheduler`, `tool` 바이너리를 빌드해 
 | `goworker` | `/app/goapp/.air.worker.toml` | `/app/tmp/goworker.log` |
 | `goscheduler` | `/app/goapp/.air.scheduler.toml` | `/app/tmp/goscheduler.log` |
 
-- Working directory는 모두 `/app/goapp`이다.
-- `cmd/server`, `cmd/worker`, `cmd/scheduler` 아래에 별도 Air config를 만들지 않는다.
-- 변경이 반영되지 않으면 supervisor command, working directory, log의 감시 경로와 최근 `building...` 기록을 확인한다.
+- All processes use `/app/goapp` as their working directory.
+- Do not create separate Air configs under `cmd/server`, `cmd/worker`, or `cmd/scheduler`.
+- If a change does not take effect, check the supervisor command, working directory, watched paths in the log, and the latest `building...` entry.
 
-Route는 다음 명령으로 확인한다.
+Inspect routes with:
 
 ```bash
 go run ./cmd/tool routes
 ```
 
-## HTTP Runtime
+## HTTP runtime
 
-- Nginx `:80`이 public entrypoint다.
-- `/`, `/api/*`, `/auth/*`는 GoApp으로 전달된다.
-- `/wiki/*`, `/w/*`는 MediaWiki stack으로 전달된다.
-- Dev mode에서는 frontend 요청을 Vite `http://127.0.0.1:5173`으로 proxy한다.
-- Prod mode에서는 `/app/svelte/dist`를 제공하고 runtime 설정을 `index.html`의 `window.ZCONF`로 주입한다.
+- Nginx on `:80` is the public entry point.
+- `/`, `/api/*`, and `/auth/*` are forwarded to GoApp.
+- `/wiki/*` and `/w/*` are served by the MediaWiki stack.
+- In dev mode, frontend requests are proxied to Vite at `http://127.0.0.1:5173`.
+- In production, `/app/svelte/dist` is served and runtime settings are injected into `window.ZCONF` in `index.html`.
 
-## Middleware와 접근 제어
+## Middleware and access control
 
-`Router`의 middleware factory를 사용해 `routes.go`를 선언적으로 유지한다.
+Use the `Router` middleware factory to keep `routes.go` declarative.
 
-- `r.WithUser()`: 로그인했다면 사용자 정보를 context에 추가한다.
-- `r.User()`: 로그인을 요구한다.
-- `r.Unblocked()`: 차단되지 않은 로그인 사용자를 요구한다.
-- `r.Sysop()`: 시스템 관리자만 허용한다.
-- `r.Internal()`: 유효한 signature를 가진 내부 호출만 허용한다.
-- `r.Owner(model)`: resource 작성자만 허용한다.
-- `r.OwnerOrSysop(model)`: 작성자 또는 관리자를 허용한다.
+- `r.WithUser()`: Adds user information to the context if the user is logged in.
+- `r.User()`: Requires a logged-in user.
+- `r.Unblocked()`: Requires a logged-in user who is not blocked.
+- `r.Sysop()`: Allows only system administrators.
+- `r.Internal()`: Allows only internal calls with a valid signature.
+- `r.Owner(model)`: Allows only the resource owner.
+- `r.OwnerOrSysop(model)`: Allows the owner or a system administrator.
 
-## 주요 Subsystem
+## Main subsystems
 
 ### AIEdit
 
-- Route: `goapp/server/routes.go`의 `/api/ai-edit*`
+- Route: `/api/ai-edit*` in `goapp/server/routes.go`
 - Handler: `goapp/server/handlers/api/aiedit/aiedit.go`
 - Model: `goapp/models/ai_edit.go`
-- Task: `goapp/tasks/aiedit/**`
-- 활성 phase에는 `Generating`, `Retrying`이 포함된다.
-- 목록 자동 새로고침은 page-level timer 하나를 사용하고 목록 tab을 벗어나면 중지한다.
+- Tasks: `goapp/tasks/aiedit/**`
+- Active phases include `Generating` and `Retrying`.
+- A single page-level timer refreshes the list and stops when the user leaves the list tab.
 
-AIEdit prompt는 생성에 `r.Unblocked()`, 수정에 `r.Owner(models.AIEditPrompt{})`, 삭제에 `r.OwnerOrSysop(models.AIEditPrompt{})`를 사용한다. Activity tab은 Svelte에서 `mwapi`로 MediaWiki API를 직접 호출하며 contribution flag는 `"new"`, `"top"` 같은 배열 값일 수 있다.
+AIEdit prompts use `r.Unblocked()` for creation, `r.Owner(models.AIEditPrompt{})` for editing, and `r.OwnerOrSysop(models.AIEditPrompt{})` for deletion. The Activity tab calls the MediaWiki API directly through `mwapi` in Svelte. Contribution flags can be array values such as `"new"` and `"top"`.
 
 ### Write Request
 
 - Frontend: `svelte/src/routes/tool/write-request/**`
-- Route: `goapp/server/routes.go`의 `/api/write-request/*`
+- Route: `/api/write-request/*` in `goapp/server/routes.go`
 - Handler: `goapp/server/handlers/api/writerequest/writerequest.go`
-- Task: `goapp/tasks/writerequest/**`
+- Tasks: `goapp/tasks/writerequest/**`
 
 ### Common Report
 
 - Frontend: `svelte/src/routes/tool/common-report/**`
-- Route: `goapp/server/routes.go`의 `/api/common-report*`
+- Route: `/api/common-report*` in `goapp/server/routes.go`
 - Handler: `goapp/server/handlers/api/commonreport/commonreport.go`
-- Model: `goapp/models/common_report.go`, `goapp/models/common_report_item.go`
-- Task: `goapp/tasks/commonreport/**`
+- Models: `goapp/models/common_report.go`, `goapp/models/common_report_item.go`
+- Tasks: `goapp/tasks/commonreport/**`
 
 ### Forum
 
 - Frontend: `svelte/src/routes/forum/**`
-- Route: `goapp/server/routes.go`의 `/api/posts*`, `/api/posts/{post}/replies*`
-- Handler: `goapp/server/handlers/api/post/post.go`, `goapp/server/handlers/api/reply/reply.go`
-- Model: `goapp/models/forum_post.go`, `goapp/models/forum_reply.go`
+- Routes: `/api/posts*`, `/api/posts/{post}/replies*` in `goapp/server/routes.go`
+- Handlers: `goapp/server/handlers/api/post/post.go`, `goapp/server/handlers/api/reply/reply.go`
+- Models: `goapp/models/forum_post.go`, `goapp/models/forum_reply.go`
 
-### LLM Service
+### LLM service
 
 - Service: `goapp/services/llmsvc/llmsvc.go`
 - Client: `goapp/services/llmsvc/client/client.go`
-- 설정: `goapp/app/config/config.go`의 `API.LLMEndpoint`
+- Configuration: `API.LLMEndpoint` in `goapp/app/config/config.go`
 
-## Asynq Task 수행 체계
+## Asynq task processing
 
-GoApp의 background task는 Asynq와 Redis를 사용한다. 기존 자체 queue 자료구조와 `Job` interface는 사용하지 않으며 Redis migration이나 호환 계층도 두지 않는다.
+GoApp background tasks use Asynq and Redis. The old custom queue data structures and `Job` interface are not used; there is no Redis migration or compatibility layer.
 
 ```text
 HTTP server / task handler ---> asynq.Client ---> Redis ---> asynq.Server
@@ -132,20 +132,20 @@ Asynq Scheduler -------------> asynq task ----^                |
                                                     Registry -> XxxTask.Execute
 ```
 
-| 역할 | 코드 |
+| Role | Code |
 | --- | --- |
-| Task 구현 | `goapp/tasks/**` |
-| DB/config/enqueue context | `goapp/app/taskctx/taskctx.go`, `goapp/app/appctx/context.go` |
-| Type, timeout, retry, queue, cron catalog | `goapp/worker/registry/registry.go` |
+| Task implementation | `goapp/tasks/**` |
+| Database/configuration/enqueue context | `goapp/app/taskctx/taskctx.go`, `goapp/app/appctx/context.go` |
+| Type, timeout, retry, queue, and cron catalog | `goapp/worker/registry/registry.go` |
 | Worker lifecycle | `goapp/worker/worker.go` |
 | Scheduler lifecycle | `goapp/worker/scheduler/scheduler.go` |
-| 조회·직접 실행·flush CLI | `goapp/cmd/tool/**` |
+| Inspect, run, and flush CLI | `goapp/cmd/tool/**` |
 
-Server와 worker는 `asynq.Client`와 `asynq.Server`를 직접 사용한다. 별도의 queue client wrapper, request/result adapter, task factory package는 없다. Registry는 task를 `ServeMux`에 연결하고 scheduler와 CLI가 공유하는 정적 spec을 관리한다.
+The server and worker use `asynq.Client` and `asynq.Server` directly. There is no separate queue-client wrapper, request/result adapter, or task-factory package. The registry connects tasks to `ServeMux` and manages static specifications shared by the scheduler and CLI.
 
-### Task 작성과 등록
+### Defining and registering a task
 
-업무 단위는 `goapp/tasks/<package>`의 `XxxTask`로 정의한다. `Name`, `Run`, `Timeout` method나 `job.Result` 계층은 없다.
+Define each unit of work as an `XxxTask` in `goapp/tasks/<package>`. There are no `Name`, `Run`, or `Timeout` methods and no `job.Result` layer.
 
 ```go
 type ExampleTask struct{}
@@ -157,21 +157,21 @@ func (t *ExampleTask) Execute(
 ) (app.H, error)
 ```
 
-Registry의 generic adapter가 Asynq JSON payload를 구체 payload type으로 decode한다. 잘못된 JSON은 `asynq.SkipRetry`로 archive한다. 실행 error, panic, timeout은 Asynq retry 정책을 따른다. 반환 `app.H`는 비동기 실행에서 저장하지 않고 `tool` 직접 실행 출력에만 사용한다.
+The registry's generic adapter decodes the Asynq JSON payload into its concrete type. Invalid JSON is archived with `asynq.SkipRetry`. Execution errors, panics, and timeouts follow the Asynq retry policy. The returned `app.H` is not stored for asynchronous execution; it is used only as output for direct `tool` execution.
 
-새 task 추가 절차:
+To add a task:
 
-1. `goapp/tasks/<package>`에 `XxxTask`, payload, `Execute`를 구현한다.
-2. Registry에 type, timeout, queue, retry, cron을 등록한다.
-3. 외부 enqueue가 필요하면 package helper에서 `asynq.NewTask`와 옵션을 정의한다.
-4. DB claim, unique constraint, upsert 등으로 멱등성을 확보한다.
-5. `go test ./...`와 `go vet ./...`를 실행한다.
+1. Implement `XxxTask`, its payload, and `Execute` in `goapp/tasks/<package>`.
+2. Register its type, timeout, queue, retry policy, and cron schedule.
+3. If external code must enqueue it, define `asynq.NewTask` and its options in a package helper.
+4. Ensure idempotency with database claims, unique constraints, upserts, or similar mechanisms.
+5. Run `go test ./...` and `go vet ./...`.
 
-Task type 문자열과 JSON payload는 배포 version 사이의 protocol이므로 이전 version이 enqueue한 task와의 호환성을 고려한다.
+Task type strings and JSON payloads are protocols between deployed versions, so maintain compatibility with tasks enqueued by earlier versions.
 
-### Enqueue와 상태
+### Enqueueing and status
 
-Application enqueue helper는 공식 Asynq API와 option을 직접 사용한다.
+Application enqueue helpers use the official Asynq API and options directly.
 
 ```go
 task := asynq.NewTask(taskType, payload)
@@ -182,7 +182,7 @@ info, err := taskCtx.EnqueueTask(ctx, task,
 )
 ```
 
-기본 retry는 3회다. `common-report`는 `asynq.Unique(30*time.Minute)`를 사용하며 `asynq.ErrDuplicateTask`를 이미 요청된 것으로 보고 성공 처리한다.
+The default retry count is 3. `common-report` uses `asynq.Unique(30*time.Minute)` and treats `asynq.ErrDuplicateTask` as a request that has already been handled.
 
 ```text
 scheduled -> pending -> active -> completed
@@ -191,38 +191,38 @@ scheduled -> pending -> active -> completed
                          +-> archived
 ```
 
-전달은 at-least-once이므로 모든 handler는 중복·동시 실행에 안전해야 한다.
+Delivery is at least once, so every handler must tolerate duplicate and concurrent execution.
 
-### Worker 동시성과 종료
+### Worker concurrency and shutdown
 
-Worker process는 하나의 `asynq.Server`로 모든 queue를 소비한다.
+One `asynq.Server` in each worker process consumes all queues.
 
-- `Concurrency: 1`이므로 한 worker process에서는 queue와 무관하게 task를 한 번에 하나만 실행한다.
-- `default`와 `runbox`의 weight는 각각 1이며, 둘 다 대기 중이면 동일한 비율로 선택된다.
-- Worker replica가 늘면 전체 concurrency도 replica 수만큼 증가한다.
+- `Concurrency: 1` means each worker process runs only one task at a time, regardless of queue.
+- `default` and `runbox` each have a weight of 1, so they are selected equally when both have pending tasks.
+- Increasing worker replicas increases total concurrency by the same factor.
 
-SIGINT/SIGTERM 시 active handler를 최대 30초 drain한다.
+On SIGINT or SIGTERM, active handlers are drained for up to 30 seconds.
 
-### 등록된 Task
+### Registered tasks
 
 | Task type | Timeout | Retry | Schedule | Queue / trigger |
 | --- | ---: | ---: | --- | --- |
-| `ai-edit` | 10분 | 3 | - | API 및 nanny |
-| `ai-edit-nanny` | 1분 | 3 | `0 * * * *` | `default` |
-| `common-report` | 5분 | 3 | - | API 및 nanny, unique 30분 |
-| `common-report-nanny` | 1분 | 3 | `0 * * * *` | `default` |
-| `inspire` | 5초 | 3 | - | 수동 |
-| `ping-db` | 10초 | 3 | - | 수동 |
-| `ping-redis` | 5초 | 3 | - | 수동 |
-| `request-matcher` | 5분 | 3 | `15 * * * *` | `default` |
-| `request-pruner` | 5분 | 3 | `0 0 * * *` | `default` |
-| `runbox` | 2분 | 0 | - | `runbox`, API |
-| `runbox-pruner` | 1분 | 3 | `* * * * *` | `default`, 매분 |
-| `stat-{cf,ga,gsc,mw}-{daily,hourly}` | 5분 | 3 | `5 * * * *` | `default` |
+| `ai-edit` | 10 min | 3 | - | API and nanny |
+| `ai-edit-nanny` | 1 min | 3 | `0 * * * *` | `default` |
+| `common-report` | 5 min | 3 | - | API and nanny, unique for 30 min |
+| `common-report-nanny` | 1 min | 3 | `0 * * * *` | `default` |
+| `inspire` | 5 sec | 3 | - | Manual |
+| `ping-db` | 10 sec | 3 | - | Manual |
+| `ping-redis` | 5 sec | 3 | - | Manual |
+| `request-matcher` | 5 min | 3 | `15 * * * *` | `default` |
+| `request-pruner` | 5 min | 3 | `0 0 * * *` | `default` |
+| `runbox` | 2 min | 0 | - | `runbox`, API |
+| `runbox-pruner` | 1 min | 3 | `* * * * *` | `default`, every minute |
+| `stat-{cf,ga,gsc,mw}-{daily,hourly}` | 5 min | 3 | `5 * * * *` | `default` |
 
-`daily` 통계 task도 현재 매시 05분 실행되며 task 내부에서 수집 시간 범위를 결정한다.
+The `daily` statistics tasks also run at 5 minutes past every hour; each task determines the collection time range internally.
 
-### 운영 CLI
+### Operations CLI
 
 ```bash
 cd /app/goapp
@@ -236,4 +236,4 @@ go run ./cmd/tool flush retry
 go run ./cmd/tool flush all
 ```
 
-`flush active`는 active task에 cancellation을 전달한다. `flush pending`, `flush scheduled`, `flush retry`는 해당 Asynq 상태의 task만 archive하며 `flush all`은 네 상태를 모두 처리한다. Asynq Redis key를 application code에서 직접 수정하지 말고 `asynq.Inspector` 또는 공식 도구를 사용한다.
+`flush active` sends cancellation to active tasks. `flush pending`, `flush scheduled`, and `flush retry` archive tasks only in the named state; `flush all` handles all four states. Do not modify Asynq Redis keys directly in application code; use `asynq.Inspector` or an official tool.

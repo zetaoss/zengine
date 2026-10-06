@@ -52,7 +52,8 @@ $wgObjectCaches['redis-persist']  = ['class' => 'RedisBagOStuff', 'servers' => [
 
 $wgMainCacheType              = 'redis-volatile';
 $wgMessageCacheType           = 'redis-volatile';
-$wgParserCacheType            = 'redis-volatile';
+$wgParserCacheType            = CACHE_DB;
+$wgParserCacheExpireTime      = 86400 * 30;
 $wgLanguageConverterCacheType = 'redis-volatile';
 $wgSessionCacheType           = 'redis-persist';
 $wgMemCachedServers           = [];
