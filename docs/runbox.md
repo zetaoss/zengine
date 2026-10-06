@@ -1,34 +1,34 @@
 # Runbox
 
-문서의 실행 가능한 코드 블록을 외부 Runbox 서버에서 실행하고 결과를 페이지에 표시하는 기능이다.
+This feature runs executable code blocks from wiki pages on an external Runbox server and displays the results on the page.
 
-## 흐름
+## Flow
 
 ```text
-MediaWiki 코드 블록
+MediaWiki code block
   -> Skin Svelte
   -> Go API (/api/runbox)
-  -> runboxes 테이블 / Asynq runbox queue
+  -> runboxes table / Asynq runbox queue
   -> worker
   -> RUNBOX_ENDPOINT/{lang|notebook}
-  -> 결과 polling 및 화면 표시
+  -> result polling and display
 ```
 
-`run` 속성이 있는 일반 코드 블록과 `notebook` 속성이 있는 노트북 블록을 지원한다. `javascript`, `html`, `css`는 브라우저에서 직접 렌더링하고, 그 외 언어는 외부 Runbox 서버로 보낸다.
+The feature supports regular code blocks with the `run` attribute and notebook blocks with the `notebook` attribute. `javascript`, `html`, and `css` run directly in the browser; other languages are sent to the external Runbox server.
 
 ## API
 
-라우트는 `goapp/server/routes.go`에 정의되어 있다.
+Routes are defined in `goapp/server/routes.go`.
 
-| Method | Path | 설명 |
+| Method | Path | Description |
 | --- | --- | --- |
-| `GET` | `/api/runbox/{hash}` | 실행 상태와 결과 조회 |
-| `POST` | `/api/runbox` | 실행 요청 생성 |
-| `POST` | `/api/runbox/{hash}/rerun` | sysop용 재실행 |
+| `GET` | `/api/runbox/{hash}` | Get execution status and results |
+| `POST` | `/api/runbox` | Create an execution request |
+| `POST` | `/api/runbox/{hash}/rerun` | Rerun as a sysop |
 
-실행 상태는 `pending`, `running`, `succeeded`, `failed` 중 하나다. 실패 시 외부 서버의 오류 사유를 `outs.error`에 저장하고 화면에 표시한다.
+Execution status is one of `pending`, `running`, `succeeded`, or `failed`. On failure, the external server's error is stored in `outs.error` and displayed on the page.
 
-일반 실행 payload 예시:
+Example payload for a regular execution:
 
 ```json
 {
@@ -43,31 +43,31 @@ MediaWiki 코드 블록
 }
 ```
 
-노트북 payload는 `lang`과 코드 셀 순서의 `sources` 배열을 사용한다.
+A notebook payload uses `lang` and a `sources` array ordered by code cell.
 
-## Worker와 설정
+## Worker and configuration
 
-worker는 전용 `runbox` queue에서 task를 처리하며 retry하지 않는다. 외부 요청 timeout은 60초, task timeout은 2분이다. 실행을 시작한 뒤 오래 갱신되지 않은 `running` 작업은 pruner가 3분 후 실패 처리한다. queue에서 대기 중인 `pending` 작업은 정상적인 지연일 수 있으므로 pruner가 임의로 실패 처리하지 않는다.
+The worker processes tasks on the dedicated `runbox` queue and does not retry them. The external request timeout is 60 seconds, and the task timeout is 2 minutes. A `running` task that has not been updated for 3 minutes after starting is marked as failed by the pruner. A `pending` task waiting in the queue may be delayed normally, so the pruner does not fail it automatically.
 
-환경변수에 외부 서버 주소를 설정한다.
+Set the external server address in an environment variable:
 
 ```dotenv
 RUNBOX_ENDPOINT=https://runbox.example.internal
 ```
 
-endpoint 끝에는 `/`를 붙이지 않는다. worker는 다음 경로로 JSON POST 요청을 보낸다.
+Do not add a trailing `/` to the endpoint. The worker sends JSON POST requests to these paths:
 
 ```text
 RUNBOX_ENDPOINT/lang
 RUNBOX_ENDPOINT/notebook
 ```
 
-외부 서버는 2xx 응답과 JSON object를 반환해야 한다. 일반 실행 결과는 `logs`, `images`, 노트북 결과는 `outputsList`를 사용한다.
+The external server must return a 2xx response and a JSON object. Regular execution results use `logs` and `images`; notebook results use `outputsList`.
 
-## 관련 코드
+## Related code
 
 - API: `goapp/server/handlers/api/runbox/runbox.go`
-- task와 stale 작업 정리: `goapp/tasks/runbox/`
-- task 등록: `goapp/worker/registry/registry.go`
-- 설정: `goapp/app/config/config.go`, `config.env.example`
-- 프론트: `mwz/skins/ZetaSkin/svelte/src/components/runbox/`
+- Tasks and stale-task pruning: `goapp/tasks/runbox/`
+- Task registration: `goapp/worker/registry/registry.go`
+- Configuration: `goapp/app/config/config.go`, `config.env.example`
+- Frontend: `mwz/skins/ZetaSkin/svelte/src/components/runbox/`

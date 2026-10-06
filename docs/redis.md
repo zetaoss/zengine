@@ -1,47 +1,47 @@
 # Redis
 
-zengine은 Redis를 데이터의 성격에 따라 두 역할로 나눠 쓴다. 기준은 "퇴출되거나 사라지면 문제가 되는가"이다.
+zengine uses Redis for two roles, based on whether losing or evicting the data would cause a problem.
 
-| 역할 | 요구 | 환경변수 | 데이터 |
+| Role | Requirements | Environment variable | Data |
 | --- | --- | --- | --- |
-| persist | 퇴출·유실되면 안 된다. 퇴출 정책은 `noeviction`, 영속화(AOF 등) 권장 | `REDIS_PERSIST_HOST` | goapp 작업 큐(Asynq: server, worker, scheduler, tool), OTP·소셜 로그인 연계 토큰, 요청 횟수 제한 카운터, MediaWiki 세션, MediaWiki 작업 큐 |
-| volatile | 언제든 퇴출되어도 된다. 퇴출 정책은 `allkeys-lru` 등, 영속화 불필요 | `REDIS_VOLATILE_HOST` | goapp의 MediaWiki 사용자 캐시(TTL 1분), MediaWiki 캐시(main, message, language converter) |
-| MariaDB | Redis 퇴출 영향을 받지 않으며 DB 백업에서는 parser cache 데이터를 제외한다 | `DB_HOST` | MediaWiki parser cache (`objectcache`, TTL 30일) |
+| persist | Must not be evicted or lost. Use a `noeviction` policy and persistence (such as AOF). | `REDIS_PERSIST_HOST` | goapp task queues (Asynq: server, worker, scheduler, tool), OTP and social-login tokens, rate-limit counters, MediaWiki sessions, MediaWiki job queue |
+| volatile | Data may be evicted at any time. Policies such as `allkeys-lru` are suitable; persistence is unnecessary. | `REDIS_VOLATILE_HOST` | goapp MediaWiki user cache (1-minute TTL), MediaWiki caches (main, message, language converter) |
+| MariaDB | Not subject to Redis eviction. Parser cache data is excluded from database backups. | `DB_HOST` | MediaWiki parser cache (`objectcache`, 30-day TTL) |
 
-- persist의 데이터는 TTL이 있거나 처리 후 지워지므로 계속 쌓이지 않는다. `noeviction`에서 메모리가 차면 쓰기가 오류로 실패하므로, 조용히 데이터를 잃는 대신 바로 드러난다.
-- persist를 캐시처럼(`allkeys-lru` 등) 운영하면 대기 중인 작업이 실행 전에 사라지고, 로그인 연계 토큰이 사라져 로그인이 실패할 수 있다.
-- 두 역할을 같은 Redis 하나로 운영해도 된다. 이때는 persist의 요구(`noeviction`)를 따른다.
-- 새 용도를 붙일 때는 위 기준으로 역할을 고른다.
+- Persist data has a TTL or is deleted after processing, so it does not grow indefinitely. If `noeviction` Redis runs out of memory, writes fail visibly instead of silently losing data.
+- If persist data were operated like a cache (for example, with `allkeys-lru`), queued jobs could disappear before execution and login tokens could disappear, causing login failures.
+- Both Redis roles can use the same Redis instance. In that case, follow the persist requirements and use `noeviction`.
+- Choose a role for each new use based on these requirements.
 
-## 환경변수
+## Environment variables
 
-| 변수 | 기본값 |
+| Variable | Default |
 | --- | --- |
-| `REDIS_PERSIST_HOST` | goapp은 `127.0.0.1`, MediaWiki는 호스트 설정 필요 |
-| `REDIS_VOLATILE_HOST` | goapp은 `127.0.0.1`, MediaWiki는 호스트 설정 필요 |
+| `REDIS_PERSIST_HOST` | goapp uses `127.0.0.1`; MediaWiki requires a host to be configured |
+| `REDIS_VOLATILE_HOST` | goapp uses `127.0.0.1`; MediaWiki requires a host to be configured |
 
-두 역할 모두 포트는 `6379`로 고정한다. 호스트 변수에는 호스트명이나 IP 주소만 설정하며, `host:port`와 Redis URI는 지원하지 않는다.
+Both Redis roles use port `6379`. Set the host variables to a hostname or IP address only; `host:port` and Redis URIs are not supported.
 
-## 코드
+## Code
 
-| 사용처 | 역할 | 위치 |
+| Use | Role | Location |
 | --- | --- | --- |
-| Asynq 작업 큐 | persist | `goapp/app/redis` `AsynqConnOpt` (server, worker, scheduler, tool) |
-| 소셜 로그인 연계 토큰 (쓰기) | persist | `goapp/server/handlers/auth/social` → `OpenPersist` |
-| 요청 횟수 제한 | persist | `goapp/server/throttle` → `OpenPersist` |
-| MediaWiki 사용자 캐시 | volatile | `goapp/server/auth` → `OpenVolatile` |
-| OTP·연계 토큰 (읽기) | persist | ZetaExtension `includes/Auth/PersistRedis.php` |
-| 상태 확인 작업 `ping-redis` | 둘 다 | `goapp/tasks/pingredis` |
+| Asynq task queue | persist | `goapp/app/redis` `AsynqConnOpt` (server, worker, scheduler, tool) |
+| Social-login tokens (write) | persist | `goapp/server/handlers/auth/social` → `OpenPersist` |
+| Rate limiting | persist | `goapp/server/throttle` → `OpenPersist` |
+| MediaWiki user cache | volatile | `goapp/server/auth` → `OpenVolatile` |
+| OTP and linked-login tokens (read) | persist | ZetaExtension `includes/Auth/PersistRedis.php` |
+| `ping-redis` health-check task | both | `goapp/tasks/pingredis` |
 
 ## MediaWiki
 
-MediaWiki의 Redis 연결은 `mwz/settings/BaseSettings.php`가 위 환경변수에서 읽는다([config.md](config.md)). 역할은 다음과 같다.
+MediaWiki reads its Redis connection settings from the environment variables above in `mwz/settings/BaseSettings.php` ([config.md](config.md)). The roles are:
 
-| MediaWiki 설정 | 역할 |
+| MediaWiki setting | Role |
 | --- | --- |
-| `$wgObjectCaches['redis-volatile']` (main, message, language converter 캐시) | volatile |
+| `$wgObjectCaches['redis-volatile']` (main, message, and language-converter caches) | volatile |
 | `$wgParserCacheType` (`CACHE_DB`, `$wgParserCacheExpireTime = 86400 * 30`) | MariaDB `objectcache` |
 | `$wgObjectCaches['redis-persist']` (`$wgSessionCacheType`) | persist |
 | `$wgJobTypeConf['default']` (`JobQueueRedis`) | persist |
 
-`redis-volatile`, `redis-persist`는 MediaWiki 안의 캐시 설정 ID이며, 각각 호스트를 환경변수에서 읽는다.
+`redis-volatile` and `redis-persist` are cache configuration IDs in MediaWiki; each reads its host from the corresponding environment variable.
