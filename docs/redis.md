@@ -6,7 +6,8 @@ zengine uses Redis for two roles, based on whether losing or evicting the data w
 | --- | --- | --- | --- |
 | persist | Must not be evicted or lost. Use a `noeviction` policy and persistence (such as AOF). | `REDIS_PERSIST_HOST` | goapp task queues (Asynq: server, worker, scheduler, tool), OTP and social-login tokens, rate-limit counters, MediaWiki sessions, MediaWiki job queue |
 | volatile | Data may be evicted at any time. Policies such as `allkeys-lru` are suitable; persistence is unnecessary. | `REDIS_VOLATILE_HOST` | goapp MediaWiki user cache (1-minute TTL), MediaWiki caches (main, message, language converter) |
-| MariaDB | Not subject to Redis eviction. Parser cache data is excluded from database backups. | `DB_HOST` | MediaWiki parser cache (`objectcache`, 30-day TTL) |
+
+The MediaWiki parser cache is stored in MariaDB's `objectcache` table with a 30-day TTL, rather than in either Redis role. Because this cache is disposable, deployment environments should consider excluding its rows from database backups.
 
 - Persist data has a TTL or is deleted after processing, so it does not grow indefinitely. If `noeviction` Redis runs out of memory, writes fail visibly instead of silently losing data.
 - If persist data were operated like a cache (for example, with `allkeys-lru`), queued jobs could disappear before execution and login tokens could disappear, causing login failures.
