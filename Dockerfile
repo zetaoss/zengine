@@ -28,7 +28,7 @@ COPY mwz/extensions.yaml mwz/extensions.lock mwz/
 RUN EXTENSIONS_DIR=/extensions node hack/extensions.mjs install
 
 # https://hub.docker.com/_/mediawiki
-FROM mediawiki:1.43.9-fpm AS base
+FROM mediawiki:1.43.11-fpm AS base
 
 RUN set -eux; \
     ## system packages
