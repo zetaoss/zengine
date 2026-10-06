@@ -5,7 +5,8 @@ zengine은 Redis를 데이터의 성격에 따라 두 역할로 나눠 쓴다. �
 | 역할 | 요구 | 환경변수 | 데이터 |
 | --- | --- | --- | --- |
 | persist | 퇴출·유실되면 안 된다. 퇴출 정책은 `noeviction`, 영속화(AOF 등) 권장 | `REDIS_PERSIST_HOST` | goapp 작업 큐(Asynq: server, worker, scheduler, tool), OTP·소셜 로그인 연계 토큰, 요청 횟수 제한 카운터, MediaWiki 세션, MediaWiki 작업 큐 |
-| volatile | 언제든 퇴출되어도 된다. 퇴출 정책은 `allkeys-lru` 등, 영속화 불필요 | `REDIS_VOLATILE_HOST` | goapp의 MediaWiki 사용자 캐시(TTL 1분), MediaWiki 캐시(main, message, parser, language converter) |
+| volatile | 언제든 퇴출되어도 된다. 퇴출 정책은 `allkeys-lru` 등, 영속화 불필요 | `REDIS_VOLATILE_HOST` | goapp의 MediaWiki 사용자 캐시(TTL 1분), MediaWiki 캐시(main, message, language converter) |
+| MariaDB | Redis 퇴출 영향을 받지 않으며 DB 백업에서는 parser cache 데이터를 제외한다 | `DB_HOST` | MediaWiki parser cache (`objectcache`, TTL 30일) |
 
 - persist의 데이터는 TTL이 있거나 처리 후 지워지므로 계속 쌓이지 않는다. `noeviction`에서 메모리가 차면 쓰기가 오류로 실패하므로, 조용히 데이터를 잃는 대신 바로 드러난다.
 - persist를 캐시처럼(`allkeys-lru` 등) 운영하면 대기 중인 작업이 실행 전에 사라지고, 로그인 연계 토큰이 사라져 로그인이 실패할 수 있다.
@@ -38,7 +39,8 @@ MediaWiki의 Redis 연결은 `mwz/settings/BaseSettings.php`가 위 환경변수
 
 | MediaWiki 설정 | 역할 |
 | --- | --- |
-| `$wgObjectCaches['redis-volatile']` (main, message, parser, language converter 캐시) | volatile |
+| `$wgObjectCaches['redis-volatile']` (main, message, language converter 캐시) | volatile |
+| `$wgParserCacheType` (`CACHE_DB`, `$wgParserCacheExpireTime = 86400 * 30`) | MariaDB `objectcache` |
 | `$wgObjectCaches['redis-persist']` (`$wgSessionCacheType`) | persist |
 | `$wgJobTypeConf['default']` (`JobQueueRedis`) | persist |
 
