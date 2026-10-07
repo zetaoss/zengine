@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/zetaoss/zengine/goapp/app/config"
 
@@ -19,6 +20,9 @@ func Open(cfg *config.Config) (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Close idle connections before the server's wait_timeout (300s) does, so the pool does not keep
+	// connections the server already dropped and MariaDB logs no "Aborted connection" warnings.
+	sqlDB.SetConnMaxIdleTime(3 * time.Minute)
 	if err := sqlDB.Ping(); err != nil {
 		_ = sqlDB.Close()
 		return nil, err
