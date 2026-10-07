@@ -58,6 +58,12 @@ $wgLanguageConverterCacheType = 'redis-volatile';
 $wgSessionCacheType           = 'redis-persist';
 $wgMemCachedServers           = [];
 
+// Localisation cache in container-local CDB files instead of the l10n_cache table. Each container
+// fills it on first use and rebuilds it when message files change. Not 'array': OPcache does not
+// revalidate timestamps in production, so rebuilt PHP files would not be picked up.
+$wgCacheDirectory                 = "$IP/cache";
+$wgLocalisationCacheConf['store'] = 'files';
+
 $wgJobTypeConf['default'] = ['class' => 'JobQueueRedis', 'redisServer' => getenv('REDIS_PERSIST_HOST') . ':' . $redisPort, 'redisConfig' => [], 'claimTTL' => 3600, 'daemonized' => true];
 $wgJobRunRate             = 0;
 
