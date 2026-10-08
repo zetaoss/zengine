@@ -38,8 +38,8 @@
   commit: 1d2cb5805a24072eed74d6d7fe896dea7b0ee6aa
 - name: SimpleMathJax
   repo: https://github.com/jmnote/SimpleMathJax.git
-  tag: v1.1.1
-  commit: a45bb1d1d0bd19bebf1e91f8cc248cc530dcb532
+  tag: v1.2.0
+  commit: 882db4ed78ffade46ef29d0ff93caf020a9cb671
 - name: SimpleMermaid
   repo: https://github.com/jmnote/SimpleMermaid.git
   tag: v0.1.4
