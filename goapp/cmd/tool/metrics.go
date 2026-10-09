@@ -4,8 +4,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/zetaoss/zengine/goapp/app/config"
@@ -29,39 +29,15 @@ func runMetrics(cfg *config.Config, args []string) error {
 		return fmt.Errorf("metrics does not accept positional arguments")
 	}
 
-	endpoint := ""
-	nodepool := ""
-	namespace := ""
-	pvc := ""
+	bobEndpoint := ""
 	if cfg != nil {
-		endpoint = cfg.API.MonitoringEndpoint
-		nodepool = cfg.API.MonitoringNodepool
-		namespace = cfg.API.MonitoringNamespace
-		pvc = cfg.API.MonitoringPVC
+		bobEndpoint = cfg.API.BobEndpoint
 	}
-	if endpoint == "" {
-		endpoint = os.Getenv("MONITORING_ENDPOINT")
+	if bobEndpoint == "" {
+		bobEndpoint = strings.TrimRight(os.Getenv("BOB_ENDPOINT"), "/")
 	}
-	if endpoint == "" {
-		return fmt.Errorf("missing MONITORING_ENDPOINT")
-	}
-	if nodepool == "" {
-		nodepool = os.Getenv("MONITORING_NODEPOOL")
-	}
-	if nodepool == "" {
-		return fmt.Errorf("missing MONITORING_NODEPOOL")
-	}
-	if namespace == "" {
-		namespace = os.Getenv("MONITORING_NAMESPACE")
-	}
-	if namespace == "" {
-		return fmt.Errorf("missing MONITORING_NAMESPACE")
-	}
-	if pvc == "" {
-		pvc = os.Getenv("MONITORING_PVC")
-	}
-	if pvc == "" {
-		return fmt.Errorf("missing MONITORING_PVC")
+	if bobEndpoint == "" {
+		return fmt.Errorf("missing BOB_ENDPOINT")
 	}
 
 	show := func() error {
@@ -69,28 +45,23 @@ func runMetrics(cfg *config.Config, args []string) error {
 			fmt.Print("\033[H\033[J")
 			_, _ = fmt.Printf("%s\n\n", time.Now().Format(time.RFC3339))
 		}
-		nodes, pods, err := fetchAndParseMetrics(endpoint, nodepool, namespace)
+		m, err := k8s.FetchMetrics(context.Background(), bobEndpoint, nil)
 		if err != nil {
-			return fmt.Errorf("failed to fetch metrics from %s: %w", endpoint, err)
+			return fmt.Errorf("failed to fetch metrics from %s: %w", bobEndpoint, err)
 		}
-		pvcs, err := fetchPVCMetrics(endpoint, namespace, pvc)
-		if err != nil {
-			return fmt.Errorf("failed to fetch PVC metrics from %s: %w", endpoint, err)
-		}
-		defenderFightingRatio, defenderMaxLevel := fetchDefenderMetrics(endpoint)
-		if err := printNodeMetrics(nodes); err != nil {
+		if err := printNodeMetrics(m.Nodes()); err != nil {
 			return err
 		}
 		_, _ = fmt.Println()
-		if err := printPodMetrics(pods, namespace); err != nil {
+		if err := printPodMetrics(m.Pods()); err != nil {
 			return err
 		}
 		_, _ = fmt.Println()
-		if err := printPVCMetrics(pvcs, namespace); err != nil {
+		if err := printPVCMetrics(m.PVCs()); err != nil {
 			return err
 		}
 		_, _ = fmt.Println()
-		return printDefenderMetrics(defenderFightingRatio, defenderMaxLevel)
+		return printDefenderMetrics(m.Total("defender_fighting_ratio"), m.Total("defender_max_level"))
 	}
 
 	if err := show(); err != nil {
@@ -109,26 +80,6 @@ func runMetrics(cfg *config.Config, args []string) error {
 		}
 	}
 	return nil
-}
-
-func fetchAndParseMetrics(endpoint, nodepool, namespace string) ([]NodeMetric, []PodMetric, error) {
-	return k8s.FetchAndParseMetrics(context.Background(), endpoint, nodepool, namespace)
-}
-
-func fetchPVCMetrics(endpoint, namespace, pvc string) ([]PVCMetric, error) {
-	return k8s.FetchPVCMetrics(context.Background(), endpoint, namespace, pvc)
-}
-
-func fetchDefenderMetrics(endpoint string) (float64, float64) {
-	return k8s.FetchDefenderMetrics(context.Background(), endpoint)
-}
-
-func parsePrometheusNodeMetrics(r io.Reader, nodepool string) ([]NodeMetric, error) {
-	return k8s.ParsePrometheusNodeMetrics(r, nodepool)
-}
-
-func parsePrometheusPodMetrics(r io.Reader, namespace string) ([]PodMetric, error) {
-	return k8s.ParsePrometheusPodMetrics(r, namespace)
 }
 
 func printNodeMetrics(nodes []NodeMetric) error {
@@ -170,12 +121,9 @@ func printNodeMetrics(nodes []NodeMetric) error {
 	return tw.Flush()
 }
 
-func printPodMetrics(pods []PodMetric, namespace string) error {
+func printPodMetrics(pods []PodMetric) error {
 	if len(pods) == 0 {
-		if namespace == "" {
-			namespace = "prod3"
-		}
-		_, _ = fmt.Printf("No %s pod metrics found.\n", namespace)
+		_, _ = fmt.Println("No pod metrics found.")
 		return nil
 	}
 
@@ -202,9 +150,9 @@ func printPodMetrics(pods []PodMetric, namespace string) error {
 	return tw.Flush()
 }
 
-func printPVCMetrics(pvcs []PVCMetric, namespace string) error {
+func printPVCMetrics(pvcs []PVCMetric) error {
 	if len(pvcs) == 0 {
-		_, _ = fmt.Printf("No %s PVC metrics found.\n", namespace)
+		_, _ = fmt.Println("No PVC metrics found.")
 		return nil
 	}
 

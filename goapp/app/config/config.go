@@ -60,13 +60,9 @@ type AnalyticsConfig struct {
 }
 
 type APIConfig struct {
-	MonitoringEndpoint  string
-	MonitoringNamespace string
-	MonitoringNodepool  string
-	MonitoringPVC       string
-	LLMEndpoint         string
-	RunboxEndpoint      string
-	SearchEndpoint      string
+	// BobEndpoint is the base URL of bob, the in-cluster app server. Callers append the
+	// feature path: /aigate (LLM), /metrics (k8s stats), /runbox, /search.
+	BobEndpoint string
 }
 
 type CloudflareConfig struct {
@@ -125,13 +121,7 @@ func Load() (*Config, error) {
 	cfg.Analytics.GATimezone = lookup("GA_TIMEZONE")
 	cfg.Analytics.GSCSiteURL = lookup("GSC_SITE_URL")
 
-	cfg.API.MonitoringEndpoint = lookup("MONITORING_ENDPOINT")
-	cfg.API.MonitoringNamespace = lookup("MONITORING_NAMESPACE")
-	cfg.API.MonitoringNodepool = lookup("MONITORING_NODEPOOL")
-	cfg.API.MonitoringPVC = lookup("MONITORING_PVC")
-	cfg.API.LLMEndpoint = lookup("LLM_ENDPOINT")
-	cfg.API.RunboxEndpoint = lookup("RUNBOX_ENDPOINT")
-	cfg.API.SearchEndpoint = lookup("SEARCH_ENDPOINT")
+	cfg.API.BobEndpoint = strings.TrimRight(lookup("BOB_ENDPOINT"), "/")
 
 	cfg.Cloudflare.APIToken = lookup("CLOUDFLARE_API_TOKEN")
 	cfg.Cloudflare.ZoneID = lookup("CLOUDFLARE_ZONE_ID")

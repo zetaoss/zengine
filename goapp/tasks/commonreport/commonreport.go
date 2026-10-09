@@ -67,7 +67,7 @@ func (j *CommonReportTask) Execute(ctx context.Context, taskCtx taskctx.Context,
 	slog.Info("common-report Task start", "report_id", p.ReportID, "items", len(report.Items))
 	_ = db.WithContext(ctx).Table("common_reports").Where("id = ?", p.ReportID).Updates(app.H{"phase": models.CommonReportPhaseRunning, "updated_at": time.Now()}).Error
 
-	if err := processReport(ctx, db.WithContext(ctx), taskCtx.Config().API.SearchEndpoint, report); err != nil {
+	if err := processReport(ctx, db.WithContext(ctx), taskCtx.Config().API.BobEndpoint, report); err != nil {
 		slog.Error("common-report Task failed", "report_id", p.ReportID, "err", err)
 		_ = db.WithContext(ctx).Table("common_reports").Where("id = ?", p.ReportID).Updates(app.H{"phase": models.CommonReportPhaseFailed, "updated_at": time.Now()}).Error
 		return nil, err
@@ -78,18 +78,18 @@ func (j *CommonReportTask) Execute(ctx context.Context, taskCtx taskctx.Context,
 	return app.H{"report_id": p.ReportID, "phase": models.CommonReportPhaseSucceeded}, nil
 }
 
-func processReport(ctx context.Context, db *gorm.DB, endpoint string, report models.CommonReport) error {
-	slog.Debug("[processReport]", "endpoint", endpoint)
-	ep := strings.TrimSpace(endpoint)
-	if ep == "" {
-		return fmt.Errorf("SEARCH_ENDPOINT is required")
+func processReport(ctx context.Context, db *gorm.DB, bobEndpoint string, report models.CommonReport) error {
+	slog.Debug("[processReport]", "bob_endpoint", bobEndpoint)
+	bob := strings.TrimSpace(bobEndpoint)
+	if bob == "" {
+		return fmt.Errorf("BOB_ENDPOINT is required")
 	}
 
 	q := url.Values{}
 	for _, item := range report.Items {
 		q.Add("q", item.Name)
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, ep+"/search?"+q.Encode(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, bob+"/search/search?"+q.Encode(), nil)
 	if err != nil {
 		return err
 	}

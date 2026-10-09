@@ -80,14 +80,15 @@ func (j *RunboxTask) Execute(ctx context.Context, taskCtx taskctx.Context, p pay
 		return app.H{"hash": hash, "phase": "skipped"}, nil
 	}
 
-	ep := taskCtx.Config().API.RunboxEndpoint
-	if ep == "" {
-		err := fmt.Errorf("RUNBOX_URL is required")
+	bob := taskCtx.Config().API.BobEndpoint
+	if bob == "" {
+		err := fmt.Errorf("BOB_ENDPOINT is required")
 		_ = markFailed(ctx, db, hash, leaseMarker, err.Error())
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, ep+"/"+row.Type, bytes.NewBufferString(row.Payload))
+	ep := bob + "/runbox/" + row.Type
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, ep, bytes.NewBufferString(row.Payload))
 	if err != nil {
 		_ = markFailed(ctx, db, hash, leaseMarker, err.Error())
 		return nil, err
@@ -96,7 +97,7 @@ func (j *RunboxTask) Execute(ctx context.Context, taskCtx taskctx.Context, p pay
 	slog.Info("[runbox-job] request",
 		"hash", hash,
 		"type", row.Type,
-		"url", ep+"/"+row.Type,
+		"url", ep,
 		"payload_bytes", len(row.Payload),
 	)
 

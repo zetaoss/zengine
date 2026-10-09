@@ -25,8 +25,8 @@ type Message struct {
 
 func New(cfg *config.Config) *LLMClient {
 	endpoint := ""
-	if cfg != nil {
-		endpoint = cfg.API.LLMEndpoint
+	if cfg != nil && cfg.API.BobEndpoint != "" {
+		endpoint = cfg.API.BobEndpoint + "/aigate"
 	}
 	return NewClientWithEndpoint(endpoint)
 }
@@ -37,7 +37,7 @@ func NewClientWithEndpoint(endpoint string) *LLMClient {
 
 func (s *LLMClient) ChatCompletion(ctx context.Context, model string, messages []Message) (string, string, error) {
 	if strings.TrimSpace(s.Endpoint) == "" {
-		return "", "", fmt.Errorf("LLM_ENDPOINT is required")
+		return "", "", fmt.Errorf("BOB_ENDPOINT is required")
 	}
 	if s.Client == nil {
 		s.Client = &http.Client{Timeout: 60 * time.Second}
