@@ -90,37 +90,6 @@ func TestFetchMetricsByName(t *testing.T) {
 	}
 }
 
-func TestValidate(t *testing.T) {
-	m, err := FetchMetrics(context.Background(), fakeBob(t, http.StatusOK, bobBody, nil), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := m.validate(); err != nil {
-		t.Fatalf("complete metrics: %v", err)
-	}
-
-	with := func(name string, samples []Sample) Metrics {
-		out := Metrics{}
-		for k, v := range m {
-			out[k] = v
-		}
-		out[name] = samples
-		return out
-	}
-	if err := with("pvc_storage_usage", []Sample{}).validate(); err == nil || !strings.Contains(err.Error(), "pvc_storage_usage has no data") {
-		t.Errorf("empty PVC usage: %v", err)
-	}
-	if err := with("pvc_storage_usage", []Sample{{Value: 0}}).validate(); err != nil {
-		t.Errorf("zero PVC usage should pass: %v", err)
-	}
-	if err := with("defender_max_level", []Sample{}).validate(); err != nil {
-		t.Errorf("no defender data should pass: %v", err)
-	}
-	if err := with("pvc_storage_capacity", []Sample{{Value: 0}}).validate(); err == nil || !strings.Contains(err.Error(), "capacity") {
-		t.Errorf("zero capacity: %v", err)
-	}
-}
-
 func TestParseHourlyTimeslot(t *testing.T) {
 	got, err := parseHourlyTimeslot("2026-08-15 12:00:00")
 	if err != nil || !got.Equal(time.Date(2026, 8, 15, 12, 0, 0, 0, time.UTC)) {

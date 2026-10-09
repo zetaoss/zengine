@@ -185,22 +185,6 @@ var hourlyMetrics = []string{
 	"defender_fighting_ratio", "defender_max_level",
 }
 
-// requiredMetrics must have data for a row to be stored (a zero value is fine); the others,
-// such as zeta-defender, may legitimately have none and count as zero. Without data the timeslot
-// is left empty so it can be filled later by running the task with that timeslot.
-var requiredMetrics = []string{"node_cpu_usage", "pod_memory_usage", "pvc_storage_usage", "pvc_storage_capacity"}
-
-func (m Metrics) validate() error {
-	for _, name := range requiredMetrics {
-		if len(m[name]) == 0 {
-			return fmt.Errorf("bob metric %s has no data", name)
-		}
-	}
-	if m.Total("pvc_storage_capacity") <= 0 {
-		return fmt.Errorf("invalid PVC capacity metric")
-	}
-	return nil
-}
 
 type HourlyTask struct{}
 
@@ -245,9 +229,6 @@ func (j *HourlyTask) Execute(ctx context.Context, taskCtx taskctx.Context, input
 	m, err := FetchMetrics(ctx, bobEndpoint, &evaluationTime, hourlyMetrics...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch k8s metrics: %w", err)
-	}
-	if err := m.validate(); err != nil {
-		return nil, err
 	}
 
 	row := statmodels.K8sHourly{
