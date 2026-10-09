@@ -119,7 +119,7 @@ AIEdit prompts use `r.Unblocked()` for creation, `r.Owner(models.AIEditPrompt{})
 
 - Service: `goapp/services/llmsvc/llmsvc.go`
 - Client: `goapp/services/llmsvc/client/client.go`
-- Configuration: `API.LLMEndpoint` in `goapp/app/config/config.go`
+- Configuration: `API.BobEndpoint` in `goapp/app/config/config.go`; the client calls `BOB_ENDPOINT/aigate/v1/chat/completions`
 
 ## Asynq task processing
 
