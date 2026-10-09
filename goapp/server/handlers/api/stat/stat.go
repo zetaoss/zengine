@@ -1,6 +1,7 @@
 package stat
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -76,15 +77,12 @@ func GADaily(c *serverctx.Context) {
 		http.NotFound(c.W, c.R)
 		return
 	}
-	gaTZ := c.Cfg.Analytics.GATimezone
-	if gaTZ == "" {
-		gaTZ = "UTC"
+	// GA dates are in the property's time zone, so the range ends at the latest stored date.
+	to := dailyEndUTC(time.Now().UTC())
+	var latest sql.NullTime
+	if err := c.DB.Raw("SELECT MAX(timeslot) FROM stat_ga_daily").Scan(&latest).Error; err == nil && latest.Valid {
+		to = dailyEndUTC(latest.Time)
 	}
-	loc, err := time.LoadLocation(gaTZ)
-	if err != nil {
-		loc = time.UTC
-	}
-	to := dailyEndInLocation(time.Now(), loc)
 	from := to.AddDate(0, 0, -(days - 1))
 	rows, err := selectNumericRows(c.DB, "stat_ga_daily", []string{"active_users", "screen_page_views", "sessions"}, from, to, true)
 	if err != nil {

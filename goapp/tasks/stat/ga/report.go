@@ -9,8 +9,9 @@ import (
 	"github.com/zetaoss/zengine/goapp/tasks/stat/bobapi"
 )
 
-// report asks bob for GA4 rows. interval is "hour" (timeslot RFC3339 UTC) or "day" (timeslot
-// YYYY-MM-DD); since and until are dates, both inclusive.
+// report asks bob for GA4 rows in [since, until): the hours starting in it (timeslot RFC3339 UTC)
+// or the property-local dates overlapping it (timeslot YYYY-MM-DD). bob converts with the GA
+// property's time zone.
 func report(ctx context.Context, bobEndpoint, interval string, since, until time.Time) ([]statmodels.GA, error) {
 	var rows []struct {
 		Timeslot        string `json:"timeslot"`
@@ -18,7 +19,7 @@ func report(ctx context.Context, bobEndpoint, interval string, since, until time
 		ScreenPageViews int    `json:"screen_page_views"`
 		ActiveUsers     int    `json:"active_users"`
 	}
-	params := url.Values{"interval": {interval}, "since": {since.Format("2006-01-02")}, "until": {until.Format("2006-01-02")}}
+	params := url.Values{"interval": {interval}, "since": {since.UTC().Format(time.RFC3339)}, "until": {until.UTC().Format(time.RFC3339)}}
 	if err := bobapi.Get(ctx, bobEndpoint, "/ga/report", params, &rows); err != nil {
 		return nil, err
 	}
@@ -35,16 +36,4 @@ func report(ctx context.Context, bobEndpoint, interval string, since, until time
 		out = append(out, statmodels.GA{Timeslot: timeslot, Sessions: r.Sessions, ScreenPageViews: r.ScreenPageViews, ActiveUsers: r.ActiveUsers})
 	}
 	return out, nil
-}
-
-// location is the zone the GA windows are computed in (GA_TIMEZONE, default UTC).
-func location(name string) *time.Location {
-	if name == "" {
-		return time.UTC
-	}
-	loc, err := time.LoadLocation(name)
-	if err != nil {
-		return time.UTC
-	}
-	return loc
 }

@@ -52,7 +52,6 @@ type AdsConfig struct {
 
 type AnalyticsConfig struct {
 	GAMeasurementID string
-	GATimezone      string
 }
 
 type APIConfig struct {
@@ -106,7 +105,6 @@ func Load() (*Config, error) {
 	cfg.Ads.Slots = lookupList("AD_SLOTS")
 
 	cfg.Analytics.GAMeasurementID = lookup("GA_MEASUREMENT_ID")
-	cfg.Analytics.GATimezone = lookup("GA_TIMEZONE")
 
 	cfg.API.BobEndpoint = strings.TrimRight(lookup("BOB_ENDPOINT"), "/")
 

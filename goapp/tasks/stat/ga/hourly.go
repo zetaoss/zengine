@@ -22,12 +22,10 @@ func (j *HourlyTask) Execute(ctx context.Context, taskCtx taskctx.Context, _ any
 	if err != nil {
 		return nil, err
 	}
-	cfg := taskCtx.Config()
-	loc := location(cfg.Analytics.GATimezone)
-	until := timeutil.HourlyEndInLocation(time.Now(), loc).Add(time.Hour)
+	until := timeutil.HourlyEndUTC(time.Now(), 0).Add(time.Hour)
 	since := until.Add(-48 * time.Hour)
 
-	rows, err := report(ctx, cfg.API.BobEndpoint, "hour", since, until)
+	rows, err := report(ctx, taskCtx.Config().API.BobEndpoint, "hour", since, until)
 	if err != nil {
 		return nil, err
 	}
