@@ -13,9 +13,9 @@ import (
 
 	"github.com/zetaoss/zengine/goapp/app"
 	"github.com/zetaoss/zengine/goapp/app/config"
-	"github.com/zetaoss/zengine/goapp/tasks/aiedit"
 	"github.com/zetaoss/zengine/goapp/models"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
+	"github.com/zetaoss/zengine/goapp/tasks/aiedit"
 
 	"gorm.io/gorm"
 )

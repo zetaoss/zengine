@@ -17,21 +17,15 @@ func TestReport(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	day := time.Date(2026, 10, 9, 0, 0, 0, 0, time.UTC)
-	rows, err := report(context.Background(), srv.URL, "hour", day.AddDate(0, 0, -2), day)
+	until := time.Date(2026, 10, 9, 12, 0, 0, 0, time.UTC)
+	rows, err := report(context.Background(), srv.URL, "hour", until.Add(-48*time.Hour), until)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if gotURL != "/ga/report?interval=hour&since=2026-10-07&until=2026-10-09" {
+	if gotURL != "/ga/report?interval=hour&since=2026-10-07T12%3A00%3A00Z&until=2026-10-09T12%3A00%3A00Z" {
 		t.Errorf("request URL = %s", gotURL)
 	}
 	if len(rows) != 1 || rows[0].Timeslot != "2026-10-09 07:00:00" || rows[0].Sessions != 5 || rows[0].ScreenPageViews != 9 || rows[0].ActiveUsers != 3 {
 		t.Errorf("rows=%+v", rows)
-	}
-}
-
-func TestLocation(t *testing.T) {
-	if location("") != time.UTC || location("Not/AZone") != time.UTC || location("Asia/Seoul").String() != "Asia/Seoul" {
-		t.Fatal("unexpected location")
 	}
 }

@@ -6,7 +6,6 @@ import (
 
 	"github.com/zetaoss/zengine/goapp/app"
 	"github.com/zetaoss/zengine/goapp/app/taskctx"
-	"github.com/zetaoss/zengine/goapp/tasks/stat/timeutil"
 
 	"gorm.io/gorm/clause"
 )
@@ -22,11 +21,9 @@ func (j *DailyTask) Execute(ctx context.Context, taskCtx taskctx.Context, _ any)
 	if err != nil {
 		return nil, err
 	}
-	cfg := taskCtx.Config()
-	to := timeutil.DailyEndInLocation(time.Now(), location(cfg.Analytics.GATimezone))
-	from := to.AddDate(0, 0, -9)
-
-	rows, err := report(ctx, cfg.API.BobEndpoint, "day", from, to)
+	// The last 10 property-local dates, today included.
+	now := time.Now()
+	rows, err := report(ctx, taskCtx.Config().API.BobEndpoint, "day", now.AddDate(0, 0, -9), now)
 	if err != nil {
 		return nil, err
 	}

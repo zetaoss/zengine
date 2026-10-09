@@ -29,7 +29,6 @@ The zengine image receives configuration in two forms:
 | `REDIS_VOLATILE_HOST` | goapp defaults to `127.0.0.1`; MediaWiki requires a host to be configured (port `6379` is fixed) | Redis for data that may be evicted: caches. See [redis.md](redis.md). |
 | `AD_CLIENT`, `AD_SLOTS` | | Advertising. `AD_SLOTS` is comma-separated. |
 | `GA_MEASUREMENT_ID` | | Google Analytics measurement ID for the frontend tag. |
-| `GA_TIMEZONE` | `UTC` | Zone the GA stat windows and the GA stats API use. Must match bob's `google.gaTimezone`. |
 | `BOB_ENDPOINT` | | Base URL of [bob](https://github.com/zetaoss/bob), the in-cluster app server, without a trailing `/`. goapp appends the feature path: `/aigate` (LLM), `/cloudflare/analytics` (`stat-cf-*`), `/ga/report` (`stat-ga-*`), `/gsc/query` (`stat-gsc-*`), `/metrics/` (k8s stats for `stat-k8s-hourly` and `ctl metrics`), `/runbox`, `/search`. |
 | `FACEBOOK_CLIENT_ID/SECRET`, `GITHUB_CLIENT_ID/SECRET`, `GOOGLE_CLIENT_ID/SECRET` | | Social login. |
 
