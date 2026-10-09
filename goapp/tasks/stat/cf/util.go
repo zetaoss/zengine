@@ -1,166 +1,50 @@
 package cf
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"log/slog"
 	"net/http"
+	"net/url"
 	"time"
-
-	"github.com/zetaoss/zengine/goapp/app"
 )
 
-func RunCFGraphQL(ctx context.Context, token string, query string, variables app.H) (app.H, error) {
-	body, _ := json.Marshal(app.H{"query": query, "variables": variables})
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.cloudflare.com/client/v4/graphql", bytes.NewReader(body))
+// Group is one timeslot of Cloudflare zone analytics from bob: an RFC3339 datetime for hourly
+// data, a date (YYYY-MM-DD) for daily data. Metric values are the text stored in stat_cf_*.
+type Group struct {
+	Timeslot string            `json:"timeslot"`
+	Metrics  map[string]string `json:"metrics"`
+}
+
+var bobHTTPClient = &http.Client{Timeout: 60 * time.Second}
+
+// FetchAnalytics asks bob for zone analytics. interval is "hour" (since/until RFC3339) or "day"
+// (since/until YYYY-MM-DD, until exclusive).
+func FetchAnalytics(ctx context.Context, bobEndpoint, interval, since, until string) ([]Group, error) {
+	if bobEndpoint == "" {
+		return nil, fmt.Errorf("BOB_ENDPOINT is required")
+	}
+	params := url.Values{"interval": {interval}, "since": {since}, "until": {until}}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, bobEndpoint+"/cloudflare/analytics?"+params.Encode(), nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := (&http.Client{Timeout: 20 * time.Second}).Do(req)
+	resp, err := bobHTTPClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
+	defer func() { _ = resp.Body.Close() }()
 
-	raw, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return nil, fmt.Errorf("cloudflare api failed: %d %s", resp.StatusCode, string(raw))
+	var body struct {
+		Status string  `json:"status"`
+		Error  string  `json:"error"`
+		Result []Group `json:"result"`
 	}
-
-	var payload app.H
-	if err := json.Unmarshal(raw, &payload); err != nil {
-		return nil, err
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		return nil, fmt.Errorf("bob cloudflare: status %d: %w", resp.StatusCode, err)
 	}
-	slog.Debug("cloudflare payload", "raw", string(raw))
-	if errs, ok := payload["errors"].([]any); ok && len(errs) > 0 {
-		return nil, fmt.Errorf("cloudflare graphql returned errors: %+v", errs)
+	if resp.StatusCode != http.StatusOK || body.Status != "ok" {
+		return nil, fmt.Errorf("bob cloudflare: status %d: %s", resp.StatusCode, body.Error)
 	}
-	return payload, nil
+	return body.Result, nil
 }
-
-func CFGroups(payload app.H) []app.H {
-	data, _ := payload["data"].(app.H)
-	viewer, _ := data["viewer"].(app.H)
-	zones, _ := viewer["zones"].([]any)
-	if len(zones) == 0 {
-		return nil
-	}
-	zone0, _ := zones[0].(app.H)
-	groups, _ := zone0["zones"].([]any)
-	out := make([]app.H, 0, len(groups))
-	for _, g := range groups {
-		m, _ := g.(app.H)
-		if m != nil {
-			out = append(out, m)
-		}
-	}
-	return out
-}
-
-func NestedString(m app.H, keys ...string) (string, bool) {
-	cur := any(m)
-	for _, k := range keys {
-		next, ok := cur.(app.H)
-		if !ok {
-			return "", false
-		}
-		cur = next[k]
-	}
-	s, ok := cur.(string)
-	return s, ok
-}
-
-func CFMetricsFromGroup(group app.H) map[string]string {
-	sum, _ := group["sum"].(app.H)
-	uniq, _ := group["uniq"].(app.H)
-
-	metrics := map[string]string{}
-	if uniq != nil {
-		metrics["uniq_uniques"] = toTextValue(uniq["uniques"])
-	}
-	if sum != nil {
-		metrics["sum_requests"] = toTextValue(sum["requests"])
-		metrics["sum_pageViews"] = toTextValue(sum["pageViews"])
-		metrics["sum_bytes"] = toTextValue(sum["bytes"])
-		metrics["sum_cachedBytes"] = toTextValue(sum["cachedBytes"])
-		metrics["sum_cachedRequests"] = toTextValue(sum["cachedRequests"])
-		metrics["sum_encryptedBytes"] = toTextValue(sum["encryptedBytes"])
-		metrics["sum_encryptedRequests"] = toTextValue(sum["encryptedRequests"])
-		metrics["sum_threats"] = toTextValue(sum["threats"])
-		metrics["sum_browserMap"] = toTextValue(sum["browserMap"])
-		metrics["sum_contentTypeMap"] = toTextValue(sum["contentTypeMap"])
-		metrics["sum_clientSSLMap"] = toTextValue(sum["clientSSLMap"])
-		metrics["sum_countryMap"] = toTextValue(sum["countryMap"])
-		metrics["sum_ipClassMap"] = toTextValue(sum["ipClassMap"])
-		metrics["sum_responseStatusMap"] = toTextValue(sum["responseStatusMap"])
-		metrics["sum_threatPathingMap"] = toTextValue(sum["threatPathingMap"])
-	}
-	return metrics
-}
-
-func toTextValue(v any) string {
-	if v == nil {
-		return ""
-	}
-	switch x := v.(type) {
-	case app.H, []any:
-		b, err := json.Marshal(x)
-		if err != nil {
-			return "[]"
-		}
-		return string(b)
-	default:
-		return fmt.Sprintf("%v", v)
-	}
-}
-
-const CFDailyQuery = `query GetZoneAnalytics($zoneTag: string, $since: string, $until: string) {
-  viewer {
-    zones(filter: { zoneTag: $zoneTag }) {
-      zones: httpRequests1dGroups(orderBy: [date_ASC], limit: 10000, filter: { date_geq: $since, date_lt: $until }) {
-        dimensions { timeslot: date }
-        uniq { uniques }
-        sum {
-          browserMap { pageViews key: uaBrowserFamily }
-          bytes cachedBytes cachedRequests encryptedBytes encryptedRequests pageViews requests threats
-          contentTypeMap { bytes requests key: edgeResponseContentTypeName }
-          clientSSLMap { requests key: clientSSLProtocol }
-          countryMap { bytes requests threats key: clientCountryName }
-          ipClassMap { requests key: ipType }
-          responseStatusMap { requests key: edgeResponseStatus }
-          threatPathingMap { requests key: threatPathingName }
-        }
-      }
-    }
-  }
-}`
-
-const CFHourlyQuery = `query GetZoneAnalytics($zoneTag: string, $since: string, $until: string) {
-  viewer {
-    zones(filter: { zoneTag: $zoneTag }) {
-      zones: httpRequests1hGroups(orderBy: [datetime_ASC], limit: 10000, filter: { datetime_geq: $since, datetime_lt: $until }) {
-        dimensions { timeslot: datetime }
-        uniq { uniques }
-        sum {
-          browserMap { pageViews key: uaBrowserFamily }
-          bytes cachedBytes cachedRequests encryptedBytes encryptedRequests pageViews requests threats
-          contentTypeMap { bytes requests key: edgeResponseContentTypeName }
-          clientSSLMap { requests key: clientSSLProtocol }
-          countryMap { bytes requests threats key: clientCountryName }
-          ipClassMap { requests key: ipType }
-          responseStatusMap { requests key: edgeResponseStatus }
-          threatPathingMap { requests key: threatPathingName }
-        }
-      }
-    }
-  }
-}`

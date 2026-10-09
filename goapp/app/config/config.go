@@ -7,14 +7,13 @@ import (
 )
 
 type Config struct {
-	App        AppConfig
-	DB         DBConfig
-	Redis      RedisConfig
-	Ads        AdsConfig
-	Analytics  AnalyticsConfig
-	API        APIConfig
-	Cloudflare CloudflareConfig
-	OAuth      OAuthConfig
+	App       AppConfig
+	DB        DBConfig
+	Redis     RedisConfig
+	Ads       AdsConfig
+	Analytics AnalyticsConfig
+	API       APIConfig
+	OAuth     OAuthConfig
 }
 
 type AppConfig struct {
@@ -61,13 +60,8 @@ type AnalyticsConfig struct {
 
 type APIConfig struct {
 	// BobEndpoint is the base URL of bob, the in-cluster app server. Callers append the
-	// feature path: /aigate (LLM), /metrics (k8s stats), /runbox, /search.
+	// feature path: /aigate (LLM), /cloudflare (zone analytics), /metrics (k8s stats), /runbox, /search.
 	BobEndpoint string
-}
-
-type CloudflareConfig struct {
-	APIToken string
-	ZoneID   string
 }
 
 type OAuthConfig struct {
@@ -81,14 +75,13 @@ type OAuthConfig struct {
 
 func Load() (*Config, error) {
 	cfg := &Config{
-		App:        AppConfig{},
-		DB:         DBConfig{},
-		Redis:      RedisConfig{},
-		Ads:        AdsConfig{},
-		Analytics:  AnalyticsConfig{},
-		API:        APIConfig{},
-		Cloudflare: CloudflareConfig{},
-		OAuth:      OAuthConfig{},
+		App:       AppConfig{},
+		DB:        DBConfig{},
+		Redis:     RedisConfig{},
+		Ads:       AdsConfig{},
+		Analytics: AnalyticsConfig{},
+		API:       APIConfig{},
+		OAuth:     OAuthConfig{},
 	}
 
 	cfg.App.APIServer = lookup("API_SERVER")
@@ -122,9 +115,6 @@ func Load() (*Config, error) {
 	cfg.Analytics.GSCSiteURL = lookup("GSC_SITE_URL")
 
 	cfg.API.BobEndpoint = strings.TrimRight(lookup("BOB_ENDPOINT"), "/")
-
-	cfg.Cloudflare.APIToken = lookup("CLOUDFLARE_API_TOKEN")
-	cfg.Cloudflare.ZoneID = lookup("CLOUDFLARE_ZONE_ID")
 
 	cfg.OAuth.FacebookClientID = lookup("FACEBOOK_CLIENT_ID")
 	cfg.OAuth.FacebookClientSecret = lookup("FACEBOOK_CLIENT_SECRET")

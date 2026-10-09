@@ -30,8 +30,7 @@ The zengine image receives configuration in two forms:
 | `AD_CLIENT`, `AD_SLOTS` | | Advertising. `AD_SLOTS` is comma-separated. |
 | `GA_MEASUREMENT_ID`, `GA_PROPERTY_ID`, `GA_TIMEZONE`, `GSC_SITE_URL` | | Google Analytics / Search Console. |
 | `GA_READER_FILE` | | Path to the service-account JSON file used to query GA/GSC. |
-| `BOB_ENDPOINT` | | Base URL of [bob](https://github.com/zetaoss/bob), the in-cluster app server, without a trailing `/`. goapp appends the feature path: `/aigate` (LLM), `/metrics/` (k8s stats for `stat-k8s-hourly` and `ctl metrics`), `/runbox`, `/search`. |
-| `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ZONE_ID` | | Cloudflare API. |
+| `BOB_ENDPOINT` | | Base URL of [bob](https://github.com/zetaoss/bob), the in-cluster app server, without a trailing `/`. goapp appends the feature path: `/aigate` (LLM), `/cloudflare/analytics` (`stat-cf-*`), `/metrics/` (k8s stats for `stat-k8s-hourly` and `ctl metrics`), `/runbox`, `/search`. |
 | `FACEBOOK_CLIENT_ID/SECRET`, `GITHUB_CLIENT_ID/SECRET`, `GOOGLE_CLIENT_ID/SECRET` | | Social login. |
 
 At startup, goapp reads these values and injects `window.ZCONF` (`avatarBaseUrl`, `gaMeasurementId`, `adClient`, `adSlots`) into the frontend (`goapp/server/runtime/common/injector.go`).
