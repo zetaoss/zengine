@@ -7,14 +7,13 @@ import (
 )
 
 type Config struct {
-	App        AppConfig
-	DB         DBConfig
-	Redis      RedisConfig
-	Ads        AdsConfig
-	Analytics  AnalyticsConfig
-	API        APIConfig
-	Cloudflare CloudflareConfig
-	OAuth      OAuthConfig
+	App       AppConfig
+	DB        DBConfig
+	Redis     RedisConfig
+	Ads       AdsConfig
+	Analytics AnalyticsConfig
+	API       APIConfig
+	OAuth     OAuthConfig
 }
 
 type AppConfig struct {
@@ -53,21 +52,13 @@ type AdsConfig struct {
 
 type AnalyticsConfig struct {
 	GAMeasurementID string
-	GAPropertyID    string
-	GAReaderFile    string
 	GATimezone      string
-	GSCSiteURL      string
 }
 
 type APIConfig struct {
 	// BobEndpoint is the base URL of bob, the in-cluster app server. Callers append the
-	// feature path: /aigate (LLM), /metrics (k8s stats), /runbox, /search.
+	// feature path: /aigate (LLM), /cloudflare, /ga, /gsc (analytics), /metrics (k8s stats), /runbox, /search.
 	BobEndpoint string
-}
-
-type CloudflareConfig struct {
-	APIToken string
-	ZoneID   string
 }
 
 type OAuthConfig struct {
@@ -81,14 +72,13 @@ type OAuthConfig struct {
 
 func Load() (*Config, error) {
 	cfg := &Config{
-		App:        AppConfig{},
-		DB:         DBConfig{},
-		Redis:      RedisConfig{},
-		Ads:        AdsConfig{},
-		Analytics:  AnalyticsConfig{},
-		API:        APIConfig{},
-		Cloudflare: CloudflareConfig{},
-		OAuth:      OAuthConfig{},
+		App:       AppConfig{},
+		DB:        DBConfig{},
+		Redis:     RedisConfig{},
+		Ads:       AdsConfig{},
+		Analytics: AnalyticsConfig{},
+		API:       APIConfig{},
+		OAuth:     OAuthConfig{},
 	}
 
 	cfg.App.APIServer = lookup("API_SERVER")
@@ -116,15 +106,9 @@ func Load() (*Config, error) {
 	cfg.Ads.Slots = lookupList("AD_SLOTS")
 
 	cfg.Analytics.GAMeasurementID = lookup("GA_MEASUREMENT_ID")
-	cfg.Analytics.GAPropertyID = lookup("GA_PROPERTY_ID")
-	cfg.Analytics.GAReaderFile = lookup("GA_READER_FILE")
 	cfg.Analytics.GATimezone = lookup("GA_TIMEZONE")
-	cfg.Analytics.GSCSiteURL = lookup("GSC_SITE_URL")
 
 	cfg.API.BobEndpoint = strings.TrimRight(lookup("BOB_ENDPOINT"), "/")
-
-	cfg.Cloudflare.APIToken = lookup("CLOUDFLARE_API_TOKEN")
-	cfg.Cloudflare.ZoneID = lookup("CLOUDFLARE_ZONE_ID")
 
 	cfg.OAuth.FacebookClientID = lookup("FACEBOOK_CLIENT_ID")
 	cfg.OAuth.FacebookClientSecret = lookup("FACEBOOK_CLIENT_SECRET")

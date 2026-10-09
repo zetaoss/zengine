@@ -2,7 +2,6 @@ package cf
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/zetaoss/zengine/goapp/app"
@@ -25,34 +24,19 @@ func (j *DailyTask) Execute(ctx context.Context, taskCtx taskctx.Context, _ any)
 		return nil, err
 	}
 
-	token := taskCtx.Config().Cloudflare.APIToken
-	zoneID := taskCtx.Config().Cloudflare.ZoneID
-	if token == "" || zoneID == "" {
-		return nil, fmt.Errorf("missing cloudflare credentials")
-	}
-
 	to := timeutil.DailyEndUTC(time.Now().UTC())
 	since := to.AddDate(0, 0, -9)
 	until := to.AddDate(0, 0, 1)
 
-	payload, err := RunCFGraphQL(ctx, token, CFDailyQuery, app.H{
-		"zoneTag": zoneID,
-		"since":   since.Format("2006-01-02"),
-		"until":   until.Format("2006-01-02"),
-	})
+	groups, err := FetchAnalytics(ctx, taskCtx.Config().API.BobEndpoint, "day", since.Format("2006-01-02"), until.Format("2006-01-02"))
 	if err != nil {
 		return nil, err
 	}
 
 	rows := make([]statmodels.CFKV, 0, 2048)
-	for _, group := range CFGroups(payload) {
-		timeslot, _ := NestedString(group, "dimensions", "timeslot")
-		if timeslot == "" {
-			continue
-		}
-		metrics := CFMetricsFromGroup(group)
+	for _, group := range groups {
 		for _, name := range statmodels.WorkerCFMetricNames {
-			rows = append(rows, statmodels.CFKV{Timeslot: timeslot, Name: name, Value: metrics[name]})
+			rows = append(rows, statmodels.CFKV{Timeslot: group.Timeslot, Name: name, Value: group.Metrics[name]})
 		}
 	}
 
