@@ -185,7 +185,6 @@ var hourlyMetrics = []string{
 	"defender_fighting_ratio", "defender_max_level",
 }
 
-
 type HourlyTask struct{}
 
 func NewHourlyTask() *HourlyTask {
