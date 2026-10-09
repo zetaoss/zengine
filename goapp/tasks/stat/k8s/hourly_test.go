@@ -75,6 +75,53 @@ func TestFetchMetricsErrors(t *testing.T) {
 	}
 }
 
+func TestValidate(t *testing.T) {
+	m, err := FetchMetrics(context.Background(), fakeBob(t, http.StatusOK, bobBody, nil), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := m.validate(); err != nil {
+		t.Fatalf("complete metrics: %v", err)
+	}
+
+	missing := Metrics{}
+	for k, v := range m {
+		missing[k] = v
+	}
+	delete(missing, "pvc_storage_usage")
+	if err := missing.validate(); err == nil || !strings.Contains(err.Error(), "pvc_storage_usage is not configured") {
+		t.Errorf("missing PVC usage: %v", err)
+	}
+
+	empty := Metrics{}
+	for k, v := range m {
+		empty[k] = v
+	}
+	empty["pvc_storage_usage"] = []Sample{}
+	if err := empty.validate(); err == nil || !strings.Contains(err.Error(), "pvc_storage_usage has no data") {
+		t.Errorf("empty PVC usage: %v", err)
+	}
+
+	zero := Metrics{}
+	for k, v := range m {
+		zero[k] = v
+	}
+	zero["pvc_storage_usage"] = []Sample{{Labels: map[string]string{}, Value: 0}}
+	zero["defender_max_level"] = []Sample{}
+	if err := zero.validate(); err != nil {
+		t.Errorf("zero usage and no defender data should pass: %v", err)
+	}
+
+	noCapacity := Metrics{}
+	for k, v := range m {
+		noCapacity[k] = v
+	}
+	noCapacity["pvc_storage_capacity"] = []Sample{{Labels: map[string]string{}, Value: 0}}
+	if err := noCapacity.validate(); err == nil || !strings.Contains(err.Error(), "capacity") {
+		t.Errorf("zero capacity: %v", err)
+	}
+}
+
 func TestParseHourlyTimeslot(t *testing.T) {
 	got, err := parseHourlyTimeslot("2026-08-15 12:00:00")
 	if err != nil || !got.Equal(time.Date(2026, 8, 15, 12, 0, 0, 0, time.UTC)) {

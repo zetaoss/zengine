@@ -172,6 +172,43 @@ func (m Metrics) PVCs() []PVCMetric {
 	return out
 }
 
+// hourlyMetrics are the stat_k8s_hourly columns read from bob. A name missing from bob's response
+// is a configuration error; required ones must also have data (a zero value is fine).
+var hourlyMetrics = []struct {
+	name     string
+	required bool
+}{
+	{"node_cpu_usage", true},
+	{"node_cpu_allocatable", false},
+	{"node_memory_usage", false},
+	{"node_memory_allocatable", false},
+	{"pod_cpu_usage", false},
+	{"pod_memory_usage", true},
+	{"pod_count", false},
+	{"pvc_storage_usage", true},
+	{"pvc_storage_capacity", true},
+	{"defender_fighting_ratio", false},
+	{"defender_max_level", false},
+}
+
+// validate rejects a response that would store a wrong row: an unconfigured metric, a required
+// metric without data, or a non-positive PVC capacity.
+func (m Metrics) validate() error {
+	for _, metric := range hourlyMetrics {
+		samples, ok := m[metric.name]
+		if !ok {
+			return fmt.Errorf("bob metric %s is not configured", metric.name)
+		}
+		if metric.required && len(samples) == 0 {
+			return fmt.Errorf("bob metric %s has no data", metric.name)
+		}
+	}
+	if m.Total("pvc_storage_capacity") <= 0 {
+		return fmt.Errorf("invalid PVC capacity metric")
+	}
+	return nil
+}
+
 type HourlyTask struct{}
 
 func NewHourlyTask() *HourlyTask {
@@ -216,14 +253,8 @@ func (j *HourlyTask) Execute(ctx context.Context, taskCtx taskctx.Context, input
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch k8s metrics: %w", err)
 	}
-	if len(m["node_cpu_usage"]) == 0 {
-		return nil, fmt.Errorf("no node metrics")
-	}
-	if len(m["pod_memory_usage"]) == 0 {
-		return nil, fmt.Errorf("no pod metrics")
-	}
-	if m.Total("pvc_storage_capacity") <= 0 {
-		return nil, fmt.Errorf("missing or invalid PVC capacity metric")
+	if err := m.validate(); err != nil {
+		return nil, err
 	}
 
 	row := statmodels.K8sHourly{
