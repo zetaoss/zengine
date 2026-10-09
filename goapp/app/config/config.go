@@ -52,15 +52,12 @@ type AdsConfig struct {
 
 type AnalyticsConfig struct {
 	GAMeasurementID string
-	GAPropertyID    string
-	GAReaderFile    string
 	GATimezone      string
-	GSCSiteURL      string
 }
 
 type APIConfig struct {
 	// BobEndpoint is the base URL of bob, the in-cluster app server. Callers append the
-	// feature path: /aigate (LLM), /cloudflare (zone analytics), /metrics (k8s stats), /runbox, /search.
+	// feature path: /aigate (LLM), /cloudflare, /ga, /gsc (analytics), /metrics (k8s stats), /runbox, /search.
 	BobEndpoint string
 }
 
@@ -109,10 +106,7 @@ func Load() (*Config, error) {
 	cfg.Ads.Slots = lookupList("AD_SLOTS")
 
 	cfg.Analytics.GAMeasurementID = lookup("GA_MEASUREMENT_ID")
-	cfg.Analytics.GAPropertyID = lookup("GA_PROPERTY_ID")
-	cfg.Analytics.GAReaderFile = lookup("GA_READER_FILE")
 	cfg.Analytics.GATimezone = lookup("GA_TIMEZONE")
-	cfg.Analytics.GSCSiteURL = lookup("GSC_SITE_URL")
 
 	cfg.API.BobEndpoint = strings.TrimRight(lookup("BOB_ENDPOINT"), "/")
 

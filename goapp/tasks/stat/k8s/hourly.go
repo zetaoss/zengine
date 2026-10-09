@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"net/url"
 	"sort"
 	"time"
@@ -12,6 +11,7 @@ import (
 	"github.com/zetaoss/zengine/goapp/app"
 	"github.com/zetaoss/zengine/goapp/app/taskctx"
 	statmodels "github.com/zetaoss/zengine/goapp/models/stat"
+	"github.com/zetaoss/zengine/goapp/tasks/stat/bobapi"
 	"github.com/zetaoss/zengine/goapp/tasks/stat/timeutil"
 
 	"gorm.io/gorm/clause"
@@ -50,44 +50,19 @@ type Sample struct {
 // behind them (node pool, namespace, PVC) is configured in bob.
 type Metrics map[string][]Sample
 
-var bobHTTPClient = &http.Client{Timeout: 15 * time.Second}
-
 // FetchMetrics gets the named metrics (all when names is empty) from bob at the given time
 // (nil: now). bob answers 404 when a name is not configured.
 func FetchMetrics(ctx context.Context, bobEndpoint string, at *time.Time, names ...string) (Metrics, error) {
-	if bobEndpoint == "" {
-		return nil, fmt.Errorf("BOB_ENDPOINT is required")
+	params := url.Values{}
+	if len(names) > 0 {
+		params["name"] = names
 	}
-	params := url.Values{"name": names}
 	if at != nil {
 		params.Set("time", at.UTC().Format(time.RFC3339))
 	}
-	u := bobEndpoint + "/metrics/"
-	if len(params) > 0 {
-		u += "?" + params.Encode()
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := bobHTTPClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	var body struct {
-		Status string  `json:"status"`
-		Error  string  `json:"error"`
-		Result Metrics `json:"result"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
-		return nil, fmt.Errorf("bob metrics: status %d: %w", resp.StatusCode, err)
-	}
-	if resp.StatusCode != http.StatusOK || body.Status != "ok" {
-		return nil, fmt.Errorf("bob metrics: status %d: %s", resp.StatusCode, body.Error)
-	}
-	return body.Result, nil
+	var m Metrics
+	err := bobapi.Get(ctx, bobEndpoint, "/metrics/", params, &m)
+	return m, err
 }
 
 // Total sums every series of a metric.

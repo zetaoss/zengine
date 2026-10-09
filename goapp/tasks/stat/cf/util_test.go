@@ -33,12 +33,4 @@ func TestFetchAnalyticsErrors(t *testing.T) {
 	if _, err := FetchAnalytics(context.Background(), "", "day", "a", "b"); err == nil || !strings.Contains(err.Error(), "BOB_ENDPOINT") {
 		t.Errorf("empty endpoint: %v", err)
 	}
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusBadGateway)
-		_, _ = io.WriteString(w, `{"status":"error","error":"cloudflare api failed: 403"}`)
-	}))
-	defer srv.Close()
-	if _, err := FetchAnalytics(context.Background(), srv.URL, "day", "2026-10-01", "2026-10-09"); err == nil || !strings.Contains(err.Error(), "403") {
-		t.Errorf("bob error: %v", err)
-	}
 }
