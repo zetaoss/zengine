@@ -52,14 +52,19 @@ type Metrics map[string][]Sample
 
 var bobHTTPClient = &http.Client{Timeout: 15 * time.Second}
 
-// FetchMetrics gets every metric from bob at the given time (nil: now).
-func FetchMetrics(ctx context.Context, bobEndpoint string, at *time.Time) (Metrics, error) {
+// FetchMetrics gets the named metrics (all when names is empty) from bob at the given time
+// (nil: now). bob answers 404 when a name is not configured.
+func FetchMetrics(ctx context.Context, bobEndpoint string, at *time.Time, names ...string) (Metrics, error) {
 	if bobEndpoint == "" {
 		return nil, fmt.Errorf("BOB_ENDPOINT is required")
 	}
-	u := bobEndpoint + "/metrics/"
+	params := url.Values{"name": names}
 	if at != nil {
-		u += "?" + url.Values{"time": []string{at.UTC().Format(time.RFC3339)}}.Encode()
+		params.Set("time", at.UTC().Format(time.RFC3339))
+	}
+	u := bobEndpoint + "/metrics/"
+	if len(params) > 0 {
+		u += "?" + params.Encode()
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 	if err != nil {
@@ -172,35 +177,23 @@ func (m Metrics) PVCs() []PVCMetric {
 	return out
 }
 
-// hourlyMetrics are the stat_k8s_hourly columns read from bob. A name missing from bob's response
-// is a configuration error; required ones must also have data (a zero value is fine).
-var hourlyMetrics = []struct {
-	name     string
-	required bool
-}{
-	{"node_cpu_usage", true},
-	{"node_cpu_allocatable", false},
-	{"node_memory_usage", false},
-	{"node_memory_allocatable", false},
-	{"pod_cpu_usage", false},
-	{"pod_memory_usage", true},
-	{"pod_count", false},
-	{"pvc_storage_usage", true},
-	{"pvc_storage_capacity", true},
-	{"defender_fighting_ratio", false},
-	{"defender_max_level", false},
+// hourlyMetrics are the stat_k8s_hourly columns, requested from bob by name.
+var hourlyMetrics = []string{
+	"node_cpu_usage", "node_cpu_allocatable", "node_memory_usage", "node_memory_allocatable",
+	"pod_cpu_usage", "pod_memory_usage", "pod_count",
+	"pvc_storage_usage", "pvc_storage_capacity",
+	"defender_fighting_ratio", "defender_max_level",
 }
 
-// validate rejects a response that would store a wrong row: an unconfigured metric, a required
-// metric without data, or a non-positive PVC capacity.
+// requiredMetrics must have data for a row to be stored (a zero value is fine); the others,
+// such as zeta-defender, may legitimately have none and count as zero. Without data the timeslot
+// is left empty so it can be filled later by running the task with that timeslot.
+var requiredMetrics = []string{"node_cpu_usage", "pod_memory_usage", "pvc_storage_usage", "pvc_storage_capacity"}
+
 func (m Metrics) validate() error {
-	for _, metric := range hourlyMetrics {
-		samples, ok := m[metric.name]
-		if !ok {
-			return fmt.Errorf("bob metric %s is not configured", metric.name)
-		}
-		if metric.required && len(samples) == 0 {
-			return fmt.Errorf("bob metric %s has no data", metric.name)
+	for _, name := range requiredMetrics {
+		if len(m[name]) == 0 {
+			return fmt.Errorf("bob metric %s has no data", name)
 		}
 	}
 	if m.Total("pvc_storage_capacity") <= 0 {
@@ -249,7 +242,7 @@ func (j *HourlyTask) Execute(ctx context.Context, taskCtx taskctx.Context, input
 		return nil, fmt.Errorf("invalid timeslot %q: %w", ts, err)
 	}
 
-	m, err := FetchMetrics(ctx, bobEndpoint, &evaluationTime)
+	m, err := FetchMetrics(ctx, bobEndpoint, &evaluationTime, hourlyMetrics...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch k8s metrics: %w", err)
 	}
