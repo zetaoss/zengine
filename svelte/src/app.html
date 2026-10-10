@@ -6,6 +6,10 @@
     <title>제타위키</title>
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" type="image/svg+xml" href="/zeta.svg" />
+    <script>
+      if ((localStorage.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : '')) === 'dark')
+        document.documentElement.classList.add('dark', 'skin-theme-clientpref-night')
+    </script>
     %sveltekit.head%
     <script src="/track.js" defer></script>
   </head>

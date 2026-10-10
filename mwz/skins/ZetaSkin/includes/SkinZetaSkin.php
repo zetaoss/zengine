@@ -19,8 +19,8 @@ class SkinZetaSkin extends SkinMustache
     {
         self::$action = $out->getActionName();
         self::$pageId = (int) $skin->getTitle()->getArticleID();
-        $out->addHTMLClasses(($_COOKIE['theme'] ?? '') === 'dark' ? 'dark' : '');
-        $out->addHeadItem('assets', '<script>window.ZCONF={"avatarBaseUrl":"'.AVATAR_BASE_URL.'","gaMeasurementId":"'.GA_MEASUREMENT_ID.'","adClient":"'.AD_CLIENT.'","adSlots":'.AD_SLOTS.',"policy":"'.(($_SERVER['HTTP_X_POLICY'] ?? '') === 'standard' ? 'standard' : 'strict').'"}</script>'
+        $out->addHeadItem('assets', '<script>if((localStorage.theme||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":""))==="dark")document.documentElement.classList.add("dark","skin-theme-clientpref-night")</script>'
+            .'<script>window.ZCONF={"avatarBaseUrl":"'.AVATAR_BASE_URL.'","gaMeasurementId":"'.GA_MEASUREMENT_ID.'","adClient":"'.AD_CLIENT.'","adSlots":'.AD_SLOTS.',"policy":"'.(($_SERVER['HTTP_X_POLICY'] ?? '') === 'standard' ? 'standard' : 'strict').'"}</script>'
             .'<script src="/track.js?'.ASSET_HASH.'" defer></script><script src="/w/skins/ZetaSkin/dist/app.js?'.ASSET_HASH.'" defer></script>'
             .'<link rel="stylesheet" href="/w/skins/ZetaSkin/dist/app.css?'.ASSET_HASH.'">');
     }
