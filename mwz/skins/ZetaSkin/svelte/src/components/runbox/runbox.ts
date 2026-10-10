@@ -11,7 +11,17 @@ import { type Box, BoxType, type Job, type JobPhase, JobType } from './types'
 
 const pageId = getRLCONF().wgArticleId
 
-let delay = 1000
+// Delay before the next status check of a job: 1 s, then 1.5x per check, at most 10 s. It is kept per job; a
+// single delay shared by all jobs grew on every check of any job, so a page with many blocks waited minutes.
+const firstPollDelay = 1000
+const maxPollDelay = 10_000
+const pollDelays = new WeakMap<JobStore, number>()
+
+function nextPollDelay(store: JobStore): number {
+  const wait = pollDelays.get(store) ?? firstPollDelay
+  pollDelays.set(store, Math.min(wait * 1.5, maxPollDelay))
+  return wait
+}
 
 interface JobStatus {
   phase: JobPhase
@@ -115,9 +125,9 @@ async function getJob(store: JobStore): Promise<void> {
   }
 
   if (phase === 'pending' || phase === 'running') {
-    console.log(`Job ${job.id}: ${phase}, refresh in ${Math.round(delay)}ms`)
-    delay *= 1.1
-    setTimeout(() => enqueue((j) => getJob(j), store), delay)
+    const wait = nextPollDelay(store)
+    console.log(`Job ${job.id}: ${phase}, refresh in ${wait}ms`)
+    setTimeout(() => enqueue((j) => getJob(j), store), wait)
     return
   }
 
@@ -185,7 +195,7 @@ export async function rerunJob(store: JobStore): Promise<void> {
     return
   }
 
-  delay = 1000
+  pollDelays.delete(store)
   updateJob(store, (j) => {
     j.phase = 'pending'
   })
