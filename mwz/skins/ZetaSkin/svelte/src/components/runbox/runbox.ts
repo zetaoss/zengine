@@ -11,16 +11,21 @@ import { type Box, BoxType, type Job, type JobPhase, JobType } from './types'
 
 const pageId = getRLCONF().wgArticleId
 
-// Delay before the next status check of a job: 1 s, then 1.5x per check, at most 10 s. It is kept per job; a
+// Status checks of a job: the first after 1 s, each next one 1.1x later, for at most 999 s. Kept per job: a
 // single delay shared by all jobs grew on every check of any job, so a page with many blocks waited minutes.
+// The server runs jobs one at a time, so a page right after an edit can wait long; once a job has a result,
+// later views show it at once. Past 999 s a reload checks again.
 const firstPollDelay = 1000
-const maxPollDelay = 10_000
-const pollDelays = new WeakMap<JobStore, number>()
+const pollTimeout = 999_000
+const polls = new WeakMap<JobStore, { delay: number; deadline: number }>()
 
-function nextPollDelay(store: JobStore): number {
-  const wait = pollDelays.get(store) ?? firstPollDelay
-  pollDelays.set(store, Math.min(wait * 1.5, maxPollDelay))
-  return wait
+// nextPollDelay returns the wait before the next check, or null once the job's 999 s are up.
+function nextPollDelay(store: JobStore): number | null {
+  const now = Date.now()
+  const poll = polls.get(store) ?? { delay: firstPollDelay, deadline: now + pollTimeout }
+  if (now >= poll.deadline) return null
+  polls.set(store, { delay: poll.delay * 1.1, deadline: poll.deadline })
+  return poll.delay
 }
 
 interface JobStatus {
@@ -126,7 +131,14 @@ async function getJob(store: JobStore): Promise<void> {
 
   if (phase === 'pending' || phase === 'running') {
     const wait = nextPollDelay(store)
-    console.log(`Job ${job.id}: ${phase}, refresh in ${wait}ms`)
+    if (wait === null) {
+      updateJob(store, (j) => {
+        j.phase = 'failed'
+        j.failureReason = `no result in ${pollTimeout / 1000} s; reload the page to check again`
+      })
+      return
+    }
+    console.log(`Job ${job.id}: ${phase}, refresh in ${Math.round(wait)}ms`)
     setTimeout(() => enqueue((j) => getJob(j), store), wait)
     return
   }
@@ -195,7 +207,7 @@ export async function rerunJob(store: JobStore): Promise<void> {
     return
   }
 
-  pollDelays.delete(store)
+  polls.delete(store)
   updateJob(store, (j) => {
     j.phase = 'pending'
   })
