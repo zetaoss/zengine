@@ -9,6 +9,24 @@ permissions:
   packages: read
 
 jobs:
+  version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Check VERSION
+        env:
+          BASE: origin/${{ github.base_ref }}
+        run: |
+          git diff --quiet "$BASE"...HEAD -- VERSION && exit 0
+          version=$(cat VERSION)
+          latest=$(git tag -l 'v*' --sort=-v:refname | head -1)
+          [[ "$version" =~ ^0\.[0-9]+\.[0-9]+$ ]] || { echo "error: VERSION $version is not 0.x.y" >&2; exit 1; }
+          [[ "$(printf '%s\n' "${latest#v}" "$version" | sort -V | tail -1)" == "$version" && "v$version" != "$latest" ]] \
+            || { echo "error: VERSION $version is not after $latest" >&2; exit 1; }
+
   checks:
     runs-on: ubuntu-latest
     steps:
