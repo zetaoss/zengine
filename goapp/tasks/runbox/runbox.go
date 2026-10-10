@@ -6,9 +6,11 @@ import (
 	cryptorand "crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -80,17 +82,23 @@ func (j *RunboxTask) Execute(ctx context.Context, taskCtx taskctx.Context, p pay
 		return app.H{"hash": hash, "phase": "skipped"}, nil
 	}
 
+	// fail marks the job failed with a reason fit for the page and logs the error itself.
+	fail := func(err error, status int, bobMessage string) {
+		slog.Error("[runbox-job] failed", "hash", hash, "status", status, "error", err)
+		_ = markFailed(ctx, db, hash, leaseMarker, pageError(err, status, bobMessage))
+	}
+
 	bob := taskCtx.Config().API.BobEndpoint
 	if bob == "" {
 		err := fmt.Errorf("BOB_ENDPOINT is required")
-		_ = markFailed(ctx, db, hash, leaseMarker, err.Error())
+		fail(err, 0, "")
 		return nil, err
 	}
 
 	ep := bob + "/runbox/" + row.Type
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, ep, bytes.NewBufferString(row.Payload))
 	if err != nil {
-		_ = markFailed(ctx, db, hash, leaseMarker, err.Error())
+		fail(err, 0, "")
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -106,7 +114,7 @@ func (j *RunboxTask) Execute(ctx context.Context, taskCtx taskctx.Context, p pay
 		if err == nil {
 			err = fmt.Errorf("empty response from runbox")
 		}
-		_ = markFailed(ctx, db, hash, leaseMarker, err.Error())
+		fail(err, 0, "")
 		return nil, err
 	}
 	defer func() {
@@ -116,7 +124,7 @@ func (j *RunboxTask) Execute(ctx context.Context, taskCtx taskctx.Context, p pay
 	bodyBytes, readErr := io.ReadAll(resp.Body)
 	if readErr != nil {
 		err := fmt.Errorf("read runbox response: %w", readErr)
-		_ = markFailed(ctx, db, hash, leaseMarker, err.Error())
+		fail(err, resp.StatusCode, "")
 		return nil, err
 	}
 	slog.Info("[runbox-job] response",
@@ -132,10 +140,11 @@ func (j *RunboxTask) Execute(ctx context.Context, taskCtx taskctx.Context, p pay
 		if err == nil {
 			err = fmt.Errorf("runbox http status=%d", resp.StatusCode)
 		}
-		if message, ok := data["error"].(string); ok && strings.TrimSpace(message) != "" {
+		message, _ := data["error"].(string)
+		if strings.TrimSpace(message) != "" {
 			err = fmt.Errorf("%s", message)
 		}
-		_ = markFailed(ctx, db, hash, leaseMarker, err.Error())
+		fail(err, resp.StatusCode, message)
 		if resp.StatusCode >= http.StatusBadRequest && resp.StatusCode < http.StatusInternalServerError {
 			return nil, fmt.Errorf("%w: %v", asynq.SkipRetry, err)
 		}
@@ -169,6 +178,24 @@ func (j *RunboxTask) Execute(ctx context.Context, taskCtx taskctx.Context, p pay
 	}
 
 	return app.H{"hash": hash, "phase": "succeeded"}, nil
+}
+
+const (
+	errUnavailable = "runbox unavailable"
+	errTimedOut    = "runbox timed out"
+)
+
+// pageError is the failure reason shown on the page. Only bob's message for a bad request (4xx) is shown
+// as is; other errors may hold internal addresses (bob, its Docker host), so they stay in the worker log.
+func pageError(err error, status int, bobMessage string) string {
+	if status >= http.StatusBadRequest && status < http.StatusInternalServerError && strings.TrimSpace(bobMessage) != "" {
+		return bobMessage
+	}
+	var ne net.Error
+	if errors.Is(err, context.DeadlineExceeded) || (errors.As(err, &ne) && ne.Timeout()) {
+		return errTimedOut
+	}
+	return errUnavailable
 }
 
 func markFailed(ctx context.Context, db *gorm.DB, hash, leaseMarker, reason string) error {

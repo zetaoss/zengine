@@ -26,7 +26,7 @@ Routes are defined in `goapp/server/routes.go`.
 | `POST` | `/api/runbox` | Create an execution request |
 | `POST` | `/api/runbox/{hash}/rerun` | Rerun as a sysop |
 
-Execution status is one of `pending`, `running`, `succeeded`, or `failed`. On failure, bob's error is stored in `outs.error` and displayed on the page.
+Execution status is one of `pending`, `running`, `succeeded`, or `failed`. On failure, `outs.error` holds a reason shown on the page: bob's message for a bad request (4xx), `runbox timed out`, or `runbox unavailable`. Other details, which may hold internal addresses such as bob's or its Docker host's, go only to the worker log (`[runbox-job] failed`).
 
 Example payload for a regular execution:
 
