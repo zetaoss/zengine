@@ -22,12 +22,12 @@ func TestPageError(t *testing.T) {
 		bob    string
 		want   string
 	}{
-		{"client timeout", timeoutErr, 0, "", errTimedOut},
-		{"deadline", context.DeadlineExceeded, 0, "", errTimedOut},
-		{"connection", errors.New(`Post "http://bob.example.internal/runbox/lang": dial tcp: connection refused`), 0, "", errUnavailable},
-		{"bob 500", errors.New("runbox: dial tcp docker:2376"), 500, "runbox: dial tcp docker:2376", errUnavailable},
+		{"client timeout", timeoutErr, 0, "", ReasonTimedOut},
+		{"deadline", context.DeadlineExceeded, 0, "", ReasonTimedOut},
+		{"connection", errors.New(`Post "http://bob.example.internal/runbox/lang": dial tcp: connection refused`), 0, "", ReasonUnavailable},
+		{"bob 500", errors.New("runbox: dial tcp docker:2376"), 500, "runbox: dial tcp docker:2376", ReasonUnavailable},
 		{"bob 400", errors.New("invalid language"), 400, "invalid language", "invalid language"},
-		{"bob 400 empty", errors.New("runbox http status=400"), 400, "", errUnavailable},
+		{"bob 400 empty", errors.New("runbox http status=400"), 400, "", ReasonUnavailable},
 	}
 	for _, tt := range tests {
 		if got := pageError(tt.err, tt.status, tt.bob); got != tt.want {

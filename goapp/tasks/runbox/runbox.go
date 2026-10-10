@@ -180,9 +180,10 @@ func (j *RunboxTask) Execute(ctx context.Context, taskCtx taskctx.Context, p pay
 	return app.H{"hash": hash, "phase": "succeeded"}, nil
 }
 
+// Failure reasons stored in outs.error and shown on the page. They hold no internal details.
 const (
-	errUnavailable = "runbox unavailable"
-	errTimedOut    = "runbox timed out"
+	ReasonUnavailable = "runbox unavailable"
+	ReasonTimedOut    = "runbox timed out"
 )
 
 // pageError is the failure reason shown on the page. Only bob's message for a bad request (4xx) is shown
@@ -193,9 +194,9 @@ func pageError(err error, status int, bobMessage string) string {
 	}
 	var ne net.Error
 	if errors.Is(err, context.DeadlineExceeded) || (errors.As(err, &ne) && ne.Timeout()) {
-		return errTimedOut
+		return ReasonTimedOut
 	}
-	return errUnavailable
+	return ReasonUnavailable
 }
 
 func markFailed(ctx context.Context, db *gorm.DB, hash, leaseMarker, reason string) error {
