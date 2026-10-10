@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -106,10 +105,13 @@ func Rerun(c *serverctx.Context) {
 	c.JSON(map[string]bool{"ok": true})
 }
 
+// markEnqueueFailed marks the job failed with a page-safe reason; the enqueue error may name internal hosts
+// (Redis), so it is only logged.
 func markEnqueueFailed(c *serverctx.Context, hash string, err error) {
+	log.Printf("failed to enqueue runbox task: hash=%s error=%v", hash, err)
 	result := c.DB.Table("runboxes").Where("hash = ? AND phase = ?", hash, "pending").Updates(app.H{
 		"phase":      "failed",
-		"outs":       toJSON(app.H{"error": fmt.Sprintf("enqueue runbox task: %v", err)}),
+		"outs":       toJSON(app.H{"error": runbox.ReasonUnavailable}),
 		"updated_at": time.Now(),
 	})
 	if result.Error != nil {

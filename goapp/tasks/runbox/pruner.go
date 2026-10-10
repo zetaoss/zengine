@@ -28,7 +28,7 @@ func (j *PrunerTask) Execute(ctx context.Context, taskCtx taskctx.Context, _ any
 		Where("phase = ? AND updated_at < ?", "running", runningBefore).
 		Updates(app.H{
 			"phase":      "failed",
-			"outs":       toJSON(app.H{"error": "worker timeout"}),
+			"outs":       toJSON(app.H{"error": ReasonTimedOut}),
 			"updated_at": now,
 		})
 	if res.Error != nil {
