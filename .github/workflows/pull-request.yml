@@ -9,6 +9,25 @@ permissions:
   packages: read
 
 jobs:
+  version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Check VERSION
+        env:
+          BASE: origin/${{ github.base_ref }}
+        run: |
+          git diff --quiet "$BASE"...HEAD -- VERSION && exit 0
+          version=$(cat VERSION)
+          # The base VERSION counts too: a merged release has no tag until its image is pushed.
+          latest=$( (git tag -l 'v*' | sed 's/^v//'; git show "$BASE:VERSION" 2>/dev/null) | sort -V | tail -1)
+          [[ "$version" =~ ^0\.[0-9]+\.[0-9]+$ ]] || { echo "error: VERSION $version is not 0.x.y" >&2; exit 1; }
+          [[ "$(printf '%s\n' "$latest" "$version" | sort -V | tail -1)" == "$version" && "$version" != "$latest" ]] \
+            || { echo "error: VERSION $version is not after $latest (latest tag or $BASE)" >&2; exit 1; }
+
   checks:
     runs-on: ubuntu-latest
     steps:

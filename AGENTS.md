@@ -109,6 +109,8 @@ This guide helps coding agents quickly understand the monorepo and choose where 
 
 ## Dev Process Notes
 
+- Release: bump `VERSION` (0.x.y, after the latest tag) in a PR. Merging it builds `ghcr.io/zetaoss/zengine:v<VERSION>` and creates the tag and GitHub release (`.github/workflows/release.yml`). Do not push tags or create releases by hand.
+
 - Check the installed MediaWiki version from the repository root with:
 
   ```bash
