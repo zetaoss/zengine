@@ -1,0 +1,41 @@
+/* islands.css: reserve island space before app.js defines the custom elements */
+@reference 'tailwindcss';
+
+c-search {
+  display: block;
+  min-height: 3rem;
+}
+
+c-adsense-slot {
+  display: block;
+  width: 100%;
+}
+
+page-menu {
+  display: block;
+  min-width: 36px;
+}
+
+/* Mobile: page-meta width varies with contributors, so give it its own row. */
+main .flow-root > .float-left:has(page-meta) {
+  @apply max-md:float-none max-md:min-h-7;
+}
+
+/* md+: the binder starts expanded at 240px (BinderApex); mobile uses a fixed drawer. */
+binder-apex:not(:defined) {
+  @apply md:block md:w-60 md:flex-none;
+}
+
+toc-apex {
+  display: contents;
+}
+
+disambig-apex {
+  display: block;
+}
+
+/* Server-rendered placeholders (StaticMarkup.php) give way to Svelte output. */
+toc-apex:defined > .ce-static,
+disambig-apex:defined > .ce-static {
+  display: none;
+}
