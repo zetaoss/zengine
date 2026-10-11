@@ -70,7 +70,7 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     hmr: {
-      clientPort: 443,
+      clientPort: Number(process.env.VITE_HMR_CLIENT_PORT) || 443,
     },
   },
 })

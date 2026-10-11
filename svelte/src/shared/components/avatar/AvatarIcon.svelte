@@ -12,7 +12,7 @@
   const baseUrl = getZConf().avatarBaseUrl
 
   $: src = (() => {
-    if (!user) return ''
+    if (!user || !baseUrl) return ''
 
     const u = new URL(`${baseUrl}/u/${user.id}`)
     u.searchParams.set('s', String(size))
@@ -34,6 +34,8 @@
 >
   {#if user?.id === 0}
     <span class="flex h-full w-full items-center justify-center text-xs text-a-gray-500">?</span>
+  {:else if user && !src}
+    <span class="flex h-full w-full items-center justify-center text-xs text-a-gray-500">{user.name.slice(0, 1)}</span>
   {:else if user}
     <img
       class="h-full w-full"
