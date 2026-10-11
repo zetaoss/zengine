@@ -23,6 +23,7 @@ Monorepo for ZetaWiki services.
 - GoApp development and task system: `docs/goapp.md`
 - Configuration (environment variables, own vs injected files): `docs/config.md`
 - Redis roles (persist / volatile): `docs/redis.md`
+- Frontend apps and linking user text (linkify, linkifyText): `docs/front.md`
 
 ## Development Container
 

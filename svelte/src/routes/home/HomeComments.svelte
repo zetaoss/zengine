@@ -4,7 +4,7 @@
   import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
   import ZSkeleton from '$shared/ui/ZSkeleton.svelte'
   import httpy from '$shared/utils/httpy'
-  import linkify from '$shared/utils/linkify'
+  import linkifyText from '$shared/utils/linkifyText'
 
   interface Row {
     id: number
@@ -33,7 +33,7 @@
       loading: true,
     }))
 
-    const linkedMessages = await linkify(safeRows.map((x) => x.message || ''))
+    const linkedMessages = await linkifyText(safeRows.map((x) => x.message || ''))
     rows = safeRows.map((x, i) => ({
       ...x,
       message: linkedMessages[i] ?? '',

@@ -28,3 +28,17 @@ export function getWikiDiffHref(title: string, revid?: number): string {
   }
   return `/w/index.php?title=${encodeWikiQueryTitle(title)}&diff=cur&oldid=prev`
 }
+
+export const wikiLinkRegex = /\[\[([^\]|]+)(?:\|([^\]]*))?\]\]/g
+
+export function extractWikiTitles(input: string): string[] {
+  const titles = [...(input || '').matchAll(wikiLinkRegex)].map((m) => (m[1] || '').trim()).filter((t) => t.length > 0)
+  return [...new Set(titles)]
+}
+
+// displayHtml must already be safe HTML.
+export function wikiLinkHtml(target: string, displayHtml: string, exists?: boolean): string {
+  const href = getWikiHref(target, exists).replace(/&/g, '&amp;')
+  const classList = exists === false ? 'internal new' : 'internal'
+  return `<a href="${href}" class="${classList}" data-sveltekit-reload>${displayHtml}</a>`
+}
