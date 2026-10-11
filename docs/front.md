@@ -40,7 +40,6 @@ flowchart LR
 
   subgraph npm["npm (main app only)"]
     autolinker["autolinker"]
-    isodompurify["isomorphic-dompurify"]
     dompurify["dompurify"]
   end
 
@@ -55,7 +54,7 @@ flowchart LR
   linkify --> wikiLink
   linkify --> mediawiki
   linkify --> autolinker
-  linkify --> isodompurify --> dompurify
+  linkify --> dompurify
 ```
 
 Forum replies are rendered with `mode="text"` by `ViewerReplies.svelte` through `ViewerHTML.svelte`.
@@ -73,6 +72,6 @@ Page comments and onelines are stored as plain text (the API does not escape or 
 
 ### linkify
 
-Used only by the forum, where post bodies are HTML from the editor. autolinker and DOMPurify (about 80 KB minified) are dependencies of the main app only (`svelte/package.json`). The skin's `package.json` does not list them, so nothing in the skin can import them. The skin used them for page comments until v0.9.22, when its `app.js` went from 293 KB to 213 KB (gzip 108 KB to 77 KB).
+Used only by the forum, where post bodies are HTML from the editor. autolinker and DOMPurify (about 80 KB minified) are dependencies of the main app only (`svelte/package.json`). The main app sets `ssr = false`, so it imports `dompurify` directly rather than `isomorphic-dompurify`, which adds jsdom for server rendering. The skin's `package.json` does not list them, so nothing in the skin can import them. The skin used them for page comments until v0.9.22, when its `app.js` went from 293 KB to 213 KB (gzip 108 KB to 77 KB).
 
 Forum replies are plain text but still go through `linkify`, because `renderPlainTextWithFences` first turns them into HTML with code blocks.

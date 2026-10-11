@@ -1,5 +1,5 @@
 import Autolinker from 'autolinker'
-import DOMPurify from 'isomorphic-dompurify'
+import DOMPurify from 'dompurify'
 
 import { titlesExist } from '$shared/utils/mediawiki'
 import { extractWikiTitles, wikiLinkHtml, wikiLinkRegex } from '$shared/utils/wikiLink'
