@@ -69,8 +69,8 @@ RUN --mount=type=bind,source=mwz/patches,target=/tmp/patches \
         patch -d /var/www/html -p1 --forward --fuzz=0 --no-backup-if-mismatch < "$p"; \
     done
 
-# MediaWiki settings (docs/config.md). The deployment provides SiteSettings.php and ExtensionSettings.php.
-COPY mwz/settings/LocalSettings.php mwz/settings/BaseSettings.php /var/www/html/
+# MediaWiki settings (docs/config.md). The deployment provides SiteSettings.php and SiteExtensionSettings.php.
+COPY mwz/settings/LocalSettings.php mwz/settings/BaseSettings.php mwz/settings/BaseExtensionSettings.php /var/www/html/
 
 FROM golang:${GO_VERSION}-trixie AS go-devtools
 

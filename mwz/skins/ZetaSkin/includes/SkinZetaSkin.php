@@ -20,10 +20,22 @@ class SkinZetaSkin extends SkinMustache
     {
         self::$action = $out->getActionName();
         self::$pageId = (int) $skin->getTitle()->getArticleID();
+        $a = self::assets();
         $out->addHeadItem('assets', '<script>if((localStorage.theme||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":""))==="dark")document.documentElement.classList.add("dark","skin-theme-clientpref-night")</script>'
-            .'<script>window.ZCONF={"avatarBaseUrl":"'.AVATAR_BASE_URL.'","gaMeasurementId":"'.GA_MEASUREMENT_ID.'","adClient":"'.AD_CLIENT.'","adSlots":'.AD_SLOTS.',"policy":"'.(($_SERVER['HTTP_X_POLICY'] ?? '') === 'standard' ? 'standard' : 'strict').'"}</script>'
-            .'<script src="/track.js?'.ASSET_HASH.'" defer></script><script src="/w/skins/ZetaSkin/dist/app.js?'.ASSET_HASH.'" defer></script>'
-            .'<link rel="stylesheet" href="/w/skins/ZetaSkin/dist/app.css?'.ASSET_HASH.'">');
+            .'<script>window.ZCONF='.json_encode([
+                'avatarBaseUrl' => (string) AVATAR_BASE_URL,
+                'gaMeasurementId' => (string) GA_MEASUREMENT_ID,
+                'adClient' => (string) AD_CLIENT,
+                'adSlots' => array_values(AD_SLOTS),
+                'policy' => ($_SERVER['HTTP_X_POLICY'] ?? '') === 'standard' ? 'standard' : 'strict',
+            ], JSON_UNESCAPED_SLASHES | JSON_HEX_TAG).'</script>'
+            .'<script src="/track.js?'.$a['track'].'" defer></script><script src="/w/skins/ZetaSkin/dist/'.$a['js'].'" defer></script>'
+            .'<link rel="stylesheet" href="/w/skins/ZetaSkin/dist/'.$a['css'].'">');
+    }
+
+    private static function assets(): array
+    {
+        return require __DIR__.'/../dist/assets.php';
     }
 
     public function getTemplateData()

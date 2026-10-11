@@ -10,6 +10,7 @@
 - In local dev, `dev2` should run the Vite dev server path for `mwz/skins/ZetaSkin/svelte`.
 - The live runtime source is `mwz/skins/ZetaSkin/svelte/src/main.ts` and its imported modules.
 - `mwz/skins/ZetaSkin/dist/app.js` and `mwz/skins/ZetaSkin/dist/app.css` are compatibility stubs for MediaWiki asset injection, not the authoritative dev source.
+- A production build (`vite build`) writes `dist/app.<hash>.js`, `dist/app.<hash>.css` and `dist/assets.php`, which `SkinZetaSkin` requires for the asset URLs. The dev server writes its own `assets.php` pointing at the stubs.
 - If browser behavior looks stale, check Vite/HMR and browser cache behavior before assuming `dist/` is out of date.
 
 ## Shared Code

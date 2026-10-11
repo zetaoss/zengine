@@ -10,7 +10,7 @@ The zengine image receives configuration in two forms:
 - This repository specifies whether each file is **maintained here** or **provided externally** (required or optional).
 - Do not store secrets in this repository. The application and mounted PHP settings read secrets from **environment variables**. The deployment environment supplies the variable values. Credentials for external analytics APIs (Cloudflare, Google) live in bob, not here.
 - Use environment variables for values that differ between environments. Use mounted files (`SiteSettings.php`) only when the configuration structure differs by environment.
-- Do not expose site-specific operational settings, such as extension configuration. Provide them through mounted files.
+- Extension loading and general extension settings are maintained here (`BaseExtensionSettings.php`), next to the installation list, so adding or removing an extension is one change and can be tried with this repository alone. Site-specific parts are loaded and configured by the mounted `SiteExtensionSettings.php`, so they are not exposed: abuse controls (AbuseFilter, auto-confirm thresholds) and extensions that depend on site services (S3 file storage, mail, Score's Shellbox).
 
 ## Environment variables
 
@@ -24,7 +24,7 @@ The zengine image receives configuration in two forms:
 | `DEV_MODE` | `false` | Development mode, including the Vite dev-server proxy. |
 | `INTERNAL_SECRET_KEY` | | Authentication key for internal APIs (`/api/internal/*`), shared with the avatar service. |
 | `LOG_LEVEL` | `info` | Log level. |
-| `DB_HOST`, `DB_PORT` (`3306`), `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` | | MariaDB connection settings. |
+| `DB_HOST`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` | | MariaDB connection settings. The port is fixed at `3306`. |
 | `REDIS_PERSIST_HOST` | goapp defaults to `127.0.0.1`; MediaWiki requires a host to be configured (port `6379` is fixed) | Redis for data that must not be evicted: task queues (Asynq), authentication tokens, and rate limits. See [redis.md](redis.md). |
 | `REDIS_VOLATILE_HOST` | goapp defaults to `127.0.0.1`; MediaWiki requires a host to be configured (port `6379` is fixed) | Redis for data that may be evicted: caches. See [redis.md](redis.md). |
 | `AD_CLIENT`, `AD_SLOTS` | | Advertising. `AD_SLOTS` is comma-separated. |
@@ -41,7 +41,7 @@ Most variables are read by `BaseSettings.php`. Set all variables without default
 | Variable | Use |
 | --- | --- |
 | `APP_URL` | `$wgServer` |
-| `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD` | `$wgDBserver`, `$wgDBuser`, `$wgDBpassword`. The database name is fixed as `zetawiki` (goapp also refers to tables as `zetawiki.*`). |
+| `DB_HOST`, `DB_USERNAME`, `DB_PASSWORD` | `$wgDBserver`, `$wgDBuser`, `$wgDBpassword`. The port is fixed as `3306` and the database name as `zetawiki` (goapp also refers to tables as `zetawiki.*`). |
 | `REDIS_VOLATILE_HOST` | Cache `$wgObjectCaches['redis-volatile']`. Port `6379` is fixed. See [redis.md](redis.md). |
 | `REDIS_PERSIST_HOST` | Session cache `$wgObjectCaches['redis-persist']` and job queue `$wgJobTypeConf`. ZetaExtension authentication state (OTP and linked social logins, `includes/Auth/PersistRedis.php`) also reads tokens written by goapp from here. Port `6379` is fixed. |
 | `MW_SECRET_KEY`, `MW_UPGRADE_KEY` | `$wgSecretKey`, `$wgUpgradeKey` (secrets). |
@@ -59,9 +59,17 @@ All files are placed in the MediaWiki directory (`$IP`). `LocalSettings.php` is 
 | - | `LocalSettings.php` | Maintained here (`mwz/settings/`) | Entry point; loads the files below in order. |
 | 1 | `BaseSettings.php` | Maintained here (`mwz/settings/`) | Shared site, database, cache and job-queue, CDN, upload, permission, and skin settings, including skin constants. Values and secrets come from environment variables (above). |
 | 2 | `SiteSettings.php` | Externally provided (required) | Environment-specific settings, excluding extension configuration. Examples include development debug settings and `$wgCdnServersNoPurge`. |
-| 3 | `ExtensionSettings.php` | Externally provided (required) | `wfLoadExtension` calls and settings for all extensions (bundled, external, and ZetaExtension). |
+| 3 | `BaseExtensionSettings.php` | Maintained here (`mwz/settings/`) | `wfLoadExtension` calls for the bundled and external extensions and ZetaExtension, except the site-specific ones below. |
+| 4 | `SiteExtensionSettings.php` | Externally provided (required) | Site-specific extensions, loaded and configured together: AbuseFilter with the auto-confirm thresholds, AWS (S3 file repository), MailAPI and Score. |
 
-The image's `base` stage places `LocalSettings.php` and `BaseSettings.php` in the MediaWiki directory. The deployment environment places `SiteSettings.php` and `ExtensionSettings.php` in the same directory. MediaWiki will not start if either file is missing. If a file has no settings, provide a file containing only `<?php`.
+The image's `base` stage places `LocalSettings.php`, `BaseSettings.php` and `BaseExtensionSettings.php` in the MediaWiki directory. The deployment environment places `SiteSettings.php` and `SiteExtensionSettings.php` in the same directory. MediaWiki will not start if either file is missing. If a file has no settings, provide a file containing only `<?php`.
+
+### Notes on `BaseSettings.php`
+
+PHP settings files carry no comments; the reasons behind non-obvious values are kept here.
+
+- **Localisation cache**: `$wgLocalisationCacheConf['store'] = 'files'` with `$wgCacheDirectory = "$IP/cache"` keeps the cache in container-local CDB files instead of the `l10n_cache` table. Each container fills it on first use and rebuilds it when message files change. Not `'array'`: OPcache does not revalidate timestamps in production, so rebuilt PHP files would not be picked up.
+- **`$wgAuthenticationTokenVersion`**: mixed into every session and "keep me logged in" token. Bumping it (for example `'1'` → `'2'`) logs every user out, e.g. after a session or `$wgSecretKey` leak. Removing it would also log everyone out once, since the default is `null`.
 
 ### Skin constants
 
@@ -69,16 +77,20 @@ The image's `base` stage places `LocalSettings.php` and `BaseSettings.php` in th
 
 | Constant | Value |
 | --- | --- |
-| `ASSET_HASH` | Modification time of the skin bundle (`skins/ZetaSkin/dist/app.js`); it changes when the bundle is rebuilt. Uses the current time if the file is missing. |
 | `AVATAR_BASE_URL`, `GA_MEASUREMENT_ID`, `AD_CLIENT` | Environment variables with the same names. |
-| `AD_SLOTS` | The `AD_SLOTS` environment variable, converted from comma-separated values to a JSON array. |
+| `AD_SLOTS` | The `AD_SLOTS` environment variable, split on commas into an array. |
+
+The skin passes these to the frontend as `window.ZCONF`, built with `json_encode` so the values are escaped.
+
+The skin's bundle is built with content-hashed names (`dist/app.<hash>.js`, `dist/app.<hash>.css`), and the build writes `dist/assets.php` with those names and the content hash of the main app's `/track.js`. `SkinZetaSkin` requires that file (cached by OPcache), so a changed file always gets a new URL and the files can be cached as immutable. The Vite dev server writes `assets.php` too, pointing at the dev stubs `app.js`/`app.css` with their content hash as the query string; without either a build or the dev server the skin fails to render.
 
 ## MediaWiki extensions
 
 - **External extensions** (not bundled with MediaWiki, fetched from Git): `mwz/extensions.yaml` lists what is installed. Listed extensions are installed in the image's `base` stage; comment out an entry to remove it. Each extension specifies a source (`repo`/`tag`). The installed commit is pinned in `mwz/extensions.lock` (`make extensions-lock`), so a moving branch such as `REL1_43` stays on the same commit until the lock is updated. PHP dependencies are pinned in `hack/mediawiki-composer.lock`.
 - **ZetaExtension**: Part of this repository (`mwz/extensions/ZetaExtension`), so it is not listed for external installation. **ZetaSkin** is a skin and is loaded by `BaseSettings.php`.
 - **Bundled extensions** (Cite, VisualEditor, etc.): Nothing needs to be installed.
-- **Loading and configuration**: The externally provided `ExtensionSettings.php` contains every extension's `wfLoadExtension` call and `$wg…` settings. This repository only installs the extensions. An installed extension that is not loaded is simply unused. Keeping installation separate from loading and configuration avoids exposing site-specific settings.
+- **Loading and configuration**: `mwz/settings/BaseExtensionSettings.php` loads the extensions; adding an external extension means an entry in `mwz/extensions.yaml` and a `wfLoadExtension` line there. AbuseFilter, AWS, MailAPI and Score are site-specific, so the externally provided `SiteExtensionSettings.php` loads and configures them instead; without it they are not loaded. An installed extension that is not loaded is simply unused.
+- **Math** is not loaded; SimpleMathJax renders `<math>` instead.
 
 ## Other externally provided files
 
@@ -91,4 +103,4 @@ MediaWiki patches are included in the image ([patches.md](patches.md)).
 | `supervisord.conf` | Maintained here (dev) | Provided externally | Process configuration for the development image. |
 | `dist_ads.txt`, `dist_robots.txt` | Maintained here | Provided externally | Static files (`/app/svelte/dist/`). |
 
-After moving to the target structure, the only externally provided files will be `SiteSettings.php` and `ExtensionSettings.php`.
+After moving to the target structure, the only externally provided files will be `SiteSettings.php` and `SiteExtensionSettings.php`.

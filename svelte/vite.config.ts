@@ -44,7 +44,7 @@ function minifyJsPlugin(): Plugin {
         throw error
       }
 
-      const trackVersion = createHash('sha256').update(trackSource).digest('hex').slice(0, 12)
+      const trackVersion = createHash('sha256').update(trackSource).digest('hex').slice(0, 8)
       let indexHtml: string
       try {
         indexHtml = await readFile(indexPath, 'utf8')

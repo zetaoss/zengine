@@ -2,7 +2,6 @@ package config
 
 import (
 	"os"
-	"strconv"
 	"strings"
 )
 
@@ -27,7 +26,6 @@ type AppConfig struct {
 
 type DBConfig struct {
 	Host     string
-	Port     int
 	Database string
 	Username string
 	Password string
@@ -88,7 +86,6 @@ func Load() (*Config, error) {
 	cfg.App.LogLevel = lookupString("LOG_LEVEL", "info")
 
 	cfg.DB.Host = lookup("DB_HOST")
-	cfg.DB.Port = lookupInt("DB_PORT", 3306)
 	cfg.DB.Database = lookup("DB_DATABASE")
 	cfg.DB.Username = lookup("DB_USERNAME")
 	cfg.DB.Password = lookup("DB_PASSWORD")
@@ -120,18 +117,6 @@ func Load() (*Config, error) {
 
 func lookup(key string) string {
 	return strings.TrimSpace(os.Getenv(key))
-}
-
-func lookupInt(key string, def int) int {
-	raw := lookup(key)
-	if raw == "" {
-		return def
-	}
-	n, err := strconv.Atoi(raw)
-	if err != nil {
-		return def
-	}
-	return n
 }
 
 func lookupString(key string, def string) string {
