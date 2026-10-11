@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Section } from '$lib/types/toc'
+  import tocLabel from '$lib/utils/tocLabel'
 
   import TocNode from './TocNode.svelte'
 
@@ -11,7 +12,7 @@
 
   $: anchor = section?.anchor ?? ''
   $: children = section?.['array-sections'] ?? []
-  $: label = (section?.line ?? '').replace(/<\/?[^>]+>/gi, ' ').trim()
+  $: label = tocLabel(section?.line ?? '')
   $: number = section?.number ?? ''
   $: isInView = !!anchor && targetIds.includes(anchor)
   $: isPrimary = !!anchor && targetIds[0] === anchor
