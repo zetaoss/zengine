@@ -2,9 +2,7 @@ import Autolinker from 'autolinker'
 import DOMPurify from 'isomorphic-dompurify'
 
 import { titlesExist } from '$shared/utils/mediawiki'
-import { getWikiHref } from '$shared/utils/wikiLink'
-
-const wikiLinkRegex = /\[\[([^\]|]+)(?:\|([^\]]*))?\]\]/g
+import { extractWikiTitles, wikiLinkHtml, wikiLinkRegex } from '$shared/utils/wikiLink'
 
 function linkifyURL(s: string) {
   return Autolinker.link(s, {
@@ -15,29 +13,15 @@ function linkifyURL(s: string) {
   })
 }
 
-function extractWikiTitles(input: string): string[] {
-  const matches = [...(input || '').matchAll(wikiLinkRegex)]
-  if (matches.length === 0) return []
-  return [...new Set(matches.map((match) => (match[1] || '').trim()).filter((title) => title.length > 0))]
-}
-
-async function linkifyWiki(s: string, existsMap: Record<string, boolean>) {
-  const titles = extractWikiTitles(s)
-  if (titles.length === 0) return s
-
+function linkifyWiki(s: string, existsMap: Record<string, boolean>) {
   return s.replace(wikiLinkRegex, (_match, targetRaw: string, displayRaw: string | undefined) => {
     const target = (targetRaw || '').trim()
-    const display = (displayRaw || targetRaw).trim()
-    const exists = existsMap[target]
-    const isMissing = exists === false
-    const classList = isMissing ? 'internal new' : 'internal'
-    const href = getWikiHref(target, exists)
-    return `<a href="${href}" class="${classList}" data-sveltekit-reload>${display}</a>`
+    return wikiLinkHtml(target, (displayRaw || targetRaw).trim(), existsMap[target])
   })
 }
 
 async function linkifyOne(input: string, existsMap: Record<string, boolean>) {
-  const linked = await linkifyWiki(linkifyURL(input), existsMap)
+  const linked = linkifyWiki(linkifyURL(input), existsMap)
   return DOMPurify.sanitize(linked, { ADD_ATTR: ['target', 'rel'] })
 }
 

@@ -1,36 +1,33 @@
 import { titlesExist } from '$shared/utils/mediawiki'
-import { getWikiHref } from '$shared/utils/wikiLink'
+import { extractWikiTitles, wikiLinkHtml, wikiLinkRegex } from '$shared/utils/wikiLink'
 
 // Plain-text counterpart of linkify: escapes the text and links only URLs,
 // emails and [[wiki links]], so it needs no HTML sanitizer.
-const tokenRegex = /(https?:\/\/[^\s<>"'`]+)|([\w.+-]+@[\w-]+(?:\.[\w-]+)+)|\[\[([^\]|]+)(?:\|([^\]]*))?\]\]/g
-const wikiTitleRegex = /\[\[([^\]|]+)(?:\|[^\]]*)?\]\]/g
-const closers: Record<string, string> = { ')': '(', ']': '[', '}': '{' }
+const tokenRegex = new RegExp(`(https?://[^\\s<>"'\`]+)|([\\w.+-]+@[\\w-]+(?:\\.[\\w-]+)+)|${wikiLinkRegex.source}`, 'g')
+const openers: Record<string, string> = { ')': '(', ']': '[', '}': '{' }
 
 function escapeHtml(s: string) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
 }
 
-function count(s: string, ch: string) {
-  return s.split(ch).length - 1
-}
-
-// Leaves trailing punctuation and unbalanced closing brackets out of the URL.
+// Ends the URL at its first unbalanced closing bracket, so "(https://a.com)입니다"
+// links only https://a.com, and leaves trailing punctuation out.
 function trimUrl(url: string) {
-  for (;;) {
-    const last = url.slice(-1)
-    const opener = closers[last]
-    if (/[.,;:!?]/.test(last) || (opener && count(url, last) > count(url, opener))) {
-      url = url.slice(0, -1)
-    } else {
-      return url
+  const depth: Record<string, number> = { '(': 0, '[': 0, '{': 0 }
+  for (let i = 0; i < url.length; i++) {
+    const ch = url[i]
+    const opener = openers[ch]
+    if (ch in depth) {
+      depth[ch]++
+    } else if (opener) {
+      if (depth[opener] === 0) {
+        url = url.slice(0, i)
+        break
+      }
+      depth[opener]--
     }
   }
-}
-
-export function extractWikiTitles(input: string): string[] {
-  const titles = [...(input || '').matchAll(wikiTitleRegex)].map((m) => (m[1] || '').trim()).filter((t) => t.length > 0)
-  return [...new Set(titles)]
+  return url.replace(/[.,;:!?]+$/, '')
 }
 
 export function linkifyTextOne(input: string, existsMap: Record<string, boolean>): string {
@@ -50,10 +47,7 @@ export function linkifyTextOne(input: string, existsMap: Record<string, boolean>
     } else {
       const target = (m[3] || '').trim()
       if (!target) continue
-      const display = (m[4] || m[3] || '').trim()
-      const exists = existsMap[target]
-      const classList = exists === false ? 'internal new' : 'internal'
-      html = `<a href="${escapeHtml(getWikiHref(target, exists))}" class="${classList}" data-sveltekit-reload>${escapeHtml(display)}</a>`
+      html = wikiLinkHtml(target, escapeHtml((m[4] || m[3] || '').trim()), existsMap[target])
     }
     out += escapeHtml(input.slice(last, start)) + html
     last = start + raw.length

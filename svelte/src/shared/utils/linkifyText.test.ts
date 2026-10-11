@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { extractWikiTitles, linkifyTextOne } from './linkifyText'
+import { linkifyTextOne } from './linkifyText'
+import { extractWikiTitles } from './wikiLink'
 
 const ext = (url: string) => `<a href="${url}" class="external" target="_blank" rel="nofollow ugc noopener noreferrer">${url}</a>`
 
@@ -18,6 +19,10 @@ describe('linkifyTextOne', () => {
   it('leaves trailing punctuation and unbalanced brackets out of URLs', () => {
     expect(linkifyTextOne('(https://a.com/x).', {})).toBe(`(${ext('https://a.com/x')}).`)
     expect(linkifyTextOne('https://en.wikipedia.org/wiki/Go_(game),', {})).toBe(`${ext('https://en.wikipedia.org/wiki/Go_(game)')},`)
+    expect(linkifyTextOne('링크(https://a.com)입니다', {})).toBe(`링크(${ext('https://a.com')})입니다`)
+    expect(linkifyTextOne('[https://a.com/b] 참고', {})).toBe(`[${ext('https://a.com/b')}] 참고`)
+    expect(linkifyTextOne('https://a.com/x...', {})).toBe(`${ext('https://a.com/x')}...`)
+    expect(linkifyTextOne('https://ko.wikipedia.org/wiki/리눅스 참고', {})).toBe(`${ext('https://ko.wikipedia.org/wiki/리눅스')} 참고`)
   })
 
   it('does not break out of attributes', () => {
