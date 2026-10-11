@@ -9,7 +9,7 @@
   import { showToast } from '$shared/ui/toast/toast'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import httpy from '$shared/utils/httpy'
-  import linkify from '$shared/utils/linkify'
+  import linkifyText from '$shared/utils/linkifyText'
 
   interface Row {
     id: number
@@ -44,7 +44,7 @@
     }
 
     const safeRows = data ?? []
-    const linkedMessages = await linkify(safeRows.map((r) => r.message || ''))
+    const linkedMessages = await linkifyText(safeRows.map((r) => r.message || ''))
     rows = safeRows.map((r, i) => ({
       ...r,
       message: linkedMessages[i] ?? '',
@@ -72,7 +72,7 @@
     rows = [
       {
         ...data,
-        message: (await linkify([data.message]))[0] ?? '',
+        message: (await linkifyText([data.message]))[0] ?? '',
       },
       ...rows,
     ]

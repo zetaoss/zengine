@@ -11,7 +11,7 @@
   import CMenuItem from '$shared/ui/CMenuItem.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import httpy from '$shared/utils/httpy'
-  import linkify from '$shared/utils/linkify'
+  import linkifyText from '$shared/utils/linkifyText'
 
   interface Row {
     id: number
@@ -49,7 +49,7 @@
     const rows = data ?? []
     if (token !== fetchDataToken) return
 
-    const linkedMessages = await linkify(rows.map((row) => row.message || ''))
+    const linkedMessages = await linkifyText(rows.map((row) => row.message || ''))
     if (token !== fetchDataToken) return
 
     const nextDocComments = rows.map((row, i) => ({

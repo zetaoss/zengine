@@ -12,7 +12,7 @@
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
   import httpy from '$shared/utils/httpy'
-  import linkify from '$shared/utils/linkify'
+  import linkifyText from '$shared/utils/linkifyText'
 
   interface Row {
     id: number
@@ -62,7 +62,7 @@
     rows = await Promise.all(
       data.data.map(async (r) => ({
         ...r,
-        message: (await linkify([r.message]))[0] ?? '',
+        message: (await linkifyText([r.message]))[0] ?? '',
       })),
     )
     paginateData = {
