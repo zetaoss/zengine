@@ -1,9 +1,9 @@
 import { titlesExist } from '$shared/utils/mediawiki'
 import { extractWikiTitles, wikiLinkHtml, wikiLinkRegex } from '$shared/utils/wikiLink'
 
-// Plain-text counterpart of linkify: escapes the text and links only URLs,
-// emails and [[wiki links]], so it needs no HTML sanitizer.
-const tokenRegex = new RegExp(`(https?://[^\\s<>"'\`]+)|([\\w.+-]+@[\\w-]+(?:\\.[\\w-]+)+)|${wikiLinkRegex.source}`, 'g')
+// Plain-text counterpart of linkify: escapes the text and links only URLs and
+// [[wiki links]], so it needs no HTML sanitizer.
+const tokenRegex = new RegExp(`(https?://[^\\s<>"'\`]+)|${wikiLinkRegex.source}`, 'g')
 const openers: Record<string, string> = { ')': '(', ']': '[', '}': '{' }
 
 function escapeHtml(s: string) {
@@ -44,12 +44,9 @@ export function linkifyTextOne(input: string, existsMap: Record<string, boolean>
       raw = trimUrl(m[1])
       const url = escapeHtml(raw)
       html = `<a href="${url}" class="external" target="_blank" rel="nofollow ugc noopener noreferrer">${url}</a>`
-    } else if (m[2]) {
-      const email = escapeHtml(m[2])
-      html = `<a href="mailto:${email}" class="external">${email}</a>`
     } else {
-      const target = (m[3] || '').trim()
-      html = target ? wikiLinkHtml(target, escapeHtml((m[4] || m[3] || '').trim()), existsMap[target]) : escapeHtml(raw)
+      const target = (m[2] || '').trim()
+      html = target ? wikiLinkHtml(target, escapeHtml((m[3] || m[2] || '').trim()), existsMap[target]) : escapeHtml(raw)
     }
     out += escapeHtml(text.slice(last, m.index)) + html
     last = m.index + raw.length

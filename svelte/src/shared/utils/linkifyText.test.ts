@@ -37,8 +37,8 @@ describe('linkifyTextOne', () => {
     expect(linkifyTextOne('javascript:alert(1)', {})).toBe('javascript:alert(1)')
   })
 
-  it('links emails', () => {
-    expect(linkifyTextOne('mail a.b@example.com', {})).toBe('mail <a href="mailto:a.b@example.com" class="external">a.b@example.com</a>')
+  it('does not link emails', () => {
+    expect(linkifyTextOne('mail a.b@example.com', {})).toBe('mail a.b@example.com')
   })
 
   it('links wiki titles', () => {
