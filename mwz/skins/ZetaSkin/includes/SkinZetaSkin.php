@@ -3,6 +3,7 @@
 namespace ZetaSkin;
 
 use SkinMustache;
+use ZetaExtension\Disambig\DisambigHooks;
 
 class SkinZetaSkin extends SkinMustache
 {
@@ -38,6 +39,12 @@ class SkinZetaSkin extends SkinMustache
 
         self::$dataToc = $data['data-toc'] ?? [];
         $data['hasToc'] = ! empty(self::$dataToc);
+
+        $data['html-toc-static'] = $data['hasToc'] ? StaticMarkup::toc(self::$dataToc) : '';
+        $registration = $data['hasDisambig'] && class_exists(DisambigHooks::class)
+            ? DisambigHooks::getRegistrationData($this->getOutput())
+            : null;
+        $data['html-disambig-static'] = StaticMarkup::disambig(self::$disambig, $registration, self::$pageId);
 
         $data['pageButtons'] = $this->getPageButtons();
 

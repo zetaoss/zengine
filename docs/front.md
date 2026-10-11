@@ -7,6 +7,14 @@ zengine has two Svelte apps:
 
 `svelte/src/shared/` holds code used by both; the skin sees it through the symlink `mwz/skins/ZetaSkin/svelte/src/shared`. Code used only by the main app belongs in `svelte/src/lib/`, so the skin cannot import it by accident.
 
+## Skin islands
+
+The skin page is rendered by MediaWiki (`templates/skin.mustache`); Svelte components are custom elements (`<c-search>`, `<page-meta>`, `<toc-apex>`, ...) that `app.js` fills in after it loads. Until then each element is empty, so anything that takes space must have that space reserved, or the content below jumps when `app.js` runs (layout shift, CLS).
+
+- Fixed-size islands reserve their box in `svelte/src/assets/islands.css` (e.g. `c-search` min-height, `binder-apex` width on md+).
+- Islands whose content the server already knows (the inline table of contents and the disambiguation notice) get server-rendered markup from `includes/StaticMarkup.php` inside the element, wrapped in `.ce-static`. It mirrors the Svelte markup, so it must be updated together with `TocApex`/`TocNode`/`DisambigApex`. Once the element is defined, `:defined > .ce-static` hides it and the Svelte output takes its place in the same frame. It also makes these parts visible without JavaScript.
+- When adding or resizing an island, check JS on/off positions at mobile and desktop widths (with ads blocked, this took mobile CLS from 0.29–0.53 to 0 on 2026-10-11).
+
 ## Linking user text
 
 User text is turned into HTML with links in two ways, depending on whether the input is plain text or HTML.
