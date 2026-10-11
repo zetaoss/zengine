@@ -59,12 +59,11 @@
       return
     }
 
-    rows = await Promise.all(
-      data.data.map(async (r) => ({
-        ...r,
-        message: (await linkifyText([r.message]))[0] ?? '',
-      })),
-    )
+    const messages = await linkifyText(data.data.map((r) => r.message || ''))
+    rows = data.data.map((r, i) => ({
+      ...r,
+      message: messages[i] ?? '',
+    }))
     paginateData = {
       current_page: data.current_page,
       last_page: data.last_page,

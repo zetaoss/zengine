@@ -25,6 +25,13 @@ describe('linkifyTextOne', () => {
     expect(linkifyTextOne('https://ko.wikipedia.org/wiki/리눅스 참고', {})).toBe(`${ext('https://ko.wikipedia.org/wiki/리눅스')} 참고`)
   })
 
+  it('keeps scanning after a trimmed URL', () => {
+    expect(linkifyTextOne('(https://a.com)[[문서]]', {})).toBe(
+      `(${ext('https://a.com')})<a href="/wiki/%EB%AC%B8%EC%84%9C" class="internal" data-sveltekit-reload>문서</a>`,
+    )
+    expect(linkifyTextOne('[https://a.com][https://b.com]', {})).toBe(`[${ext('https://a.com')}][${ext('https://b.com')}]`)
+  })
+
   it('does not break out of attributes', () => {
     expect(linkifyTextOne('https://a.com/"onmouseover="x', {})).toBe(`${ext('https://a.com/')}&quot;onmouseover=&quot;x`)
     expect(linkifyTextOne('javascript:alert(1)', {})).toBe('javascript:alert(1)')

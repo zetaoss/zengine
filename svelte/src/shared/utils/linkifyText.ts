@@ -31,10 +31,13 @@ function trimUrl(url: string) {
 }
 
 export function linkifyTextOne(input: string, existsMap: Record<string, boolean>): string {
+  const text = input || ''
+  // exec with lastIndex, not matchAll: a trimmed URL hands the rest of its match back
+  // to the scan, as in "(https://a.com)[[문서]]".
+  const re = new RegExp(tokenRegex.source, 'g')
   let out = ''
   let last = 0
-  for (const m of (input || '').matchAll(tokenRegex)) {
-    const start = m.index ?? 0
+  for (let m = re.exec(text); m; m = re.exec(text)) {
     let raw = m[0]
     let html: string
     if (m[1]) {
@@ -46,13 +49,13 @@ export function linkifyTextOne(input: string, existsMap: Record<string, boolean>
       html = `<a href="mailto:${email}" class="external">${email}</a>`
     } else {
       const target = (m[3] || '').trim()
-      if (!target) continue
-      html = wikiLinkHtml(target, escapeHtml((m[4] || m[3] || '').trim()), existsMap[target])
+      html = target ? wikiLinkHtml(target, escapeHtml((m[4] || m[3] || '').trim()), existsMap[target]) : escapeHtml(raw)
     }
-    out += escapeHtml(input.slice(last, start)) + html
-    last = start + raw.length
+    out += escapeHtml(text.slice(last, m.index)) + html
+    last = m.index + raw.length
+    re.lastIndex = last
   }
-  return out + escapeHtml((input || '').slice(last))
+  return out + escapeHtml(text.slice(last))
 }
 
 export default async function linkifyText(inputs: string[]): Promise<string[]> {
