@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -130,7 +131,7 @@ func fetchTitleExistsMap(ctx context.Context, taskCtx taskctx.Context, titles []
 	client := &http.Client{Timeout: 20 * time.Second}
 	for start := 0; start < len(uniqueTitles); start += matcherPageSize {
 		end := min(start+matcherPageSize, len(uniqueTitles))
-		params := url.Values{"action": {"query"}, "format": {"json"}, "titles": {strings.Join(uniqueTitles[start:end], "|")}}
+		params := url.Values{"action": {"query"}, "format": {"json"}, "formatversion": {"2"}, "titles": {strings.Join(uniqueTitles[start:end], "|")}}
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiServer+"/w/api.php", strings.NewReader(params.Encode()))
 		if err != nil {
 			return nil, err
@@ -144,30 +145,38 @@ func fetchTitleExistsMap(ctx context.Context, taskCtx taskctx.Context, titles []
 			_ = resp.Body.Close()
 			return nil, fmt.Errorf("MediaWiki API request failed: HTTP %d", resp.StatusCode)
 		}
-		var payload struct {
-			Query struct {
-				Pages map[string]struct {
-					Title   string          `json:"title"`
-					Missing json.RawMessage `json:"missing"`
-				} `json:"pages"`
-			} `json:"query"`
-		}
-		decodeErr := json.NewDecoder(resp.Body).Decode(&payload)
+		decodeErr := decodeTitleExists(resp.Body, out)
 		_ = resp.Body.Close()
 		if decodeErr != nil {
-			return nil, fmt.Errorf("decode MediaWiki API response: %w", decodeErr)
-		}
-		if payload.Query.Pages == nil {
-			return nil, fmt.Errorf("MediaWiki API response is missing query.pages")
-		}
-		for _, page := range payload.Query.Pages {
-			exists := page.Missing == nil
-			for _, variant := range titleVariants(page.Title) {
-				out[normalizeTitleKey(variant)] = exists
-			}
+			return nil, decodeErr
 		}
 	}
 	return out, nil
+}
+
+// decodeTitleExists reads an action=query response in formatversion=2, where query.pages is always an
+// array and missing is a boolean, and records every title variant as existing or missing.
+func decodeTitleExists(r io.Reader, out map[string]bool) error {
+	var payload struct {
+		Query struct {
+			Pages []struct {
+				Title   string `json:"title"`
+				Missing bool   `json:"missing"`
+			} `json:"pages"`
+		} `json:"query"`
+	}
+	if err := json.NewDecoder(r).Decode(&payload); err != nil {
+		return fmt.Errorf("decode MediaWiki API response: %w", err)
+	}
+	if payload.Query.Pages == nil {
+		return fmt.Errorf("MediaWiki API response is missing query.pages")
+	}
+	for _, page := range payload.Query.Pages {
+		for _, variant := range titleVariants(page.Title) {
+			out[normalizeTitleKey(variant)] = !page.Missing
+		}
+	}
+	return nil
 }
 
 func resolveTitleExists(existsMap map[string]bool, title string) bool {

@@ -142,7 +142,7 @@ func lookupBool(key string, def bool) bool {
 func lookupList(key string) []string {
 	raw := lookup(key)
 	if raw == "" {
-		return nil
+		return []string{}
 	}
 	parts := strings.Split(raw, ",")
 	out := make([]string, 0, len(parts))

@@ -24,6 +24,19 @@ func TestLoadFromEnv(t *testing.T) {
 	}
 }
 
+// window.ZCONF.adSlots must be an array ([]), not null, when AD_SLOTS is empty.
+func TestLoadEmptyAdSlots(t *testing.T) {
+	t.Setenv("AD_SLOTS", "")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load error: %v", err)
+	}
+	if cfg.Ads.Slots == nil || len(cfg.Ads.Slots) != 0 {
+		t.Fatalf("Ads.Slots = %#v, want empty non-nil slice", cfg.Ads.Slots)
+	}
+}
+
 func TestLoadRedisRoles(t *testing.T) {
 	tests := []struct {
 		name         string
