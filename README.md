@@ -49,8 +49,10 @@ pending migrations and run `ctl migrate` when appropriate.
 
 `mwz/extensions.yaml` lists the third-party MediaWiki extensions installed into
 the image and where they come from (repo and tag); `mwz/extensions.lock` pins
-the installed commits. Loading and configuring extensions is up to the
-deployment's `ExtensionSettings.php` (see `docs/config.md`).
+the installed commits. `mwz/settings/BaseExtensionSettings.php` loads
+them (and the bundled extensions and ZetaExtension); site-specific
+ones (AbuseFilter, AWS, MailAPI, Score) are loaded by the deployment's
+`SiteExtensionSettings.php` (see `docs/config.md`).
 
 ```sh
 make extensions-lock      # after editing the list, or to pick up new commits; commit the lock

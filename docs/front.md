@@ -3,7 +3,7 @@
 zengine has two Svelte apps:
 
 - **main** (`svelte/`): SvelteKit app for the home page, forum, onelines and tools. Routes are split into chunks, so a library used by one route is downloaded only on that route.
-- **skin** (`mwz/skins/ZetaSkin/svelte/`): built into a single `app.js` (IIFE) and `app.css` that every wiki page loads. Everything it imports adds to the first page view.
+- **skin** (`mwz/skins/ZetaSkin/svelte/`): built into a single `app.js` (IIFE) and `app.css` that every wiki page loads, written with content-hashed names (`app.<hash>.js`) and listed in `dist/assets.php` ([config.md](config.md)). Everything it imports adds to the first page view.
 
 `svelte/src/shared/` holds code used by both; the skin sees it through the symlink `mwz/skins/ZetaSkin/svelte/src/shared`. Code used only by the main app belongs in `svelte/src/lib/`, so the skin cannot import it by accident.
 

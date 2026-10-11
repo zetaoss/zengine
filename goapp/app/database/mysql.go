@@ -35,12 +35,8 @@ func buildMySQLDSN(cfg *config.Config) string {
 	pass := cfg.DB.Password
 	dbName := cfg.DB.Database
 	host := cfg.DB.Host
-	port := cfg.DB.Port
-	if port == 0 {
-		port = 3306
-	}
 
-	addr := fmt.Sprintf("tcp(%s:%d)", host, port)
+	addr := fmt.Sprintf("tcp(%s:3306)", host)
 	return fmt.Sprintf(
 		"%s:%s@%s/%s?parseTime=true&loc=UTC&charset=utf8mb4&collation=utf8mb4_unicode_ci",
 		user,
