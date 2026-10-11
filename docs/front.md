@@ -16,14 +16,49 @@ User text is turned into HTML with links in two ways, depending on whether the i
 | `linkifyText` | `svelte/src/shared/utils/linkifyText.ts` | plain text | `http(s)://` URLs, `[[wiki links]]` | escapes the whole text, then inserts only the links it builds; no sanitizer |
 | `linkify` | `svelte/src/lib/utils/linkify.ts` | HTML | URLs ([autolinker](https://github.com/gregjacobs/Autolinker.js)), `[[wiki links]]` | sanitizes the result with DOMPurify |
 
-Callers:
+Imports, from the components that render user text down to the libraries:
 
-| App | Where | Data | Function |
-| --- | --- | --- | --- |
-| skin | `PageFooter.svelte` | page comments | `linkifyText` |
-| main | `home/HomeComments.svelte` | page comments | `linkifyText` |
-| main | `home/HomeOnelines.svelte`, `onelines/OnelinesPage.svelte` | onelines | `linkifyText` |
-| main | `forum/viewer/ViewerHTML.svelte` | forum posts (HTML) and replies (text rendered by `renderPlainTextWithFences`) | `linkify` |
+```mermaid
+flowchart LR
+  subgraph skin["skin: app.js on every wiki page"]
+    PageFooter["PageFooter.svelte<br/>page comments"]
+  end
+
+  subgraph main["main: per-route chunks"]
+    HomeComments["home/HomeComments.svelte<br/>page comments"]
+    HomeOnelines["home/HomeOnelines.svelte<br/>onelines"]
+    OnelinesPage["onelines/OnelinesPage.svelte<br/>onelines"]
+    ViewerHTML["forum/viewer/ViewerHTML.svelte<br/>forum posts and replies"]
+    linkify["lib/utils/linkify.ts"]
+  end
+
+  subgraph shared["svelte/src/shared/utils"]
+    linkifyText["linkifyText.ts"]
+    wikiLink["wikiLink.ts"]
+    mediawiki["mediawiki.ts<br/>titlesExist"]
+  end
+
+  subgraph npm["npm (main app only)"]
+    autolinker["autolinker"]
+    isodompurify["isomorphic-dompurify"]
+    dompurify["dompurify"]
+  end
+
+  PageFooter --> linkifyText
+  HomeComments --> linkifyText
+  HomeOnelines --> linkifyText
+  OnelinesPage --> linkifyText
+  ViewerHTML --> linkify
+
+  linkifyText --> wikiLink
+  linkifyText --> mediawiki
+  linkify --> wikiLink
+  linkify --> mediawiki
+  linkify --> autolinker
+  linkify --> isodompurify --> dompurify
+```
+
+Forum replies are rendered with `mode="text"` by `ViewerReplies.svelte` through `ViewerHTML.svelte`.
 
 Page comments and onelines are stored as plain text (the API does not escape or sanitize them), so markup such as `<b>` is shown as text.
 
@@ -38,6 +73,6 @@ Page comments and onelines are stored as plain text (the API does not escape or 
 
 ### linkify
 
-Used only by the forum, where post bodies are HTML from the editor. autolinker and DOMPurify (about 80 KB minified) are dependencies of the main app only; the skin does not include them. The skin used them for page comments until v0.9.22, when its `app.js` went from 293 KB to 213 KB (gzip 108 KB to 77 KB).
+Used only by the forum, where post bodies are HTML from the editor. autolinker and DOMPurify (about 80 KB minified) are dependencies of the main app only (`svelte/package.json`). The skin's `package.json` does not list them, so nothing in the skin can import them. The skin used them for page comments until v0.9.22, when its `app.js` went from 293 KB to 213 KB (gzip 108 KB to 77 KB).
 
 Forum replies are plain text but still go through `linkify`, because `renderPlainTextWithFences` first turns them into HTML with code blocks.
