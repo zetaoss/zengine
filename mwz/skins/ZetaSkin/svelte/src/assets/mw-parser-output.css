@@ -5,4 +5,10 @@
   & > dl > dt {
     @apply font-bold;
   }
+
+  & table.wikitable {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
 }
