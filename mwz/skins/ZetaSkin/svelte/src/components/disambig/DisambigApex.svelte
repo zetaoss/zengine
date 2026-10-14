@@ -64,8 +64,4 @@
   :global(disambig-apex) {
     display: block;
   }
-
-  a.new {
-    color: var(--color-destructive);
-  }
 </style>

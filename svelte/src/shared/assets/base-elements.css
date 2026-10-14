@@ -1,6 +1,6 @@
 @layer base {
   html {
-    font-size: 16px;
+    font-size: 100%;
     background-color: var(--color-background);
   }
 
@@ -56,11 +56,12 @@
   }
 
   a {
-    color: #09c;
+    color: light-dark(#07b, #5ad);
     word-break: break-all;
 
     &:hover {
       text-decoration: underline;
+      color: light-dark(#046, #ade);
     }
 
     &.external {
@@ -68,13 +69,17 @@
       border-bottom: 1px solid #0936;
 
       &:hover {
-        text-decoration: none;
-        border-bottom-color: #093;
+        color: light-dark(#062, #aed);
+        border-color: transparent;
       }
     }
 
     &.new {
       color: light-dark(#b00, #d77);
+
+      &:hover {
+        color: light-dark(#603, #eaa);
+      }
     }
   }
 

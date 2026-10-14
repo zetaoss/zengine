@@ -10,6 +10,7 @@
 @import './islands.css';
 
 @import './mw-base.css';
+@import './mw-body-content.css';
 @import './mw-changelist.css';
 @import './mw-charinsert.css';
 @import './mw-editsection.css';
