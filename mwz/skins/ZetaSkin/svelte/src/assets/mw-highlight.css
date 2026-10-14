@@ -1,6 +1,6 @@
-/* mw-highlight.css */
-.mw-highlight {
+div.mw-highlight {
   background: none;
+  margin: 0;
 }
 
 .skin-theme-clientpref-night .mw-highlight {

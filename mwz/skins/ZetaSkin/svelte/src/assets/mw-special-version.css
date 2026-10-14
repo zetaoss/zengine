@@ -1,0 +1,76 @@
+#sv-software {
+  display: block;
+  width: auto;
+  border: 0;
+
+  thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  tbody {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(18em, 1fr));
+    gap: .5em;
+  }
+
+  tr {
+    display: flex;
+    flex-direction: column;
+    padding: 1em;
+    border: 1px solid var(--color-border);
+    border-radius: .5em;
+  }
+
+  td {
+    border: 0;
+    padding: 0;
+  }
+
+  td:first-child {
+    font-size: var(--font-size-large);
+    font-weight: var(--font-weight-semi-bold);
+  }
+}
+
+.mw-installed-software {
+  th {
+    white-space: nowrap;
+  }
+
+  th:nth-child(1) {
+    min-width: 13em;
+  }
+
+  th:nth-child(2) {
+    width: auto;
+  }
+
+  td:nth-child(2) {
+    white-space: nowrap;
+
+    a {
+      word-break: normal;
+    }
+  }
+
+  .mw-version-ext-vcs-timestamp {
+    display: block;
+    font-size: var(--font-size-small);
+    color: var(--color-muted-foreground);
+  }
+
+  th:nth-child(3) {
+    min-width: 6em;
+  }
+
+  th:nth-child(4),
+  th:nth-child(5) {
+    width: auto;
+    min-width: 16em;
+  }
+}
