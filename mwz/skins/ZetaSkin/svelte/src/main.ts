@@ -15,6 +15,7 @@ import '$shared/ui/confirm/ConfirmHost.svelte'
 import '$shared/ui/toast/ToastHost.svelte'
 
 import shortcutForPageButtons from '$lib/utils/shortcutForPageButtons'
+import wikitableScroll from '$lib/utils/wikitableScroll'
 import { setTrackingGate } from '$shared/stores/trackingStore'
 import { runVisibleHeightsUpdater } from '$shared/utils/runVisibleHeightsUpdater'
 
@@ -25,6 +26,7 @@ setTrackingGate(() => window.RLCONF?.wgAction === 'view' && (window.RLCONF?.wgUs
 runVisibleHeightsUpdater()
 mountRunbox()
 shortcutForPageButtons()
+wikitableScroll()
 
 if (!document.querySelector('confirm-host')) {
   document.body.appendChild(document.createElement('confirm-host'))
