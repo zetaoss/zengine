@@ -16,10 +16,11 @@
 @import './mw-editsection.css';
 @import './mw-headings.css';
 @import './mw-highlight.css';
-@import './mw-parser-output.css';
+@import './mw-special-version.css';
 
 @import './page-btn.css';
 @import './page-cats.css';
 
 @import './printfooter.css';
 @import './toc.css';
+@import './wikitable.css';
