@@ -32,15 +32,36 @@
   }
 
   td:first-child {
-    font-size: 1.125rem;
+    font-size: var(--font-size-large);
+    font-weight: var(--font-weight-semi-bold);
   }
 }
 
 .mw-installed-software {
+  th {
+    white-space: nowrap;
+  }
 
-  th:nth-child(1),
-  th:nth-child(2) {
+  th:nth-child(1) {
     min-width: 13em;
+  }
+
+  th:nth-child(2) {
+    width: auto;
+  }
+
+  td:nth-child(2) {
+    white-space: nowrap;
+
+    a {
+      word-break: normal;
+    }
+  }
+
+  .mw-version-ext-vcs-timestamp {
+    display: block;
+    font-size: var(--font-size-small);
+    color: var(--color-muted-foreground);
   }
 
   th:nth-child(3) {
