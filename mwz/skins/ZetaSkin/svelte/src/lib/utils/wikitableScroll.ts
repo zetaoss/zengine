@@ -3,7 +3,8 @@ import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 // Wraps each content wikitable (articles and special pages) so its horizontal scroll shows which edge has
 // more content (a faded edge) and, with a mouse, gets buttons to scroll by most of a screen. The table stays
 // the scroll container (wikitable.css), so without this script tables still scroll. #sv-software is a card
-// grid, not a scrolling table.
+// grid, not a scrolling table. Floated tables are left unwrapped (the wrapper would not contain the float), and
+// so are RTL tables, whose scrollLeft runs negative from the right edge.
 const EDGE_TOLERANCE = 1
 
 function button(side: 'start' | 'end', table: HTMLElement): HTMLButtonElement {
@@ -20,16 +21,19 @@ function button(side: 'start' | 'end', table: HTMLElement): HTMLButtonElement {
 }
 
 function update(wrapper: HTMLElement, table: HTMLElement): void {
-  const scrolled = Math.abs(table.scrollLeft)
-  const overflow = table.scrollWidth - table.clientWidth > EDGE_TOLERANCE
-  wrapper.classList.toggle('more-start', overflow && scrolled > EDGE_TOLERANCE)
-  wrapper.classList.toggle('more-end', overflow && scrolled + table.clientWidth < table.scrollWidth - EDGE_TOLERANCE)
+  const range = table.scrollWidth - table.clientWidth
+  const overflow = range > EDGE_TOLERANCE
+  wrapper.classList.toggle('more-start', overflow && table.scrollLeft > EDGE_TOLERANCE)
+  wrapper.classList.toggle('more-end', overflow && table.scrollLeft < range - EDGE_TOLERANCE)
 }
 
 export default function wikitableScroll(): void {
-  const tables = Array.from(document.querySelectorAll<HTMLTableElement>('#mw-content-text table.wikitable:not(#sv-software)')).filter(
-    (table) => !table.parentElement?.closest('table.wikitable'),
-  )
+  const tables = Array.from(document.querySelectorAll<HTMLTableElement>('#mw-content-text table.wikitable:not(#sv-software)'))
+    .filter((table) => !table.parentElement?.closest('table.wikitable'))
+    .filter((table) => {
+      const style = getComputedStyle(table)
+      return style.float === 'none' && style.direction === 'ltr'
+    })
   if (tables.length === 0) return
 
   const wrappers = new Map<Element, HTMLElement>()
