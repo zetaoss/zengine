@@ -21,16 +21,23 @@
   tr {
     display: flex;
     flex-direction: column;
-    padding: .5em;
+    padding: 1em;
+    border: 1px solid var(--color-border);
     border-radius: .5em;
   }
 
   td {
     border: 0;
+    padding: 0;
+  }
+
+  td:first-child {
+    font-size: 1.125rem;
   }
 }
 
 .mw-installed-software {
+
   th:nth-child(1),
   th:nth-child(2) {
     min-width: 13em;
