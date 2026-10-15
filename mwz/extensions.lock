@@ -5,7 +5,7 @@
   tag: v0.14.0
   commit: 87134a4d19d87c1bc3329efde7f0bde642668015
 - name: CharInsert
-  repo: https://gerrit.wikimedia.org/r/mediawiki/extensions/CharInsert.git
+  repo: https://github.com/wikimedia/mediawiki-extensions-CharInsert.git
   tag: REL1_43
   commit: 373d1250f3c01cc6a79357cf8bd7a492881a553c
 - name: CrawlerProtection
@@ -21,11 +21,11 @@
   tag: v0.3.0
   commit: 5a5de60a9d8d72e53edecc5e5a543a7cce13315e
 - name: MsUpload
-  repo: https://gerrit.wikimedia.org/r/mediawiki/extensions/MsUpload.git
+  repo: https://github.com/wikimedia/mediawiki-extensions-MsUpload.git
   tag: REL1_43
   commit: 0bd00a3c4ec29ccf3d72d80ac02cf0ac41694d76
 - name: Score
-  repo: https://gerrit.wikimedia.org/r/mediawiki/extensions/Score.git
+  repo: https://github.com/wikimedia/mediawiki-extensions-Score.git
   tag: REL1_43
   commit: 743f68ef100772f73550f5c4f39d296c90c96635
 - name: SimpleMaps
@@ -45,6 +45,6 @@
   tag: v0.1.4
   commit: 90609875f9bf5e50cf6e53fb81a058084b7c2c55
 - name: TemplateStyles
-  repo: https://gerrit.wikimedia.org/r/mediawiki/extensions/TemplateStyles.git
+  repo: https://github.com/wikimedia/mediawiki-extensions-TemplateStyles.git
   tag: REL1_43
   commit: a0105a631bbbf8b32e05cf8f6d69500d4185bccb

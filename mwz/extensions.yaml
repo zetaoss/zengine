@@ -2,7 +2,7 @@
 # Loading (wfLoadExtension) is in mwz/settings/BaseExtensionSettings.php, or the deployment's
 # SiteExtensionSettings.php for site-specific ones (docs/config.md); an installed
 # extension that is not loaded is simply unused.
-# tag: git tag, REL branch for gerrit, or commit SHA for repos without tags. The installed commit
+# tag: git tag, REL branch for Wikimedia extensions, or commit SHA for repos without tags. The installed commit
 # is pinned in extensions.lock: `make extensions-lock` after editing, or to pick up new commits.
 # Files in mwz/extensions/<name> are copied over the clone.
 
@@ -10,7 +10,7 @@
   repo: https://github.com/edwardspec/mediawiki-aws-s3.git
   tag: v0.14.0
 - name: CharInsert
-  repo: https://gerrit.wikimedia.org/r/mediawiki/extensions/CharInsert.git
+  repo: https://github.com/wikimedia/mediawiki-extensions-CharInsert.git
   tag: REL1_43
 - name: CrawlerProtection
   repo: https://github.com/mywikis/CrawlerProtection.git
@@ -22,10 +22,10 @@
   repo: https://github.com/mailapi/mediawiki-extensions-MailAPI.git
   tag: v0.3.0
 - name: MsUpload
-  repo: https://gerrit.wikimedia.org/r/mediawiki/extensions/MsUpload.git
+  repo: https://github.com/wikimedia/mediawiki-extensions-MsUpload.git
   tag: REL1_43
 - name: Score
-  repo: https://gerrit.wikimedia.org/r/mediawiki/extensions/Score.git
+  repo: https://github.com/wikimedia/mediawiki-extensions-Score.git
   tag: REL1_43
 - name: SimpleMaps
   repo: https://github.com/jmnote/SimpleMaps.git
@@ -40,5 +40,5 @@
   repo: https://github.com/jmnote/SimpleMermaid.git
   tag: v0.1.4
 - name: TemplateStyles
-  repo: https://gerrit.wikimedia.org/r/mediawiki/extensions/TemplateStyles.git
+  repo: https://github.com/wikimedia/mediawiki-extensions-TemplateStyles.git
   tag: REL1_43
