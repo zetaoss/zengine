@@ -58,7 +58,6 @@
 
   a {
     color: light-dark(#07b, #5ad);
-    word-break: break-all;
 
     &:hover {
       text-decoration: underline;
