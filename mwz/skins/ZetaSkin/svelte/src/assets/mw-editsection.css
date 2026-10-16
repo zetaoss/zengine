@@ -1,4 +1,6 @@
-.mw-editsection-bracket {
+.mw-editsection-bracket,
+.mw-editsection-divider,
+.mw-editsection-visualeditor {
   display: none;
 }
 
