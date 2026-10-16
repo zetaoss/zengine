@@ -1,0 +1,62 @@
+.slash {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cline x1='0' y1='100%' x2='100%' y2='0' stroke='gray'/%3E%3C/svg%3E");
+}
+
+.backslash {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cline x1='0' y1='0' x2='100%' y2='100%' stroke='gray'/%3E%3C/svg%3E");
+}
+
+.slash,
+.backslash {
+  text-align: left !important;
+}
+
+.slash div,
+.backslash div {
+  text-align: right !important;
+}
+
+table.count tr {
+  counter-increment: tr;
+}
+
+table.count td:first-child::before {
+  content: counter(tr);
+}
+
+table.count tr.count-reset {
+  counter-reset: tr;
+}
+
+.version-old,
+.version-obsolete {
+  background: #f867;
+}
+
+.version-legacy {
+  background: #ee97;
+}
+
+.version-current,
+.version-stable {
+  background: #be67;
+}
+
+.version-future,
+.version-testing {
+  background: #9de7;
+}
+
+.version-never {
+  background: light-dark(LightGray, #555);
+}
+
+.row-future {
+  background: light-dark(#eeeef5, #25252c);
+  color: gray;
+}
+
+.row-deprecated {
+  background: light-dark(#f5eeee, #2c2525);
+  color: gray;
+}

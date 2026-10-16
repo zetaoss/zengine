@@ -1,0 +1,35 @@
+.z-blockquote {
+  position: relative;
+  margin: 0.5em 0;
+  padding: 1em 1em 1em 3em;
+  background: #9991;
+  border-left: 0.5em solid #7ba8;
+}
+
+.z-blockquote::before {
+  position: absolute;
+  font-size: 3em;
+  font-family: Georgia, cursive;
+  font-weight: bold;
+  color: #7ba8;
+  content: '“';
+  top: 0.5em;
+  left: 0.3em;
+}
+
+.z-blockquote cite {
+  display: block;
+  text-align: right;
+  font-style: normal;
+}
+
+@media (width >= 48rem) {
+  .z-blockquote {
+    margin: 0.5em 2em;
+    padding: 1em 3em 1em 4em;
+  }
+
+  .z-blockquote::before {
+    font-size: 4em;
+  }
+}

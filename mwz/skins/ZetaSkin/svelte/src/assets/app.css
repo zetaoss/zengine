@@ -9,6 +9,17 @@
 @import './has-binders.css';
 @import './islands.css';
 
+@import './tpl-alert.css';
+@import './tpl-hanja.css';
+@import './tpl-hlist.css';
+@import './tpl-infobox.css';
+@import './tpl-misc.css';
+@import './tpl-navbox.css';
+@import './tpl-quote.css';
+@import './tpl-tabs.css';
+@import './tpl-z-column.css';
+@import './wiki-classes.css';
+
 @import './mw-base.css';
 @import './mw-body-content.css';
 @import './mw-changelist.css';

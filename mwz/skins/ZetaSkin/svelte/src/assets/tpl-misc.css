@@ -1,0 +1,50 @@
+/* Module:Citation/CS1 */
+cite.citation {
+  font-style: inherit;
+}
+
+/* Template:〉 */
+.bracket1 {
+  color: #9ac;
+  padding: 0 0.3em;
+}
+
+/* Template:Ed */
+.z-ed > a[target='_blank'] {
+  opacity: 0.5;
+  zoom: 0.8;
+  color: #09d;
+}
+
+/* Template:흑백흐린그림 */
+.grayblur {
+  filter: grayscale(1) brightness(0.7) opacity(0.3);
+}
+
+/* Template:Grayout */
+.grayout {
+  background-color: gray;
+  color: gray;
+}
+
+/* Template:원_도표/조각, Module:도표 */
+.transborder {
+  border: solid transparent;
+}
+
+/* Template:검은배경 */
+.z-bg-dark img {
+  background: #000 !important;
+}
+
+/* Template:글_숨김 */
+.toctitle {
+  border-radius: 3px 3px 0 0;
+  padding: 1em 1em 0.6em 1.3em;
+}
+
+.toctitle h2 {
+  margin: 0;
+  padding: 0;
+  font-size: 1.3em;
+}

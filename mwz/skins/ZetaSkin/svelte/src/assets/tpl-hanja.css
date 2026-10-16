@@ -1,0 +1,175 @@
+.hanja-title span {
+  margin-right: 0.4em;
+  zoom: 3;
+  opacity: 0.5;
+}
+
+.hanja-title span:nth-child(1) {
+  zoom: 4;
+  opacity: 1;
+}
+
+.hanja-info {
+  float: right;
+  margin: 0 10px;
+  text-align: center;
+  border-collapse: collapse;
+}
+
+.hanja-info th,
+.hanja-info td {
+  border: 1px solid #88888833;
+}
+
+.hanja-info .han {
+  font-size: 3em;
+  padding: 0.3em;
+  font-family: serif;
+  background: #6688aa11;
+}
+
+.hanja-meaning {
+  padding: 7px;
+  background: #6688aa11;
+  border-radius: 0.25rem;
+  border: 1px solid #88888833;
+  width: auto;
+  overflow: hidden;
+}
+
+.radical > p {
+  width: 601px;
+  max-width: 100%;
+  border: 1px solid light-dark(#ccc, #444);
+  border-width: 1px 0 0 1px;
+  display: inline-block;
+}
+
+.radical > p > * {
+  box-sizing: border-box;
+  width: 50px;
+  height: 50px;
+  float: left;
+  font-size: 34px;
+  text-align: center;
+  vertical-align: middle;
+  border: 1px solid #888;
+  padding-top: 10px;
+}
+
+.radical > p > a {
+  font-family: serif;
+  border-color: light-dark(#fff, #333) #888 #888 light-dark(#fff, #333);
+}
+
+.radical > p > a:hover {
+  text-decoration: none;
+  background: #09d;
+  border-color: #09d;
+  color: #fff;
+}
+
+.radical > p > b {
+  background: #555;
+  border-color: #555 #888 #888 #555;
+  color: #fff;
+  font-size: 18px;
+}
+
+.radicals tr:nth-of-type(odd) {
+  background-color: light-dark(#f9f9f9, #1c1c1c);
+}
+
+.radicals th {
+  background: #666;
+  color: #fff;
+  width: 50px;
+  text-align: right;
+}
+
+.radicals td {
+  margin: 0;
+  padding: 0;
+}
+
+.radicals ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+.radicals li {
+  float: left;
+}
+
+.radicals li > a {
+  float: left;
+  font-size: 28px;
+  width: 40px;
+  height: 40px;
+  text-align: center;
+  text-decoration: none;
+  padding-top: 4px;
+  font-family: serif;
+  border-left: 1px solid light-dark(#ddd, #444);
+}
+
+.radicals li > a:hover {
+  text-decoration: none;
+  background: #09d;
+  border-color: #09d;
+  color: #fff;
+}
+
+.t-radical {
+  width: 100%;
+}
+
+.t-radical * {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.t-radical1 {
+  background: #999;
+  color: #fff;
+  width: 30px;
+  vertical-align: top;
+}
+
+.t-radical2 > p > * {
+  box-sizing: border-box;
+  width: 40px;
+  height: 40px;
+  float: left;
+  font-size: 28px;
+  border: 1px solid #888;
+  padding-top: 5px;
+}
+
+.t-radical2 > p > a {
+  text-decoration: none;
+  border-color: light-dark(#fff, #333) #888 #888 light-dark(#fff, #333);
+  background: linear-gradient(#eee, #fff);
+}
+
+.dark .t-radical2 > p > a {
+  background: linear-gradient(#2a2a2a, #1e1e1e);
+}
+
+.t-radical2 > p > a:hover {
+  background: #09d;
+  border-color: #09d;
+  color: #fff;
+}
+
+.t-radical2 > p > .new:hover {
+  background: #b00;
+}
+
+.t-radical2 > p > b {
+  background: #555;
+  border-color: #555;
+  color: #fff;
+  font-size: 15px;
+}

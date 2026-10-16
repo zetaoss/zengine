@@ -1,0 +1,25 @@
+[class^='z-column'] > ul {
+  column-count: 2;
+}
+
+[class^='z-column'] > ul > li {
+  padding-right: 1em;
+}
+
+@media (width >= 48rem) {
+  .z-column-3 > ul {
+    column-count: 3;
+  }
+
+  .z-column-4 > ul {
+    column-count: 4;
+  }
+
+  .z-column-5 > ul {
+    column-count: 5;
+  }
+
+  .z-column-6 > ul {
+    column-count: 6;
+  }
+}

@@ -22,7 +22,7 @@
 
 <div class="p-5">
   <h2 class="my-5 text-2xl font-bold">제타위키</h2>
-  <div class="my-5 grid gap-4 md:grid-cols-2">
+  <div class="my-5 grid grid-cols-1 gap-4 md:grid-cols-2">
     <ZCard>
       <HomeAbout />
     </ZCard>
@@ -33,7 +33,7 @@
       <HomeForum />
     </ZCard>
   </div>
-  <div class="my-5 grid gap-4 md:grid-cols-[2fr_2fr_1fr]">
+  <div class="my-5 grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,2fr)_minmax(0,1fr)]">
     <ZCard>
       <svelte:fragment slot="header">
         <a href={resolve('/onelines')}>한줄잡담</a>
