@@ -1,25 +1,14 @@
 .z-blockquote {
   position: relative;
-  margin: 0.5em 2em;
-  padding: 1em 3em 1em 4em;
+  margin: 0.5em 0;
+  padding: 1em 1em 1em 3em;
   background: #9991;
   border-left: 0.5em solid #7ba8;
 }
 
-@media (max-width: 640px) {
-  .z-blockquote {
-    margin: 0.5em 0;
-    padding: 1em 1em 1em 3em;
-  }
-
-  .z-blockquote::before {
-    font-size: 3em !important;
-  }
-}
-
 .z-blockquote::before {
   position: absolute;
-  font-size: 4em;
+  font-size: 3em;
   font-family: Georgia, cursive;
   font-weight: bold;
   color: #7ba8;
@@ -32,4 +21,15 @@
   display: block;
   text-align: right;
   font-style: normal;
+}
+
+@media (width >= 48rem) {
+  .z-blockquote {
+    margin: 0.5em 2em;
+    padding: 1em 3em 1em 4em;
+  }
+
+  .z-blockquote::before {
+    font-size: 4em;
+  }
 }

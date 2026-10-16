@@ -25,6 +25,7 @@ Styles for markup that MediaWiki core and extensions output (article lists and h
 - The `mw-*.css` files are not in a cascade layer, so they win over Tailwind's `@layer base` without `!important`. Keep `!important` only where a rule competes with MediaWiki module styles (`mw-editor.css`).
 - Use `light-dark()` or the design tokens for colors, so the rule works in both themes.
 - Write plain CSS with `var(--color-*)` tokens rather than `@apply`, so these files do not depend on the Tailwind build. Replace existing `@apply` when a file is edited.
+- Write mobile-first: mobile values by default, desktop values under `@media (width >= 48rem)`, which is Tailwind's `md` breakpoint used across the frontend. Do not add other pixel breakpoints.
 
 ## Linking user text
 
