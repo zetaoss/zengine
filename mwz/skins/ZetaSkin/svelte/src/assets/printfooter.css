@@ -3,6 +3,6 @@
 
 @media screen {
   .printfooter {
-    @apply invisible;
+    @apply hidden;
   }
 }

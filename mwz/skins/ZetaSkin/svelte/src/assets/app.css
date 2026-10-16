@@ -13,6 +13,9 @@
 @import './mw-body-content.css';
 @import './mw-changelist.css';
 @import './mw-charinsert.css';
+@import './mw-collapsible.css';
+@import './mw-content.css';
+@import './mw-editor.css';
 @import './mw-editsection.css';
 @import './mw-headings.css';
 @import './mw-highlight.css';

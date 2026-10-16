@@ -15,6 +15,14 @@ The skin page is rendered by MediaWiki (`templates/skin.mustache`); Svelte compo
 - Islands whose content the server already knows (the inline table of contents and the disambiguation notice) get server-rendered markup from `includes/StaticMarkup.php` inside the element, wrapped in `.ce-static`. It mirrors the Svelte markup, so it must be updated together with `TocApex`/`TocNode`/`DisambigApex`. Once the element is defined, `:defined > .ce-static` hides it and the Svelte output takes its place in the same frame. It also makes these parts visible without JavaScript.
 - When adding or resizing an island, check JS on/off positions at mobile and desktop widths (with ads blocked, this took mobile CLS from 0.29–0.53 to 0 on 2026-10-11).
 
+## MediaWiki markup styles
+
+Styles for markup that MediaWiki core and extensions output (article lists and headings, thumbnails, self links, `mw-collapsible`, the SyntaxHighlight header, the edit form) live in the skin's `svelte/src/assets/mw-*.css`, not in the wiki page `MediaWiki:Common.css`. Site CSS is a separate render-blocking request (`site.styles`), is not reviewed or versioned with the skin, and its fixed colors do not follow dark mode.
+
+- Classes that belong to one template or module (infoboxes, navboxes, hanja tables, ...) go into that template's TemplateStyles page instead, so the CSS loads only where the template is used and stays with the content.
+- The `mw-*.css` files are not in a cascade layer, so they win over Tailwind's `@layer base` without `!important`. Keep `!important` only where a rule competes with MediaWiki module styles (`mw-editor.css`).
+- Use `light-dark()` or the design tokens for colors, so the rule works in both themes.
+
 ## Linking user text
 
 User text is turned into HTML with links in two ways, depending on whether the input is plain text or HTML.
