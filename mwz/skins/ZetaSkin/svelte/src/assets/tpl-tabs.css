@@ -1,0 +1,13 @@
+.zw-tabs ul.nav {
+  margin: 0;
+}
+
+.nav-link {
+  cursor: pointer;
+}
+
+.zw-tabs .tab-pane {
+  padding: 0.5em;
+  border: 1px solid light-dark(#dee2e6, #383838);
+  border-top: 0;
+}

@@ -1,0 +1,49 @@
+.hlist dl,
+.hlist ol,
+.hlist ul {
+  margin: 0;
+  padding: 0;
+}
+
+.hlist dd,
+.hlist dt,
+.hlist li {
+  margin: 0;
+  display: inline;
+}
+
+.hlist.inline,
+.hlist.inline dl,
+.hlist.inline ol,
+.hlist.inline ul,
+.hlist dl dl,
+.hlist dl ol,
+.hlist dl ul,
+.hlist ol dl,
+.hlist ol ol,
+.hlist ol ul,
+.hlist ul dl,
+.hlist ul ol,
+.hlist ul ul {
+  display: inline;
+}
+
+.hlist .mw-empty-li {
+  display: none;
+}
+
+.hlist dt::after {
+  content: ': ';
+}
+
+.hlist dd::after,
+.hlist li::after {
+  content: ' · ';
+  font-weight: bold;
+}
+
+.mw-parser-output .hlist dd:last-child::after,
+.mw-parser-output .hlist dt:last-child::after,
+.mw-parser-output .hlist li:last-child::after {
+  content: none;
+}

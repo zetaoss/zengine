@@ -17,9 +17,11 @@ The skin page is rendered by MediaWiki (`templates/skin.mustache`); Svelte compo
 
 ## MediaWiki markup styles
 
-Styles for markup that MediaWiki core and extensions output (article lists and headings, thumbnails, self links, `mw-collapsible`, the SyntaxHighlight header, the edit form) live in the skin's `svelte/src/assets/mw-*.css`, not in the wiki page `MediaWiki:Common.css`. Site CSS is a separate render-blocking request (`site.styles`), is not reviewed or versioned with the skin, and its fixed colors do not follow dark mode.
+Styles for markup that MediaWiki core and extensions output (article lists and headings, thumbnails, self links, `mw-collapsible`, the SyntaxHighlight header, the edit form) live in the skin's `svelte/src/assets/mw-*.css`, and template classes in `tpl-*.css`, not in the wiki page `MediaWiki:Common.css`, which is kept empty. Site CSS is a separate render-blocking request (`site.styles`), is not reviewed or versioned with the skin, and its fixed colors do not follow dark mode.
 
-- Classes that belong to one template or module (infoboxes, navboxes, hanja tables, ...) go into that template's TemplateStyles page instead, so the CSS loads only where the template is used and stays with the content.
+- Classes that wiki templates and modules use go into `tpl-*.css`, one file per template family (`tpl-navbox.css`, `tpl-infobox.css`, `tpl-hanja.css`, ...). Small single-template rules go into `tpl-misc.css` with a comment naming the template. Classes that editors write directly in pages (`version-*`, `count`, `slash`, ...) go into `wiki-classes.css`. This keeps all wiki CSS in one reviewed place instead of spreading it over TemplateStyles pages, and changing it does not re-render every page that uses the template.
+- `app.css` imports `tpl-*.css` and `wiki-classes.css` before `mw-*.css`, the order the site CSS used to have against the skin.
+- Many templates set colors inline (`style="background:..."`), so infobox and navbox colors stay as they are in dark mode; changing only the box color would mix with the inline colors.
 - The `mw-*.css` files are not in a cascade layer, so they win over Tailwind's `@layer base` without `!important`. Keep `!important` only where a rule competes with MediaWiki module styles (`mw-editor.css`).
 - Use `light-dark()` or the design tokens for colors, so the rule works in both themes.
 - Write plain CSS with `var(--color-*)` tokens rather than `@apply`, so these files do not depend on the Tailwind build. Replace existing `@apply` when a file is edited.
