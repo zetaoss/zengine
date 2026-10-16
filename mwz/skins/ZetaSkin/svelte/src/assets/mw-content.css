@@ -1,0 +1,92 @@
+a.mw-selflink {
+  font-weight: bold;
+  text-decoration: none;
+  color: inherit;
+
+  &:hover {
+    text-decoration: none;
+    color: inherit;
+  }
+}
+
+.mw-parser-output > p > img,
+.mw-parser-output > p > a > img {
+  box-shadow: 0 2px 5px 1px rgba(0, 0, 0, 0.2);
+  box-sizing: content-box;
+  border-radius: 3px;
+  padding: 5px;
+  max-width: 100%;
+  height: auto;
+  background: #fff;
+}
+
+.mw-content-ltr {
+  > h2 {
+    padding: 0.3em 0 0.2em;
+  }
+
+  ul {
+    margin: 0.3em 0 0 1.6em;
+    padding: 0;
+  }
+
+  ol {
+    margin: 0.3em 0 0 1.6em;
+    padding: 0;
+    list-style: disc;
+    counter-reset: item;
+
+    > li {
+      counter-increment: li;
+
+      &::before {
+        content: counters(item, '.') '. ';
+        counter-increment: item;
+      }
+    }
+  }
+
+  dd {
+    margin-left: 1.6em;
+    margin-bottom: 0.1em;
+  }
+
+  img {
+    max-width: 100%;
+  }
+}
+
+div.tright,
+div.floatright,
+table.floatright {
+  clear: right;
+  float: right;
+}
+
+div.tright {
+  margin: 0.5em 0 1.3em 1.4em;
+}
+
+div.thumb {
+  margin-bottom: 0.5em;
+  width: auto;
+  background-color: transparent;
+}
+
+div.thumbinner {
+  border: 1px solid #8886;
+  padding: 3px;
+  background-color: #8883;
+  font-size: 94%;
+  text-align: center;
+  overflow: hidden;
+}
+
+div.thumb div a img {
+  background-color: #fff;
+}
+
+html .thumbimage {
+  background-color: #fff;
+  border: 1px solid #c8ccd1;
+}

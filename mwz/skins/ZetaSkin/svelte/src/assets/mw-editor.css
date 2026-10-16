@@ -1,0 +1,11 @@
+#msupload-dropzone {
+  height: auto !important;
+}
+
+.mw-editfont-monospace {
+  font-family: inherit !important;
+}
+
+.wikiEditor-ui-toolbar .page-characters div span {
+  height: auto !important;
+}
