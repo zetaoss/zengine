@@ -7,7 +7,7 @@ zengine has two Svelte apps:
 
 `svelte/src/shared/` holds code used by both; the skin sees it through the symlink `mwz/skins/ZetaSkin/svelte/src/shared`. Code used by only one app belongs in that app's `src/lib/` (`svelte/src/lib/` or `mwz/skins/ZetaSkin/svelte/src/lib/`), so the other app cannot import it by accident and its dependencies do not leak into the other app's checks. The skin's Tailwind build also scans `shared` for class names (`@source`), so main-only components there would add CSS to every wiki page.
 
-`hack/check-shared.mjs` (run by `make checks` with the main Svelte checks) follows `$shared`, `$lib`, relative and CSS `@import` paths from each app and fails when a file in `shared` is used by only one app or by neither. Tests next to a shared file and the CI-written `version.json` are exempt.
+`hack/check-shared.mjs` (run by `make checks` with the main Svelte checks) follows `$shared`, `$lib`, relative and CSS `@import` paths from each app and fails when a file in `shared` is used by only one app or by neither. Imports from test files do not count as use. Tests next to a shared file and the CI-written `version.json` are exempt.
 
 ## Skin islands
 

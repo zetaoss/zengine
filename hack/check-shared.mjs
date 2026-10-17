@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SHARED = join(ROOT, "svelte/src/shared");
 const APPS = {
-  main: { src: join(ROOT, "svelte/src"), lib: join(ROOT, "svelte/src/lib"), configs: ["svelte/vite.config.ts", "svelte/vitest.config.ts"] },
-  skin: { src: join(ROOT, "mwz/skins/ZetaSkin/svelte/src"), lib: join(ROOT, "mwz/skins/ZetaSkin/svelte/src/lib"), configs: ["mwz/skins/ZetaSkin/svelte/vite.config.ts"] },
+  main: { src: join(ROOT, "svelte/src"), lib: join(ROOT, "svelte/src/lib") },
+  skin: { src: join(ROOT, "mwz/skins/ZetaSkin/svelte/src"), lib: join(ROOT, "mwz/skins/ZetaSkin/svelte/src/lib") },
 };
 // Written by CI before the build.
 const EXEMPT = new Set(["version.json"]);
@@ -60,8 +60,8 @@ function imports(file, app) {
 }
 
 function sharedFilesUsedBy(app) {
-  const roots = walk(app.src).filter((file) => !inShared(file));
-  roots.push(...app.configs.map((file) => join(ROOT, file)).filter(existsSync));
+  // A test import does not make a shared file used by the app.
+  const roots = walk(app.src).filter((file) => !inShared(file) && !isTest(file));
   const used = new Set();
   const stack = roots.flatMap((file) => [...imports(file, app)].filter(inShared));
   while (stack.length > 0) {
