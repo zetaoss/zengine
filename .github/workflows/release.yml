@@ -23,9 +23,10 @@ jobs:
           [[ "$GITHUB_REF_NAME" =~ ^v0\.[0-9]+\.[0-9]+$ ]] || { echo "error: tag $GITHUB_REF_NAME is not v0.x.y" >&2; exit 1; }
           git merge-base --is-ancestor "$GITHUB_SHA" origin/main \
             || { echo "error: tag $GITHUB_REF_NAME is not on main" >&2; exit 1; }
-          # The tag must be newer than every other release tag. Rerunning the latest release keeps passing because
-          # the tag itself is excluded.
-          latest=$(git tag -l 'v*' | grep -vxF "$GITHUB_REF_NAME" | sort -V | tail -1)
+          # The tag must be newer than every other release tag: v0.x.y tags merged into main, so a stray tag on
+          # another branch or in another format cannot block releases. Rerunning the latest release keeps
+          # passing because the tag itself is excluded.
+          latest=$(git tag -l 'v*' --merged origin/main | grep -E '^v0\.[0-9]+\.[0-9]+$' | grep -vxF "$GITHUB_REF_NAME" | sort -V | tail -1)
           if [ -n "$latest" ] && [ "$(printf '%s\n' "$latest" "$GITHUB_REF_NAME" | sort -V | tail -1)" != "$GITHUB_REF_NAME" ]; then
             echo "error: tag $GITHUB_REF_NAME is not after the latest release tag $latest" >&2; exit 1
           fi
