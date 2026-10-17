@@ -6,6 +6,17 @@
   }
 }
 
+.NavFrame .NavToggle {
+  appearance: none;
+  margin-inline-start: 0.5em;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
 .mw-collapsible-toggle {
   padding: 0 1em;
 }
