@@ -121,7 +121,10 @@ function setupTabs(content: JQuerySelection): void {
         })
       }
 
-      tab.addEventListener('click', activate)
+      tab.addEventListener('click', (event: MouseEvent) => {
+        event.preventDefault()
+        activate()
+      })
       tab.addEventListener('keydown', (event: KeyboardEvent) => {
         if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
         event.preventDefault()
