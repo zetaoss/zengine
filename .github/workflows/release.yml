@@ -6,6 +6,9 @@ on:
   push:
     branches: [main]
     paths: [VERSION]
+concurrency:
+  group: release
+  cancel-in-progress: false
 jobs:
   docker-push:
     runs-on: ubuntu-latest
@@ -29,9 +32,10 @@ jobs:
           if existing=$(git rev-parse -q --verify "refs/tags/$tag^{commit}"); then
             [ "$existing" = "$GITHUB_SHA" ] || { echo "error: $tag already exists on $existing" >&2; exit 1; }
           fi
-          # The version must be newer than every other release: v0.x.y tags merged into main, so a stray tag
-          # on another branch or in another format cannot block releases.
-          latest=$(git tag -l 'v*' --merged HEAD | grep -E '^v0\.[0-9]+\.[0-9]+$' | grep -vxF "$tag" | sort -V | tail -1)
+          # The version must be newer than every other release: v0.x.y tags merged into the current main tip
+          # (fetched fresh, so rerunning an old failed release sees releases made since), ignoring stray tags
+          # on other branches or in other formats.
+          latest=$(git tag -l 'v*' --merged origin/main | grep -E '^v0\.[0-9]+\.[0-9]+$' | grep -vxF "$tag" | sort -V | tail -1)
           if [ -n "$latest" ] && [ "$(printf '%s\n' "$latest" "$tag" | sort -V | tail -1)" != "$tag" ]; then
             echo "error: $tag is not after the latest release tag $latest" >&2; exit 1
           fi
