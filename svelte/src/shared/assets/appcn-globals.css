@@ -20,10 +20,6 @@
   --breakpoint-3xl: 1600px;
   --breakpoint-4xl: 2000px;
 
-  --font-sans: var(--font-sans);
-  --font-heading: var(--font-heading);
-  --font-mono: var(--font-mono);
-
   --radius-sm: 0.18rem;
   --radius-md: 0.24rem;
   --radius-lg: 0.3rem;
@@ -95,10 +91,6 @@
     text-rendering: optimizeLegibility;
   }
 
-  .cn-font-heading {
-    @apply font-heading;
-  }
-
   [data-slot='layout'] {
     @apply overscroll-none;
   }
@@ -113,12 +105,5 @@
   button:active {
     @apply opacity-60 md:opacity-100;
   }
-
-  [data-lang='ar'] {
-    font-family: var(--font-ar);
-  }
-
-  [data-lang='he'] {
-    font-family: var(--font-he);
-  }
 }
+

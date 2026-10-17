@@ -9,7 +9,7 @@
 .z-blockquote::before {
   position: absolute;
   font-size: 3em;
-  font-family: Georgia, cursive;
+  font-family: var(--font-serif);
   font-weight: bold;
   color: #7ba8;
   content: '“';

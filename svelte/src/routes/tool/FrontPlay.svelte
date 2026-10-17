@@ -205,7 +205,7 @@ console.log("Hello HTML");
 
 <style>
   .console {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    font-family: var(--font-mono);
   }
 
   .console :global(.string) {
@@ -300,7 +300,7 @@ console.log("Hello HTML");
   }
 
   .code-editor :global(.cm-scroller) {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    font-family: var(--font-mono);
     font-size: 0.875rem;
     line-height: 1.25rem;
   }

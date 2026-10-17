@@ -1,0 +1,8 @@
+:root {
+  --color-link: light-dark(#07b, #5ad);
+  --color-link-hover: light-dark(#046, #ade);
+  --color-link-external: light-dark(#093, #3a6);
+  --color-link-new: light-dark(#b00, #d77);
+  --color-link-new-hover: light-dark(#603, #eaa);
+}
+
