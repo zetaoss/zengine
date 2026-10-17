@@ -55,7 +55,10 @@ jobs:
         with:
           push: false
           context: .
-          cache-from: type=gha
+          # Read the registry cache that releases write; PRs do not write it.
+          cache-from: |
+            type=registry,ref=ghcr.io/${{ github.repository }}:buildcache
+            type=gha
           cache-to: type=gha,mode=max
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

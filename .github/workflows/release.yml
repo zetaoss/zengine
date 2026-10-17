@@ -59,8 +59,12 @@ jobs:
           context: .
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # A tag run can only read GitHub Actions caches from its own tag or main, so each release would
+          # rebuild layers that no earlier tag could share. The registry cache is shared by every ref.
+          cache-from: |
+            type=registry,ref=ghcr.io/${{ github.repository }}:buildcache
+            type=gha
+          cache-to: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache,mode=max,image-manifest=true,oci-mediatypes=true
 
   create-release:
     needs: docker-push
