@@ -47,3 +47,4 @@ wfLoadExtension('ZetaExtension');
 
 $wgVisualEditorUseSingleEditTab            = true;
 $wgDefaultUserOptions['visualeditor-tabs'] = 'prefer-wt';
+$wgHiddenPrefs[]                           = 'visualeditor-tabs';
