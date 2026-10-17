@@ -166,11 +166,18 @@ FROM base AS prod
 
 ENV MW_INSTALL_PATH=/app/w
 
-COPY --from=nodebuild /app      /app
-COPY --from=gobuild   /out/bin/ /app/bin/
+# Move and chown MediaWiki before copying the application so this layer stays cached until base
+# changes. Done after the application COPY, it rewrote MediaWiki and the extensions into a new
+# layer on every release.
+RUN set -eux \
+    && mkdir /app \
+    && mv /var/www/html /app/w \
+    && chown www-data:www-data -R /app/w
+
+# Go binaries before the application: goapp changes less often, so this layer is often reused too.
+COPY --from=gobuild   --chown=www-data:www-data /out/bin/ /app/bin/
+COPY --from=nodebuild --chown=www-data:www-data /app      /app
 
 RUN set -eux \
-    && mv /var/www/html                         /app/w \
     && ln -rs /app/mwz/extensions/ZetaExtension /app/w/extensions/ \
-    && ln -rs /app/mwz/skins/ZetaSkin           /app/w/skins/ \
-    && chown www-data:www-data -R /app/*
+    && ln -rs /app/mwz/skins/ZetaSkin           /app/w/skins/
