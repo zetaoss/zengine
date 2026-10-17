@@ -4,7 +4,7 @@
   import { resolve } from '$app/paths'
   import useAuthStore from '$lib/stores/auth'
   import CAdsenseSlot from '$shared/components/CAdsenseSlot.svelte'
-  import ZCard from '$shared/ui/ZCard.svelte'
+  import ZCard from '$lib/ui/ZCard.svelte'
 
   import HomeAbout from './HomeAbout.svelte'
   import HomeComments from './HomeComments.svelte'

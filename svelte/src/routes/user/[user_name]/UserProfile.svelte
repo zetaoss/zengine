@@ -9,7 +9,7 @@
   import { page } from '$app/state'
   import useAuthStore from '$lib/stores/auth'
   import AvatarIcon from '$shared/components/avatar/AvatarIcon.svelte'
-  import ZCard from '$shared/ui/ZCard.svelte'
+  import ZCard from '$lib/ui/ZCard.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
   import httpy from '$shared/utils/httpy'

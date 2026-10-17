@@ -17,9 +17,10 @@
 
 - `mwz/skins/ZetaSkin/svelte/src/shared/` is a symlink to `svelte/src/shared/`.
 - Edit shared utilities, components, and styles in `svelte/src/shared/`, not through the symlink under `mwz/`.
+- Only code the main app also imports belongs there. Skin-only code goes in `mwz/skins/ZetaSkin/svelte/src/lib/` (`hack/check-shared.mjs` enforces this).
 
 ## Verification
 
-- For skin Svelte changes, run `pnpm type-check` and the relevant `eslint` commands before finalizing.
+- For skin Svelte changes, run `pnpm type-check` and the relevant `eslint` commands before finalizing. Unit tests (`src/**/*.test.ts`) run with `pnpm test:unit`.
 - Treat `svelte-check` warnings as issues to resolve or explicitly document.
 

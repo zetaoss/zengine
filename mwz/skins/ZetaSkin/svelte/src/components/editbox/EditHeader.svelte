@@ -5,9 +5,9 @@
   import mwapi from '$lib/utils/mwapi'
   import getRLCONF from '$lib/utils/rlconf'
   import CButton from '$shared/ui/CButton.svelte'
-  import ZNativeSelect from '$shared/ui/ZNativeSelect.svelte'
+  import ZNativeSelect from '$lib/ui/ZNativeSelect.svelte'
   import ZToggle from '$shared/ui/ZToggle.svelte'
-  import { getAge } from '$shared/utils/time'
+  import { getAge } from '$lib/utils/time'
 
   import { getWikiEditorContent, replaceWikiEditorContent } from './wikiEditor'
 

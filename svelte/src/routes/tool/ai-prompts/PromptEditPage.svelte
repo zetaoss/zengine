@@ -9,15 +9,15 @@
   import { page } from '$app/state'
   import RouteLinkButton from '$lib/components/RouteLinkButton.svelte'
   import useAuthStore from '$lib/stores/auth'
-  import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
-  import CBadge from '$shared/ui/CBadge.svelte'
+  import AvatarUser from '$lib/components/avatar/AvatarUser.svelte'
+  import CBadge from '$lib/ui/CBadge.svelte'
   import CButton from '$shared/ui/CButton.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZSelect from '$shared/ui/ZSelect.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
-  import ZValidator from '$shared/ui/ZValidator.svelte'
+  import ZValidator from '$lib/ui/ZValidator.svelte'
   import httpy from '$shared/utils/httpy'
 
   interface PromptItem {

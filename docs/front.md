@@ -5,7 +5,9 @@ zengine has two Svelte apps:
 - **main** (`svelte/`): SvelteKit app for the home page, forum, onelines and tools. Routes are split into chunks, so a library used by one route is downloaded only on that route.
 - **skin** (`mwz/skins/ZetaSkin/svelte/`): built into a single `app.js` (IIFE) and `app.css` that every wiki page loads, written with content-hashed names (`app.<hash>.js`) and listed in `dist/assets.php` ([config.md](config.md)). Everything it imports adds to the first page view.
 
-`svelte/src/shared/` holds code used by both; the skin sees it through the symlink `mwz/skins/ZetaSkin/svelte/src/shared`. Code used only by the main app belongs in `svelte/src/lib/`, so the skin cannot import it by accident.
+`svelte/src/shared/` holds code used by both; the skin sees it through the symlink `mwz/skins/ZetaSkin/svelte/src/shared`. Code used by only one app belongs in that app's `src/lib/` (`svelte/src/lib/` or `mwz/skins/ZetaSkin/svelte/src/lib/`), so the other app cannot import it by accident and its dependencies do not leak into the other app's checks. The skin's Tailwind build also scans `shared` for class names (`@source`), so main-only components there would add CSS to every wiki page.
+
+`hack/check-shared.mjs` (run by `make checks` with the main Svelte checks) follows `$shared`, `$lib`, relative and CSS `@import` paths from each app and fails when a file in `shared` is used by only one app or by neither. Tests next to a shared file and the CI-written `version.json` are exempt.
 
 ## Skin islands
 

@@ -3,7 +3,7 @@
   import { onMount } from 'svelte'
 
   import useAuthStore from '$lib/stores/auth'
-  import CBadge from '$shared/ui/CBadge.svelte'
+  import CBadge from '$lib/ui/CBadge.svelte'
   import CButton from '$shared/ui/CButton.svelte'
   import { showToast } from '$shared/ui/toast/toast'
   import ZIcon from '$shared/ui/ZIcon.svelte'

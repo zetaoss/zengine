@@ -4,7 +4,7 @@
 
   import { useOnelineDelete } from '$lib/composables/useOnelineDelete'
   import useAuthStore from '$lib/stores/auth'
-  import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
+  import AvatarUser from '$lib/components/avatar/AvatarUser.svelte'
   import CButton from '$shared/ui/CButton.svelte'
   import { showToast } from '$shared/ui/toast/toast'
   import ZIcon from '$shared/ui/ZIcon.svelte'

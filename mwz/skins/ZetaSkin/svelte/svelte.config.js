@@ -11,7 +11,6 @@ const customElementFiles = [
   'src/shared/components/CSiteFooter.svelte',
   'src/shared/components/CSiteRemocon.svelte',
   'src/shared/components/navbar/CSearch.svelte',
-  'src/shared/ui/CBadge.svelte',
   'src/shared/ui/confirm/ConfirmHost.svelte',
   'src/shared/ui/toast/ToastHost.svelte',
 ]
