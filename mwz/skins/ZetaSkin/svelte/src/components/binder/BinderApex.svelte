@@ -8,7 +8,7 @@
   import getRLCONF from '$lib/utils/rlconf'
   import CButton from '$shared/ui/CButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
-  import { isMdOrLargerStore } from '$shared/utils/screen'
+  import { isMdOrLargerStore } from '$lib/utils/screen'
 
   import BinderNode from './BinderNode.svelte'
 

@@ -8,7 +8,7 @@
   import CMenu from '$shared/ui/CMenu.svelte'
   import CMenuItem from '$shared/ui/CMenuItem.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
-  import { colorizeCss, colorizeHtml } from '$shared/utils/colorize'
+  import { colorizeCss, colorizeHtml } from '$lib/utils/colorize'
 
   import BoxFront from './BoxFront.svelte'
   import BoxLang from './BoxLang.svelte'

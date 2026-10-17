@@ -11,7 +11,7 @@
 <script lang="ts" module>
   import type { Snippet } from 'svelte'
 
-  import { cn } from './utils'
+  import { cn } from '$shared/ui/utils'
 
   export type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline' | 'ghost' | 'link'
 

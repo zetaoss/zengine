@@ -7,7 +7,7 @@
   import ThePagination from '$lib/components/pagination/ThePagination.svelte'
   import type { PaginateData } from '$lib/components/pagination/types'
   import { useOnelineDelete } from '$lib/composables/useOnelineDelete'
-  import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
+  import AvatarUser from '$lib/components/avatar/AvatarUser.svelte'
   import CButton from '$shared/ui/CButton.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'

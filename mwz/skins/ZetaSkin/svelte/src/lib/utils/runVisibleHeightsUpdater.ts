@@ -1,4 +1,4 @@
-// $shared/utils/runVisibleHeightsUpdater.ts
+// $lib/utils/runVisibleHeightsUpdater.ts
 export function runVisibleHeightsUpdater() {
   let started = false
 

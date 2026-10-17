@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { User } from '$shared/types/user'
 
-  import AvatarIcon from './AvatarIcon.svelte'
+  import AvatarIcon from '$shared/components/avatar/AvatarIcon.svelte'
 
   export let user: User
   export let size = 18

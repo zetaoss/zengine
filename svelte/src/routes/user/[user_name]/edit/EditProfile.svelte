@@ -8,10 +8,10 @@
   import useAuthStore from '$lib/stores/auth'
   import AvatarIcon from '$shared/components/avatar/AvatarIcon.svelte'
   import CButton from '$shared/ui/CButton.svelte'
-  import ZCard from '$shared/ui/ZCard.svelte'
+  import ZCard from '$lib/ui/ZCard.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
   import httpy from '$shared/utils/httpy'
-  import { sha256Hex } from '$shared/utils/sha256'
+  import { sha256Hex } from '$lib/utils/sha256'
 
   import { maskEmail } from './util/mask'
 

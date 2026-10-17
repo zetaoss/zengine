@@ -4,7 +4,7 @@
   import { mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 
   import CButton from '$shared/ui/CButton.svelte'
-  import ZCard from '$shared/ui/ZCard.svelte'
+  import ZCard from '$lib/ui/ZCard.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
 
   type StatsMap = Record<string, number>

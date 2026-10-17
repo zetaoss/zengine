@@ -3,7 +3,7 @@
   import { resolve } from '$app/paths'
   import RouteLinkButton from '$lib/components/RouteLinkButton.svelte'
   import useAuthStore from '$lib/stores/auth'
-  import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
+  import AvatarUser from '$lib/components/avatar/AvatarUser.svelte'
   import CButton from '$shared/ui/CButton.svelte'
   import ZModal from '$shared/ui/ZModal.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'

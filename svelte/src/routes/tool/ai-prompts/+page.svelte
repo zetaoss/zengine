@@ -5,8 +5,8 @@
 
   import { resolve } from '$app/paths'
   import useAuthStore from '$lib/stores/auth'
-  import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
-  import CBadge from '$shared/ui/CBadge.svelte'
+  import AvatarUser from '$lib/components/avatar/AvatarUser.svelte'
+  import CBadge from '$lib/ui/CBadge.svelte'
   import CButton from '$shared/ui/CButton.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'
