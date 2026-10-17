@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte'
 
-  import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
-  import ZSkeleton from '$shared/ui/ZSkeleton.svelte'
+  import AvatarUser from '$lib/components/avatar/AvatarUser.svelte'
+  import ZSkeleton from '$lib/ui/ZSkeleton.svelte'
   import httpy from '$shared/utils/httpy'
   import linkifyText from '$shared/utils/linkifyText'
 

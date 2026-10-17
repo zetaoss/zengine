@@ -25,6 +25,7 @@ function checkExtension(path) {
 
 function checkMainSvelte() {
   run("node", ["hack/svelte-common-deps.mjs"]);
+  run("node", ["hack/check-shared.mjs"]);
   checkSvelteProject("svelte");
 }
 
@@ -54,7 +55,7 @@ const cachedChecks = [
   { name: "check-mw-extensions", paths: ["mwz/extensions.yaml", "mwz/extensions.lock", "hack/extensions.mjs", "hack/package.json", "hack/pnpm-lock.yaml"], action: checkMwExtensions },
   { name: "check-extension", paths: ["mwz/extensions/ZetaExtension"], action: () => checkExtension("mwz/extensions/ZetaExtension") },
   { name: "check-skin", paths: ["mwz/skins/ZetaSkin"], action: () => checkExtension("mwz/skins/ZetaSkin") },
-  { name: "check-main-svelte", paths: ["svelte", "hack/svelte-common-deps.mjs", "pnpm-lock.yaml", "package.json"], action: checkMainSvelte },
+  { name: "check-main-svelte", paths: ["svelte", "mwz/skins/ZetaSkin/svelte/src", "hack/svelte-common-deps.mjs", "hack/check-shared.mjs", "pnpm-lock.yaml", "package.json"], action: checkMainSvelte },
   { name: "check-skin-svelte", paths: ["mwz/skins/ZetaSkin/svelte", "svelte/src/shared", "pnpm-lock.yaml", "package.json"], action: () => checkSvelteProject("mwz/skins/ZetaSkin/svelte") },
   { name: "check-goapp", paths: ["goapp", ".golangci.yml"], action: checkGoapp },
 ];

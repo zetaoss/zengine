@@ -8,7 +8,7 @@
   import RouteLinkButton from '$lib/components/RouteLinkButton.svelte'
   import useAuthStore from '$lib/stores/auth'
   import { titlesExist } from '$lib/utils/mediawiki'
-  import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
+  import AvatarUser from '$lib/components/avatar/AvatarUser.svelte'
   import CButton from '$shared/ui/CButton.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'

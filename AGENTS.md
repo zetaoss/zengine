@@ -15,7 +15,7 @@ This guide helps coding agents quickly understand the monorepo and choose where 
       - **Import Sorting**: Always maintain sorted imports (use `eslint --fix`).
       - **Verification**: Run `npm run check` and `eslint` before finalizing changes.
       - **Svelte Warnings**: Treat `svelte-check` warnings as review items and resolve them (or document why they are intentionally kept).
-  - **Shared Code**: `svelte/src/shared/` is the source for utilities used by both main and skin Svelte. Never edit the symlink in `mwz/`.
+  - **Shared Code**: `svelte/src/shared/` holds only code that both main and skin Svelte import. Code used by one app goes in that app's `src/lib/`; `hack/check-shared.mjs` (part of `make checks`) fails otherwise. Never edit the symlink in `mwz/`.
 
 ## Scope
 
@@ -71,9 +71,9 @@ This guide helps coding agents quickly understand the monorepo and choose where 
 - Prefer the design tokens defined in `svelte/src/shared/assets/appcn-globals.css`.
 - Use Tailwind utilities to express those tokens in markup, rather than introducing ad hoc CSS.
 
-## Frontend Shared Responsive Utilities
+## Frontend Responsive Utilities
 
-- Mobile breakpoint source of truth: `svelte/src/shared/utils/screen.ts`
+- Skin mobile breakpoint source of truth: `mwz/skins/ZetaSkin/svelte/src/lib/utils/screen.ts`
   - `isMdOrLargerStore`: Svelte store (reactive)
   - `isMdOrLarger()`: getter function
 - Responsive Styling Rules:
@@ -81,7 +81,7 @@ This guide helps coding agents quickly understand the monorepo and choose where 
   - **Mobile-first**: Write default styles for mobile, use Tailwind `md:` utilities for medium-screen enhancements.
   - **Component Scoping**: Component-specific responsive sizes (e.g. modal dimensions) should use component-local Tailwind classes when practical.
 - `mwz/skins/ZetaSkin/svelte/src/shared` is a symlink to `svelte/src/shared`.
-  - Shared utils, components, and styles are maintained in **main svelte**'s `shared` folder.
+  - Utils, components, and styles used by both apps are maintained in **main svelte**'s `shared` folder.
   - Changes are automatically reflected in **skin svelte** via this symlink.
 
 ## Frontend Dev Runtime

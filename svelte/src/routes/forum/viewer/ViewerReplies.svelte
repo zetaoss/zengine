@@ -2,7 +2,7 @@
   import { mdiDotsVertical } from '@mdi/js'
 
   import useAuthStore from '$lib/stores/auth'
-  import AvatarUser from '$shared/components/avatar/AvatarUser.svelte'
+  import AvatarUser from '$lib/components/avatar/AvatarUser.svelte'
   import CButton from '$shared/ui/CButton.svelte'
   import CMenu from '$shared/ui/CMenu.svelte'
   import CMenuItem from '$shared/ui/CMenuItem.svelte'

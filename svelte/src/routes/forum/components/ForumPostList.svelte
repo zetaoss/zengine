@@ -6,7 +6,7 @@
   import ThePagination from '$lib/components/pagination/ThePagination.svelte'
   import type { PaginateData } from '$lib/components/pagination/types'
   import AvatarIcon from '$shared/components/avatar/AvatarIcon.svelte'
-  import CBadge from '$shared/ui/CBadge.svelte'
+  import CBadge from '$lib/ui/CBadge.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
   import httpy from '$shared/utils/httpy'
 

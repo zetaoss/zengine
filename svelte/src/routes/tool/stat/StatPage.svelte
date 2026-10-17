@@ -7,7 +7,7 @@
   import { resolve } from '$app/paths'
   import { page } from '$app/state'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
-  import ZTabs from '$shared/ui/ZTabs.svelte'
+  import ZTabs from '$lib/ui/ZTabs.svelte'
   import ZToggle from '$shared/ui/ZToggle.svelte'
   import httpy from '$shared/utils/httpy'
 
