@@ -1,10 +1,11 @@
 # release.yml
-# Pushing a v0.x.y tag on a main commit releases it: it builds and pushes the image, then creates the
-# GitHub release. Rerun failed jobs to retry a release.
+# A main commit that changes VERSION releases v<VERSION>: it builds and pushes the image, then creates the
+# tag and the GitHub release. PRs bump VERSION (pull-request.yml checks it). Rerun failed jobs to retry.
 name: release
 on:
   push:
-    tags: ['v*']
+    branches: [main]
+    paths: [VERSION]
 jobs:
   docker-push:
     runs-on: ubuntu-latest
@@ -12,24 +13,29 @@ jobs:
       contents: read
       packages: write
     outputs:
-      tag: ${{ github.ref_name }}
+      tag: ${{ steps.version.outputs.tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - name: Check tag
+      - name: Read and check VERSION
+        id: version
         run: |
-          [[ "$GITHUB_REF_NAME" =~ ^v0\.[0-9]+\.[0-9]+$ ]] || { echo "error: tag $GITHUB_REF_NAME is not v0.x.y" >&2; exit 1; }
-          git merge-base --is-ancestor "$GITHUB_SHA" origin/main \
-            || { echo "error: tag $GITHUB_REF_NAME is not on main" >&2; exit 1; }
-          # The tag must be newer than every other release tag: v0.x.y tags merged into main, so a stray tag on
-          # another branch or in another format cannot block releases. Rerunning the latest release keeps
-          # passing because the tag itself is excluded.
-          latest=$(git tag -l 'v*' --merged origin/main | grep -E '^v0\.[0-9]+\.[0-9]+$' | grep -vxF "$GITHUB_REF_NAME" | sort -V | tail -1)
-          if [ -n "$latest" ] && [ "$(printf '%s\n' "$latest" "$GITHUB_REF_NAME" | sort -V | tail -1)" != "$GITHUB_REF_NAME" ]; then
-            echo "error: tag $GITHUB_REF_NAME is not after the latest release tag $latest" >&2; exit 1
+          version=$(cat VERSION)
+          tag="v$version"
+          [[ "$version" =~ ^0\.[0-9]+\.[0-9]+$ ]] || { echo "error: VERSION $version is not 0.x.y" >&2; exit 1; }
+          # An existing tag is only allowed on this commit (a rerun); never overwrite another release's image.
+          if existing=$(git rev-parse -q --verify "refs/tags/$tag^{commit}"); then
+            [ "$existing" = "$GITHUB_SHA" ] || { echo "error: $tag already exists on $existing" >&2; exit 1; }
           fi
+          # The version must be newer than every other release: v0.x.y tags merged into main, so a stray tag
+          # on another branch or in another format cannot block releases.
+          latest=$(git tag -l 'v*' --merged HEAD | grep -E '^v0\.[0-9]+\.[0-9]+$' | grep -vxF "$tag" | sort -V | tail -1)
+          if [ -n "$latest" ] && [ "$(printf '%s\n' "$latest" "$tag" | sort -V | tail -1)" != "$tag" ]; then
+            echo "error: $tag is not after the latest release tag $latest" >&2; exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v6
@@ -37,7 +43,7 @@ jobs:
           images: |
             ghcr.io/${{ github.repository }}
           tags: |
-            type=raw,value=${{ github.ref_name }}
+            type=raw,value=${{ steps.version.outputs.tag }}
       - name: Generate version.json
         env:
           APP_VERSION: ${{ steps.meta.outputs.version }}
@@ -59,12 +65,8 @@ jobs:
           context: .
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # A tag run can only read GitHub Actions caches from its own tag or main, so each release would
-          # rebuild layers that no earlier tag could share. The registry cache is shared by every ref.
-          cache-from: |
-            type=registry,ref=ghcr.io/${{ github.repository }}:buildcache
-            type=gha
-          cache-to: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache,mode=max,image-manifest=true,oci-mediatypes=true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   create-release:
     needs: docker-push
@@ -77,4 +79,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ needs.docker-push.outputs.tag }}
-        run: gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --verify-tag --title "$TAG" --generate-notes
+        run: gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --target "$GITHUB_SHA" --title "$TAG" --generate-notes
