@@ -24,7 +24,7 @@
 .hanja-info .han {
   font-size: 3em;
   padding: 0.3em;
-  font-family: serif;
+  font-family: var(--font-serif);
   background: #6688aa11;
 }
 
@@ -58,7 +58,7 @@
 }
 
 .radical > p > a {
-  font-family: serif;
+  font-family: var(--font-serif);
   border-color: light-dark(#fff, #333) #888 #888 light-dark(#fff, #333);
 }
 
@@ -110,7 +110,7 @@
   text-align: center;
   text-decoration: none;
   padding-top: 4px;
-  font-family: serif;
+  font-family: var(--font-serif);
   border-left: 1px solid light-dark(#ddd, #444);
 }
 

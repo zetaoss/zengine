@@ -7,7 +7,7 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Segoe UI', 'Malgun Gothic', sans-serif;
+    font-family: var(--font-sans);
     word-break: keep-all;
     overflow-wrap: break-word;
   }
@@ -57,22 +57,22 @@
   }
 
   a {
-    color: light-dark(#07b, #5ad);
+    color: var(--color-link);
 
     &:hover {
       text-decoration: underline;
-      color: light-dark(#046, #ade);
+      color: var(--color-link-hover);
     }
 
     &.external {
-      color: light-dark(#093, #3a6);
+      color: var(--color-link-external);
     }
 
     &.new {
-      color: light-dark(#b00, #d77);
+      color: var(--color-link-new);
 
       &:hover {
-        color: light-dark(#603, #eaa);
+        color: var(--color-link-new-hover);
       }
     }
   }
@@ -100,6 +100,7 @@
   }
 
   pre {
+    font-family: var(--font-mono);
     white-space: pre-wrap;
     word-break: break-all;
   }
@@ -108,6 +109,7 @@
   kbd,
   samp,
   tt {
+    font-family: var(--font-mono);
     font-size: 0.875em;
   }
 

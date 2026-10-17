@@ -58,8 +58,16 @@ function setupAutocollapse(content: JQuerySelection, $: JQueryFactory): void {
   })
 }
 
-function setupNavigationFrames(content: JQuerySelection): void {
-  content.find('div.NavFrame:not(.mw-collapsible)').each((_index, frame) => {
+function queryMatching(root: ParentNode, selector: string): HTMLElement[] {
+  const matched = Array.from(root.querySelectorAll<HTMLElement>(selector))
+  if (root instanceof HTMLElement && root.matches(selector)) {
+    matched.unshift(root)
+  }
+  return matched
+}
+
+function setupNavigationFramesInRoot(root: ParentNode): void {
+  queryMatching(root, 'div.NavFrame:not(.mw-collapsible)').forEach((frame) => {
     if (frame.dataset.legacyNavFrameReady) return
     const head = frame.querySelector<HTMLElement>('.NavHead')
     if (!head) return
@@ -93,14 +101,20 @@ function setupNavigationFrames(content: JQuerySelection): void {
   })
 }
 
-function setupTabs(content: JQuerySelection): void {
-  content.find('.zw-tabs').each((tabIndex, root) => {
-    if (root.dataset.tabsReady) return
-    const tabs = Array.from(root.querySelectorAll<HTMLElement>(':scope > ul.nav > li > .nav-link'))
-    const panes = Array.from(root.querySelectorAll<HTMLElement>(':scope > .tab-content > .tab-pane'))
-    if (!tabs.length || tabs.length !== panes.length) return
+function setupTabsInRoot(root: ParentNode): void {
+  queryMatching(root, '.zw-tabs').forEach((tabsRoot, tabIndex) => {
+    if (tabsRoot.dataset.tabsReady) return
+    const tabs = Array.from(tabsRoot.querySelectorAll<HTMLElement>(':scope > ul.nav > li > .nav-link'))
+    const panes = Array.from(tabsRoot.querySelectorAll<HTMLElement>(':scope > .tab-content > .tab-pane'))
+    if (!tabs.length || panes.length < tabs.length) return
 
-    root.setAttribute('data-tabs-ready', 'true')
+    tabsRoot.setAttribute('data-tabs-ready', 'true')
+    panes.forEach((pane, paneIndex) => {
+      pane.hidden = paneIndex !== 0
+      pane.classList.toggle('show', paneIndex === 0)
+      pane.classList.toggle('active', paneIndex === 0)
+    })
+
     tabs.forEach((tab, index) => {
       const id = `mytab-${tabIndex}-${index}`
       tab.dataset.target = `#${id}`
@@ -109,7 +123,6 @@ function setupTabs(content: JQuerySelection): void {
       tab.tabIndex = index === 0 ? 0 : -1
       panes[index].id = id
       panes[index].setAttribute('role', 'tabpanel')
-      panes[index].hidden = index !== 0
 
       const activate = () => {
         tabs.forEach((item, itemIndex) => {
@@ -117,9 +130,12 @@ function setupTabs(content: JQuerySelection): void {
           item.classList.toggle('active', active)
           item.setAttribute('aria-selected', String(active))
           item.tabIndex = active ? 0 : -1
-          panes[itemIndex].hidden = !active
-          panes[itemIndex].classList.toggle('show', active)
-          panes[itemIndex].classList.toggle('active', active)
+        })
+        panes.forEach((pane, paneIndex) => {
+          const active = paneIndex === index
+          pane.hidden = !active
+          pane.classList.toggle('show', active)
+          pane.classList.toggle('active', active)
         })
       }
 
@@ -139,10 +155,15 @@ function setupTabs(content: JQuerySelection): void {
 }
 
 export default function setupWikiCompatibility(): void {
+  if (document.body) {
+    setupNavigationFramesInRoot(document.body)
+    setupTabsInRoot(document.body)
+  }
+
   if (compatibilityInitialized) return
   const $ = runtime.jQuery
   const mw = runtime.mw
-  if (!$ || !mw) {
+  if (typeof $ !== 'function' || typeof mw?.hook !== 'function' || typeof mw?.loader?.using !== 'function') {
     if (!retryScheduled) {
       retryScheduled = true
       window.setTimeout(() => {
@@ -156,8 +177,10 @@ export default function setupWikiCompatibility(): void {
 
   const setup = (content: JQuerySelection) => {
     setupLegacyCollapsible(content)
-    setupNavigationFrames(content)
-    setupTabs(content)
+    content.get().forEach((element) => {
+      setupNavigationFramesInRoot(element)
+      setupTabsInRoot(element)
+    })
   }
 
   mw.hook('wikipage.content').add(setup)

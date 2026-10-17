@@ -1,4 +1,8 @@
 :root {
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Segoe UI', 'Malgun Gothic', sans-serif;
+  --font-serif: Georgia, 'Nanum Myeongjo', 'Batang', serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+
   --font-size-x-small: 0.75rem;
   --font-size-small: 0.875rem;
   --font-size-medium: 1rem;
@@ -11,3 +15,4 @@
   --font-weight-semi-bold: 600;
   --font-weight-bold: 700;
 }
+
