@@ -30,15 +30,15 @@ RUN EXTENSIONS_DIR=/extensions node hack/extensions.mjs install
 # https://hub.docker.com/_/mediawiki
 FROM mediawiki:1.43.11-fpm AS base
 
-RUN set -eux; \
+# install-php-extensions comes from a pinned image and is mounted only for this step, so builds are
+# reproducible and it does not stay in the image.
+RUN --mount=type=bind,from=mlocati/php-extension-installer:2.12.1,source=/usr/bin/install-php-extensions,target=/usr/local/bin/install-php-extensions \
+    set -eux; \
     ## system packages
     apt-get update; \
     apt-get install -y --no-install-recommends nginx; \
     rm -rf /var/lib/apt/lists/*; \
     ## php extensions
-    curl -sSLf -o /usr/local/bin/install-php-extensions \
-        https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions; \
-    chmod +x /usr/local/bin/install-php-extensions; \
     install-php-extensions \
         pcntl \
         pdo_mysql \
@@ -69,16 +69,15 @@ RUN --mount=type=bind,source=mwz/patches,target=/tmp/patches \
         patch -d /var/www/html -p1 --forward --fuzz=0 --no-backup-if-mismatch < "$p"; \
     done
 
-# MediaWiki settings (docs/config.md). The deployment provides SiteSettings.php and SiteExtensionSettings.php.
-COPY mwz/settings/LocalSettings.php mwz/settings/BaseSettings.php mwz/settings/BaseExtensionSettings.php /var/www/html/
-
 FROM golang:${GO_VERSION}-trixie AS go-devtools
+
+# Pinned: @latest moves on and can require a newer Go than GO_VERSION (gopls v0.24.0 needs Go 1.27).
 
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     set -eux; \
-    GOBIN=/out/bin go install golang.org/x/tools/gopls@latest; \
-    GOBIN=/out/bin go install github.com/air-verse/air@latest
+    GOBIN=/out/bin go install golang.org/x/tools/gopls@v0.23.0; \
+    GOBIN=/out/bin go install github.com/air-verse/air@v1.67.4
 
 FROM node:24-bookworm-slim AS cli-tools
 
@@ -147,6 +146,8 @@ RUN pnpm -C mwz/skins/ZetaSkin/svelte install --frozen-lockfile
 RUN node hack/version-sync.mjs
 RUN pnpm -C svelte                    run build
 RUN pnpm -C mwz/skins/ZetaSkin/svelte run build
+# The runtime needs only the build output, not the build dependencies.
+RUN rm -rf svelte/node_modules mwz/skins/ZetaSkin/svelte/node_modules
 
 FROM --platform=$BUILDPLATFORM golang:1.25-trixie AS gobuild
 
@@ -173,6 +174,10 @@ RUN set -eux \
     && mkdir /app \
     && mv /var/www/html /app/w \
     && chown www-data:www-data -R /app/w
+
+# MediaWiki settings (docs/config.md). The deployment provides SiteSettings.php and SiteExtensionSettings.php.
+# Copied after the move, so a settings change does not rebuild the MediaWiki layer.
+COPY --chown=www-data:www-data mwz/settings/LocalSettings.php mwz/settings/BaseSettings.php mwz/settings/BaseExtensionSettings.php /app/w/
 
 # Go binaries before the application: goapp changes less often, so this layer is often reused too.
 COPY --from=gobuild   --chown=www-data:www-data /out/bin/ /app/bin/
