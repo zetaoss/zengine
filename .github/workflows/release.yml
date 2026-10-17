@@ -1,11 +1,10 @@
 # release.yml
-# A merge that changes VERSION releases v<VERSION>: it builds and pushes the image, then creates the tag and
-# the GitHub release. Rerun failed jobs to retry a release.
+# Pushing a v0.x.y tag on a main commit releases it: it builds and pushes the image, then creates the
+# GitHub release. Rerun failed jobs to retry a release.
 name: release
 on:
   push:
-    branches: [main]
-    paths: [VERSION]
+    tags: ['v*']
 jobs:
   docker-push:
     runs-on: ubuntu-latest
@@ -13,13 +12,17 @@ jobs:
       contents: read
       packages: write
     outputs:
-      tag: ${{ steps.version.outputs.tag }}
+      tag: ${{ github.ref_name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      - name: Read VERSION
-        id: version
-        run: echo "tag=v$(cat VERSION)" >> "$GITHUB_OUTPUT"
+        with:
+          fetch-depth: 0
+      - name: Check tag
+        run: |
+          [[ "$GITHUB_REF_NAME" =~ ^v0\.[0-9]+\.[0-9]+$ ]] || { echo "error: tag $GITHUB_REF_NAME is not v0.x.y" >&2; exit 1; }
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main \
+            || { echo "error: tag $GITHUB_REF_NAME is not on main" >&2; exit 1; }
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v6
@@ -27,7 +30,7 @@ jobs:
           images: |
             ghcr.io/${{ github.repository }}
           tags: |
-            type=raw,value=${{ steps.version.outputs.tag }}
+            type=raw,value=${{ github.ref_name }}
       - name: Generate version.json
         env:
           APP_VERSION: ${{ steps.meta.outputs.version }}
@@ -63,4 +66,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ needs.docker-push.outputs.tag }}
-        run: gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --target "$GITHUB_SHA" --title "$TAG" --generate-notes
+        run: gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --verify-tag --title "$TAG" --generate-notes
