@@ -16,6 +16,7 @@ import '$shared/ui/toast/ToastHost.svelte'
 
 import shortcutForPageButtons from '$lib/utils/shortcutForPageButtons'
 import wikitableScroll from '$lib/utils/wikitableScroll'
+import setupWikiCompatibility from './utils/wikiCompatibility'
 import { setTrackingGate } from '$shared/stores/trackingStore'
 import { runVisibleHeightsUpdater } from '$shared/utils/runVisibleHeightsUpdater'
 
@@ -27,6 +28,7 @@ runVisibleHeightsUpdater()
 mountRunbox()
 shortcutForPageButtons()
 wikitableScroll()
+setupWikiCompatibility()
 
 if (!document.querySelector('confirm-host')) {
   document.body.appendChild(document.createElement('confirm-host'))

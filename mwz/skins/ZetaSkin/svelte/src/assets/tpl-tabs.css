@@ -7,7 +7,12 @@
 }
 
 .zw-tabs .tab-pane {
+  display: none;
   padding: 0.5em;
   border: 1px solid light-dark(#dee2e6, #383838);
   border-top: 0;
+}
+
+.zw-tabs .tab-pane.show.active {
+  display: block;
 }
