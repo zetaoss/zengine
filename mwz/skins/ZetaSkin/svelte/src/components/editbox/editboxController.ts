@@ -136,7 +136,7 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
     const wikiEditorTop = findWikiEditorTop()
     if (!wikiEditorTop) {
       if (!hasLoggedMissingWikiEditor) {
-        console.info('WikiEditor was not found. Retrying...')
+        console.debug('WikiEditor was not found yet. Retrying...')
         hasLoggedMissingWikiEditor = true
       }
       return false
@@ -276,6 +276,9 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
       }
     return true
   }
+
+  // Only edit pages have the edit form and WikiEditor; elsewhere the retries below would only search for them.
+  if (!isEditAction()) return () => {}
 
   let aiEditReady = false
   let editHeaderReady = false
