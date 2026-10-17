@@ -25,6 +25,8 @@ interface MediaWikiRuntime {
 type JQueryFactory = (target: HTMLElement | HTMLElement[]) => JQuerySelection
 
 const runtime = window as Window & { jQuery?: JQueryFactory; mw?: MediaWikiRuntime }
+let compatibilityInitialized = false
+let retryScheduled = false
 
 function setupLegacyCollapsible(content: JQuerySelection): void {
   const tables = content.find('table.collapsible:not(.mw-collapsible)').addClass('mw-collapsible')
@@ -137,9 +139,20 @@ function setupTabs(content: JQuerySelection): void {
 }
 
 export default function setupWikiCompatibility(): void {
+  if (compatibilityInitialized) return
   const $ = runtime.jQuery
   const mw = runtime.mw
-  if (!$ || !mw) return
+  if (!$ || !mw) {
+    if (!retryScheduled) {
+      retryScheduled = true
+      window.setTimeout(() => {
+        retryScheduled = false
+        setupWikiCompatibility()
+      }, 50)
+    }
+    return
+  }
+  compatibilityInitialized = true
 
   const setup = (content: JQuerySelection) => {
     setupLegacyCollapsible(content)
