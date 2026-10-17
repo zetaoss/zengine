@@ -62,7 +62,7 @@ All files are placed in the MediaWiki directory (`$IP`). `LocalSettings.php` is 
 | 3 | `BaseExtensionSettings.php` | Maintained here (`mwz/settings/`) | `wfLoadExtension` calls for the bundled and external extensions and ZetaExtension, except the site-specific ones below. |
 | 4 | `SiteExtensionSettings.php` | Externally provided (required) | Site-specific extensions, loaded and configured together: AbuseFilter with the auto-confirm thresholds, AWS (S3 file repository), MailAPI and Score. |
 
-The image's `base` stage places `LocalSettings.php`, `BaseSettings.php` and `BaseExtensionSettings.php` in the MediaWiki directory. The deployment environment places `SiteSettings.php` and `SiteExtensionSettings.php` in the same directory. MediaWiki will not start if either file is missing. If a file has no settings, provide a file containing only `<?php`.
+The image places `LocalSettings.php`, `BaseSettings.php` and `BaseExtensionSettings.php` in the MediaWiki directory (`/app/w`), after moving MediaWiki there, so a settings change does not rebuild the MediaWiki layer. The `dev` image does not include them; the development environment links them from the working tree. The deployment environment places `SiteSettings.php` and `SiteExtensionSettings.php` in the same directory. MediaWiki will not start if either file is missing. If a file has no settings, provide a file containing only `<?php`.
 
 ### Notes on `BaseSettings.php`
 
