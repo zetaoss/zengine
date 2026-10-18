@@ -197,13 +197,17 @@
 <div class="text-foreground ml-auto flex w-full md:max-w-2xl">
   <div class="m-1.5 grow">
     <div bind:this={root} class="relative" role="search">
-      <div class={`relative flex h-9 bg-background rounded-t ${!expanded || !keyword.trim().length ? 'rounded-b' : ''}`}>
+      <div class={`relative flex h-9 border border-transparent bg-background rounded-t ${!expanded || !keyword.trim().length ? 'rounded-b' : ''}`}>
+        <!-- Same column as the suggestion icons, so typed text lines up with suggestion text. -->
+        <button type="button" class="z-10 flex h-full flex-none items-center bg-transparent pr-2 pl-3 text-muted-foreground hover:text-foreground focus:text-a-blue-700" aria-label="검색" on:click={onClick}>
+          <ZIcon path={mdiMagnify} size={18} />
+        </button>
         <!-- svelte-ignore a11y_accesskey -->
         <input
           accesskey="f"
           aria-label="search"
           type="search"
-          class="grow h-full bg-transparent px-3 outline-0"
+          class="grow h-full bg-transparent pr-3 outline-0"
           name="search"
           placeholder="검색..."
           title={searchTitle}
@@ -216,11 +220,8 @@
           on:keydown={onKeyDown}
         />
         {#if !focused && !keyword}
-          <kbd class="pointer-events-none absolute top-1/2 right-12 hidden -translate-y-1/2 text-muted-foreground md:inline" aria-hidden="true">/</kbd>
+          <kbd class="pointer-events-none absolute top-1/2 right-3 hidden -translate-y-1/2 text-muted-foreground md:inline" aria-hidden="true">/</kbd>
         {/if}
-        <button type="button" class="z-10 h-full w-12 flex-none bg-transparent focus:text-a-blue-700" on:click={onClick}>
-          <ZIcon path={mdiMagnify} size={24} />
-        </button>
       </div>
 
       <div class={`absolute z-40 w-full overflow-hidden bg-background border rounded-b ${!expanded || !keyword.trim().length ? 'hidden' : ''}`}>
@@ -229,23 +230,23 @@
             {#each pages as p, i (p.id)}
               <div>
                 <a
-                  class={`flex items-start gap-2 p-1.5 px-3 text-foreground hover:no-underline ${currentIndex === i ? 'focused' : ''}`}
+                  class={`flex h-11 items-center gap-2 px-3 text-foreground hover:no-underline ${currentIndex === i ? 'focused' : ''}`}
                   href={pageUrl(p)}
                   rel="external"
                   data-sveltekit-reload
                   on:mouseenter={() => (hIndex = i)}
                   on:focus={() => (hIndex = i)}
                 >
-                  <ZIcon path={p.matched_title ? mdiSubdirectoryArrowRight : mdiFileDocumentOutline} size={18} class="sub mt-0.5 flex-none text-muted-foreground" />
-                  <span class="min-w-0">
+                  <ZIcon path={p.matched_title ? mdiSubdirectoryArrowRight : mdiFileDocumentOutline} size={18} class="sub flex-none text-muted-foreground" />
+                  <!-- Fixed row height: rows with a second line (redirect source, description) are as tall as rows without. -->
+                  <span class="flex min-w-0 flex-col justify-center">
                     <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-                    <span class="block truncate">{@html highlight(keyword, p.title)}</span>
+                    <span class="truncate leading-6">{@html highlight(keyword, p.title)}</span>
                     {#if p.matched_title}
                       <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-                      <span class="sub block truncate text-sm text-muted-foreground">{@html highlight(keyword, p.matched_title)}에서 넘어옴</span>
-                    {/if}
-                    {#if p.description}
-                      <span class="sub block truncate text-sm text-muted-foreground">{p.description}</span>
+                      <span class="sub truncate text-xs leading-4 text-muted-foreground">{@html highlight(keyword, p.matched_title)}에서 넘어옴</span>
+                    {:else if p.description}
+                      <span class="sub truncate text-xs leading-4 text-muted-foreground">{p.description}</span>
                     {/if}
                   </span>
                 </a>
@@ -265,11 +266,10 @@
             <span class="min-w-0 truncate"><b>{keyword}</b> 항목이 포함된 글 검색</span>
           </a>
         </nav>
-        <div class="hidden gap-4 border-t px-3 py-1.5 text-xs text-muted-foreground md:flex" aria-hidden="true">
-          <span><kbd>↑</kbd> <kbd>↓</kbd> 이동</span>
-          <span><kbd>Enter</kbd> 열기</span>
-          <span><kbd>Esc</kbd> 닫기</span>
-          <span class="ml-auto"><kbd>/</kbd> 검색창</span>
+        <div class="hidden justify-center gap-4 border-t px-3 py-1.5 text-xs text-muted-foreground md:flex" aria-hidden="true">
+          <span><kbd>↑</kbd> <kbd>↓</kbd> Navigate</span>
+          <span><kbd>Enter</kbd> Go</span>
+          <span><kbd>Esc</kbd> Exit</span>
         </div>
       </div>
     </div>
