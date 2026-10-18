@@ -66,6 +66,10 @@
 }
 
 .mw-installed-software {
+  >caption {
+    text-align: start;
+  }
+
   th {
     white-space: nowrap;
   }
