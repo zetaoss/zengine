@@ -46,67 +46,39 @@
   }
 }
 
-.mw-special-Version #mw-content-text {
-  container-type: inline-size;
+.wikitable-scroll:has(> .mw-installed-software) {
+  width: 100%;
+  overflow-x: auto;
 }
 
-/* Wide enough for the column minimums below: lay out as a table that fills the content width. Narrower, it
-   stays a scrolling block table (wikitable.css). A table is not a scroll container, so the wrapper scrolls in
-   case long cells still do not fit. */
-@container (width >= 52em) {
-  .wikitable-scroll:has(> .mw-installed-software) {
-    width: 100%;
-    overflow-x: auto;
-  }
+/* Description and authors get most of the width; the other columns fit their content. Narrower than the
+   content allows, the wrapper scrolls. */
+.wikitable.mw-installed-software {
+  display: table;
+  width: auto;
+  table-layout: auto;
+  word-break: normal;
 
-  .wikitable.mw-installed-software {
-    display: table;
-    width: 100%;
-  }
-}
-
-.mw-installed-software {
   >caption {
     text-align: start;
   }
 
-  &.wikitable>*>tr>th {
+  >*>tr>th {
     text-align: start;
   }
 
-  th {
-    white-space: nowrap;
+  th:nth-child(4) {
+    width: 40%;
+    min-width: 12em;
   }
 
-  th:nth-child(1) {
-    min-width: 13em;
-  }
-
-  th:nth-child(2) {
-    width: auto;
-  }
-
-  td:nth-child(2) {
-    white-space: nowrap;
-
-    a {
-      word-break: normal;
-    }
+  th:nth-child(5) {
+    width: 30%;
   }
 
   .mw-version-ext-vcs-timestamp {
     display: block;
     font-size: var(--font-size-small);
     color: var(--color-muted-foreground);
-  }
-
-  th:nth-child(3) {
-    min-width: 6em;
-  }
-
-  th:nth-child(4),
-  th:nth-child(5) {
-    width: auto;
-    min-width: 16em;
   }
 }
