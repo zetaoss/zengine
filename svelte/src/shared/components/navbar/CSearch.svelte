@@ -28,6 +28,8 @@
   let expanded = false
   let keyword = ''
   let pages: Page[] = []
+  // Query whose results are in pages.
+  let shownQuery = ''
 
   let kIndex = -1
   let hIndex = -1
@@ -59,6 +61,7 @@
     if (!trimmed) return
 
     aborter?.abort()
+    if (trimmed === shownQuery) return
     const controller = new AbortController()
     aborter = controller
 
@@ -68,6 +71,7 @@
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const json = (await res.json()) as SearchResponse
       pages = Array.isArray(json.pages) ? json.pages : []
+      shownQuery = trimmed
       expanded = true
       kIndex = -1
       hIndex = -1
@@ -86,6 +90,9 @@
 
   function onInput(e: Event) {
     const val = (e.target as HTMLInputElement).value
+    // A Korean IME commits the composed text (e.g. on an arrow key) with another input event of the same value.
+    const composing = e instanceof InputEvent && (e.isComposing || e.inputType.includes('Composition'))
+    if (composing && val === keyword) return
     keyword = val
     kIndex = -1
     hIndex = -1
@@ -93,6 +100,7 @@
     if (!val.trim()) {
       aborter?.abort()
       pages = []
+      shownQuery = ''
       expanded = false
       return
     }
