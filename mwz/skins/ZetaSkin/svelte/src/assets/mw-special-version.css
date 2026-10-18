@@ -18,7 +18,7 @@
     gap: .5em;
 
     @media (width >= 48rem) {
-      grid-template-columns: repeat(auto-fill, minmax(14em, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(min(14em, calc((100% - .5em) / 2)), 1fr));
     }
   }
 
