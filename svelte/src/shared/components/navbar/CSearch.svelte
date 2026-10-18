@@ -1,20 +1,20 @@
 <svelte:options customElement={{ tag: 'c-search', shadow: 'none' }} />
 
 <script lang="ts">
-  import { mdiHistory, mdiMagnify, mdiShuffle } from '@mdi/js'
-  import { onDestroy } from 'svelte'
+  import { mdiFileDocumentOutline, mdiHistory, mdiMagnify, mdiShuffle, mdiSubdirectoryArrowRight, mdiTextSearch } from '@mdi/js'
+  import { onDestroy, onMount } from 'svelte'
 
   import { useDismissable } from '$shared/composables/useDismissable'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import getShortcut from '$shared/utils/shortcut'
 
   interface Page {
-    description: string
+    description: string | null
     excerpt: string
     id: number
     key: string
-    matched_title: string
-    thumbnail: Record<string, unknown>
+    matched_title: string | null
+    thumbnail: Record<string, unknown> | null
     title: string
   }
   interface SearchResponse {
@@ -23,6 +23,8 @@
   }
 
   let root: HTMLElement | null = null
+  let input: HTMLInputElement | null = null
+  let focused = false
   let expanded = false
   let keyword = ''
   let pages: Page[] = []
@@ -98,8 +100,26 @@
   }
 
   function onFocus() {
+    focused = true
     if (keyword.trim()) expanded = true
   }
+
+  function isTyping(el: EventTarget | null) {
+    return el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))
+  }
+
+  // "/" focuses the search box unless the user is typing somewhere.
+  function onWindowKeyDown(e: KeyboardEvent) {
+    if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey || e.isComposing || isTyping(e.target)) return
+    e.preventDefault()
+    input?.focus()
+    input?.select()
+  }
+
+  onMount(() => {
+    window.addEventListener('keydown', onWindowKeyDown)
+    return () => window.removeEventListener('keydown', onWindowKeyDown)
+  })
 
   function handleUpDown(offset: number) {
     const max = pages.length
@@ -109,22 +129,28 @@
     kIndex = next
   }
 
+  function pageUrl(p: Page) {
+    return `/wiki/${p.key.split('/').map(encodeURIComponent).join('/')}`
+  }
+
   function goToSearch() {
     if (typeof window === 'undefined') return
+
+    if (kIndex >= 0 && kIndex < pages.length) {
+      const p = pages[kIndex]
+      keyword = p.title
+      close()
+      window.location.href = pageUrl(p)
+      return
+    }
 
     const base = new URL('/w/index.php', window.location.origin)
     base.searchParams.set('title', '특수:검색')
 
-    if (kIndex < 0) {
-      base.searchParams.set('search', displayQuery)
-    } else if (kIndex === pages.length) {
-      base.searchParams.set('search', displayQuery)
+    base.searchParams.set('search', displayQuery)
+    if (kIndex === pages.length) {
       base.searchParams.set('fulltext', '1')
       base.searchParams.set('ns0', '1')
-    } else {
-      const selectedTitle = pages[kIndex]?.title ?? displayQuery
-      base.searchParams.set('search', selectedTitle)
-      keyword = selectedTitle
     }
 
     close()
@@ -147,7 +173,8 @@
       goToSearch()
     } else if (e.key === 'Escape') {
       e.preventDefault()
-      close()
+      if (expanded) close()
+      else input?.blur()
     }
   }
 
@@ -170,7 +197,7 @@
 <div class="text-foreground ml-auto flex w-full md:max-w-2xl">
   <div class="m-1.5 grow">
     <div bind:this={root} class="relative" role="search">
-      <div class={`flex h-9 bg-background rounded-t ${!expanded || !keyword.trim().length ? 'rounded-b' : ''}`}>
+      <div class={`relative flex h-9 bg-background rounded-t ${!expanded || !keyword.trim().length ? 'rounded-b' : ''}`}>
         <!-- svelte-ignore a11y_accesskey -->
         <input
           accesskey="f"
@@ -182,47 +209,68 @@
           title={searchTitle}
           autocomplete="off"
           value={displayQuery}
+          bind:this={input}
           on:input={onInput}
           on:focus={onFocus}
+          on:blur={() => (focused = false)}
           on:keydown={onKeyDown}
         />
+        {#if !focused && !keyword}
+          <kbd class="pointer-events-none absolute top-1/2 right-12 hidden -translate-y-1/2 text-muted-foreground md:inline" aria-hidden="true">/</kbd>
+        {/if}
         <button type="button" class="z-10 h-full w-12 flex-none bg-transparent focus:text-a-blue-700" on:click={onClick}>
           <ZIcon path={mdiMagnify} size={24} />
         </button>
       </div>
 
-      <div class={`absolute z-40 w-full bg-background border rounded-b ${!expanded || !keyword.trim().length ? 'hidden' : ''}`}>
+      <div class={`absolute z-40 w-full overflow-hidden bg-background border rounded-b ${!expanded || !keyword.trim().length ? 'hidden' : ''}`}>
         <nav aria-label="검색 제안" on:mouseleave={() => (hIndex = -1)}>
           {#if pages.length}
             {#each pages as p, i (p.id)}
               <div>
                 <a
-                  class={`block p-1.5 px-3 text-foreground ${currentIndex === i ? 'focused' : ''}`}
-                  href={`/w/index.php?title=특수:검색&search=${encodeURIComponent(p.title)}`}
+                  class={`flex items-start gap-2 p-1.5 px-3 text-foreground hover:no-underline ${currentIndex === i ? 'focused' : ''}`}
+                  href={pageUrl(p)}
                   rel="external"
                   data-sveltekit-reload
                   on:mouseenter={() => (hIndex = i)}
                   on:focus={() => (hIndex = i)}
                 >
-                  <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-                  <span>{@html highlight(keyword, p.title)}</span>
+                  <ZIcon path={p.matched_title ? mdiSubdirectoryArrowRight : mdiFileDocumentOutline} size={18} class="sub mt-0.5 flex-none text-muted-foreground" />
+                  <span class="min-w-0">
+                    <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+                    <span class="block truncate">{@html highlight(keyword, p.title)}</span>
+                    {#if p.matched_title}
+                      <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+                      <span class="sub block truncate text-sm text-muted-foreground">{@html highlight(keyword, p.matched_title)}에서 넘어옴</span>
+                    {/if}
+                    {#if p.description}
+                      <span class="sub block truncate text-sm text-muted-foreground">{p.description}</span>
+                    {/if}
+                  </span>
                 </a>
               </div>
             {/each}
           {/if}
 
           <a
-            class={`block p-2 px-3 border-t rounded-b text-foreground ${currentIndex === pages.length ? 'focused' : ''}`}
+            class={`flex items-center gap-2 p-2 px-3 border-t text-foreground hover:no-underline ${currentIndex === pages.length ? 'focused' : ''}`}
             href={`/w/index.php?title=특수:검색&fulltext=1&search=${encodeURIComponent(keyword)}`}
             rel="external"
             data-sveltekit-reload
             on:mouseenter={() => (hIndex = pages.length)}
             on:focus={() => (hIndex = pages.length)}
           >
-            <ZIcon path={mdiMagnify} />
-            <b>{keyword}</b> 항목이 포함된 글 검색
+            <ZIcon path={mdiTextSearch} size={18} class="sub flex-none text-muted-foreground" />
+            <span class="min-w-0 truncate"><b>{keyword}</b> 항목이 포함된 글 검색</span>
           </a>
         </nav>
+        <div class="hidden gap-4 border-t px-3 py-1.5 text-xs text-muted-foreground md:flex" aria-hidden="true">
+          <span><kbd>↑</kbd> <kbd>↓</kbd> 이동</span>
+          <span><kbd>Enter</kbd> 열기</span>
+          <span><kbd>Esc</kbd> 닫기</span>
+          <span class="ml-auto"><kbd>/</kbd> 검색창</span>
+        </div>
       </div>
     </div>
   </div>
@@ -246,5 +294,9 @@
     background-color: rgb(79 70 229 / 0.7);
     color: white;
     text-decoration: none;
+  }
+  .focused :global(.sub) {
+    color: inherit;
+    opacity: 0.85;
   }
 </style>
