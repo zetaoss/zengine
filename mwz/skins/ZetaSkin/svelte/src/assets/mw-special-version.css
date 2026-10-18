@@ -18,7 +18,7 @@
     gap: .5em;
 
     @media (width >= 48rem) {
-      grid-template-columns: repeat(auto-fill, minmax(14em, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(min(14em, calc((100% - .5em) / 2)), 1fr));
     }
   }
 
@@ -46,40 +46,37 @@
   }
 }
 
-.mw-installed-software {
-  th {
-    white-space: nowrap;
+.wikitable-scroll:has(> .mw-installed-software) {
+  width: 100%;
+}
+
+/* A grid of the cells, so the table stays the scroll container (wikitable.css) while filling the width: name,
+   version and license fit their content, description and authors share the rest. */
+.wikitable.mw-installed-software {
+  display: grid;
+  grid-template-columns: fit-content(14em) fit-content(12em) fit-content(8em) minmax(12em, 4fr) minmax(8em, 3fr);
+  width: 100%;
+  word-break: normal;
+
+  >caption {
+    grid-column: 1 / -1;
+    text-align: start;
   }
 
-  th:nth-child(1) {
-    min-width: 13em;
+  >thead,
+  >tbody,
+  >*>tr {
+    display: contents;
   }
 
-  th:nth-child(2) {
+  >*>tr>th {
     width: auto;
-  }
-
-  td:nth-child(2) {
-    white-space: nowrap;
-
-    a {
-      word-break: normal;
-    }
+    text-align: start;
   }
 
   .mw-version-ext-vcs-timestamp {
     display: block;
     font-size: var(--font-size-small);
     color: var(--color-muted-foreground);
-  }
-
-  th:nth-child(3) {
-    min-width: 6em;
-  }
-
-  th:nth-child(4),
-  th:nth-child(5) {
-    width: auto;
-    min-width: 16em;
   }
 }
