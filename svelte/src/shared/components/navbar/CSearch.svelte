@@ -91,7 +91,8 @@
   function onInput(e: Event) {
     const val = (e.target as HTMLInputElement).value
     // A Korean IME commits the composed text (e.g. on an arrow key) with another input event of the same value.
-    if (val === keyword) return
+    const composing = e instanceof InputEvent && (e.isComposing || e.inputType.includes('Composition'))
+    if (composing && val === keyword) return
     keyword = val
     kIndex = -1
     hIndex = -1
