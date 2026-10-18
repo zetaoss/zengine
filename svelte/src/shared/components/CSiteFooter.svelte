@@ -4,6 +4,8 @@
   import { onMount } from 'svelte'
 
   import CCookieSettings from '$shared/components/CCookieSettings.svelte'
+  import CcBySaIcon from '$shared/components/footer/CcBySaIcon.svelte'
+  import PoweredByMediaWikiIcon from '$shared/components/footer/PoweredByMediaWikiIcon.svelte'
   import { getTrackingState } from '$shared/stores/trackingStore'
   import versionData from '$shared/version.json'
 
@@ -24,36 +26,30 @@
       <div>
         <img class="h-8" src="/zeta2.svg" alt="" />
         <div class="text-xl font-bold text-foreground pt-4 pb-2">제타위키</div>
-        <div class="text-sm text-a-gray-600" title="{versionData.buildDate}">세상의 각주, 기록하고 연결합니다.</div>
+        <div class="text-sm text-a-gray-600" title={versionData.buildDate}>세상의 각주, 기록하고 연결합니다.</div>
       </div>
-      <nav>
-        <ul class="list-none pl-0 flex gap-3">
+      <nav aria-label="배지">
+        <ul class="list-none pl-0 flex flex-wrap items-center gap-3">
           <li>
             <a
               href="https://creativecommons.org/licenses/by-sa/4.0/"
               target="_blank"
+              rel="noopener license"
               title="Creative Commons BY-SA 4.0"
-              class="bg-white flex h-11 rounded border p-2"
+              class="flex text-muted-foreground no-underline transition-colors hover:text-foreground"
             >
-              <img
-                src="https://upload.wikimedia.org/wikipedia/commons/e/e5/CC_BY-SA_icon.svg"
-                class="h-full w-auto"
-                alt="Creative Commons BY-SA 4.0"
-              />
+              <CcBySaIcon />
             </a>
           </li>
           <li>
             <a
               href="https://www.mediawiki.org/"
               target="_blank"
+              rel="noopener"
               title="Powered by MediaWiki"
-              class="bg-white flex h-11 rounded border p-2"
+              class="flex text-muted-foreground no-underline transition-colors hover:text-foreground"
             >
-              <img
-                src="https://mediawiki.org/w/resources/assets/poweredby_mediawiki.svg"
-                class="h-full w-auto"
-                alt="Powered by MediaWiki"
-              />
+              <PoweredByMediaWikiIcon />
             </a>
           </li>
         </ul>
@@ -81,7 +77,7 @@
         {/if}
       </ul>
       <nav>
-        <span class="text-xs text-a-gray-400" title="{versionData.buildDate}">zengine {versionData.gitVersion}</span>
+        <span class="text-xs text-a-gray-400" title={versionData.buildDate}>zengine {versionData.gitVersion}</span>
       </nav>
     </section>
   </div>
