@@ -70,6 +70,10 @@
     text-align: start;
   }
 
+  &.wikitable>*>tr>th {
+    text-align: start;
+  }
+
   th {
     white-space: nowrap;
   }
