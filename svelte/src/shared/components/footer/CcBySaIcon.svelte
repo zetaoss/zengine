@@ -1,3 +1,5 @@
+<script lang="ts"></script>
+
 <svg viewBox="0 0 76 24" class="h-6" fill="none" stroke="currentColor" role="img" aria-label="Creative Commons BY-SA 4.0">
   <circle cx="12" cy="12" r="10.5" stroke-width="1.5" />
   <path d="M10.4 10.1a2.6 2.6 0 1 0 0 3.8M16.6 10.1a2.6 2.6 0 1 0 0 3.8" stroke-width="1.7" stroke-linecap="round" />
