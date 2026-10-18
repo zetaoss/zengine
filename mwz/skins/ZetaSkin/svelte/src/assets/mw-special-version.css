@@ -46,6 +46,23 @@
   }
 }
 
+.mw-special-Version #mw-content-text {
+  container-type: inline-size;
+}
+
+/* Wide enough for the column minimums below: lay out as a table that fills the content width. Narrower, it
+   stays a scrolling block table (wikitable.css). */
+@container (width >= 52em) {
+  .wikitable-scroll:has(> .mw-installed-software) {
+    width: 100%;
+  }
+
+  .wikitable.mw-installed-software {
+    display: table;
+    width: 100%;
+  }
+}
+
 .mw-installed-software {
   th {
     white-space: nowrap;
