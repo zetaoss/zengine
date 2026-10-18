@@ -51,10 +51,12 @@
 }
 
 /* Wide enough for the column minimums below: lay out as a table that fills the content width. Narrower, it
-   stays a scrolling block table (wikitable.css). */
+   stays a scrolling block table (wikitable.css). A table is not a scroll container, so the wrapper scrolls in
+   case long cells still do not fit. */
 @container (width >= 52em) {
   .wikitable-scroll:has(> .mw-installed-software) {
     width: 100%;
+    overflow-x: auto;
   }
 
   .wikitable.mw-installed-software {
