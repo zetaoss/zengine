@@ -17,6 +17,7 @@ import (
 	"github.com/zetaoss/zengine/goapp/tasks/inspire"
 	"github.com/zetaoss/zengine/goapp/tasks/pingdb"
 	"github.com/zetaoss/zengine/goapp/tasks/pingredis"
+	"github.com/zetaoss/zengine/goapp/tasks/redirect"
 	"github.com/zetaoss/zengine/goapp/tasks/runbox"
 	"github.com/zetaoss/zengine/goapp/tasks/stat/cf"
 	"github.com/zetaoss/zengine/goapp/tasks/stat/ga"
@@ -69,6 +70,7 @@ func New() *Registry {
 	register(r, "runbox", 2*time.Minute, runbox.NewRunboxTask(), queue("runbox"), maxRetry(0))
 	register(r, "request-pruner", 5*time.Minute, writerequest.NewPrunerTask(), cron("0 0 * * *"))
 	register(r, "request-matcher", 5*time.Minute, writerequest.NewMatcherTask(), cron("15 * * * *"))
+	register(r, "redirect-fixer", 5*time.Minute, redirect.NewFixerTask(), cron("0 4 * * *"))
 	return r
 }
 

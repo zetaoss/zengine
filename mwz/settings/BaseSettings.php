@@ -84,7 +84,8 @@ $wgDefaultUserOptions['numberheadings'] = 1;
 $wgDefaultUserOptions['usebetatoolbar'] = 1;
 
 // ---- content ----
-$wgMaxArticleSize = 512;
+$wgFixDoubleRedirects = true;
+$wgMaxArticleSize     = 512;
 
 $wgEnableMagicLinks = ['ISBN' => true, 'PMID' => true, 'RFC' => true];
 
