@@ -68,9 +68,9 @@ jobs:
           path: |
             goapp/bin
             ~/.cache/golangci-lint
-          key: ${{ runner.os }}-golangci-lint-v2.12.2-${{ hashFiles('goapp/go.sum', '.golangci.yml') }}
+          key: ${{ runner.os }}-golangci-lint-${{ hashFiles('goapp/Makefile', 'goapp/go.sum', '.golangci.yml') }}
           restore-keys: |
-            ${{ runner.os }}-golangci-lint-v2.12.2-
+            ${{ runner.os }}-golangci-lint-
       - name: Cache checks result (.checks)
         uses: actions/cache@v4
         with:
