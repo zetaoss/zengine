@@ -35,9 +35,9 @@ func (t *FixerTask) Execute(ctx context.Context, taskCtx taskctx.Context, _ any)
 	err = db.WithContext(ctx).Raw(`
 		SELECT pa.page_namespace AS from_namespace, pa.page_title AS from_title,
 		       pb.page_namespace AS to_namespace, pb.page_title AS to_title
-		FROM redirect
-		JOIN page pa ON rd_from = pa.page_id
-		JOIN page pb ON rd_namespace = pb.page_namespace AND rd_title = pb.page_title
+		FROM zetawiki.redirect
+		JOIN zetawiki.page pa ON rd_from = pa.page_id
+		JOIN zetawiki.page pb ON rd_namespace = pb.page_namespace AND rd_title = pb.page_title
 		WHERE rd_interwiki = '' AND pb.page_is_redirect = 1
 	`).Scan(&targets).Error
 	if err != nil {
