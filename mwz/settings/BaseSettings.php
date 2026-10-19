@@ -77,7 +77,12 @@ $wgCookiePrefix = 'wiki';
 $wgRememberMe   = 'always';
 
 $wgGroupPermissions['*']['edit']                      = false;
+$wgGroupPermissions['user']['move']                   = false;
 $wgGroupPermissions['autoconfirmed']['upload_by_url'] = true;
+$wgGroupPermissions['autoconfirmed']['move']          = true;
+$wgGroupPermissions['autoconfirmed']['movefile']      = true;
+$wgGroupPermissions['autoconfirmed']['move-subpages'] = true;
+$wgGroupPermissions['autoconfirmed']['move-rootuserpages'] = true;
 
 $wgDefaultUserOptions['usenewrc']       = 0;
 $wgDefaultUserOptions['numberheadings'] = 1;
