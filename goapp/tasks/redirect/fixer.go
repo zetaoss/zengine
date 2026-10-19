@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"gorm.io/gorm"
+
 	"github.com/zetaoss/zengine/goapp/app"
 	"github.com/zetaoss/zengine/goapp/app/taskctx"
 )
@@ -25,14 +27,9 @@ type doubleRedirectTarget struct {
 	ToTitle       string `gorm:"column:to_title"`
 }
 
-func (t *FixerTask) Execute(ctx context.Context, taskCtx taskctx.Context, _ any) (app.H, error) {
-	db, err := taskCtx.GetDB()
-	if err != nil {
-		return nil, err
-	}
-
+func queryDoubleRedirects(ctx context.Context, db *gorm.DB) ([]doubleRedirectTarget, error) {
 	var targets []doubleRedirectTarget
-	err = db.WithContext(ctx).Raw(`
+	err := db.WithContext(ctx).Raw(`
 		SELECT pa.page_namespace AS from_namespace, pa.page_title AS from_title,
 		       pb.page_namespace AS to_namespace, pb.page_title AS to_title
 		FROM zetawiki.redirect
@@ -43,9 +40,22 @@ func (t *FixerTask) Execute(ctx context.Context, taskCtx taskctx.Context, _ any)
 	if err != nil {
 		return nil, fmt.Errorf("query double redirects: %w", err)
 	}
+	return targets, nil
+}
+
+func (t *FixerTask) Execute(ctx context.Context, taskCtx taskctx.Context, _ any) (app.H, error) {
+	db, err := taskCtx.GetDB()
+	if err != nil {
+		return nil, err
+	}
+
+	targets, err := queryDoubleRedirects(ctx, db)
+	if err != nil {
+		return nil, err
+	}
 
 	if len(targets) == 0 {
-		return app.H{"found": 0, "fixed": 0, "status": "no double redirects"}, nil
+		return app.H{"found": 0, "fixed": 0, "remaining": 0, "status": "no double redirects"}, nil
 	}
 
 	slog.Info("[redirect-fixer] found double redirects to fix", "count", len(targets))
@@ -70,10 +80,37 @@ func (t *FixerTask) Execute(ctx context.Context, taskCtx taskctx.Context, _ any)
 		return nil, fmt.Errorf("fixDoubleRedirects execution failed: %w (output: %s)", err, outputStr)
 	}
 
-	slog.Info("[redirect-fixer] fixDoubleRedirects completed", "count", len(targets), "output", outputStr)
-	return app.H{
-		"found":  len(targets),
-		"fixed":  len(targets),
-		"output": outputStr,
-	}, nil
+	remaining, err := queryDoubleRedirects(ctx, db)
+	if err != nil {
+		slog.Warn("[redirect-fixer] failed to verify remaining double redirects", "err", err)
+		return app.H{
+			"found":  len(targets),
+			"output": outputStr,
+			"status": "unverified",
+		}, nil
+	}
+
+	fixedCount := len(targets) - len(remaining)
+	if fixedCount < 0 {
+		fixedCount = 0
+	}
+
+	result := app.H{
+		"found":     len(targets),
+		"fixed":     fixedCount,
+		"remaining": len(remaining),
+		"output":    outputStr,
+	}
+
+	if len(remaining) > 0 {
+		slog.Warn("[redirect-fixer] some double redirects remained unfixable",
+			"found", len(targets), "fixed", fixedCount, "remaining", len(remaining))
+		result["status"] = "partial"
+	} else {
+		slog.Info("[redirect-fixer] fixDoubleRedirects completed successfully",
+			"found", len(targets), "fixed", fixedCount)
+		result["status"] = "ok"
+	}
+
+	return result, nil
 }
