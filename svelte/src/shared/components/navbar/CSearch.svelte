@@ -8,13 +8,20 @@
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import getShortcut from '$shared/utils/shortcut'
 
+  interface Thumbnail {
+    height?: number
+    mimetype?: string
+    url: string
+    width?: number
+  }
+
   interface Page {
     description: string | null
     excerpt: string
     id: number
     key: string
     matched_title: string | null
-    thumbnail: Record<string, unknown> | null
+    thumbnail: Thumbnail | null
     title: string
   }
   interface SearchResponse {
@@ -28,6 +35,7 @@
   let expanded = false
   let keyword = ''
   let pages: Page[] = []
+  let failedThumbnailIds: number[] = []
   // Query whose results are in pages.
   let shownQuery = ''
 
@@ -71,6 +79,7 @@
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const json = (await res.json()) as SearchResponse
       pages = Array.isArray(json.pages) ? json.pages : []
+      failedThumbnailIds = []
       shownQuery = trimmed
       expanded = true
       kIndex = -1
@@ -139,6 +148,10 @@
 
   function pageUrl(p: Page) {
     return `/wiki/${p.key.split('/').map(encodeURIComponent).join('/')}`
+  }
+
+  function onThumbnailError(pageId: number) {
+    failedThumbnailIds = [...failedThumbnailIds, pageId]
   }
 
   function goToSearch() {
@@ -245,7 +258,22 @@
                   on:mouseenter={() => (hIndex = i)}
                   on:focus={() => (hIndex = i)}
                 >
-                  <ZIcon path={p.matched_title ? mdiSubdirectoryArrowRight : mdiFileDocumentOutline} size={18} class="sub flex-none text-muted-foreground" />
+                  <span
+                    class="relative flex h-8 w-8 flex-none items-center justify-center overflow-hidden rounded bg-muted text-muted-foreground"
+                  >
+                    {#if p.thumbnail?.url && !failedThumbnailIds.includes(p.id)}
+                      <img
+                        class="h-full w-full object-cover"
+                        src={p.thumbnail.url}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        on:error={() => onThumbnailError(p.id)}
+                      />
+                    {:else}
+                      <ZIcon path={p.matched_title ? mdiSubdirectoryArrowRight : mdiFileDocumentOutline} size={18} class="sub" />
+                    {/if}
+                  </span>
                   <!-- Fixed row height: rows with a second line (redirect source, description) are as tall as rows without. -->
                   <span class="flex min-w-0 flex-col justify-center">
                     <!-- eslint-disable-next-line svelte/no-at-html-tags -->
