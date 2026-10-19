@@ -5,8 +5,8 @@ import { dirname, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const CACHE_DIR = "/tmp/make-checks";
-const IGNORED_DIRECTORIES = new Set([".git", ".svelte-kit", "bin", "dist", "node_modules", "tmp", "vendor"]);
+const CACHE_DIR = process.env.CHECKS_CACHE_DIR || resolve(ROOT, ".checks");
+const IGNORED_DIRECTORIES = new Set([".checks", ".git", ".svelte-kit", "bin", "dist", "node_modules", "tmp", "vendor"]);
 
 function run(command, args, { cwd = ROOT, fix } = {}) {
   console.log(`➡️  ${cwd === ROOT ? "" : `${cwd.slice(ROOT.length + 1)}: `}${command} ${args.join(" ")}`);
@@ -67,6 +67,10 @@ function toolVersion(command, args) {
   return result.status === 0 ? result.stdout.trim() : "";
 }
 
+const toolVersions = [["node", ["-v"]], ["pnpm", ["-v"]], ["php", ["-v"]], ["go", ["version"]]]
+  .map(([command, args]) => `${command}=${toolVersion(command, args)}\n`)
+  .join("");
+
 function hashPath(hash, path) {
   if (!existsSync(path)) return;
   const stat = statSync(path);
@@ -88,9 +92,7 @@ function hashPath(hash, path) {
 function cacheKey(check) {
   const hash = createHash("sha256");
   hash.update(`check=${check.name}\n`);
-  for (const [command, args] of [["node", ["-v"]], ["pnpm", ["-v"]], ["php", ["-v"]], ["go", ["version"]]]) {
-    hash.update(`${command}=${toolVersion(command, args)}\n`);
-  }
+  hash.update(toolVersions);
   hashPath(hash, resolve(ROOT, "Makefile"));
   hashPath(hash, resolve(ROOT, "hack/checks.mjs"));
   for (const path of check.paths) hashPath(hash, resolve(ROOT, path));
