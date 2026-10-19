@@ -1,4 +1,5 @@
 .bootstrapped
+.checks
 .pnpm-store
 .runtime-cache
 node_modules
