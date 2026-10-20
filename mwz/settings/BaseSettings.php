@@ -41,8 +41,6 @@ $wgMessageCacheType           = 'redis-volatile';
 $wgLanguageConverterCacheType = 'redis-volatile';
 $wgSessionCacheType           = 'redis-persist';
 
-$wgEnableSidebarCache = true;
-
 $wgParserCacheType       = CACHE_DB;
 $wgParserCacheExpireTime = 86400 * 30;
 $wgMemCachedServers      = [];
