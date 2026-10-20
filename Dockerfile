@@ -38,7 +38,7 @@ RUN --mount=type=bind,from=mlocati/php-extension-installer:2.12.1,source=/usr/bi
     apt-get update; \
     apt-get install -y --no-install-recommends nginx; \
     rm -rf /var/lib/apt/lists/*; \
-    ## php extensions
+    ## php extensions (luasandbox is pre-installed in the upstream mediawiki base image)
     install-php-extensions \
         pcntl \
         pdo_mysql \
