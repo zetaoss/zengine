@@ -23,10 +23,14 @@ func New(cfg *config.Config) (*Scheduler, error) {
 	if err != nil {
 		return nil, fmt.Errorf("configure asynq redis: %w", err)
 	}
+	loc, err := time.LoadLocation("Asia/Seoul")
+	if err != nil {
+		loc = time.Local
+	}
 	reg := registry.New()
 	s := &Scheduler{
 		scheduler: asynq.NewScheduler(conn, &asynq.SchedulerOpts{
-			Location: time.Local,
+			Location: loc,
 			PostEnqueueFunc: func(info *asynq.TaskInfo, err error) {
 				if err != nil {
 					slog.Error("scheduled task enqueue failed", "err", err)

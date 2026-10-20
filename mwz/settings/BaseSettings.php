@@ -77,14 +77,20 @@ $wgCookiePrefix = 'wiki';
 $wgRememberMe   = 'always';
 
 $wgGroupPermissions['*']['edit']                      = false;
+$wgGroupPermissions['user']['move']                   = false;
 $wgGroupPermissions['autoconfirmed']['upload_by_url'] = true;
+$wgGroupPermissions['autoconfirmed']['move']          = true;
+$wgGroupPermissions['autoconfirmed']['movefile']      = true;
+$wgGroupPermissions['autoconfirmed']['move-subpages'] = true;
+$wgGroupPermissions['autoconfirmed']['move-rootuserpages'] = true;
 
 $wgDefaultUserOptions['usenewrc']       = 0;
 $wgDefaultUserOptions['numberheadings'] = 1;
 $wgDefaultUserOptions['usebetatoolbar'] = 1;
 
 // ---- content ----
-$wgMaxArticleSize = 512;
+$wgFixDoubleRedirects = true;
+$wgMaxArticleSize     = 512;
 
 $wgEnableMagicLinks = ['ISBN' => true, 'PMID' => true, 'RFC' => true];
 
