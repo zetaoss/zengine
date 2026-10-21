@@ -62,6 +62,8 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate Dockerfile.patch
+        run: make dockerfile-patch
       - name: Build and push
         uses: docker/build-push-action@v7
         with:

@@ -96,5 +96,5 @@ check-goapp:
 # Run after changing mwz/extensions.yaml or the mediawiki base image, then commit the lock.
 .PHONY: composer-lock
 composer-lock:
-	docker build --target base --build-arg COMPOSER_MODE=update -t zengine-base:composer-lock .
+	docker build -f Dockerfile.patch --target base --build-arg COMPOSER_MODE=update -t zengine-base:composer-lock .
 	docker run --rm --entrypoint cat zengine-base:composer-lock /var/www/html/composer.lock > hack/mediawiki-composer.lock
