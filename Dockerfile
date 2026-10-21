@@ -39,12 +39,17 @@ RUN --mount=type=bind,from=mlocati/php-extension-installer:2.12.1,source=/usr/bi
     apt-get install -y --no-install-recommends nginx; \
     rm -rf /var/lib/apt/lists/*; \
     ## php extensions (luasandbox is pre-installed in the upstream mediawiki base image)
+    ## redis is built from the GitHub tag instead of PECL (deprecated); the clone includes the
+    ## bundled liblzf submodule, which GitHub source tarballs omit.
+    git clone --quiet --depth 1 --branch 6.3.0 --recurse-submodules --shallow-submodules \
+        https://github.com/phpredis/phpredis.git /tmp/phpredis; \
     install-php-extensions \
         pcntl \
         pdo_mysql \
-        redis \
+        /tmp/phpredis \
         wikidiff2 \
-        zip
+        zip; \
+    rm -rf /tmp/phpredis
 
 COPY --from=extensions /extensions/ /var/www/html/extensions/
 
