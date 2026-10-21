@@ -8,6 +8,8 @@
 #    FROM php:8.3-fpm -> FROM php:8.3.36-fpm AS mediawiki
 # 2. Appended with the contents of Dockerfile verbatim.
 
+ARG GO_VERSION=1.26
+
 FROM php:8.3.36-fpm AS mediawiki
 
 # System dependencies

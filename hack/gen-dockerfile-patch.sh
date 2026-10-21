@@ -24,6 +24,10 @@ cat << 'HEADER' > "$OUTPUT"
 
 HEADER
 
+# Preserve any global ARGs defined before the first FROM in Dockerfile (e.g. ARG GO_VERSION=...)
+sed -n '/^FROM /q; /^ARG /p' Dockerfile >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
 # Replace FROM php:8.3-fpm with FROM php:8.3.36-fpm AS mediawiki
 echo "$UPSTREAM_CONTENT" | sed "s|^FROM php:8\.3-fpm|FROM php:${PHP_TAG} AS mediawiki|" >> "$OUTPUT"
 
