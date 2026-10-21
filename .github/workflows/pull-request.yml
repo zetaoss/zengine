@@ -111,6 +111,7 @@ jobs:
       - name: Build
         uses: docker/build-push-action@v7
         with:
+          file: Dockerfile.patch
           push: false
           context: .
           cache-from: type=gha

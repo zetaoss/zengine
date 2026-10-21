@@ -5,6 +5,10 @@ MAKEFLAGS += --no-print-directory
 version-sync:
 	node hack/version-sync.mjs
 
+.PHONY: dockerfile-patch
+dockerfile-patch:
+	bash hack/gen-dockerfile-patch.sh
+
 # checks hierarchy
 # GROUP            TARGET              CACHE PATHS                    CHECKS
 # check-php        check-extension     ZetaExtension                  lint
