@@ -60,6 +60,17 @@ class SkinZetaSkin extends SkinMustache
 
         $data['pageButtons'] = $this->getPageButtons();
 
+        if ($this->getUser()->isAnon() &&
+            $this->getTitle()->isSpecial('Search') &&
+            ! empty($data['html-body-content'])
+        ) {
+            $data['html-body-content'] = preg_replace(
+                '/\s*\|\s*<a\s+[^>]*limit=(?:250|500)[^>]*>(?:250|500)<\/a>/',
+                '',
+                $data['html-body-content']
+            );
+        }
+
         return $data;
     }
 
