@@ -226,10 +226,10 @@ func TestDefinitionCurrent(t *testing.T) {
 }
 
 func TestDefineVersionArg(t *testing.T) {
-	if arg := DefineVersionArg(); arg.Name != "defineVersion" || arg.Value != prompts.DocDefine.Metadata["version"] {
+	if arg := defineVersionArg(); arg.Name != "defineVersion" || arg.Value != prompts.DocDefine.Metadata["version"] {
 		t.Fatalf("unexpected arg %+v", arg)
 	}
-	if !strings.Contains(CurrentDefinitionSQL, "@defineVersion") {
-		t.Fatal("CurrentDefinitionSQL must bind @defineVersion")
+	if !strings.Contains(currentDefinitionSQL, "@defineVersion") {
+		t.Fatal("currentDefinitionSQL must bind @defineVersion")
 	}
 }

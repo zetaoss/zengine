@@ -39,7 +39,7 @@ Two chains ([chain.md](chain.md)) run in `goapp/services/doceval`. `doc-define` 
 - `doc_evaluations` (`goapp/app/database/migrations/202610210001_doc_evaluations.up.sql`): grade, pass rates, safety, contradicted count, summary, the `definition` the rubrics were built from, `rubrics` and `raw_json` (judge output), `chain_version`, model, tokens, elapsed time.
 
 All routes are sysop-only:
-- `GET /api/definitions`: stored definitions, latest first; filters `q` (title), `stale=1` (not current), `limit` (25, max 100), `offset`. Items include `latest_revid`, `revisions_after` and `current`.
+- `GET /api/definitions`: stored definitions, latest first; filters `q` (title), `limit` (25, max 100), `offset`. Out-of-date ones are not marked, since `doc-define-loop` redefines them on its own.
 - `GET /api/definitions/candidate`: the article `doc-define-loop` would define next, by `strategy` (default: the setting)
 - `POST /api/definitions/run`: enqueues one definition run immediately (forced even when the interval is off); a given `page_id` or `page_title` is redefined even when its definition is current
 - `GET /api/evaluations`: list; filters `page_id`, `grade`, `contradicted=1`, `min_quality`, `max_quality`, `limit` (25, max 100), `offset`. Items include `revid`, `latest_revid`, `is_latest`, and `revisions_after` (count of edits made after the evaluation).

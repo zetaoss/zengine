@@ -27,9 +27,6 @@
     model: string
     chain_version: string
     updated_at: string
-    latest_revid: number
-    revisions_after: number
-    current: boolean
   }
 
   interface ListResp {
@@ -62,7 +59,6 @@
   let loading = $state(true)
   let offset = $state(0)
   let query = $state(page.url.searchParams.get('q')?.replaceAll('_', ' ') ?? '')
-  let staleOnly = $state(false)
   let expandedId = $state<number | null>(null)
   let sources = $state<Record<number, { loading: boolean; text?: string; error?: string }>>({})
 
@@ -115,7 +111,6 @@
     loading = true
     const params: Record<string, string> = { limit: String(pageSize), offset: String(offset) }
     if (query.trim()) params.q = query.trim()
-    if (staleOnly) params.stale = '1'
     const [data, err] = await httpy.get<ListResp>('/api/definitions', params)
     loading = false
     if (err || !data) {
@@ -147,13 +142,6 @@
     sources[item.revid] = { loading: true }
     const src = await fetchRevisionSource(item.revid)
     sources[item.revid] = typeof src === 'string' ? { loading: false, text: src } : { loading: false, error: src.message }
-  }
-
-  function stateLabel(item: Definition): string {
-    if (item.current) return '최신'
-    if (item.latest_revid === 0) return '문서 없음'
-    if (item.revisions_after > 0) return `${item.revisions_after}판 뒤처짐`
-    return '다시 정의 필요'
   }
 
   onMount(() => {
@@ -199,18 +187,6 @@
       value={query}
       oninput={onSearchInput}
     />
-    <label class="flex items-center gap-1.5 text-muted-foreground cursor-pointer">
-      <input
-        type="checkbox"
-        checked={staleOnly}
-        onchange={(e) => {
-          staleOnly = e.currentTarget.checked
-          offset = 0
-          fetchDefinitions()
-        }}
-      />
-      다시 정의할 것만
-    </label>
     <span class="ml-auto text-muted-foreground">{total.toLocaleString()}건</span>
   </div>
 
@@ -222,15 +198,14 @@
             <th class="p-3 whitespace-nowrap">일시</th>
             <th class="p-3">제목</th>
             <th class="p-3">정의</th>
-            <th class="p-3 whitespace-nowrap">상태</th>
             <th class="p-3 whitespace-nowrap">모델</th>
           </tr>
         </thead>
         <tbody class="divide-y">
           {#if loading && items.length === 0}
-            <tr><td colspan="5" class="p-8 text-center text-muted-foreground">불러오는 중...</td></tr>
+            <tr><td colspan="4" class="p-8 text-center text-muted-foreground">불러오는 중...</td></tr>
           {:else if items.length === 0}
-            <tr><td colspan="5" class="p-8 text-center text-muted-foreground">정의가 없습니다.</td></tr>
+            <tr><td colspan="4" class="p-8 text-center text-muted-foreground">정의가 없습니다.</td></tr>
           {:else}
             {#each items as item (item.page_id)}
               <tr class="hover:bg-muted/30 transition cursor-pointer align-top" onclick={() => toggleExpand(item)}>
@@ -245,18 +220,14 @@
                   >
                 </td>
                 <td class="p-3 break-words">{item.definition}</td>
-                <td class={`p-3 text-xs whitespace-nowrap ${item.current ? 'text-a-emerald-600' : 'text-a-orange-600'}`}
-                  >{stateLabel(item)}</td
-                >
                 <td class="p-3 text-xs whitespace-nowrap"><ModelId id={item.model} /></td>
               </tr>
               {#if expandedId === item.page_id}
                 {@const src = sources[item.revid]}
                 <tr class="bg-muted/10">
-                  <td colspan="5" class="p-4 text-xs">
+                  <td colspan="4" class="p-4 text-xs">
                     <div class="mb-2 text-muted-foreground">
-                      r{item.revid}{#if !item.current && item.latest_revid > 0}
-                        → 최신 r{item.latest_revid}{/if} · {item.chain_version} · 정의 단계가 읽은 앞부분 {leadBytes}바이트
+                      r{item.revid} · {item.chain_version} · 정의 단계가 읽은 앞부분 {leadBytes}바이트
                     </div>
                     {#if !src || src.loading}
                       <div class="text-muted-foreground">불러오는 중...</div>
