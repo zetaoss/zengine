@@ -13,10 +13,12 @@ version-sync:
 #                  check-skin-svelte   skin svelte, shared svelte     install, peers, lint, type-check
 # check-goapp      check-goapp         goapp                          golangci-lint, test
 # checks runs configuration validation plus PHP, Svelte, and Go checks with caching, in parallel (CHECKS_JOBS,
-# default the CPU count). Builds are left to the docker-build job, which builds both apps and the binaries.
+# default the CPU count); CI runs each group (php, svelte, goapp) in its own job. Builds are left to the
+# docker-build job, which builds both apps and the binaries.
+# GROUP=php|svelte|goapp runs one group, as each CI checks job does.
 .PHONY: checks
 checks:
-	node hack/checks.mjs checks
+	node hack/checks.mjs checks $(if $(GROUP),--group $(GROUP))
 
 .PHONY: checks-no-cache
 checks-no-cache:

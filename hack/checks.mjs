@@ -65,13 +65,14 @@ async function checkMwExtensions(run) {
   await run("node", ["hack/extensions.mjs", "check"], { fix: "make extensions-lock" });
 }
 
+// group names the CI job that runs a check (pull-request.yml), so each job sets up only its own tools.
 const cachedChecks = [
-  { name: "check-mw-extensions", paths: ["mwz/extensions.yaml", "mwz/extensions.lock", "hack/extensions.mjs", "hack/package.json", "hack/pnpm-lock.yaml"], action: checkMwExtensions },
-  { name: "check-extension", paths: ["mwz/extensions/ZetaExtension"], action: (run) => checkExtension(run, "mwz/extensions/ZetaExtension") },
-  { name: "check-skin", paths: ["mwz/skins/ZetaSkin"], action: (run) => checkExtension(run, "mwz/skins/ZetaSkin") },
-  { name: "check-main-svelte", paths: ["svelte", "mwz/skins/ZetaSkin/svelte/src", "hack/svelte-common-deps.mjs", "hack/check-shared.mjs", "pnpm-lock.yaml", "package.json"], action: checkMainSvelte },
-  { name: "check-skin-svelte", paths: ["mwz/skins/ZetaSkin/svelte", "svelte/src/shared", "pnpm-lock.yaml", "package.json"], action: (run) => checkSvelteProject(run, "mwz/skins/ZetaSkin/svelte", "type-check") },
-  { name: "check-goapp", paths: ["goapp", ".golangci.yml"], action: checkGoapp },
+  { name: "check-mw-extensions", group: "svelte", paths: ["mwz/extensions.yaml", "mwz/extensions.lock", "hack/extensions.mjs", "hack/package.json", "hack/pnpm-lock.yaml"], action: checkMwExtensions },
+  { name: "check-extension", group: "php", paths: ["mwz/extensions/ZetaExtension"], action: (run) => checkExtension(run, "mwz/extensions/ZetaExtension") },
+  { name: "check-skin", group: "php", paths: ["mwz/skins/ZetaSkin"], action: (run) => checkExtension(run, "mwz/skins/ZetaSkin") },
+  { name: "check-main-svelte", group: "svelte", paths: ["svelte", "mwz/skins/ZetaSkin/svelte/src", "hack/svelte-common-deps.mjs", "hack/check-shared.mjs", "pnpm-lock.yaml", "package.json"], action: checkMainSvelte },
+  { name: "check-skin-svelte", group: "svelte", paths: ["mwz/skins/ZetaSkin/svelte", "svelte/src/shared", "pnpm-lock.yaml", "package.json"], action: (run) => checkSvelteProject(run, "mwz/skins/ZetaSkin/svelte", "type-check") },
+  { name: "check-goapp", group: "goapp", paths: ["goapp", ".golangci.yml"], action: checkGoapp },
 ];
 
 const checksByName = new Map(cachedChecks.map((check) => [check.name, check]));
@@ -144,11 +145,13 @@ async function runOne(check, useCache, out) {
   return { check, seconds: (Date.now() - started) / 1000 };
 }
 
-// runAll runs the checks in parallel, CHECKS_JOBS at a time (default: the CPU count), printing each one's
-// output when it ends, and fails after all of them if any failed.
-async function runAll(useCache) {
+// runAll runs the checks, or those of one group, in parallel, CHECKS_JOBS at a time (default: the CPU count),
+// printing each one's output when it ends, and fails after all of them if any failed.
+async function runAll(useCache, group) {
   const jobs = Number(process.env.CHECKS_JOBS) || availableParallelism();
-  const queue = [...cachedChecks];
+  const selected = group ? cachedChecks.filter((check) => check.group === group) : cachedChecks;
+  if (!selected.length) throw new Error(`Unknown check group: ${group}`);
+  const queue = [...selected];
   const failed = [];
   const worker = async () => {
     for (let check = queue.shift(); check; check = queue.shift()) {
@@ -163,7 +166,7 @@ async function runAll(useCache) {
       if (result.err) failed.push(result);
     }
   };
-  await Promise.all(Array.from({ length: Math.min(jobs, cachedChecks.length) }, worker));
+  await Promise.all(Array.from({ length: Math.min(jobs, selected.length) }, worker));
   if (failed.length) {
     for (const { check, err } of failed) {
       console.log(`❌  ${check.name} failed: ${err.message}`);
@@ -192,9 +195,11 @@ function clearCache() {
   rmSync(CACHE_DIR, { recursive: true, force: true });
 }
 
-const [target = "checks", option] = process.argv.slice(2);
+// checks [--no-cache] [--group php|svelte|goapp]
+const [target = "checks", ...options] = process.argv.slice(2);
 if (target === "checks") {
-  await runAll(option !== "--no-cache");
+  const groupAt = options.indexOf("--group");
+  await runAll(!options.includes("--no-cache"), groupAt >= 0 ? options[groupAt + 1] : undefined);
 } else if (target === "clear") {
   clearCache();
 } else if (target === "check-php") {
