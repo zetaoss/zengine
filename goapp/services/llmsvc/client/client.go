@@ -3,9 +3,12 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -16,6 +19,29 @@ import (
 type LLMClient struct {
 	Endpoint string
 	Client   *http.Client
+	// wait pauses before retrying a rate-limited request; tests replace it.
+	wait func(context.Context, time.Duration) error
+}
+
+// A rate-limited request (429) is retried once after the Retry-After delay, or defaultRateLimitWait
+// when none is given. A longer delay, such as a daily quota, fails at once instead of holding the task.
+const (
+	defaultRateLimitWait = 5 * time.Second
+	maxRateLimitWait     = 30 * time.Second
+)
+
+// StatusError is a non-2xx answer from aigate. RetryAfter is its Retry-After delay, zero when absent.
+type StatusError struct {
+	StatusCode int
+	RetryAfter time.Duration
+	Message    string
+}
+
+func (e *StatusError) Error() string {
+	if e.Message == "" {
+		return fmt.Sprintf("llm request failed: status=%d", e.StatusCode)
+	}
+	return fmt.Sprintf("llm request failed: status=%d: %s", e.StatusCode, e.Message)
 }
 
 type Message struct {
@@ -56,6 +82,29 @@ func (s *LLMClient) ChatCompletion(ctx context.Context, model string, messages [
 }
 
 func (s *LLMClient) ChatCompletionFull(ctx context.Context, model string, messages []Message) (ChatResponse, error) {
+	resp, err := s.chatCompletionOnce(ctx, model, messages)
+	var statusErr *StatusError
+	if !errors.As(err, &statusErr) || statusErr.StatusCode != http.StatusTooManyRequests {
+		return resp, err
+	}
+	delay := statusErr.RetryAfter
+	if delay <= 0 {
+		delay = defaultRateLimitWait
+	}
+	if delay > maxRateLimitWait {
+		return resp, err
+	}
+	wait := s.wait
+	if wait == nil {
+		wait = sleepContext
+	}
+	if waitErr := wait(ctx, delay); waitErr != nil {
+		return resp, err
+	}
+	return s.chatCompletionOnce(ctx, model, messages)
+}
+
+func (s *LLMClient) chatCompletionOnce(ctx context.Context, model string, messages []Message) (ChatResponse, error) {
 	if strings.TrimSpace(s.Endpoint) == "" {
 		return ChatResponse{}, fmt.Errorf("BOB_ENDPOINT is required")
 	}
@@ -79,6 +128,18 @@ func (s *LLMClient) ChatCompletionFull(ctx context.Context, model string, messag
 	defer func() {
 		_ = resp.Body.Close()
 	}()
+	raw, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return ChatResponse{}, err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		var e struct {
+			Error string `json:"error"`
+		}
+		_ = json.Unmarshal(raw, &e)
+		secs, _ := strconv.Atoi(resp.Header.Get("Retry-After"))
+		return ChatResponse{}, &StatusError{StatusCode: resp.StatusCode, RetryAfter: time.Duration(secs) * time.Second, Message: truncate(e.Error, maxErrorMessage)}
+	}
 	var payload struct {
 		Model   string `json:"model"`
 		Choices []struct {
@@ -88,11 +149,8 @@ func (s *LLMClient) ChatCompletionFull(ctx context.Context, model string, messag
 		} `json:"choices"`
 		Usage Usage `json:"usage"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+	if err := json.Unmarshal(raw, &payload); err != nil {
 		return ChatResponse{}, err
-	}
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return ChatResponse{}, fmt.Errorf("llm request failed: status=%d", resp.StatusCode)
 	}
 	if len(payload.Choices) == 0 || strings.TrimSpace(payload.Choices[0].Message.Content) == "" {
 		return ChatResponse{}, fmt.Errorf("empty llm output")
@@ -102,6 +160,28 @@ func (s *LLMClient) ChatCompletionFull(ctx context.Context, model string, messag
 		Model:   payload.Model,
 		Usage:   payload.Usage,
 	}, nil
+}
+
+// maxErrorMessage caps aigate's error text, which ends up in run records.
+const maxErrorMessage = 300
+
+func truncate(s string, n int) string {
+	r := []rune(s)
+	if len(r) <= n {
+		return s
+	}
+	return string(r[:n]) + "…"
+}
+
+func sleepContext(ctx context.Context, d time.Duration) error {
+	t := time.NewTimer(d)
+	defer t.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-t.C:
+		return nil
+	}
 }
 
 // GetJSON fetches an aigate GET path such as "/v1/models?all" or "/v1/usage" and returns its body and status.

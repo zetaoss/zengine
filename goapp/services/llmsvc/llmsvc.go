@@ -41,7 +41,8 @@ type StepResult struct {
 
 // RunStep renders the step's prompt with vars, calls the model, and parses the response into out, a non-nil
 // pointer, with the step's parser. When the response does not parse, it calls once more. Each attempt parses
-// into a fresh value and out is set only on success, so a failed attempt leaves nothing behind.
+// into a fresh value and out is set only on success, so a failed attempt leaves nothing behind. When the second
+// call fails, its error keeps the first attempt's parse error.
 func (s *LLMService) RunStep(ctx context.Context, model string, st prompts.Step, vars map[string]string, out any) (StepResult, error) {
 	var res StepResult
 	target := reflect.ValueOf(out)
@@ -54,10 +55,12 @@ func (s *LLMService) RunStep(ctx context.Context, model string, st prompts.Step,
 	}
 	var err error
 	for range 2 {
-		var resp client.ChatResponse
-		resp, err = s.client.ChatCompletionFull(ctx, model, messages)
-		if err != nil {
-			return res, err
+		resp, callErr := s.client.ChatCompletionFull(ctx, model, messages)
+		if callErr != nil {
+			if err != nil {
+				return res, fmt.Errorf("%w (previous attempt: %v)", callErr, err)
+			}
+			return res, callErr
 		}
 		res.Model = resp.Model
 		res.Usage.PromptTokens += resp.Usage.PromptTokens
