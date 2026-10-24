@@ -1,8 +1,12 @@
 # pull-request.yml
 name: pull-request
+# A push to main runs only the checks job, so its caches (Go, pnpm, golangci-lint, .checks) are saved in main's
+# scope, which every pull request can restore; a pull request's own caches are visible only to that pull request.
 on:
   pull_request:
     types: [opened, reopened, synchronize]
+  push:
+    branches: [main]
 permissions:
   contents: read
   pull-requests: write
@@ -10,6 +14,7 @@ permissions:
 
 jobs:
   version:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -37,32 +42,27 @@ jobs:
             echo "error: VERSION $version is not after $latest (latest tag or $BASE VERSION)" >&2; exit 1
           fi
 
+  # One job per check group (hack/checks.mjs), each on its own runner with only its tools, so the groups do not
+  # compete for one runner's CPU; .checks is cached per group.
   checks:
+    name: checks (${{ matrix.group }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [goapp, svelte, php]
     steps:
       - name: Checkout
         uses: actions/checkout@v6
       - name: Setup Go
+        if: matrix.group == 'goapp'
         uses: actions/setup-go@v5
         with:
           go-version: '1.26'
           cache: true
           cache-dependency-path: goapp/go.sum
-      - uses: pnpm/action-setup@v6
-        with:
-          version: 11.7.0
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'pnpm'
-          cache-dependency-path: '**/pnpm-lock.yaml'
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: 8.3
-          coverage: none
       - name: Cache golangci-lint
+        if: matrix.group == 'goapp'
         uses: actions/cache@v4
         with:
           path: |
@@ -71,17 +71,35 @@ jobs:
           key: ${{ runner.os }}-golangci-lint-${{ hashFiles('goapp/Makefile', 'goapp/go.sum', '.golangci.yml') }}
           restore-keys: |
             ${{ runner.os }}-golangci-lint-
+      - uses: pnpm/action-setup@v6
+        if: matrix.group == 'svelte'
+        with:
+          version: 11.7.0
+      - name: Setup Node
+        if: matrix.group == 'svelte'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+          cache-dependency-path: '**/pnpm-lock.yaml'
+      - name: Setup PHP
+        if: matrix.group == 'php'
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.3
+          coverage: none
       - name: Cache checks result (.checks)
         uses: actions/cache@v4
         with:
           path: .checks
-          key: ${{ runner.os }}-checks-${{ hashFiles('**/pnpm-lock.yaml', 'goapp/go.sum', 'mwz/extensions.lock') }}-${{ github.sha }}
+          key: ${{ runner.os }}-checks-${{ matrix.group }}-${{ hashFiles('**/pnpm-lock.yaml', 'goapp/go.sum', 'mwz/extensions.lock') }}-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-checks-${{ hashFiles('**/pnpm-lock.yaml', 'goapp/go.sum', 'mwz/extensions.lock') }}-
-            ${{ runner.os }}-checks-
-      - run: make checks
+            ${{ runner.os }}-checks-${{ matrix.group }}-${{ hashFiles('**/pnpm-lock.yaml', 'goapp/go.sum', 'mwz/extensions.lock') }}-
+            ${{ runner.os }}-checks-${{ matrix.group }}-
+      - run: make checks GROUP=${{ matrix.group }}
 
   docker-build:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
