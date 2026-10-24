@@ -9,10 +9,11 @@ version-sync:
 # GROUP            TARGET              CACHE PATHS                    CHECKS
 # check-php        check-extension     ZetaExtension                  lint
 #                  check-skin          ZetaSkin                       lint
-# check-svelte     check-main-svelte   main svelte                    deps, install, peers, lint, build
-#                  check-skin-svelte   skin svelte, shared svelte     install, peers, lint, build
-# check-goapp      check-goapp         goapp                          golangci-lint, test, build
-# checks runs configuration validation plus PHP, Svelte, and Go checks with caching.
+# check-svelte     check-main-svelte   main svelte                    deps, install, peers, lint, svelte-check
+#                  check-skin-svelte   skin svelte, shared svelte     install, peers, lint, type-check
+# check-goapp      check-goapp         goapp                          golangci-lint, test
+# checks runs configuration validation plus PHP, Svelte, and Go checks with caching, in parallel (CHECKS_JOBS,
+# default the CPU count). Builds are left to the docker-build job, which builds both apps and the binaries.
 .PHONY: checks
 checks:
 	node hack/checks.mjs checks

@@ -1,8 +1,12 @@
 # pull-request.yml
 name: pull-request
+# A push to main runs only the checks job, so its caches (Go, pnpm, golangci-lint, .checks) are saved in main's
+# scope, which every pull request can restore; a pull request's own caches are visible only to that pull request.
 on:
   pull_request:
     types: [opened, reopened, synchronize]
+  push:
+    branches: [main]
 permissions:
   contents: read
   pull-requests: write
@@ -10,6 +14,7 @@ permissions:
 
 jobs:
   version:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -82,6 +87,7 @@ jobs:
       - run: make checks
 
   docker-build:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
