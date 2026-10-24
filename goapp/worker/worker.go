@@ -69,9 +69,22 @@ func (w *Worker) Run(ctx context.Context) error {
 	if err := w.server.Start(w.mux); err != nil {
 		return fmt.Errorf("start asynq server: %w", err)
 	}
+	go w.bootstrapLoopTasks(ctx)
 	<-ctx.Done()
 	w.Shutdown()
 	return nil
+}
+
+// bootstrapLoopTasks ensures that any loop tasks with active intervals have a scheduled or running task.
+func (w *Worker) bootstrapLoopTasks(ctx context.Context) {
+	for _, spec := range w.registry.AllSpecs() {
+		enqueued, err := registry.EnsureLoopTask(ctx, w.appCtx, spec)
+		if err != nil {
+			slog.Error("[worker] Failed to ensure bootstrap loop task", "type", spec.Type, "err", err)
+		} else if enqueued {
+			slog.Info("[worker] Enqueued bootstrap loop task", "type", spec.Type)
+		}
+	}
 }
 
 func (w *Worker) Shutdown() {

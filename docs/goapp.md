@@ -13,6 +13,7 @@ This guide describes the structure of the `goapp` Go backend, local development,
 | Services | `goapp/services/**` |
 | Background tasks | `goapp/tasks/**` |
 | Models | `goapp/models/**` |
+| LLM chains | `goapp/prompts/**` ([chain.md](chain.md)) |
 | Task registry and worker | `goapp/worker/**` |
 | Database, configuration, and task context | `goapp/app/**` |
 
@@ -91,7 +92,7 @@ Use the `Router` middleware factory to keep `routes.go` declarative.
 - Active phases include `Generating` and `Retrying`.
 - A single page-level timer refreshes the list and stops when the user leaves the list tab.
 
-AIEdit prompts use `r.Unblocked()` for creation, `r.Owner(models.AIEditPrompt{})` for editing, and `r.OwnerOrSysop(models.AIEditPrompt{})` for deletion. The Activity tab calls the MediaWiki API directly through `mwapi` in Svelte. Contribution flags can be array values such as `"new"` and `"top"`.
+AIEdit prompts (`/api/ai-prompts*`) are sysop-only (`r.Sysop()`). The Activity tab calls the MediaWiki API directly through `mwapi` in Svelte. Contribution flags can be array values such as `"new"` and `"top"`.
 
 ### Write Request
 
@@ -120,6 +121,24 @@ AIEdit prompts use `r.Unblocked()` for creation, `r.Owner(models.AIEditPrompt{})
 - Service: `goapp/services/llmsvc/llmsvc.go`
 - Client: `goapp/services/llmsvc/client/client.go`
 - Configuration: `API.BobEndpoint` in `goapp/app/config/config.go`; the client calls `BOB_ENDPOINT/aigate/v1/chat/completions`
+- Models: `GET /api/ai/models` (`r.Sysop()`, `goapp/server/handlers/api/aimodels/aimodels.go`) returns bob's `/aigate/v1/models?all` and `/aigate/v1/usage` (null when bob lacks it); the AI tool menu's model tab (`svelte/src/routes/tool/ai/models/**`) shows them per provider
+
+### Chains
+
+- Definitions: `goapp/prompts/**`; runner: `llmsvc.RunStep`
+- Route: `GET /api/ai/builtin-chains` (`r.Sysop()`)
+- Frontend: `svelte/src/routes/tool/ai/prompts/**`
+- Guide: [chain.md](chain.md)
+
+### Document Evaluation
+
+- Routes: `/api/evaluations*` (`r.Sysop()`) in `goapp/server/routes.go`
+- Frontend: `svelte/src/routes/tool/ai/eval/**` (AI menu, sysop-only)
+- Handler: `goapp/server/handlers/api/doceval/doceval.go`
+- Service: `goapp/services/doceval/doceval.go`
+- Model: `goapp/models/doc_evaluation.go`
+- Chain: `doc-eval` (`rubric` → `judge`) in `goapp/prompts/doceval.go`
+- Guide: [doc-eval.md](doc-eval.md)
 
 ## Asynq task processing
 
@@ -211,6 +230,7 @@ On SIGINT or SIGTERM, active handlers are drained for up to 30 seconds.
 | `ai-edit-nanny` | 1 min | 3 | `0 * * * *` | `default` |
 | `common-report` | 5 min | 3 | - | API and nanny, unique for 30 min |
 | `common-report-nanny` | 1 min | 3 | `0 * * * *` | `default` |
+| `doc-eval-loop` | 5 min | 0 | - | `doc-eval`, reschedules itself |
 | `inspire` | 5 sec | 3 | - | Manual |
 | `ping-db` | 10 sec | 3 | - | Manual |
 | `ping-redis` | 5 sec | 3 | - | Manual |
@@ -219,6 +239,7 @@ On SIGINT or SIGTERM, active handlers are drained for up to 30 seconds.
 | `runbox` | 2 min | 0 | - | `runbox`, API |
 | `runbox-pruner` | 1 min | 3 | `* * * * *` | `default`, every minute |
 | `stat-{cf,ga,gsc,mw}-{daily,hourly}` | 5 min | 3 | `5 * * * *` | `default` |
+| `system-loop-nanny` | 1 min | 3 | `0 * * * *` | `default`, restores missing loop tasks |
 
 The `daily` statistics tasks also run at 5 minutes past every hour; each task determines the collection time range internally.
 

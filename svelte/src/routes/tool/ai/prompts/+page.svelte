@@ -26,6 +26,31 @@
     updated_at?: string
   }
 
+  interface BuiltinChain {
+    name: string
+    description: string
+    metadata?: Record<string, string>
+    inputs: string[]
+    steps: Array<{
+      name: string
+      description: string
+      prompt: { inputs: string[]; messages: Array<{ role: string; content: string }> }
+      parser: string
+      output: string
+    }>
+  }
+
+  let builtinChains = $state<BuiltinChain[]>([])
+
+  async function fetchBuiltinChains() {
+    const [data, err] = await httpy.get<BuiltinChain[]>('/api/ai/builtin-chains')
+    if (err) {
+      console.error(err)
+      return
+    }
+    builtinChains = data ?? []
+  }
+
   let promptList = $state<PromptItem[]>([])
   let promptListLoading = $state(false)
   let deletingPromptId = $state<number | null>(null)
@@ -39,6 +64,7 @@
     if (!promptListFetched) {
       promptListFetched = true
       void fetchPromptList()
+      void fetchBuiltinChains()
     }
   })
 
@@ -83,10 +109,10 @@
 </script>
 
 <div class="p-5">
-  <div class="mb-5 flex items-center justify-between">
-    <div class="flex-1"></div>
+  <div class="mb-3 flex items-center justify-between">
+    <h2 class="text-base font-semibold">커스텀</h2>
     {#if isSysop}
-      <CButton variant="outline" size="small" href={resolve('/tool/ai-prompts/new')}>
+      <CButton variant="outline" size="small" href={resolve('/tool/ai/prompts/new')}>
         <ZIcon path={mdiPlus} class="mr-1" />
         새 프롬프트 작성
       </CButton>
@@ -126,9 +152,7 @@
               <CBadge variant="outline" class={`mr-2 ${getRequestTypeClass(item.request_type)}`}
                 >{getRequestTypeLabel(item.request_type)}</CBadge
               >
-              <a class="font-medium hover:underline" href={resolve(`/tool/ai-prompts/${item.id}` as '/tool/ai-prompts/[id]')}
-                >{item.title}</a
-              >
+              <a class="font-medium hover:underline" href={resolve(`/tool/ai/prompts/${item.id}` as '/tool/ai/prompts/[id]')}>{item.title}</a>
             </td>
             <td class="text-center text-sm text-muted-foreground">{item.use_count === 0 ? '-' : item.use_count}</td>
             <td>
@@ -154,4 +178,48 @@
       {/if}
     </tbody>
   </table>
+
+  {#if builtinChains.length > 0}
+    <div class="mt-8 space-y-2">
+      <h2 class="text-base font-semibold">빌트인</h2>
+      {#each builtinChains as c (c.name)}
+        <details class="rounded border bg-card">
+          <summary class="cursor-pointer px-3 py-2 text-sm">
+            <span class="font-mono text-xs">{c.name}</span>
+            <span class="ml-1 font-mono text-xs text-muted-foreground"
+              >{Object.entries(c.metadata ?? {})
+                .map(([k, v]) => `${k}=${v}`)
+                .join(' ')}</span
+            >
+            <span class="ml-1 font-mono text-xs text-muted-foreground">{c.steps.map((st) => st.name).join(' → ')}</span>
+            <span class="ml-2 text-xs text-muted-foreground">{c.description}</span>
+          </summary>
+          <div class="divide-y border-t">
+            {#each c.steps as st, n (st.name)}
+              <div class="space-y-2 p-3">
+                <div class="text-sm">
+                  <span class="text-muted-foreground">{n + 1}.</span>
+                  <span class="font-mono text-xs">{c.name}/{st.name}</span>
+                  <span class="ml-2 text-xs text-muted-foreground">{st.description}</span>
+                </div>
+                <div class="flex flex-wrap items-center gap-1.5 font-mono text-xs text-muted-foreground">
+                  <span class="rounded bg-muted px-1.5 py-0.5 text-foreground">{st.prompt.inputs.join(', ')}</span>
+                  <span>→</span>
+                  <span class="rounded bg-muted/60 px-1.5 py-0.5">prompt | model | {st.parser} parser</span>
+                  <span>→</span>
+                  <span class="rounded bg-muted px-1.5 py-0.5 text-foreground">{st.output}</span>
+                </div>
+                {#each st.prompt.messages as m (m.role)}
+                  <div class="rounded border">
+                    <div class="border-b bg-muted/50 px-3 py-1 font-mono text-xs text-muted-foreground">{m.role}</div>
+                    <pre class="max-h-[60vh] overflow-auto whitespace-pre-wrap bg-muted/30 p-3 text-xs">{m.content}</pre>
+                  </div>
+                {/each}
+              </div>
+            {/each}
+          </div>
+        </details>
+      {/each}
+    </div>
+  {/if}
 </div>

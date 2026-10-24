@@ -6,12 +6,14 @@ import (
 
 	"github.com/zetaoss/zengine/goapp/models"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/aiedit"
+	"github.com/zetaoss/zengine/goapp/server/handlers/api/aimodels"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/aiprompts"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/articletpl"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/binder"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/comments"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/commonreport"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/disambig"
+	"github.com/zetaoss/zengine/goapp/server/handlers/api/doceval"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/internalprofile"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/me"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/oneline"
@@ -60,16 +62,27 @@ func RegisterRoutes(mux *http.ServeMux, serverCtx *serverctx.Context, components
 	r.GET("/api/ai-edit/{id}", aiedit.Show, r.OwnerOrSysop(models.AIEdit{}))
 	r.POST("/api/ai-edit", aiedit.Store, r.Unblocked())
 
-	r.GET("/api/ai-prompts", aiprompts.Index)
-	r.GET("/api/ai-prompts/exists", aiprompts.Exists)
-	r.GET("/api/ai-prompts/{id}", aiprompts.Show)
-	r.POST("/api/ai-prompts", aiprompts.Store, r.Unblocked())
-	r.DELETE("/api/ai-prompts/{id}", aiprompts.Destroy, r.OwnerOrSysop(models.AIEditPrompt{}))
+	r.GET("/api/ai-prompts", aiprompts.Index, r.Sysop())
+	r.GET("/api/ai-prompts/exists", aiprompts.Exists, r.Sysop())
+	r.GET("/api/ai-prompts/{id}", aiprompts.Show, r.Sysop())
+	r.POST("/api/ai-prompts", aiprompts.Store, r.Sysop())
+	r.DELETE("/api/ai-prompts/{id}", aiprompts.Destroy, r.Sysop())
 
 	r.GET("/api/internal/profiles/{id}", internalprofile.Show, r.Internal())
 
 	r.GET("/api/reactions/page/{page}", pagereaction.Show)
 	r.POST("/api/reactions/page", pagereaction.Store, r.User())
+
+	r.GET("/api/ai/models", aimodels.Index, r.Sysop())
+	r.GET("/api/ai/builtin-chains", aimodels.BuiltinChains, r.Sysop())
+
+	r.GET("/api/evaluations", doceval.Index, r.Sysop())
+	r.GET("/api/evaluations/summary", doceval.Summary, r.Sysop())
+	r.GET("/api/evaluations/candidate", doceval.Candidate, r.Sysop())
+	r.GET("/api/evaluations/settings", doceval.GetSettings, r.Sysop())
+	r.PUT("/api/evaluations/settings", doceval.UpdateSettings, r.Sysop())
+	r.POST("/api/evaluations/run", doceval.Run, r.Sysop())
+	r.GET("/api/evaluations/{id}", doceval.Show, r.Sysop())
 
 	r.GET("/api/runbox/{hash}", runbox.Show)
 	r.POST("/api/runbox", runbox.Store)

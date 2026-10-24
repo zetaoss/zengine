@@ -13,6 +13,7 @@
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
   import httpy from '$shared/utils/httpy'
+  import { getAge } from '$shared/utils/time'
   import { getWikiViewHref } from '$shared/utils/wikiLink'
 
   import ContributionMap from './ContributionMap.svelte'
@@ -66,19 +67,6 @@
     const m = String(d.getMonth() + 1).padStart(2, '0')
     const day = String(d.getDate()).padStart(2, '0')
     return `${y}-${m}-${day}`
-  }
-
-  function agoDate(d: Date): string {
-    const diffSec = Math.floor((Date.now() - d.getTime()) / 1000)
-    if (diffSec < 60) return `${diffSec}초 전`
-
-    const min = Math.floor(diffSec / 60)
-    if (min < 60) return `${min}분 전`
-
-    const hour = Math.floor(min / 60)
-    if (hour < 24) return `${hour}시간 전`
-
-    return formatYmd(d)
   }
 
   function parseRegistrationDate(reg: string): Date {
@@ -223,7 +211,7 @@
         <tbody>
           {#each contribs as c (c.revid)}
             <tr class="border-b">
-              <td>{agoDate(new Date(c.timestamp))}</td>
+              <td>{getAge(c.timestamp)}</td>
               <td>
                 <a href={getWikiViewHref(c.title)} rel="external" data-sveltekit-reload>
                   {c.title}

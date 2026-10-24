@@ -5,12 +5,14 @@
 
   import { resolve } from '$app/paths'
   import { page } from '$app/state'
+  import useAuthStore from '$lib/stores/auth'
 
   interface NavItem {
     href: string
     key: string
     label: string
     external?: boolean
+    sysopOnly?: boolean
   }
 
   const navItems: NavItem[] = [
@@ -19,7 +21,7 @@
     { key: '/tool/common-report', href: resolve('/tool/common-report'), label: '통용' },
     { key: '/tool/article-tpl', href: resolve('/tool/article-tpl'), label: '템플릿' },
     { key: '/tool/write-request', href: resolve('/tool/write-request'), label: '작성요청' },
-    { key: '/tool/ai-prompts', href: resolve('/tool/ai-prompts'), label: 'AI 프롬프트' },
+    { key: '/tool/ai', href: resolve('/tool/ai'), label: 'AI', sysopOnly: true },
     { key: '/tool/stat', href: resolve('/tool/stat'), label: '통계' },
     { key: '/tool/frontplay', href: resolve('/tool/frontplay'), label: 'FrontPlay' },
   ]
@@ -27,6 +29,10 @@
   function isActive(pathname: string, to: string) {
     return pathname === to || pathname.startsWith(`${to}/`)
   }
+
+  const { userInfo } = useAuthStore()
+  let isSysop = $derived(($userInfo?.groups ?? []).includes('sysop'))
+  let visibleNavItems = $derived(navItems.filter((item) => !item.sysopOnly || isSysop))
 
   let pendingKey = $state('')
   let pathname = $derived(page.url.pathname)
@@ -48,7 +54,7 @@
         </tr>
       </thead>
       <tbody>
-        {#each navItems as item (item.key)}
+        {#each visibleNavItems as item (item.key)}
           <tr>
             <td>
               <a
@@ -74,7 +80,7 @@
     </table>
   </aside>
 
-  <div>
+  <div class="min-w-0">
     {@render children?.()}
   </div>
 </div>
