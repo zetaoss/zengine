@@ -104,13 +104,13 @@
 
   function getRequestTypeLabel(requestType: string) {
     if (requestType === 'create') return '생성'
-    if (requestType === 'edit') return '편집'
+    if (requestType === 'update') return '편집'
     return requestType || '-'
   }
 
   function getRequestTypeClass(requestType: string) {
     if (requestType === 'create') return 'text-a-emerald-600'
-    if (requestType === 'edit') return 'text-a-amber-600'
+    if (requestType === 'update') return 'text-a-amber-600'
     return ''
   }
 
@@ -210,7 +210,7 @@
                   bind:value={currentRow.request_type}
                   items={[
                     { value: 'create', label: '생성' },
-                    { value: 'edit', label: '편집' },
+                    { value: 'update', label: '편집' },
                   ]}
                   class="w-24 shrink-0"
                 />

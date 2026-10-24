@@ -92,7 +92,7 @@ Use the `Router` middleware factory to keep `routes.go` declarative.
 - Active phases include `Generating` and `Retrying`.
 - A single page-level timer refreshes the list and stops when the user leaves the list tab.
 
-AIEdit prompts (`/api/ai-prompts*`) are sysop-only (`r.Sysop()`). The Activity tab calls the MediaWiki API directly through `mwapi` in Svelte. Contribution flags can be array values such as `"new"` and `"top"`.
+Request types are `create` (a page that does not exist yet) and `update` (rewrite an existing one), in `aiedit_tasks` and `aiedit_prompts` (`models.AIEditRequestCreate`, `AIEditRequestUpdate`). `update` was called `edit` until v0.9.60; the API still accepts `edit` from skins loaded before the rename. AIEdit prompts (`/api/ai-prompts*`) are sysop-only (`r.Sysop()`). The Activity tab calls the MediaWiki API directly through `mwapi` in Svelte. Contribution flags can be array values such as `"new"` and `"top"`.
 
 ### Write Request
 

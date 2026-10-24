@@ -218,7 +218,7 @@
     }
 
     if (requestType === 'create') {
-      onRequestTypeChange?.('edit')
+      onRequestTypeChange?.('update')
       showToast('AI 작성본을 위키편집기에 반영했습니다.')
     } else {
       showToast('AI 작성본을 위키편집기에 반영했습니다.')

@@ -77,11 +77,12 @@ func Store(c *serverctx.Context) {
 		c.JSONError(http.StatusUnprocessableEntity, "제목은 필수입니다.")
 		return
 	}
-	body.RequestType = strings.TrimSpace(body.RequestType)
-	if body.RequestType != "create" && body.RequestType != "edit" {
+	requestType, ok := models.NormalizeAIEditRequestType(body.RequestType)
+	if !ok {
 		c.JSONError(http.StatusUnprocessableEntity, "유효하지 않은 요청 유형입니다.")
 		return
 	}
+	body.RequestType = requestType
 
 	user, _ := c.User()
 

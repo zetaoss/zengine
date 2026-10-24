@@ -1,4 +1,4 @@
-export type AIEditRequestType = 'create' | 'edit'
+export type AIEditRequestType = 'create' | 'update'
 
 export type AIEditTaskPhase = 'Pending' | 'Generating' | 'Retrying' | 'Completed' | 'Rejected'
 

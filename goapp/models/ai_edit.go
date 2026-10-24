@@ -1,6 +1,9 @@
 package models
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 type AIEditPhase string
 
@@ -11,6 +14,24 @@ const (
 	AIEditPhaseCompleted  AIEditPhase = "Completed"
 	AIEditPhaseRejected   AIEditPhase = "Rejected"
 )
+
+// AIEdit request types: create writes a page that does not exist yet, update rewrites an existing one.
+const (
+	AIEditRequestCreate = "create"
+	AIEditRequestUpdate = "update"
+)
+
+// NormalizeAIEditRequestType returns the request type for s, or false for an unknown one. "edit", the former
+// name of update, is still accepted from skins loaded before the rename.
+func NormalizeAIEditRequestType(s string) (string, bool) {
+	switch strings.TrimSpace(s) {
+	case AIEditRequestCreate:
+		return AIEditRequestCreate, true
+	case AIEditRequestUpdate, "edit":
+		return AIEditRequestUpdate, true
+	}
+	return "", false
+}
 
 type AIEdit struct {
 	ID           int         `json:"id" gorm:"column:id"`
