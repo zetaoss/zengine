@@ -102,70 +102,9 @@ func (t *LoopTask) Execute(ctx context.Context, taskCtx taskctx.Context, p LoopP
 		saveLastRun(db, docevalsvc.SettingKeyDocEvalLastRun, docevalsvc.LastRun{At: time.Now(), PageID: candidate.PageID, PageTitle: candidate.PageTitle, Model: modelToRun, Error: err.Error()})
 		return nil, err
 	}
-	if p.PageID > 0 {
-		query := `
-			SELECT p.page_id, p.page_title, p.page_latest
-			FROM zetawiki.page p
-			WHERE p.page_id = ? AND p.page_namespace = 0 AND p.page_is_redirect = 0
-			LIMIT 1
-		`
-		if err := db.WithContext(ctx).Raw(query, p.PageID).Scan(&candidate).Error; err != nil {
-			return fail(fmt.Errorf("failed to find page ID %d: %w", p.PageID, err))
-		}
-		if candidate.PageID == 0 {
-			// Resolve redirect if page_id points to a redirect page
-			redirectQuery := `
-				SELECT target.page_id, target.page_title, target.page_latest
-				FROM zetawiki.page src
-				JOIN zetawiki.redirect r ON r.rd_from = src.page_id
-				JOIN zetawiki.page target ON target.page_namespace = r.rd_namespace AND target.page_title = r.rd_title
-				WHERE src.page_id = ? AND target.page_namespace = 0 AND target.page_is_redirect = 0
-				LIMIT 1
-			`
-			if err := db.WithContext(ctx).Raw(redirectQuery, p.PageID).Scan(&candidate).Error; err != nil {
-				return fail(fmt.Errorf("failed to resolve redirect for page ID %d: %w", p.PageID, err))
-			}
-		}
-		if candidate.PageID == 0 {
-			return fail(fmt.Errorf("page ID %d not found or not an article", p.PageID))
-		}
-	} else if title := strings.TrimSpace(p.PageTitle); title != "" {
-		normalized := normalizeWikiTitle(title)
-		query := `
-			SELECT p.page_id, p.page_title, p.page_latest
-			FROM zetawiki.page p
-			WHERE p.page_namespace = 0 AND p.page_is_redirect = 0 AND p.page_title = ?
-			LIMIT 1
-		`
-		if err := db.WithContext(ctx).Raw(query, normalized).Scan(&candidate).Error; err != nil {
-			return fail(fmt.Errorf("failed to find page %q: %w", title, err))
-		}
-		if candidate.PageID == 0 {
-			// Resolve redirect if the title points to a redirect page
-			redirectQuery := `
-				SELECT target.page_id, target.page_title, target.page_latest
-				FROM zetawiki.page src
-				JOIN zetawiki.redirect r ON r.rd_from = src.page_id
-				JOIN zetawiki.page target ON target.page_namespace = r.rd_namespace AND target.page_title = r.rd_title
-				WHERE src.page_namespace = 0 AND src.page_title = ? AND target.page_namespace = 0 AND target.page_is_redirect = 0
-				LIMIT 1
-			`
-			if err := db.WithContext(ctx).Raw(redirectQuery, normalized).Scan(&candidate).Error; err != nil {
-				return fail(fmt.Errorf("failed to resolve redirect for page %q: %w", title, err))
-			}
-		}
-		if candidate.PageID == 0 {
-			// Case-insensitive fallback for direct match in namespace 0
-			ciQuery := `
-				SELECT p.page_id, p.page_title, p.page_latest
-				FROM zetawiki.page p
-				WHERE p.page_namespace = 0 AND p.page_is_redirect = 0 AND LOWER(CONVERT(p.page_title USING utf8mb4)) = LOWER(?)
-				LIMIT 1
-			`
-			_ = db.WithContext(ctx).Raw(ciQuery, normalized).Scan(&candidate).Error
-		}
-		if candidate.PageID == 0 {
-			return fail(fmt.Errorf("page not found or not an article: %q", title))
+	if p.PageID > 0 || strings.TrimSpace(p.PageTitle) != "" {
+		if candidate, err = resolvePage(ctx, db, p.PageID, p.PageTitle); err != nil {
+			return fail(err)
 		}
 	} else {
 		picked, err := docevalsvc.PickCandidate(ctx, db, settings.Strategy)
@@ -234,6 +173,79 @@ func (t *LoopTask) Execute(ctx context.Context, taskCtx taskctx.Context, p LoopP
 		"grade":           evalRecord.Grade,
 		"general_quality": evalRecord.GeneralQuality,
 	}, nil
+}
+
+// resolvePage finds the article for a page ID or a title, following a redirect; a title is normalized and
+// matched case-insensitively as a last resort.
+func resolvePage(ctx context.Context, db *gorm.DB, pageID int, pageTitle string) (candidatePage, error) {
+	var candidate candidatePage
+	if pageID > 0 {
+		query := `
+			SELECT p.page_id, p.page_title, p.page_latest
+			FROM zetawiki.page p
+			WHERE p.page_id = ? AND p.page_namespace = 0 AND p.page_is_redirect = 0
+			LIMIT 1
+		`
+		if err := db.WithContext(ctx).Raw(query, pageID).Scan(&candidate).Error; err != nil {
+			return candidate, fmt.Errorf("failed to find page ID %d: %w", pageID, err)
+		}
+		if candidate.PageID == 0 {
+			// Resolve redirect if page_id points to a redirect page
+			redirectQuery := `
+				SELECT target.page_id, target.page_title, target.page_latest
+				FROM zetawiki.page src
+				JOIN zetawiki.redirect r ON r.rd_from = src.page_id
+				JOIN zetawiki.page target ON target.page_namespace = r.rd_namespace AND target.page_title = r.rd_title
+				WHERE src.page_id = ? AND target.page_namespace = 0 AND target.page_is_redirect = 0
+				LIMIT 1
+			`
+			if err := db.WithContext(ctx).Raw(redirectQuery, pageID).Scan(&candidate).Error; err != nil {
+				return candidate, fmt.Errorf("failed to resolve redirect for page ID %d: %w", pageID, err)
+			}
+		}
+		if candidate.PageID == 0 {
+			return candidate, fmt.Errorf("page ID %d not found or not an article", pageID)
+		}
+	} else if title := strings.TrimSpace(pageTitle); title != "" {
+		normalized := normalizeWikiTitle(title)
+		query := `
+			SELECT p.page_id, p.page_title, p.page_latest
+			FROM zetawiki.page p
+			WHERE p.page_namespace = 0 AND p.page_is_redirect = 0 AND p.page_title = ?
+			LIMIT 1
+		`
+		if err := db.WithContext(ctx).Raw(query, normalized).Scan(&candidate).Error; err != nil {
+			return candidate, fmt.Errorf("failed to find page %q: %w", title, err)
+		}
+		if candidate.PageID == 0 {
+			// Resolve redirect if the title points to a redirect page
+			redirectQuery := `
+				SELECT target.page_id, target.page_title, target.page_latest
+				FROM zetawiki.page src
+				JOIN zetawiki.redirect r ON r.rd_from = src.page_id
+				JOIN zetawiki.page target ON target.page_namespace = r.rd_namespace AND target.page_title = r.rd_title
+				WHERE src.page_namespace = 0 AND src.page_title = ? AND target.page_namespace = 0 AND target.page_is_redirect = 0
+				LIMIT 1
+			`
+			if err := db.WithContext(ctx).Raw(redirectQuery, normalized).Scan(&candidate).Error; err != nil {
+				return candidate, fmt.Errorf("failed to resolve redirect for page %q: %w", title, err)
+			}
+		}
+		if candidate.PageID == 0 {
+			// Case-insensitive fallback for direct match in namespace 0
+			ciQuery := `
+				SELECT p.page_id, p.page_title, p.page_latest
+				FROM zetawiki.page p
+				WHERE p.page_namespace = 0 AND p.page_is_redirect = 0 AND LOWER(CONVERT(p.page_title USING utf8mb4)) = LOWER(?)
+				LIMIT 1
+			`
+			_ = db.WithContext(ctx).Raw(ciQuery, normalized).Scan(&candidate).Error
+		}
+		if candidate.PageID == 0 {
+			return candidate, fmt.Errorf("page not found or not an article: %q", title)
+		}
+	}
+	return candidate, nil
 }
 
 func saveLastRun(db *gorm.DB, key string, r docevalsvc.LastRun) {

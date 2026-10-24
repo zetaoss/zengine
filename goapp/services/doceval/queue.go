@@ -41,14 +41,14 @@ func StopLoop(ctx context.Context, cfg *config.Config, taskType string) error {
 	return loopq.Clear(ctx, cfg, LoopQueue, taskType)
 }
 
-// RunNow makes the loop's only waiting task an immediate run, forced even when the interval is off,
-// so the next scheduled run starts counting from it. If pageID > 0 or pageTitle is non-empty, that
-// page is evaluated.
-func RunNow(ctx context.Context, cfg *config.Config, enq loopq.Enqueuer, pageID int, pageTitle string) (*asynq.TaskInfo, error) {
-	return loopq.Replace(ctx, cfg, enq, LoopQueue, runNowTask(pageID, pageTitle), loopq.Options(LoopQueue, LoopTimeout, 0)...)
+// RunNow makes the only waiting task of a loop (LoopTaskType or DefineLoopTaskType) an immediate run,
+// forced even when the interval is off, so the next scheduled run starts counting from it. If pageID > 0
+// or pageTitle is non-empty, that page is evaluated or defined; otherwise one is picked.
+func RunNow(ctx context.Context, cfg *config.Config, enq loopq.Enqueuer, taskType string, pageID int, pageTitle string) (*asynq.TaskInfo, error) {
+	return loopq.Replace(ctx, cfg, enq, LoopQueue, runNowTask(taskType, pageID, pageTitle), loopq.Options(LoopQueue, loopTimeout(taskType), 0)...)
 }
 
-func runNowTask(pageID int, pageTitle string) *asynq.Task {
+func runNowTask(taskType string, pageID int, pageTitle string) *asynq.Task {
 	p := map[string]any{"force": true}
 	if pageID > 0 {
 		p["page_id"] = pageID
@@ -57,7 +57,7 @@ func runNowTask(pageID int, pageTitle string) *asynq.Task {
 		p["page_title"] = title
 	}
 	payload, _ := json.Marshal(p)
-	return asynq.NewTask(LoopTaskType, payload)
+	return asynq.NewTask(taskType, payload)
 }
 
 // QueuedTask is a doc-eval-loop task waiting or running in asynq.

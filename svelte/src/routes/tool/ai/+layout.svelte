@@ -14,6 +14,7 @@
   let isSysop = $derived(($userInfo?.groups ?? []).includes('sysop'))
 
   const tabs = [
+    { value: 'define', label: '문서정의', href: resolve('/tool/ai/define') },
     { value: 'eval', label: '문서평가', href: resolve('/tool/ai/eval') },
     { value: 'prompts', label: '프롬프트', href: resolve('/tool/ai/prompts') },
     { value: 'models', label: '모델', href: resolve('/tool/ai/models') },

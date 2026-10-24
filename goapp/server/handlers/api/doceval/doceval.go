@@ -340,19 +340,24 @@ func Candidate(c *serverctx.Context) {
 // The run replaces the waiting scheduled run, so the next one is scheduled from this execution
 // (like Grafana auto-refresh reset).
 func Run(c *serverctx.Context) {
+	runNow(c, docevalsvc.LoopTaskType)
+}
+
+// runNow enqueues an immediate run of a loop for the page in the body, or a picked one when it names none.
+func runNow(c *serverctx.Context, taskType string) {
 	var req runReq
 	if c.R.Body != nil {
 		_ = json.NewDecoder(c.R.Body).Decode(&req)
 	}
 
-	info, err := docevalsvc.RunNow(c.R.Context(), c.Cfg, c, req.PageID, req.PageTitle)
+	info, err := docevalsvc.RunNow(c.R.Context(), c.Cfg, c, taskType, req.PageID, req.PageTitle)
 	if info == nil {
 		c.JSONError(http.StatusInternalServerError, "failed to enqueue task: "+err.Error())
 		return
 	}
 	if err != nil {
 		// The run is enqueued; the leftover waiting run is dropped when the loop reschedules.
-		slog.Warn("[doc-eval] Failed to replace waiting loop task before manual run", "err", err)
+		slog.Warn("[doc-eval] Failed to replace waiting loop task before manual run", "type", taskType, "err", err)
 	}
 	c.JSON(app.H{
 		"ok":      true,

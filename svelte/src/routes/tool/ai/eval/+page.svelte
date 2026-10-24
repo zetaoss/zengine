@@ -1,20 +1,24 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-  import { onDestroy, onMount } from 'svelte'
+  import { onMount } from 'svelte'
+
+  import { resolve } from '$app/paths'
 
   import { mdiChevronDown, mdiInformationOutline } from '@mdi/js'
 
   import CButton from '$shared/ui/CButton.svelte'
   import { showToast } from '$shared/ui/toast/toast'
   import ZIcon from '$shared/ui/ZIcon.svelte'
-  import ZModal from '$shared/ui/ZModal.svelte'
   import httpy from '$shared/utils/httpy'
   import { displayTitle } from '$shared/utils/mediawiki'
   import { getAge } from '$shared/utils/time'
   import { getWikiViewHref } from '$shared/utils/wikiLink'
 
+  import LoopPanel from '../LoopPanel.svelte'
+  import { fetchModelIds, fetchRevisionSource, type LastRun, type LoopSettings, type QueuedTask, splitAtBytes } from '../loop'
   import ModelId from '../ModelId.svelte'
+  import RunModal from '../RunModal.svelte'
 
   interface Criterion {
     id: string
@@ -85,50 +89,10 @@
     contradicted: number
   }
 
-  interface LastRun {
-    at: string
-    ok: boolean
-    page_id?: number
-    page_title?: string
-    model?: string
-    eval_id?: number
-    error?: string
-  }
-
-  interface QueuedTask {
-    id: string
-    state: 'active' | 'pending' | 'scheduled' | 'failed'
-    page_id?: number
-    page_title?: string
-    next_process_at?: string
-    failed_at?: string
-    last_error?: string
-  }
-
-  interface SettingsResp {
-    interval: string
-    model: string
-    strategy?: string
+  interface SettingsResp extends LoopSettings {
     last_run?: LastRun | null
     tasks?: QueuedTask[] | null
-    define_interval: string
-    define_model: string
-    define_strategy: string
-    define_last_run?: LastRun | null
-    define_tasks?: QueuedTask[] | null
-    definitions: number
   }
-
-  type SettingsChange = {
-    interval?: string
-    model?: string
-    strategy?: string
-    define_interval?: string
-    define_model?: string
-    define_strategy?: string
-  }
-
-  type SettingsSaved = Required<SettingsChange> & { ok: boolean }
 
   let loading = $state(true)
   let evaluations = $state<DocEvaluation[]>([])
@@ -146,21 +110,8 @@
   let pageOffset = $state(0)
   const pageSize = 20
 
-  let currentInterval = $state('1h')
-  let currentModel = $state('groq/openai/gpt-oss-120b')
-  let currentStrategy = $state('random')
-  let currentDefineInterval = $state('30m')
-  let currentDefineModel = $state('groq/openai/gpt-oss-120b')
-  let currentDefineStrategy = $state('random')
-  let definitionsCount = $state(0)
-  let defineLastRun = $state<LastRun | null>(null)
-  let defineTasks = $state<QueuedTask[]>([])
-  let defineWaiting = $derived(defineTasks.filter((t) => t.state === 'pending' || t.state === 'scheduled'))
+  let settings = $state<LoopSettings>({ interval: '1h', model: 'groq/openai/gpt-oss-120b', strategy: 'random' })
   let modelIds = $state<string[]>([])
-  let modelOptions = $derived(currentModel && !modelIds.includes(currentModel) ? [currentModel, ...modelIds] : modelIds)
-  let defineModelOptions = $derived(
-    currentDefineModel && !modelIds.includes(currentDefineModel) ? [currentDefineModel, ...modelIds] : modelIds,
-  )
   let savingSettings = $state(false)
   let settingsError = $state('')
 
@@ -244,42 +195,7 @@
     summary = data
   }
 
-  const intervalOptions = [
-    { value: '0s', label: '끔' },
-    { value: '10m', label: '10분' },
-    { value: '30m', label: '30분' },
-    { value: '1h', label: '1시간' },
-    { value: '2h', label: '2시간' },
-    { value: '6h', label: '6시간' },
-    { value: '12h', label: '12시간' },
-    { value: '24h', label: '24시간' },
-  ]
-  function withCurrent(value: string) {
-    return intervalOptions.some((o) => o.value === value) ? intervalOptions : [...intervalOptions, { value, label: value }]
-  }
-  let selectOptions = $derived(withCurrent(currentInterval))
-  let defineSelectOptions = $derived(withCurrent(currentDefineInterval))
-
-  const strategyOptions = [
-    { value: 'random', label: '랜덤' },
-    { value: 'oldest', label: '오랜순' },
-    { value: 'newest', label: '최신순' },
-  ]
-  const strategyLabels: Record<string, string> = {
-    random: '랜덤',
-    oldest: '오랜순',
-    newest: '최신순',
-  }
-
   let queuedTasks = $state<QueuedTask[]>([])
-  let runningTasks = $derived(queuedTasks.filter((t) => t.state === 'active'))
-  let waitingTasks = $derived(queuedTasks.filter((t) => t.state === 'pending' || t.state === 'scheduled'))
-  const queueStateLabels: Record<QueuedTask['state'], string> = {
-    active: '수행 중',
-    pending: '대기',
-    scheduled: '예약',
-    failed: '실패',
-  }
   let lastRun = $state<LastRun | null>(null)
   let now = $state(Date.now())
   let initialSettingsLoaded = false
@@ -287,14 +203,8 @@
   async function fetchSettings() {
     const [data, err] = await httpy.get<SettingsResp>('/api/evaluations/settings')
     if (!err && data) {
-      currentInterval = data.interval
-      currentModel = data.model
-      if (data.strategy) currentStrategy = data.strategy
+      settings = { interval: data.interval, model: data.model, strategy: data.strategy }
       queuedTasks = data.tasks ?? []
-      applyDefineSettings(data)
-      definitionsCount = data.definitions
-      defineLastRun = data.define_last_run ?? null
-      defineTasks = data.define_tasks ?? []
       const prevAt = lastRun?.at
       lastRun = data.last_run ?? null
       if (initialSettingsLoaded) {
@@ -308,52 +218,11 @@
     }
   }
 
-  function formatTime(iso: string): string {
-    const d = new Date(iso)
-    if (isNaN(d.getTime())) return iso
-    const pad = (n: number) => String(n).padStart(2, '0')
-    return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
-  }
-
-  function formatCountdown(iso: string): string {
-    const totalSecs = Math.max(0, Math.round((new Date(iso).getTime() - now) / 1000))
-    const h = Math.floor(totalSecs / 3600)
-    const m = Math.floor((totalSecs % 3600) / 60)
-    const s = totalSecs % 60
-    const pad = (n: number) => String(n).padStart(2, '0')
-    if (h > 0) {
-      return `${h}:${pad(m)}:${pad(s)}`
-    }
-    return `${pad(m)}:${pad(s)}`
-  }
-
-  function formatModelLabel(id: string): string {
-    const i = id.indexOf('/')
-    if (i === -1) return id
-    return `${id.slice(0, i)} | ${id.slice(i + 1)}`
-  }
-
-  // Configured bob models in fallback order, for the model dropdown.
-  async function fetchModelIds() {
-    const [data, err] = await httpy.get<{
-      usage: { data: Array<{ id: string }> } | null
-      models: { data: Array<{ id: string; enabled: boolean }> }
-    }>('/api/ai/models')
-    if (err || !data) return
-    modelIds = data.usage?.data.map((m) => m.id) ?? data.models.data.filter((m) => m.enabled).map((m) => m.id)
-  }
-
-  function applyDefineSettings(data: Pick<SettingsResp, 'define_interval' | 'define_model' | 'define_strategy'>) {
-    currentDefineInterval = data.define_interval
-    currentDefineModel = data.define_model
-    currentDefineStrategy = data.define_strategy
-  }
-
-  async function handleSaveSettings(change: SettingsChange) {
+  async function handleSaveSettings(change: Partial<LoopSettings>) {
     savingSettings = true
     settingsError = ''
 
-    const [data, err] = await httpy.put<SettingsSaved>('/api/evaluations/settings', change)
+    const [data, err] = await httpy.put<LoopSettings & { ok: boolean }>('/api/evaluations/settings', change)
     savingSettings = false
 
     if (err) {
@@ -362,298 +231,25 @@
     }
 
     if (data?.ok) {
-      currentInterval = data.interval
-      currentModel = data.model
-      if (data.strategy) currentStrategy = data.strategy
-      applyDefineSettings(data)
+      settings = { interval: data.interval, model: data.model, strategy: data.strategy }
       showToast('저장했습니다')
     }
   }
 
-  type CheckState = 'idle' | 'checking' | 'exists' | 'missing'
-
-  interface SearchPage {
-    id: number
-    title: string
-    key: string
-    matched_title: string | null
-    description: string | null
-  }
-
-  let triggeringRun = $state(false)
-  let fetchingCandidate = $state(false)
   let showRunModal = $state(false)
-  let targetTitle = $state('')
-  let targetPageID = $state(0)
-  let checkedTitle = $state('')
-  let checkState = $state<CheckState>('idle')
-  let checkSeq = 0
-  let autoCheckTimer: ReturnType<typeof setTimeout> | undefined
-  let titleInputEl = $state<HTMLInputElement | null>(null)
+  let triggeringRun = $state(false)
 
-  let suggestions = $state<SearchPage[]>([])
-  let showSuggestions = $state(false)
-  let activeSuggestionIndex = $state(-1)
-  let searchAborter: AbortController | null = null
-  let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
-
-  let trimmedTitle = $derived(targetTitle.trim())
-
-  function clearAutoCheck() {
-    if (autoCheckTimer) {
-      clearTimeout(autoCheckTimer)
-      autoCheckTimer = undefined
-    }
-  }
-
-  function resetRunModal() {
-    clearAutoCheck()
-    if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
-    searchAborter?.abort()
-    targetTitle = ''
-    targetPageID = 0
-    checkedTitle = ''
-    checkState = 'idle'
-    suggestions = []
-    showSuggestions = false
-    activeSuggestionIndex = -1
-    checkSeq++
-  }
-
-  function openRunModal() {
-    resetRunModal()
-    showRunModal = true
-    setTimeout(() => titleInputEl?.focus(), 50)
-  }
-
-  async function fetchSuggestions(q: string) {
-    const trimmed = q.trim()
-    if (!trimmed) {
-      suggestions = []
-      showSuggestions = false
-      activeSuggestionIndex = -1
-      return
-    }
-
-    searchAborter?.abort()
-    const controller = new AbortController()
-    searchAborter = controller
-
-    try {
-      const url = `/w/rest.php/v1/search/title?${new URLSearchParams({ q: trimmed, limit: '8' })}`
-      const res = await fetch(url, { signal: controller.signal })
-      if (!res.ok) return
-      const json = (await res.json()) as { pages?: SearchPage[] }
-      if (searchAborter === controller && targetTitle.trim() === trimmed) {
-        suggestions = Array.isArray(json.pages) ? json.pages : []
-        showSuggestions = suggestions.length > 0
-        activeSuggestionIndex = -1
-        const exact = suggestions.find((p) => p.title.toLowerCase() === trimmed.toLowerCase())
-        if (exact) {
-          checkState = 'exists'
-          checkedTitle = trimmed
-          targetPageID = exact.id
-        }
-      }
-    } catch (e: unknown) {
-      if (e instanceof DOMException && e.name === 'AbortError') return
-    } finally {
-      if (searchAborter === controller) searchAborter = null
-    }
-  }
-
-  function debouncedFetchSuggestions(q: string) {
-    if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
-    searchDebounceTimer = setTimeout(() => {
-      void fetchSuggestions(q)
-    }, 250)
-  }
-
-  function selectSuggestion(item: SearchPage) {
-    clearAutoCheck()
-    if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
-    searchAborter?.abort()
-
-    targetTitle = item.title
-    targetPageID = item.id
-    checkedTitle = item.title
-    checkState = 'exists'
-    showSuggestions = false
-    suggestions = []
-    activeSuggestionIndex = -1
-    checkSeq++
-    setTimeout(() => titleInputEl?.focus(), 50)
-  }
-
-  async function checkDocumentExists(titleToCheck: string) {
-    clearAutoCheck()
-    const title = titleToCheck.trim()
-    if (!title) {
-      checkState = 'idle'
-      checkedTitle = ''
-      targetPageID = 0
-      return
-    }
-
-    if (checkedTitle === title && checkState !== 'idle') {
-      return
-    }
-
-    checkState = 'checking'
-    const seq = ++checkSeq
-
-    try {
-      const [data, err] = await httpy.get<{
-        query?: {
-          pages?: Array<{ pageid?: number; title?: string; missing?: boolean }>
-        }
-      }>('/w/api.php', {
-        action: 'query',
-        format: 'json',
-        formatversion: '2',
-        titles: title,
-      })
-      if (seq !== checkSeq || targetTitle.trim() !== title) return
-      checkedTitle = title
-      const page = data?.query?.pages?.[0]
-      if (!err && page && !page.missing && page.pageid && page.pageid > 0) {
-        checkState = 'exists'
-        targetPageID = page.pageid
-        if (page.title) {
-          targetTitle = page.title
-          checkedTitle = page.title
-        }
-      } else {
-        checkState = 'missing'
-        targetPageID = 0
-      }
-    } catch {
-      if (seq !== checkSeq || targetTitle.trim() !== title) return
-      checkState = 'idle'
-      targetPageID = 0
-    }
-  }
-
-  function scheduleAutoCheck() {
-    clearAutoCheck()
-    const title = targetTitle.trim()
-    if (!title) {
-      checkState = 'idle'
-      checkedTitle = ''
-      return
-    }
-    if (checkedTitle === title && checkState !== 'idle') return
-
-    autoCheckTimer = setTimeout(() => {
-      void checkDocumentExists(title)
-    }, 500)
-  }
-
-  function onTitleInput(e: Event) {
-    targetTitle = (e.target as HTMLInputElement).value
-    targetPageID = 0
-    searchAborter?.abort()
-    if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
-    checkSeq++
-    checkState = 'idle'
-    scheduleAutoCheck()
-    debouncedFetchSuggestions(targetTitle)
-  }
-
-  function onTitleKeydown(e: KeyboardEvent) {
-    if (e.isComposing) return
-
-    if (e.key === 'ArrowDown') {
-      if (showSuggestions && suggestions.length > 0) {
-        e.preventDefault()
-        activeSuggestionIndex = (activeSuggestionIndex + 1) % suggestions.length
-        return
-      }
-    } else if (e.key === 'ArrowUp') {
-      if (showSuggestions && suggestions.length > 0) {
-        e.preventDefault()
-        activeSuggestionIndex = (activeSuggestionIndex - 1 + suggestions.length) % suggestions.length
-        return
-      }
-    } else if (e.key === 'Escape') {
-      if (showSuggestions) {
-        e.preventDefault()
-        showSuggestions = false
-        activeSuggestionIndex = -1
-        return
-      }
-    } else if (e.key === 'Enter') {
-      e.preventDefault()
-
-      if (showSuggestions && activeSuggestionIndex >= 0 && activeSuggestionIndex < suggestions.length) {
-        selectSuggestion(suggestions[activeSuggestionIndex])
-        return
-      }
-
-      showSuggestions = false
-
-      if (checkState === 'exists' && !triggeringRun) {
-        void handleConfirmRun()
-        return
-      }
-
-      if (targetTitle.trim() && checkState !== 'checking') {
-        void checkDocumentExists(targetTitle.trim())
-      }
-    }
-  }
-
-  async function fetchAutoCandidate() {
-    clearAutoCheck()
-    if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
-    searchAborter?.abort()
-    showSuggestions = false
-    suggestions = []
-    activeSuggestionIndex = -1
-
-    fetchingCandidate = true
-    const [data, err] = await httpy.get<{ page_id: number; page_title: string }>(
-      `/api/evaluations/candidate?strategy=${encodeURIComponent(currentStrategy)}`,
-    )
-    fetchingCandidate = false
-
-    if (err || !data?.page_title) {
-      showToast('후보 문서를 가져오지 못했습니다.')
-      return
-    }
-
-    targetTitle = data.page_title
-    targetPageID = data.page_id
-    checkedTitle = data.page_title
-    checkSeq++
-    checkState = 'exists'
-    setTimeout(() => titleInputEl?.focus(), 50)
-  }
-
-  async function handleConfirmRun() {
-    const titleToRun = targetTitle.trim()
-    if (!titleToRun || checkState !== 'exists') return
-
-    showRunModal = false
+  async function runEvaluation(pageID: number, title: string) {
     triggeringRun = true
-    const body = { page_id: targetPageID, page_title: titleToRun }
-    const [, err] = await httpy.post<{ ok: boolean; task_id: string }>('/api/evaluations/run', body)
+    const [, err] = await httpy.post<{ ok: boolean; task_id: string }>('/api/evaluations/run', { page_id: pageID, page_title: title })
     triggeringRun = false
-
     if (err) {
       showToast(err.message || '평가 실행에 실패했습니다.')
       return
     }
-    showToast(`'${titleToRun}' 평가를 시작했습니다`)
-    resetRunModal()
+    showToast(`'${title}' 평가를 시작했습니다`)
     fetchSettings()
   }
-
-  onDestroy(() => {
-    clearAutoCheck()
-    if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
-    searchAborter?.abort()
-  })
 
   async function fetchEvaluations() {
     loading = true
@@ -686,53 +282,12 @@
     fetchEvaluations()
   }
 
-  function splitAtBytes(text: string, maxBytes: number): { evaluated: string; remaining: string } {
-    const encoder = new TextEncoder()
-    const bytes = encoder.encode(text)
-    if (bytes.length <= maxBytes) {
-      return { evaluated: text, remaining: '' }
-    }
-    const decoder = new TextDecoder('utf-8')
-    return {
-      evaluated: decoder.decode(bytes.slice(0, maxBytes)),
-      remaining: decoder.decode(bytes.slice(maxBytes)),
-    }
-  }
-
   async function fetchRevisionContent(revid: number) {
     if (!revid || revid <= 0) return
     if (revisionContents[revid]?.text || revisionContents[revid]?.loading) return
-
     revisionContents[revid] = { loading: true }
-    try {
-      const resp = await fetch(`/w/rest.php/v1/revision/${revid}`)
-      if (resp.ok) {
-        const data = await resp.json()
-        if (typeof data.source === 'string') {
-          revisionContents[revid] = { loading: false, text: data.source }
-          return
-        }
-      }
-
-      const queryResp = await fetch(`/w/api.php?action=query&prop=revisions&revids=${revid}&rvprop=content&rvslots=main&format=json`)
-      if (queryResp.ok) {
-        const queryData = await queryResp.json()
-        const pages = queryData.query?.pages
-        if (pages) {
-          const page = Object.values(pages)[0] as { revisions?: Array<{ slots?: { main?: { '*'?: string; content?: string } } }> }
-          const src = page?.revisions?.[0]?.slots?.main?.['*'] ?? page?.revisions?.[0]?.slots?.main?.content
-          if (typeof src === 'string') {
-            revisionContents[revid] = { loading: false, text: src }
-            return
-          }
-        }
-      }
-
-      revisionContents[revid] = { loading: false, error: '리비전 내용을 불러오지 못했습니다.' }
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : '네트워크 오류가 발생했습니다.'
-      revisionContents[revid] = { loading: false, error: msg }
-    }
+    const src = await fetchRevisionSource(revid)
+    revisionContents[revid] = typeof src === 'string' ? { loading: false, text: src } : { loading: false, error: src.message }
   }
 
   function toggleExpand(item: DocEvaluation) {
@@ -749,7 +304,7 @@
   onMount(() => {
     fetchSummary()
     fetchSettings()
-    fetchModelIds()
+    fetchModelIds().then((ids) => (modelIds = ids))
     fetchEvaluations()
     let tick = 0
     const timer = setInterval(() => {
@@ -764,250 +319,19 @@
 </script>
 
 <div class="container mx-auto p-4 md:p-6 max-w-6xl space-y-6">
-  <div class="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
-    <h1 class="text-2xl font-bold tracking-tight">문서 평가</h1>
-    <div class="flex flex-wrap items-center gap-2">
-      <select
-        class="h-8 max-w-64 rounded border bg-background px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-        value={currentModel}
-        disabled={savingSettings}
-        aria-label="모델"
-        title="모델"
-        onchange={(e) => handleSaveSettings({ model: e.currentTarget.value })}
-      >
-        {#each modelOptions as id (id)}
-          <option value={id}>{formatModelLabel(id)}</option>
-        {/each}
-      </select>
-      <select
-        class="h-8 w-24 rounded border bg-background px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-        value={currentInterval}
-        disabled={savingSettings}
-        aria-label="주기"
-        title="주기"
-        onchange={(e) => handleSaveSettings({ interval: e.currentTarget.value })}
-      >
-        {#each selectOptions as option (option.value)}
-          <option value={option.value}>{option.label}</option>
-        {/each}
-      </select>
-      <select
-        class="h-8 w-24 rounded border bg-background px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-        value={currentStrategy}
-        disabled={savingSettings}
-        aria-label="자동선정 방식"
-        title="자동선정 방식"
-        onchange={(e) => handleSaveSettings({ strategy: e.currentTarget.value })}
-      >
-        {#each strategyOptions as option (option.value)}
-          <option value={option.value}>{option.label}</option>
-        {/each}
-      </select>
-      <button
-        type="button"
-        class="h-8 rounded border bg-background px-3 text-xs font-medium text-foreground transition hover:bg-muted disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-        disabled={triggeringRun || runningTasks.length > 0}
-        title="평가 즉시 실행 대화상자 열기"
-        onclick={openRunModal}
-      >
-        Instant
-      </button>
-    </div>
-  </div>
-
-  <!-- 문서 정의: 평가는 지금 판의 정의가 있는 문서만 고른다 -->
-  <div class="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
-    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 min-w-0">
-      <span class="font-medium text-foreground">문서 정의</span>
-      <span>{definitionsCount.toLocaleString()}개</span>
-      <span class="truncate">
-        최근
-        {#if defineLastRun}
-          {getAge(defineLastRun.at, now)}
-          {#if defineLastRun.page_title}
-            <a
-              href={(defineLastRun.page_id ?? 0) > 0
-                ? `/w/index.php?curid=${defineLastRun.page_id}`
-                : getWikiViewHref(defineLastRun.page_title)}
-              target="_blank"
-              rel="noopener">{displayTitle(defineLastRun.page_title)}</a
-            >
-          {/if}
-          {#if defineLastRun.ok}
-            <span class="font-medium text-a-emerald-600" title="성공">✓</span>
-          {:else}
-            <span class="font-medium text-a-rose-600" title={defineLastRun.error ?? '실패'}>✗</span>
-          {/if}
-        {:else}
-          <span class="text-muted-foreground/60">-</span>
-        {/if}
-      </span>
-      <span>
-        다음
-        {#if defineWaiting.length > 0 && defineWaiting[0].next_process_at}
-          <span title={`${formatTime(defineWaiting[0].next_process_at)} 예정`}>{formatCountdown(defineWaiting[0].next_process_at)}</span>
-        {:else}
-          {currentDefineInterval === '0s' ? '꺼짐' : '없음'}
-        {/if}
-      </span>
-    </div>
-    <div class="flex flex-wrap items-center gap-2">
-      <select
-        class="h-8 max-w-64 rounded border bg-background px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-        value={currentDefineModel}
-        disabled={savingSettings}
-        aria-label="정의 모델"
-        title="정의 모델"
-        onchange={(e) => handleSaveSettings({ define_model: e.currentTarget.value })}
-      >
-        {#each defineModelOptions as id (id)}
-          <option value={id}>{formatModelLabel(id)}</option>
-        {/each}
-      </select>
-      <select
-        class="h-8 w-24 rounded border bg-background px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-        value={currentDefineInterval}
-        disabled={savingSettings}
-        aria-label="정의 주기"
-        title="정의 주기"
-        onchange={(e) => handleSaveSettings({ define_interval: e.currentTarget.value })}
-      >
-        {#each defineSelectOptions as option (option.value)}
-          <option value={option.value}>{option.label}</option>
-        {/each}
-      </select>
-      <select
-        class="h-8 w-24 rounded border bg-background px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-        value={currentDefineStrategy}
-        disabled={savingSettings}
-        aria-label="정의 자동선정 방식"
-        title="정의 자동선정 방식"
-        onchange={(e) => handleSaveSettings({ define_strategy: e.currentTarget.value })}
-      >
-        {#each strategyOptions as option (option.value)}
-          <option value={option.value}>{option.label}</option>
-        {/each}
-      </select>
-    </div>
-  </div>
-  {#if defineLastRun && !defineLastRun.ok && defineLastRun.error}
-    <div class="-mt-4 px-3 text-xs text-a-rose-500 break-words">{defineLastRun.error}</div>
-  {/if}
-
-  <!-- 실행 상태 요약 바 -->
-  <div class="flex flex-wrap items-start justify-between gap-4 rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
-    <!-- 최근 -->
-    <div class="space-y-0.5 min-w-0">
-      <div class="font-medium text-foreground">
-        최근 {#if lastRun}<span class="font-normal text-muted-foreground">{getAge(lastRun.at, now)}</span>{:else}<span
-            class="font-normal text-muted-foreground/60">-</span
-          >{/if}
-      </div>
-      <div class="truncate">
-        {#if lastRun?.page_title}
-          <a
-            href={(lastRun.page_id ?? 0) > 0 ? `/w/index.php?curid=${lastRun.page_id}` : getWikiViewHref(lastRun.page_title)}
-            target="_blank"
-            rel="noopener"
-          >
-            {displayTitle(lastRun.page_title)}
-          </a>
-        {:else}
-          <span class="text-muted-foreground/60">-</span>
-        {/if}
-      </div>
-      <div class="truncate">
-        {#if lastRun?.model}
-          <span>{formatModelLabel(lastRun.model)}</span>
-        {:else}
-          <span class="text-muted-foreground/60">-</span>
-        {/if}
-        {#if lastRun}
-          {#if lastRun.ok}
-            <span class="ml-1 font-medium text-a-emerald-600" title="성공">✓</span>
-          {:else}
-            <span class="ml-1 font-medium text-a-rose-600" title="실패">✗</span>
-          {/if}
-        {/if}
-      </div>
-      {#if lastRun && !lastRun.ok && lastRun.error}
-        <div class="text-a-rose-500 break-words">{lastRun.error}</div>
-      {/if}
-    </div>
-
-    <!-- 실행 중 (있을 때만 표시) -->
-    {#if runningTasks.length > 0}
-      <div class="space-y-0.5 min-w-0">
-        <div class="font-medium text-foreground flex items-center gap-1.5">
-          <span>실행 중</span>
-          <span class="h-2 w-2 rounded-full bg-a-blue-500 animate-pulse"></span>
-        </div>
-        <div class="truncate">
-          {#if runningTasks[0].page_title}
-            <a
-              href={runningTasks[0].page_id && runningTasks[0].page_id > 0
-                ? `/w/index.php?curid=${runningTasks[0].page_id}`
-                : getWikiViewHref(runningTasks[0].page_title)}
-              target="_blank"
-              rel="noopener"
-            >
-              {displayTitle(runningTasks[0].page_title)}
-            </a>
-          {:else}
-            <span class="text-muted-foreground">{strategyLabels[currentStrategy] ?? '랜덤'}</span>
-          {/if}
-        </div>
-        <div class="truncate">
-          <span>{formatModelLabel(currentModel)}</span>
-        </div>
-      </div>
-    {/if}
-
-    <!-- 다음 -->
-    <div class="space-y-0.5 min-w-0">
-      <div class="font-medium text-foreground">
-        다음
-        {#if waitingTasks.length === 0}
-          <span class="font-normal text-muted-foreground">{currentInterval === '0s' ? '꺼짐' : '없음'}</span>
-        {:else}
-          {@const task = waitingTasks[0]}
-          {#if task.next_process_at}
-            <span class="font-normal text-muted-foreground" title={`${formatTime(task.next_process_at)} 예정`}
-              >{formatCountdown(task.next_process_at)}</span
-            >
-          {:else}
-            <span class="font-normal text-muted-foreground">{queueStateLabels[task.state]}</span>
-          {/if}
-        {/if}
-      </div>
-      <div class="truncate">
-        {#if waitingTasks.length > 0}
-          {#if waitingTasks[0].page_title}
-            <a
-              href={waitingTasks[0].page_id && waitingTasks[0].page_id > 0
-                ? `/w/index.php?curid=${waitingTasks[0].page_id}`
-                : getWikiViewHref(waitingTasks[0].page_title)}
-              target="_blank"
-              rel="noopener"
-            >
-              {displayTitle(waitingTasks[0].page_title)}
-            </a>
-          {:else}
-            <span class="text-muted-foreground">{strategyLabels[currentStrategy] ?? '랜덤'}</span>
-          {/if}
-        {:else}
-          <span class="text-muted-foreground/60">-</span>
-        {/if}
-      </div>
-      <div class="truncate">
-        {#if waitingTasks.length > 0 && currentInterval !== '0s'}
-          <span>{formatModelLabel(currentModel)}</span>
-        {:else}
-          <span class="text-muted-foreground/60">-</span>
-        {/if}
-      </div>
-    </div>
-  </div>
+  <LoopPanel
+    heading="문서 평가"
+    instantTitle="평가 즉시 실행 대화상자 열기"
+    {settings}
+    {modelIds}
+    saving={savingSettings}
+    {lastRun}
+    tasks={queuedTasks}
+    {now}
+    instantDisabled={triggeringRun}
+    onchange={handleSaveSettings}
+    oninstant={() => (showRunModal = true)}
+  />
 
   {#if settingsError}
     <div class="text-xs font-medium text-a-rose-600">
@@ -1219,7 +543,7 @@
                             </div>
                           {:else if revContent?.text}
                             {@const split = splitAtBytes(revContent.text, 6000)}
-                            <span>{split.evaluated}</span>
+                            <span>{split.read}</span>
                             {#if split.remaining}
                               <div
                                 class="my-3 py-1.5 px-3 border-y border-dashed border-a-amber-300 bg-a-amber-100 text-[11px] text-a-amber-800 font-sans font-medium text-center"
@@ -1239,7 +563,14 @@
                         <!-- 대상 정의 -->
                         {#if item.definition}
                           <div class="space-y-1.5">
-                            <div class="px-2.5 py-1 rounded bg-muted/70 font-semibold text-foreground">대상 정의</div>
+                            <div class="px-2.5 py-1 rounded bg-muted/70 font-semibold text-foreground flex items-center justify-between">
+                              <span>대상 정의</span>
+                              <a
+                                href={`${resolve('/tool/ai/define')}?q=${encodeURIComponent(item.page_title)}`}
+                                class="font-normal text-muted-foreground hover:underline"
+                                onclick={(e) => e.stopPropagation()}>정의 목록</a
+                              >
+                            </div>
                             <div class="text-muted-foreground pt-0.5 leading-relaxed select-text break-words">{item.definition}</div>
                           </div>
                         {/if}
@@ -1397,105 +728,10 @@
   </div>
 </div>
 
-<ZModal
-  show={showRunModal}
-  title="문서 평가 즉시 실행"
-  okText="즉시 실행"
-  okVariant="default"
-  okDisabled={checkState !== 'exists' || triggeringRun || fetchingCandidate}
-  panelClass="max-w-md !overflow-visible"
-  sectionClass="p-5 !overflow-visible"
-  onOk={handleConfirmRun}
-  onCancel={() => {
-    showRunModal = false
-    resetRunModal()
-  }}
->
-  <div class="space-y-2 text-sm">
-    <div class="flex items-center gap-2">
-      <button
-        type="button"
-        class="shrink-0 h-9 rounded border bg-background px-3 text-xs font-medium text-foreground transition hover:bg-muted cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-        disabled={fetchingCandidate || triggeringRun}
-        onclick={fetchAutoCandidate}
-      >
-        {#if fetchingCandidate}
-          선정 중...
-        {:else}
-          자동선정
-        {/if}
-      </button>
-      <div class="relative min-w-0 flex-1">
-        <input
-          type="text"
-          bind:this={titleInputEl}
-          value={targetTitle}
-          class={`w-full rounded border bg-background p-2 pr-8 text-sm outline-none transition-colors ${
-            checkState === 'exists'
-              ? 'border-a-emerald-500 focus:border-a-emerald-600'
-              : checkState === 'missing'
-                ? 'border-a-rose-500 focus:border-a-rose-600'
-                : checkState === 'checking'
-                  ? 'border-a-blue-500 focus:border-a-blue-600'
-                  : 'border-input focus:border-primary'
-          }`}
-          placeholder="또는 직접 문서 제목 입력"
-          autocomplete="off"
-          oninput={onTitleInput}
-          onfocus={() => {
-            if (suggestions.length > 0) showSuggestions = true
-          }}
-          onblur={() => {
-            setTimeout(() => {
-              showSuggestions = false
-              activeSuggestionIndex = -1
-            }, 200)
-          }}
-          onkeydown={onTitleKeydown}
-        />
-        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5">
-          {#if checkState === 'checking'}
-            <span class="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-a-blue-500 border-t-transparent"></span>
-          {:else if checkState === 'exists'}
-            <span class="text-xs font-bold text-a-emerald-600" title="문서 확인됨">✓</span>
-          {:else if checkState === 'missing'}
-            <span class="text-xs font-bold text-a-rose-600" title="문서 없음">✗</span>
-          {/if}
-        </div>
-
-        {#if showSuggestions && suggestions.length > 0}
-          <div
-            class="absolute left-0 right-0 top-full z-50 mt-1 max-h-56 overflow-y-auto rounded-md border bg-background shadow-lg text-xs"
-          >
-            {#each suggestions as item, i (item.id)}
-              <button
-                type="button"
-                class={`flex w-full items-center justify-between px-3 py-2 text-left transition hover:bg-muted cursor-pointer ${
-                  i === activeSuggestionIndex ? 'bg-muted text-primary font-medium' : 'text-foreground'
-                }`}
-                onmousedown={(e) => {
-                  e.preventDefault()
-                  selectSuggestion(item)
-                }}
-              >
-                <div class="flex flex-col min-w-0">
-                  <span class="truncate font-medium">{item.title}</span>
-                  {#if item.matched_title}
-                    <span class="text-[11px] text-muted-foreground truncate">{item.matched_title}에서 넘어옴</span>
-                  {:else if item.description}
-                    <span class="text-[11px] text-muted-foreground truncate">{item.description}</span>
-                  {/if}
-                </div>
-              </button>
-            {/each}
-          </div>
-        {/if}
-      </div>
-    </div>
-    {#if checkState === 'missing'}
-      <p class="text-xs text-a-rose-500">
-        '{trimmedTitle}' 문서를 찾을 수 없습니다.
-      </p>
-    {/if}
-  </div>
-</ZModal>
+<RunModal
+  bind:show={showRunModal}
+  heading="문서 평가 즉시 실행"
+  candidateUrl={`/api/evaluations/candidate?strategy=${encodeURIComponent(settings.strategy)}`}
+  busy={triggeringRun}
+  onrun={runEvaluation}
+/>

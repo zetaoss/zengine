@@ -39,6 +39,9 @@ Two chains ([chain.md](chain.md)) run in `goapp/services/doceval`. `doc-define` 
 - `doc_evaluations` (`goapp/app/database/migrations/202610210001_doc_evaluations.up.sql`): grade, pass rates, safety, contradicted count, summary, the `definition` the rubrics were built from, `rubrics` and `raw_json` (judge output), `chain_version`, model, tokens, elapsed time.
 
 All routes are sysop-only:
+- `GET /api/definitions`: stored definitions, latest first; filters `q` (title), `stale=1` (not current), `limit` (25, max 100), `offset`. Items include `latest_revid`, `revisions_after` and `current`.
+- `GET /api/definitions/candidate`: the article `doc-define-loop` would define next, by `strategy` (default: the setting)
+- `POST /api/definitions/run`: enqueues one definition run immediately (forced even when the interval is off); a given `page_id` or `page_title` is redefined even when its definition is current
 - `GET /api/evaluations`: list; filters `page_id`, `grade`, `contradicted=1`, `min_quality`, `max_quality`, `limit` (25, max 100), `offset`. Items include `revid`, `latest_revid`, `is_latest`, and `revisions_after` (count of edits made after the evaluation).
 - `GET /api/evaluations/summary`: counts per grade, contradicted count, average pass rates
 - `GET /api/evaluations/candidate`: picks a candidate article title by `strategy` (default: the setting)
@@ -52,7 +55,7 @@ Both loops pick one article per run by their strategy (`random` by `page_random`
 - `doc-define-loop` defines an article without a current definition (none, or one of another revision, title or chain version).
 - `doc-eval-loop` evaluates an article with a current definition and no evaluation of its latest revision by the current chain version. An edit makes the article a candidate again once it is redefined. A run for a given title or page ID (`POST /api/evaluations/run`) writes the definition first when it is missing.
 
-Each run fetches the wikitext, runs its chain, saves the result and the run (`last_run`, `define_last_run`), and schedules the next one after its interval. Runs are never retried: a failed run is archived, recorded, and the loop goes on.
+Each run fetches the wikitext, runs its chain, saves the result and the run (`last_run`, `define_last_run`), and schedules the next one after its interval. The AI tool shows them in two tabs, `/tool/ai/define` (definitions, with the lead each one was written from) and `/tool/ai/eval`, which share the settings, status and Instant dialog (`svelte/src/routes/tool/ai/LoopPanel.svelte`, `RunModal.svelte`). Runs are never retried: a failed run is archived, recorded, and the loop goes on.
 
 The loops share their own `doc-eval` queue, and each keeps at most one waiting task. `goapp/app/loopq` makes every change to that task under a Redis lock shared by workers and servers:
 - A finished run schedules the next one unless a run is already waiting, so extra waiting runs collapse into one. A run canceled by worker shutdown is requeued by asynq and schedules nothing itself.

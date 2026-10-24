@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/zetaoss/zengine/goapp/app"
@@ -12,7 +13,7 @@ import (
 )
 
 // DefineLoopTask writes the definition of one article per run: one without a current definition, picked by
-// the define strategy. Evaluations pick only articles it has defined.
+// the define strategy, or one given in the payload. Evaluations pick only articles it has defined.
 type DefineLoopTask struct{}
 
 func NewDefineLoopTask() *DefineLoopTask {
@@ -29,7 +30,9 @@ func (t *DefineLoopTask) LoopInterval(ctx context.Context, tc taskctx.Context) (
 	return d, active, nil
 }
 
-func (t *DefineLoopTask) Execute(ctx context.Context, tc taskctx.Context, _ struct{}) (app.H, error) {
+// Execute defines a page given by p.PageID or p.PageTitle, always rewriting its definition, or else picks one
+// without a current definition. p.Force runs it even when the definition interval is off.
+func (t *DefineLoopTask) Execute(ctx context.Context, tc taskctx.Context, p LoopPayload) (app.H, error) {
 	db, err := tc.GetDB()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get DB: %w", err)
@@ -38,24 +41,35 @@ func (t *DefineLoopTask) Execute(ctx context.Context, tc taskctx.Context, _ stru
 	if err != nil {
 		return nil, fmt.Errorf("failed to load settings: %w", err)
 	}
-	if _, active := settings.DefineDuration(); !active {
+	if _, active := settings.DefineDuration(); !active && !p.Force {
 		return app.H{"skipped": true, "reason": "definition is off"}, nil
 	}
 
-	picked, err := docevalsvc.PickUndefined(ctx, db, settings.DefineStrategy)
-	if err != nil {
-		return nil, fmt.Errorf("failed to pick a page to define: %w", err)
-	}
-	if picked == nil {
-		return app.H{"skipped": true, "reason": "every article is defined"}, nil
-	}
-
-	run := docevalsvc.LastRun{At: time.Now(), PageID: picked.PageID, PageTitle: picked.PageTitle, Model: settings.DefineModel}
+	run := docevalsvc.LastRun{At: time.Now(), Model: settings.DefineModel}
 	fail := func(err error) (app.H, error) {
 		run.At, run.Error = time.Now(), err.Error()
 		saveLastRun(db, docevalsvc.SettingKeyDefineLastRun, run)
 		return nil, err
 	}
+
+	given := p.PageID > 0 || strings.TrimSpace(p.PageTitle) != ""
+	var picked candidatePage
+	if given {
+		if picked, err = resolvePage(ctx, db, p.PageID, p.PageTitle); err != nil {
+			return fail(err)
+		}
+	} else {
+		c, err := docevalsvc.PickUndefined(ctx, db, settings.DefineStrategy)
+		if err != nil {
+			return fail(fmt.Errorf("failed to pick a page to define: %w", err))
+		}
+		if c == nil {
+			return app.H{"skipped": true, "reason": "every article is defined"}, nil
+		}
+		picked = candidatePage(*c)
+	}
+	run.PageID, run.PageTitle = picked.PageID, picked.PageTitle
+
 	wikitext, revid, err := fetchWikiPageContent(ctx, tc.Config(), picked.PageID)
 	if err != nil {
 		return fail(fmt.Errorf("failed to fetch wiki page: %w", err))
@@ -64,7 +78,12 @@ func (t *DefineLoopTask) Execute(ctx context.Context, tc taskctx.Context, _ stru
 		revid = picked.PageLatest
 	}
 	page := docevalsvc.Page{ID: uint(picked.PageID), Title: picked.PageTitle, Revid: uint64(revid)}
-	def, err := docevalsvc.New(tc.Config(), db).EnsureDefinition(ctx, db, page, wikitext, settings.DefineModel)
+	evaluator := docevalsvc.New(tc.Config(), db)
+	define := evaluator.EnsureDefinition
+	if given {
+		define = evaluator.Define
+	}
+	def, err := define(ctx, db, page, wikitext, settings.DefineModel)
 	if err != nil {
 		return fail(fmt.Errorf("definition failed: %w", err))
 	}

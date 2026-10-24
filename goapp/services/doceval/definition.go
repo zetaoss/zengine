@@ -44,8 +44,8 @@ func definitionCurrent(d *models.DocDefinition, page Page) bool {
 	return d != nil && d.Revid == page.Revid && d.PageTitle == page.Title && d.ChainVersion == prompts.DocDefine.Metadata["version"]
 }
 
-// EnsureDefinition returns the page's definition, writing and storing a new one with model when there is none
-// or it is out of date (another revision, title, or chain version). It is the only writer of doc_definitions.
+// EnsureDefinition returns the page's definition, writing a new one with model (Define) when there is none or
+// it is out of date (another revision, title, or chain version).
 func (e *Evaluator) EnsureDefinition(ctx context.Context, db *gorm.DB, page Page, wikitext, model string) (*models.DocDefinition, error) {
 	d, err := GetDefinition(ctx, db, page.ID)
 	if err != nil {
@@ -54,7 +54,12 @@ func (e *Evaluator) EnsureDefinition(ctx context.Context, db *gorm.DB, page Page
 	if definitionCurrent(d, page) {
 		return d, nil
 	}
+	return e.Define(ctx, db, page, wikitext, model)
+}
 
+// Define writes the page's definition with model from its title and lead, and stores it in place of any
+// earlier one. With EnsureDefinition it is the only writer of doc_definitions.
+func (e *Evaluator) Define(ctx context.Context, db *gorm.DB, page Page, wikitext, model string) (*models.DocDefinition, error) {
 	lead := wikitext
 	if len(lead) > maxLeadLen {
 		lead = strings.ToValidUTF8(lead[:maxLeadLen], "")
@@ -74,7 +79,7 @@ func (e *Evaluator) EnsureDefinition(ctx context.Context, db *gorm.DB, page Page
 		return nil, fmt.Errorf("llm definition is empty")
 	}
 
-	d = &models.DocDefinition{
+	d := &models.DocDefinition{
 		PageID:       page.ID,
 		PageTitle:    page.Title,
 		Revid:        page.Revid,

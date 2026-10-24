@@ -6,7 +6,7 @@ import (
 )
 
 func TestRunNowTaskPayload(t *testing.T) {
-	task := runNowTask(42, "  Linux 명령어 ")
+	task := runNowTask(LoopTaskType, 42, "  Linux 명령어 ")
 	if task.Type() != LoopTaskType {
 		t.Fatalf("unexpected task type %q", task.Type())
 	}
@@ -19,7 +19,7 @@ func TestRunNowTaskPayload(t *testing.T) {
 	}
 
 	p = nil
-	if err := json.Unmarshal(runNowTask(0, " ").Payload(), &p); err != nil {
+	if err := json.Unmarshal(runNowTask(DefineLoopTaskType, 0, " ").Payload(), &p); err != nil {
 		t.Fatal(err)
 	}
 	if len(p) != 1 || p["force"] != true {

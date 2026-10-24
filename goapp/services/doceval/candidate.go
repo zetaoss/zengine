@@ -15,21 +15,26 @@ type CandidatePage struct {
 	PageLatest int    `gorm:"column:page_latest" json:"page_latest"`
 }
 
-// currentDefinition matches a definition written for the page's latest revision and title by the current
-// doc-define chain.
-const currentDefinition = `d.page_id = p.page_id AND d.revid = p.page_latest AND d.page_title = p.page_title AND d.chain_version = @defineVersion`
+// CurrentDefinitionSQL matches a definition d written for page p's latest revision and title by the current
+// doc-define chain, whose version is bound as @defineVersion (DefineVersionArg).
+const CurrentDefinitionSQL = `d.page_id = p.page_id AND d.revid = p.page_latest AND d.page_title = p.page_title AND d.chain_version = @defineVersion`
+
+// DefineVersionArg binds @defineVersion in CurrentDefinitionSQL.
+func DefineVersionArg() sql.NamedArg {
+	return DefineVersionArg()
+}
 
 // PickCandidate selects an article to evaluate by strategy: one with a current definition and no evaluation of
 // its latest revision by the current doc-eval chain. An edit or a new chain version makes a page a candidate
 // again. It returns nil when every article is evaluated.
 func PickCandidate(ctx context.Context, db *gorm.DB, strategy string) (*CandidatePage, error) {
 	return pickPage(ctx, db, strategy, `
-		EXISTS (SELECT 1 FROM doc_definitions d WHERE `+currentDefinition+`)
+		EXISTS (SELECT 1 FROM doc_definitions d WHERE `+CurrentDefinitionSQL+`)
 		AND NOT EXISTS (
 		  SELECT 1 FROM doc_evaluations e
 		  WHERE e.page_id = p.page_id AND e.revid = p.page_latest AND e.chain_version = @evalVersion
 		)`,
-		sql.Named("defineVersion", prompts.DocDefine.Metadata["version"]),
+		DefineVersionArg(),
 		sql.Named("evalVersion", prompts.DocEval.Metadata["version"]))
 }
 
@@ -37,8 +42,8 @@ func PickCandidate(ctx context.Context, db *gorm.DB, strategy string) (*Candidat
 // another revision, title or chain version). It returns nil when every article is defined.
 func PickUndefined(ctx context.Context, db *gorm.DB, strategy string) (*CandidatePage, error) {
 	return pickPage(ctx, db, strategy, `
-		NOT EXISTS (SELECT 1 FROM doc_definitions d WHERE `+currentDefinition+`)`,
-		sql.Named("defineVersion", prompts.DocDefine.Metadata["version"]))
+		NOT EXISTS (SELECT 1 FROM doc_definitions d WHERE `+CurrentDefinitionSQL+`)`,
+		DefineVersionArg())
 }
 
 // pickPage returns one non-redirect article matching cond, ordered by strategy: random (page_random from a
