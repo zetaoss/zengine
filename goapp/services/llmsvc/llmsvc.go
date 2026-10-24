@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/zetaoss/zengine/goapp/app/config"
@@ -14,16 +13,6 @@ import (
 	"github.com/zetaoss/zengine/goapp/services/llmsvc/client"
 	"gorm.io/gorm"
 )
-
-type Input struct {
-	Prompt string
-	Model  string
-}
-
-type Output struct {
-	Content string
-	Model   string
-}
 
 type LLMService struct {
 	client *client.LLMClient
@@ -155,12 +144,4 @@ func truncateRunes(s string, n int) string {
 		return s
 	}
 	return string(r[:n]) + "…"
-}
-
-func (s *LLMService) Generate(ctx context.Context, in Input) (Output, error) {
-	content, model, err := s.client.ChatCompletion(ctx, in.Model, []client.Message{{Role: "user", Content: strings.TrimSpace(in.Prompt)}})
-	if err != nil {
-		return Output{}, err
-	}
-	return Output{Content: content, Model: model}, nil
 }

@@ -65,38 +65,6 @@ type APIConfig struct {
 	BobEndpoint string
 }
 
-// ChainsConfig is the chains section of the GOAPP_CONFIG file: run settings of the chain loops (docDefine,
-// docEval), whose model and strategy fall back to common when unset. Settings a sysop saves in the evaluation
-// tab override them; services/doceval validates the values and falls back to its own defaults.
-type ChainsConfig struct {
-	Common    CommonChainConfig `yaml:"common"`
-	DocDefine ChainConfig       `yaml:"docDefine"`
-	DocEval   ChainConfig       `yaml:"docEval"`
-}
-
-// CommonChainConfig holds what the chains share. It has no interval: each loop runs at its own pace.
-type CommonChainConfig struct {
-	Model    string `yaml:"model"`
-	Strategy string `yaml:"strategy"`
-}
-
-type ChainConfig struct {
-	Interval string `yaml:"interval"`
-	Model    string `yaml:"model"`
-	Strategy string `yaml:"strategy"`
-}
-
-// Resolve returns c with its unset model and strategy taken from common.
-func (c ChainConfig) Resolve(common CommonChainConfig) ChainConfig {
-	if c.Model == "" {
-		c.Model = common.Model
-	}
-	if c.Strategy == "" {
-		c.Strategy = common.Strategy
-	}
-	return c
-}
-
 // fileConfig is the GOAPP_CONFIG file: settings that are not secrets or per-environment endpoints.
 type fileConfig struct {
 	Chains ChainsConfig `yaml:"chains"`
@@ -160,6 +128,9 @@ func Load() (*Config, error) {
 		file, err := loadFile(path)
 		if err != nil {
 			return nil, err
+		}
+		if err := file.Chains.validate(); err != nil {
+			return nil, fmt.Errorf("GOAPP_CONFIG %s: %w", path, err)
 		}
 		cfg.Chains = file.Chains
 	}
