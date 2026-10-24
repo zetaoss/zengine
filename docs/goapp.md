@@ -121,6 +121,7 @@ AIEdit prompts (`/api/ai-prompts*`) are sysop-only (`r.Sysop()`). The Activity t
 - Service: `goapp/services/llmsvc/llmsvc.go`
 - Client: `goapp/services/llmsvc/client/client.go`
 - Configuration: `API.BobEndpoint` in `goapp/app/config/config.go`; the client calls `BOB_ENDPOINT/aigate/v1/chat/completions`
+- Rate limits: a `429` from aigate is retried once after its `Retry-After` (5 seconds when absent); a delay over 30 seconds, such as a daily quota, fails at once. Errors carry aigate's `error` text.
 - Models: `GET /api/ai/models` (`r.Sysop()`, `goapp/server/handlers/api/aimodels/aimodels.go`) returns bob's `/aigate/v1/models?all` and `/aigate/v1/usage` (null when bob lacks it); the AI tool menu's model tab (`svelte/src/routes/tool/ai/models/**`) shows them per provider
 
 ### Chains

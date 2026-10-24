@@ -2,9 +2,12 @@ package client
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 )
 
 func TestChatCompletionSuccess(t *testing.T) {
@@ -68,5 +71,75 @@ func TestGetJSON(t *testing.T) {
 	}
 	if _, status, err := svc.GetJSON(context.Background(), "/v1/usage"); err != nil || status != http.StatusNotFound {
 		t.Fatalf("expected 404, got %d %v", status, err)
+	}
+}
+
+func rateLimitedServer(t *testing.T, retryAfter string, failures int) (*httptest.Server, *int) {
+	t.Helper()
+	calls := 0
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		if calls <= failures {
+			if retryAfter != "" {
+				w.Header().Set("Retry-After", retryAfter)
+			}
+			w.WriteHeader(http.StatusTooManyRequests)
+			_, _ = w.Write([]byte(`{"error":"provider groq returned status 429: tokens per minute"}`))
+			return
+		}
+		_, _ = w.Write([]byte(`{"model":"m","choices":[{"message":{"content":"ok"}}]}`))
+	}))
+	t.Cleanup(ts.Close)
+	return ts, &calls
+}
+
+func TestChatCompletionRetriesRateLimitOnce(t *testing.T) {
+	ts, calls := rateLimitedServer(t, "5", 1)
+	svc := NewClientWithEndpoint(ts.URL)
+	var waited time.Duration
+	svc.wait = func(_ context.Context, d time.Duration) error { waited = d; return nil }
+
+	resp, err := svc.ChatCompletionFull(context.Background(), "m", nil)
+	if err != nil || resp.Content != "ok" || *calls != 2 || waited != 5*time.Second {
+		t.Fatalf("expected one retry after Retry-After, got %v %+v calls=%d waited=%v", err, resp, *calls, waited)
+	}
+}
+
+func TestChatCompletionRateLimitGivesUp(t *testing.T) {
+	cases := []struct {
+		name       string
+		retryAfter string
+		failures   int
+		wantCalls  int
+		wantWait   time.Duration
+	}{
+		{"still limited after the retry", "", 2, 2, defaultRateLimitWait},
+		{"delay longer than the cap", "3600", 1, 1, 0},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			ts, calls := rateLimitedServer(t, c.retryAfter, c.failures)
+			svc := NewClientWithEndpoint(ts.URL)
+			var waited time.Duration
+			svc.wait = func(_ context.Context, d time.Duration) error { waited = d; return nil }
+
+			_, err := svc.ChatCompletionFull(context.Background(), "m", nil)
+			var statusErr *StatusError
+			if !errors.As(err, &statusErr) || statusErr.StatusCode != http.StatusTooManyRequests || *calls != c.wantCalls || waited != c.wantWait {
+				t.Fatalf("got %v calls=%d waited=%v", err, *calls, waited)
+			}
+			if !strings.Contains(err.Error(), "status=429: provider groq returned status 429: tokens per minute") {
+				t.Fatalf("expected aigate's error in the message, got %q", err)
+			}
+		})
+	}
+}
+
+func TestChatCompletionRateLimitWaitCanceled(t *testing.T) {
+	ts, calls := rateLimitedServer(t, "1", 1)
+	svc := NewClientWithEndpoint(ts.URL)
+	svc.wait = func(context.Context, time.Duration) error { return context.Canceled }
+	if _, err := svc.ChatCompletionFull(context.Background(), "m", nil); err == nil || *calls != 1 {
+		t.Fatalf("expected a canceled wait to fail without retrying, got %v calls=%d", err, *calls)
 	}
 }

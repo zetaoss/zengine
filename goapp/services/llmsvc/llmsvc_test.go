@@ -81,3 +81,23 @@ func TestRunStepRejectsNonPointer(t *testing.T) {
 		t.Fatal("non-pointer out accepted")
 	}
 }
+
+func TestRunStepKeepsParseErrorWhenRetryFails(t *testing.T) {
+	var calls atomic.Int32
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if calls.Add(1) == 1 {
+			_ = json.NewEncoder(w).Encode(map[string]any{"choices": []map[string]any{{"message": map[string]any{"content": "not json"}}}})
+			return
+		}
+		w.Header().Set("Retry-After", "3600")
+		w.WriteHeader(http.StatusTooManyRequests)
+		_, _ = w.Write([]byte(`{"error":"rate limited"}`))
+	}))
+	t.Cleanup(ts.Close)
+
+	var out testOutput
+	_, err := NewWithEndpoint(ts.URL).RunStep(context.Background(), "", testStep, map[string]string{"title": "x"}, &out)
+	if err == nil || !strings.Contains(err.Error(), "status=429") || !strings.Contains(err.Error(), "previous attempt: invalid") || !strings.Contains(err.Error(), "not json") {
+		t.Fatalf("expected the 429 with the earlier parse error, got %v", err)
+	}
+}
