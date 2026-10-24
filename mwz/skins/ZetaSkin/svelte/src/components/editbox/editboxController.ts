@@ -232,7 +232,7 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
         target: aiEditPanelMountElement,
         props: {
           pageId: wgArticleId || undefined,
-          requestType: isCreateAction() ? 'create' : 'edit',
+          requestType: isCreateAction() ? 'create' : 'update',
           title: getCurrentTitle(),
         },
       })

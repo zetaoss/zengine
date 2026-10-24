@@ -115,10 +115,12 @@ func Store(c *serverctx.Context) {
 	if !c.Decode(&body) {
 		return
 	}
-	if body.RequestType != "create" && body.RequestType != "edit" {
+	requestType, ok := models.NormalizeAIEditRequestType(body.RequestType)
+	if !ok {
 		c.JSONError(http.StatusUnprocessableEntity, "Invalid payload")
 		return
 	}
+	body.RequestType = requestType
 	title := strings.TrimSpace(body.Title)
 	if title == "" && body.PageID > 0 {
 		title = resolvePageTitle(c.DB, c.Cfg, body.PageID)
@@ -136,7 +138,7 @@ func Store(c *serverctx.Context) {
 			return
 		}
 		existing := ""
-		if body.RequestType == "edit" {
+		if body.RequestType == models.AIEditRequestUpdate {
 			txt, _ := fetchWikiPageText(c.R.Context(), c.Cfg, title)
 			existing = txt
 		}
@@ -191,7 +193,7 @@ func Store(c *serverctx.Context) {
 func normalizePromptTitle(title string, requestType string) string {
 	title = strings.TrimSpace(title)
 	if title == "" {
-		if strings.TrimSpace(requestType) == "edit" {
+		if strings.TrimSpace(requestType) == models.AIEditRequestUpdate {
 			return "틀:프롬프트 편집"
 		}
 		return "틀:프롬프트 생성"

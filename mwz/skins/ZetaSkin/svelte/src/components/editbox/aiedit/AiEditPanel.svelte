@@ -59,12 +59,12 @@
 
   let sortedPromptItems = $derived.by(() => {
     const createPrompts = promptItems.filter((p) => p.request_type === 'create').sort((a, b) => b.use_count - a.use_count)
-    const editPrompts = promptItems.filter((p) => p.request_type === 'edit').sort((a, b) => b.use_count - a.use_count)
+    const updatePrompts = promptItems.filter((p) => p.request_type === 'update').sort((a, b) => b.use_count - a.use_count)
 
     if (currentRequestType === 'create') {
-      return [...createPrompts, ...editPrompts]
+      return [...createPrompts, ...updatePrompts]
     } else {
-      return [...editPrompts, ...createPrompts]
+      return [...updatePrompts, ...createPrompts]
     }
   })
   let currentPromptItem = $derived(promptItems.find((p) => p.title === promptTitle))
@@ -105,7 +105,7 @@
   })
 
   function isAIEditRequestType(value: string): value is AIEditRequestType {
-    return value === 'create' || value === 'edit'
+    return value === 'create' || value === 'update'
   }
 
   function getStoredPromptTitle(type: AIEditRequestType) {

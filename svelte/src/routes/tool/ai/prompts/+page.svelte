@@ -81,13 +81,13 @@
 
   function getRequestTypeLabel(requestType: string) {
     if (requestType === 'create') return '생성'
-    if (requestType === 'edit') return '편집'
+    if (requestType === 'update') return '편집'
     return requestType || '-'
   }
 
   function getRequestTypeClass(requestType: string) {
     if (requestType === 'create') return 'text-a-emerald-600'
-    if (requestType === 'edit') return 'text-a-amber-600'
+    if (requestType === 'update') return 'text-a-amber-600'
     return ''
   }
 
