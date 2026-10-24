@@ -76,6 +76,9 @@ func RegisterRoutes(mux *http.ServeMux, serverCtx *serverctx.Context, components
 	r.GET("/api/ai/models", aimodels.Index, r.Sysop())
 	r.GET("/api/ai/builtin-chains", aimodels.BuiltinChains, r.Sysop())
 
+	r.GET("/api/definitions", doceval.Definitions, r.Sysop())
+	r.GET("/api/definitions/candidate", doceval.DefinitionCandidate, r.Sysop())
+	r.POST("/api/definitions/run", doceval.RunDefinition, r.Sysop())
 	r.GET("/api/evaluations", doceval.Index, r.Sysop())
 	r.GET("/api/evaluations/summary", doceval.Summary, r.Sysop())
 	r.GET("/api/evaluations/candidate", doceval.Candidate, r.Sysop())

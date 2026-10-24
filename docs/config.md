@@ -1,9 +1,10 @@
 # Configuration
 
-The zengine image receives configuration in two forms:
+The zengine image receives configuration in three forms:
 
 1. **Environment variables**: goapp and MediaWiki (PHP) read values from the process environment. They do not read an env file directly; the deployment environment provides container variables. See `config.env.example` in the repository root.
-2. **Externally mounted files**: Files that are not stored in this repository and are provided by the deployment environment. Each deployment decides how to provide them.
+2. **goapp config file**: an optional YAML file named by `GOAPP_CONFIG` for goapp settings that are neither secrets nor endpoints (see [goapp config file](#goapp-config-file)).
+3. **Externally mounted files**: Files that are not stored in this repository and are provided by the deployment environment. Each deployment decides how to provide them.
 
 ## Principles
 
@@ -31,8 +32,26 @@ The zengine image receives configuration in two forms:
 | `GA_MEASUREMENT_ID` | | Google Analytics measurement ID for the frontend tag. |
 | `BOB_ENDPOINT` | | Base URL of [bob](https://github.com/zetaoss/bob), the in-cluster app server, without a trailing `/`. goapp appends the feature path: `/aigate` (LLM), `/cloudflare/analytics` (`stat-cf-*`), `/ga/report` (`stat-ga-*`), `/gsc/query` (`stat-gsc-*`), `/metrics/` (k8s stats for `stat-k8s-hourly` and `ctl metrics`), `/runbox`, `/search`. |
 | `FACEBOOK_CLIENT_ID/SECRET`, `GITHUB_CLIENT_ID/SECRET`, `GOOGLE_CLIENT_ID/SECRET` | | Social login. |
+| `GOAPP_CONFIG` | | Path of the [goapp config file](#goapp-config-file). Unset means no file; a set path that cannot be read or parsed stops goapp at startup. |
 
 At startup, goapp reads these values and injects `window.ZCONF` (`avatarBaseUrl`, `gaMeasurementId`, `adClient`, `adSlots`) into the frontend (`goapp/server/runtime/common/injector.go`).
+
+### goapp config file
+
+A YAML file (`goapp/app/config/config.go`, `GOAPP_CONFIG`) for goapp settings that are neither secrets nor endpoints, so they do not each need an environment variable. Unknown keys are errors, so a typo does not silently keep a default. Sections:
+
+- `chains`: run settings of the chain loops. `docDefine` and `docEval` each set `interval`, `model` and `strategy`; `common` holds the `model` and `strategy` they share when unset (no `interval`: each loop runs at its own pace). See [doc-eval.md](doc-eval.md#settings).
+
+```yaml
+chains:
+  common:
+    model: groq/openai/gpt-oss-120b
+    strategy: random
+  docDefine:
+    interval: 30m
+  docEval:
+    interval: 1h
+```
 
 ### MediaWiki (PHP)
 

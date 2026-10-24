@@ -73,6 +73,7 @@ func New() *Registry {
 	register(r, "request-pruner", 5*time.Minute, writerequest.NewPrunerTask(), cron("0 0 * * *"))
 	register(r, "request-matcher", 5*time.Minute, writerequest.NewMatcherTask(), cron("15 * * * *"))
 	register(r, docevalsvc.LoopTaskType, docevalsvc.LoopTimeout, docevaltask.NewLoopTask(), queue(docevalsvc.LoopQueue), loop())
+	register(r, docevalsvc.DefineLoopTaskType, docevalsvc.DefineLoopTimeout, docevaltask.NewDefineLoopTask(), queue(docevalsvc.LoopQueue), loop())
 	register(r, "system-loop-nanny", time.Minute, NewLoopNannyTask(r), cron("0 * * * *"))
 	return r
 }

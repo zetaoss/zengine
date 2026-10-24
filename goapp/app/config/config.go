@@ -1,8 +1,14 @@
 package config
 
 import (
+	"bytes"
+	"errors"
+	"fmt"
+	"io"
 	"os"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
@@ -13,6 +19,7 @@ type Config struct {
 	Analytics AnalyticsConfig
 	API       APIConfig
 	OAuth     OAuthConfig
+	Chains    ChainsConfig
 }
 
 type AppConfig struct {
@@ -56,6 +63,43 @@ type APIConfig struct {
 	// BobEndpoint is the base URL of bob, the in-cluster app server. Callers append the
 	// feature path: /aigate (LLM), /cloudflare, /ga, /gsc (analytics), /metrics (k8s stats), /runbox, /search.
 	BobEndpoint string
+}
+
+// ChainsConfig is the chains section of the GOAPP_CONFIG file: run settings of the chain loops (docDefine,
+// docEval), whose model and strategy fall back to common when unset. Settings a sysop saves in the evaluation
+// tab override them; services/doceval validates the values and falls back to its own defaults.
+type ChainsConfig struct {
+	Common    CommonChainConfig `yaml:"common"`
+	DocDefine ChainConfig       `yaml:"docDefine"`
+	DocEval   ChainConfig       `yaml:"docEval"`
+}
+
+// CommonChainConfig holds what the chains share. It has no interval: each loop runs at its own pace.
+type CommonChainConfig struct {
+	Model    string `yaml:"model"`
+	Strategy string `yaml:"strategy"`
+}
+
+type ChainConfig struct {
+	Interval string `yaml:"interval"`
+	Model    string `yaml:"model"`
+	Strategy string `yaml:"strategy"`
+}
+
+// Resolve returns c with its unset model and strategy taken from common.
+func (c ChainConfig) Resolve(common CommonChainConfig) ChainConfig {
+	if c.Model == "" {
+		c.Model = common.Model
+	}
+	if c.Strategy == "" {
+		c.Strategy = common.Strategy
+	}
+	return c
+}
+
+// fileConfig is the GOAPP_CONFIG file: settings that are not secrets or per-environment endpoints.
+type fileConfig struct {
+	Chains ChainsConfig `yaml:"chains"`
 }
 
 type OAuthConfig struct {
@@ -112,7 +156,30 @@ func Load() (*Config, error) {
 	cfg.OAuth.GoogleClientID = lookup("GOOGLE_CLIENT_ID")
 	cfg.OAuth.GoogleClientSecret = lookup("GOOGLE_CLIENT_SECRET")
 
+	if path := lookup("GOAPP_CONFIG"); path != "" {
+		file, err := loadFile(path)
+		if err != nil {
+			return nil, err
+		}
+		cfg.Chains = file.Chains
+	}
+
 	return cfg, nil
+}
+
+// loadFile reads the GOAPP_CONFIG file. Unknown keys are errors, so a typo does not silently keep a default.
+func loadFile(path string) (fileConfig, error) {
+	var file fileConfig
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return file, fmt.Errorf("read GOAPP_CONFIG %s: %w", path, err)
+	}
+	dec := yaml.NewDecoder(bytes.NewReader(raw))
+	dec.KnownFields(true)
+	if err := dec.Decode(&file); err != nil && !errors.Is(err, io.EOF) {
+		return file, fmt.Errorf("parse GOAPP_CONFIG %s: %w", path, err)
+	}
+	return file, nil
 }
 
 func lookup(key string) string {

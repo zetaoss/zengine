@@ -1,6 +1,7 @@
 package config
 
 import (
+	"os"
 	"testing"
 )
 
@@ -85,5 +86,58 @@ func TestLoadRedisRoles(t *testing.T) {
 				t.Fatalf("Redis.Volatile = %+v, want %+v", cfg.Redis.Volatile, tt.wantVolatile)
 			}
 		})
+	}
+}
+
+func TestLoadChainsFromFile(t *testing.T) {
+	path := t.TempDir() + "/goapp.yaml"
+	if err := os.WriteFile(path, []byte(`chains:
+  common:
+    model: groq/openai/gpt-oss-120b
+    strategy: random
+  docDefine:
+    interval: 30m
+  docEval:
+    interval: 1h
+`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("GOAPP_CONFIG", path)
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load error: %v", err)
+	}
+	def := cfg.Chains.DocDefine.Resolve(cfg.Chains.Common)
+	eval := cfg.Chains.DocEval.Resolve(cfg.Chains.Common)
+	if def != (ChainConfig{Interval: "30m", Model: "groq/openai/gpt-oss-120b", Strategy: "random"}) {
+		t.Fatalf("docDefine = %+v", def)
+	}
+	if eval != (ChainConfig{Interval: "1h", Model: "groq/openai/gpt-oss-120b", Strategy: "random"}) {
+		t.Fatalf("docEval = %+v", eval)
+	}
+}
+
+func TestLoadFileErrors(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(dir+"/typo.yaml", []byte("chains:\n  docEvel:\n    interval: 1h\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(dir+"/common-interval.yaml", []byte("chains:\n  common:\n    interval: 1h\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for name, path := range map[string]string{"missing file": dir + "/none.yaml", "unknown key": dir + "/typo.yaml", "interval in common": dir + "/common-interval.yaml"} {
+		t.Setenv("GOAPP_CONFIG", path)
+		if _, err := Load(); err == nil {
+			t.Errorf("%s: expected an error", name)
+		}
+	}
+
+	if err := os.WriteFile(dir+"/empty.yaml", nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("GOAPP_CONFIG", dir+"/empty.yaml")
+	if _, err := Load(); err != nil {
+		t.Errorf("an empty file must load: %v", err)
 	}
 }

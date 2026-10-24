@@ -3,6 +3,8 @@ package doceval
 import (
 	"testing"
 	"time"
+
+	"github.com/zetaoss/zengine/goapp/app/config"
 )
 
 func TestParseInterval(t *testing.T) {
@@ -49,22 +51,45 @@ func TestParseInterval(t *testing.T) {
 	}
 }
 
-func TestDefaultSettingsInterval(t *testing.T) {
-	if d, active := DefaultSettings().Duration(); !active || d != 1*time.Hour {
-		t.Fatalf("default settings must be 1h active, got %v active=%v", d, active)
+func TestDefaultSettingsBuiltin(t *testing.T) {
+	s := DefaultSettings(nil)
+	if d, active := s.Duration(); !active || d != 1*time.Hour {
+		t.Fatalf("default evaluation interval must be 1h active, got %v active=%v", d, active)
+	}
+	if d, active := s.DefineDuration(); !active || d != 30*time.Minute {
+		t.Fatalf("default definition interval must be 30m active, got %v active=%v", d, active)
+	}
+	if s.Model != "groq/openai/gpt-oss-120b" || s.DefineModel != s.Model || s.Strategy != StrategyRandom {
+		t.Fatalf("unexpected defaults %+v", s)
 	}
 }
 
-func TestDefaultSettingsModel(t *testing.T) {
-	if got := DefaultSettings().Model; got != "groq/openai/gpt-oss-120b" {
-		t.Fatalf("unexpected default model %q", got)
+func TestDefaultSettingsFromConfig(t *testing.T) {
+	cfg := &config.Config{Chains: config.ChainsConfig{
+		Common:    config.CommonChainConfig{Model: "gemini/gemini-3.8-flash", Strategy: "Newest"},
+		DocDefine: config.ChainConfig{Interval: "10m", Model: "not-a-model"},
+		DocEval:   config.ChainConfig{Interval: "0s"},
+	}}
+	s := DefaultSettings(cfg)
+	if s.Interval != "0s" || s.Model != "gemini/gemini-3.8-flash" || s.Strategy != StrategyNewest {
+		t.Fatalf("expected docEval over common, got %+v", s)
+	}
+	if s.DefineInterval != "10m" || s.DefineStrategy != StrategyNewest {
+		t.Fatalf("expected docDefine over common, got %+v", s)
+	}
+	if s.DefineModel != DefaultModel {
+		t.Fatalf("expected an invalid configured model to fall back, got %q", s.DefineModel)
+	}
+	bad := &config.Config{Chains: config.ChainsConfig{DocEval: config.ChainConfig{Interval: "500ms"}}}
+	if got := DefaultSettings(bad).Interval; got != "1h" {
+		t.Fatalf("expected an invalid configured interval to fall back, got %q", got)
 	}
 }
 
 func TestSaveSettingsRejectsInvalidModel(t *testing.T) {
 	// Validation runs before the database is touched, so a nil DB is enough.
 	for _, model := range []string{"", "gemini", "/x", "gemini/"} {
-		if err := SaveSettings(nil, Settings{Interval: "0s", Model: model}); err == nil {
+		if err := SaveSettings(nil, Settings{Interval: "0s", Model: model, DefineModel: DefaultModel}); err == nil {
 			t.Errorf("expected an error for model %q", model)
 		}
 	}
