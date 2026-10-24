@@ -145,7 +145,7 @@
     row = data
     isEditing = false
     showToast('저장 완료')
-    await goto(resolve('/tool/ai-prompts'))
+    await goto(resolve('/tool/ai/prompts'))
   }
 
   async function delPrompt() {
@@ -162,7 +162,7 @@
     }
     row = null
     showToast('삭제 완료')
-    await goto(resolve('/tool/ai-prompts'))
+    await goto(resolve('/tool/ai/prompts'))
   }
 
   async function checkTitleExists() {
@@ -188,7 +188,7 @@
 
 <div class="p-5">
   <div class="mb-4">
-    <RouteLinkButton to="/tool/ai-prompts" variant="ghost" size="small">
+    <RouteLinkButton to="/tool/ai/prompts" variant="ghost" size="small">
       <ZIcon path={mdiArrowLeft} />
       프롬프트 목록
     </RouteLinkButton>
@@ -219,7 +219,9 @@
                 <input
                   type="text"
                   bind:value={currentRow.title}
-                  class="border-border rounded p-1 bg-background text-lg font-semibold {hasError ? 'border-a-red-500! focus:ring-a-red-500/20!' : ''}"
+                  class="border-border rounded p-1 bg-background text-lg font-semibold {hasError
+                    ? 'border-a-red-500! focus:ring-a-red-500/20!'
+                    : ''}"
                   placeholder="프롬프트 제목"
                 />
               {/snippet}
@@ -241,7 +243,7 @@
               variant="ghost"
               size="small"
               disabled={isSaving}
-              onclick={() => (id === 0 ? void goto(resolve('/tool/ai-prompts')) : void fetchPrompt())}
+              onclick={() => (id === 0 ? void goto(resolve('/tool/ai/prompts')) : void fetchPrompt())}
             >
               취소
             </CButton>

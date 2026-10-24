@@ -179,7 +179,7 @@
 
 {#snippet promptHeader()}
   <div class="flex items-center gap-2">
-    <a href="/tool/ai-prompts" target="_blank" rel="noopener noreferrer" class="external text-xs" title="프롬프트 관리 새 창에서 열기">
+    <a href="/tool/ai/prompts" target="_blank" rel="noopener noreferrer" class="external text-xs" title="프롬프트 관리 새 창에서 열기">
       프롬프트
     </a>
     {#if promptListLoading}

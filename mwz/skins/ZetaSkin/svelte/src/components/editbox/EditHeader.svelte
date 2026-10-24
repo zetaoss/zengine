@@ -7,7 +7,7 @@
   import CButton from '$shared/ui/CButton.svelte'
   import ZNativeSelect from '$lib/ui/ZNativeSelect.svelte'
   import ZToggle from '$shared/ui/ZToggle.svelte'
-  import { getAge } from '$lib/utils/time'
+  import { getAge } from '$shared/utils/time'
 
   import { getWikiEditorContent, replaceWikiEditorContent } from './wikiEditor'
 

@@ -5,7 +5,7 @@
 
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZSpinner from '$shared/ui/ZSpinner.svelte'
-  import { formatDateTime } from '$lib/utils/time'
+  import { formatDateTime } from '$shared/utils/time'
 
   import NBOutput from './notebook/NBOutput.svelte'
   import type { Job } from './types'

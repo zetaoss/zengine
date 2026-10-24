@@ -12,8 +12,10 @@ import (
 	"github.com/zetaoss/zengine/goapp/app"
 	"github.com/zetaoss/zengine/goapp/app/appctx"
 	"github.com/zetaoss/zengine/goapp/app/taskctx"
+	docevalsvc "github.com/zetaoss/zengine/goapp/services/doceval"
 	"github.com/zetaoss/zengine/goapp/tasks/aiedit"
 	"github.com/zetaoss/zengine/goapp/tasks/commonreport"
+	docevaltask "github.com/zetaoss/zengine/goapp/tasks/doceval"
 	"github.com/zetaoss/zengine/goapp/tasks/inspire"
 	"github.com/zetaoss/zengine/goapp/tasks/pingdb"
 	"github.com/zetaoss/zengine/goapp/tasks/pingredis"
@@ -37,6 +39,7 @@ type Spec struct {
 	MaxRetries int
 	Timeout    time.Duration
 	Input      any
+	Loop       *LoopConfig
 	process    processor
 }
 
@@ -69,6 +72,8 @@ func New() *Registry {
 	register(r, "runbox", 2*time.Minute, runbox.NewRunboxTask(), queue("runbox"), maxRetry(0))
 	register(r, "request-pruner", 5*time.Minute, writerequest.NewPrunerTask(), cron("0 0 * * *"))
 	register(r, "request-matcher", 5*time.Minute, writerequest.NewMatcherTask(), cron("15 * * * *"))
+	register(r, docevalsvc.LoopTaskType, docevalsvc.LoopTimeout, docevaltask.NewLoopTask(), queue(docevalsvc.LoopQueue), loop())
+	register(r, "system-loop-nanny", time.Minute, NewLoopNannyTask(r), cron("0 * * * *"))
 	return r
 }
 
@@ -82,6 +87,11 @@ func register[I any](r *Registry, taskType string, timeout time.Duration, task e
 	spec := Spec{Type: taskType, Timeout: timeout, MaxRetries: 3}
 	for _, opt := range opts {
 		opt(&spec)
+	}
+	if spec.Loop != nil && spec.Loop.Interval == nil {
+		if looper, ok := any(task).(Looper); ok {
+			spec.Loop.Interval = looper.LoopInterval
+		}
 	}
 	spec.process = func(ctx context.Context, tc taskctx.Context, raw []byte) (app.H, error) {
 		var payload I
@@ -120,6 +130,16 @@ func (r *Registry) Process(ctx context.Context, appCtx *appctx.AppContext, task 
 	spec, ok := r.FindSpec(task.Type())
 	if !ok {
 		return fmt.Errorf("unknown task: %s", task.Type())
+	}
+	if spec.Loop != nil && spec.Loop.Interval != nil {
+		defer func() {
+			// A canceled run is requeued by asynq on worker shutdown and schedules the next run when it
+			// finishes; the nanny restores the rare canceled run that is archived instead. A timed-out
+			// or failed run is archived, so the loop goes on here.
+			if !errors.Is(ctx.Err(), context.Canceled) {
+				scheduleNextLoop(context.Background(), appCtx, spec)
+			}
+		}()
 	}
 	_, err := spec.process(ctx, appCtx, task.Payload())
 	if errors.Is(err, errInvalidPayload) {
