@@ -15,19 +15,15 @@ import (
 
 const SettingKeyDocEval = "doc_eval_settings"
 
-// MinActiveInterval is the minimum active interval to prevent runaway loops.
-const MinActiveInterval = 1 * time.Second
-
-// MaxInterval is the strict upper bound (< 100h).
-const MaxInterval = 100 * time.Hour
-
-// DefaultModel is the bob aigate model used until a sysop picks another.
-const DefaultModel = "groq/openai/gpt-oss-120b"
-
+// The interval bounds, default model and strategies are config's, which validates the GOAPP_CONFIG file with
+// the same rules.
 const (
-	StrategyRandom = "random"
-	StrategyOldest = "oldest"
-	StrategyNewest = "newest"
+	MinActiveInterval = config.MinActiveInterval
+	MaxInterval       = config.MaxInterval
+	DefaultModel      = config.DefaultModel
+	StrategyRandom    = config.StrategyRandom
+	StrategyOldest    = config.StrategyOldest
+	StrategyNewest    = config.StrategyNewest
 )
 
 // DefaultStrategy is the fallback candidate selection strategy (random, non-duplicate).
@@ -97,35 +93,9 @@ func resolved(c config.ChainConfig, interval, model, strategy string) (string, s
 	return interval, model, strategy
 }
 
-// ParseInterval validates and parses an interval string.
-// If input is "0s", "0", "off", or empty: returns 0, "0s", nil (disabled).
-// Otherwise it parses via time.ParseDuration and verifies:
-// - duration >= MinActiveInterval (1s)
-// - duration < MaxInterval (100h)
+// ParseInterval parses a loop interval; see config.ParseInterval.
 func ParseInterval(input string) (time.Duration, string, error) {
-	trimmed := strings.TrimSpace(input)
-	if trimmed == "" || strings.EqualFold(trimmed, "off") || trimmed == "0" || trimmed == "0s" || trimmed == "0m" || trimmed == "0h" {
-		return 0, "0s", nil
-	}
-
-	d, err := time.ParseDuration(trimmed)
-	if err != nil {
-		return 0, "", fmt.Errorf("invalid duration format %q: %w (e.g. 10m, 1h, 6h, 24h, or 0s to disable)", input, err)
-	}
-
-	if d <= 0 {
-		return 0, "0s", nil
-	}
-
-	if d < MinActiveInterval {
-		return 0, "", fmt.Errorf("active interval must be at least %s, got %s (use 0s to disable)", MinActiveInterval, d)
-	}
-
-	if d >= MaxInterval {
-		return 0, "", fmt.Errorf("interval must be less than 100h, got %s", d)
-	}
-
-	return d, trimmed, nil
+	return config.ParseInterval(input)
 }
 
 // Duration returns the parsed duration and whether evaluation is active (> 0).
@@ -189,11 +159,7 @@ func normalizedInterval(interval, fallback string) string {
 }
 
 func validateModel(model string) (string, error) {
-	model = strings.TrimSpace(model)
-	if provider, name, ok := strings.Cut(model, "/"); !ok || provider == "" || name == "" {
-		return "", fmt.Errorf("model must be provider/model, got %q", model)
-	}
-	return model, nil
+	return config.ValidateModel(model)
 }
 
 func SaveSettings(db *gorm.DB, s Settings) error {

@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -139,5 +140,37 @@ func TestLoadFileErrors(t *testing.T) {
 	t.Setenv("GOAPP_CONFIG", dir+"/empty.yaml")
 	if _, err := Load(); err != nil {
 		t.Errorf("an empty file must load: %v", err)
+	}
+}
+
+func TestLoadRejectsInvalidChainValues(t *testing.T) {
+	dir := t.TempDir()
+	for name, body := range map[string]string{
+		"model":                 "chains:\n  docEval:\n    model: gpt-oss\n",
+		"strategy":              "chains:\n  common:\n    strategy: shuffle\n",
+		"interval":              "chains:\n  docDefine:\n    interval: 500ms\n",
+		"interval in docCreate": "chains:\n  docCreate:\n    interval: 1h\n",
+	} {
+		path := dir + "/" + strings.ReplaceAll(name, " ", "-") + ".yaml"
+		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		t.Setenv("GOAPP_CONFIG", path)
+		if _, err := Load(); err == nil {
+			t.Errorf("%s: expected an error", name)
+		}
+	}
+}
+
+func TestModelFor(t *testing.T) {
+	c := ChainsConfig{Common: CommonChainConfig{Model: "gemini/a"}, DocUpdate: ModelChainConfig{Model: "groq/b"}}
+	if got := c.ModelFor(c.DocUpdate); got != "groq/b" {
+		t.Errorf("own model: got %q", got)
+	}
+	if got := c.ModelFor(c.DocCreate); got != "gemini/a" {
+		t.Errorf("common model: got %q", got)
+	}
+	if got := (ChainsConfig{}).ModelFor(ModelChainConfig{}); got != DefaultModel {
+		t.Errorf("default model: got %q", got)
 	}
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/zetaoss/zengine/goapp/app/taskctx"
 
 	"github.com/zetaoss/zengine/goapp/models"
+	"github.com/zetaoss/zengine/goapp/prompts"
 	"github.com/zetaoss/zengine/goapp/services/llmsvc"
 
 	"gorm.io/gorm"
@@ -86,7 +87,7 @@ func (j *AIEditTask) Execute(ctx context.Context, taskCtx taskctx.Context, p aiE
 	if strings.TrimSpace(llmOutput) == "" {
 		slog.Info("[aiedit] generating content", "task_id", task.ID)
 		var genErr error
-		llmOutput, actualModel, llmInput, genErr = j.generateContent(ctx, taskCtx, task)
+		llmOutput, actualModel, llmInput, genErr = j.generateContent(ctx, taskCtx, db, task)
 		if genErr != nil {
 			_ = db.WithContext(ctx).Table("aiedit_tasks").Where("id = ?", task.ID).Updates(app.H{
 				"phase":       models.AIEditPhaseRetrying,
@@ -132,22 +133,32 @@ func findRunnableTaskByID(gdb *gorm.DB, taskID int) (models.AIEdit, error) {
 	return task, nil
 }
 
-func (j *AIEditTask) generateContent(ctx context.Context, taskCtx taskctx.Context, task models.AIEdit) (string, string, string, error) {
+func (j *AIEditTask) generateContent(ctx context.Context, taskCtx taskctx.Context, db *gorm.DB, task models.AIEdit) (string, string, string, error) {
 	llmInput := strings.TrimSpace(task.LLMInput)
 	if llmInput == "" {
 		return "", "", "", fmt.Errorf("llm_input is required")
 	}
-	content, actualModel, err := callLLM(ctx, taskCtx.Config(), llmInput)
-	return content, actualModel, llmInput, err
+	chain, model := chainFor(taskCtx.Config(), task.RequestType)
+	svc := llmsvc.New(taskCtx.Config()).WithRecorder(llmsvc.DBRecorder(db))
+	var content string
+	res, err := svc.RunStep(ctx, model, chain, chain.Steps[0], map[string]string{"prompt": llmInput}, &content)
+	if res.Model == "" {
+		res.Model = model
+	}
+	return content, res.Model, llmInput, err
 }
 
-func callLLM(ctx context.Context, cfg *config.Config, prompt string) (string, string, error) {
-	svc := llmsvc.New(cfg)
-	out, err := svc.Generate(ctx, llmsvc.Input{Prompt: prompt})
-	if err != nil {
-		return "", "", err
+// chainFor returns the chain of a request type, doc-update for update and doc-create otherwise, and its model
+// from the GOAPP_CONFIG chains (chains.docCreate or docUpdate, then common, then the default).
+func chainFor(cfg *config.Config, requestType string) (prompts.Chain, string) {
+	var chains config.ChainsConfig
+	if cfg != nil {
+		chains = cfg.Chains
 	}
-	return out.Content, out.Model, nil
+	if requestType == models.AIEditRequestUpdate {
+		return prompts.DocUpdate, chains.ModelFor(chains.DocUpdate)
+	}
+	return prompts.DocCreate, chains.ModelFor(chains.DocCreate)
 }
 
 // CalculateRetryAt returns the next retry time for a task based on its error count.
