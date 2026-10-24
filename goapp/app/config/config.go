@@ -66,12 +66,18 @@ type APIConfig struct {
 }
 
 // ChainsConfig is the chains section of the GOAPP_CONFIG file: run settings of the chain loops (docDefine,
-// docEval), each field falling back to common when unset. Settings a sysop saves in the evaluation tab override
-// them; services/doceval validates the values and falls back to its own defaults.
+// docEval), whose model and strategy fall back to common when unset. Settings a sysop saves in the evaluation
+// tab override them; services/doceval validates the values and falls back to its own defaults.
 type ChainsConfig struct {
-	Common    ChainConfig `yaml:"common"`
-	DocDefine ChainConfig `yaml:"docDefine"`
-	DocEval   ChainConfig `yaml:"docEval"`
+	Common    CommonChainConfig `yaml:"common"`
+	DocDefine ChainConfig       `yaml:"docDefine"`
+	DocEval   ChainConfig       `yaml:"docEval"`
+}
+
+// CommonChainConfig holds what the chains share. It has no interval: each loop runs at its own pace.
+type CommonChainConfig struct {
+	Model    string `yaml:"model"`
+	Strategy string `yaml:"strategy"`
 }
 
 type ChainConfig struct {
@@ -80,11 +86,8 @@ type ChainConfig struct {
 	Strategy string `yaml:"strategy"`
 }
 
-// Resolve returns c with its unset fields taken from common.
-func (c ChainConfig) Resolve(common ChainConfig) ChainConfig {
-	if c.Interval == "" {
-		c.Interval = common.Interval
-	}
+// Resolve returns c with its unset model and strategy taken from common.
+func (c ChainConfig) Resolve(common CommonChainConfig) ChainConfig {
 	if c.Model == "" {
 		c.Model = common.Model
 	}

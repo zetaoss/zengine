@@ -40,7 +40,7 @@ At startup, goapp reads these values and injects `window.ZCONF` (`avatarBaseUrl`
 
 A YAML file (`goapp/app/config/config.go`, `GOAPP_CONFIG`) for goapp settings that are neither secrets nor endpoints, so they do not each need an environment variable. Unknown keys are errors, so a typo does not silently keep a default. Sections:
 
-- `chains`: run settings of the chain loops, `common` plus `docDefine` and `docEval` overriding it field by field. See [doc-eval.md](doc-eval.md#settings).
+- `chains`: run settings of the chain loops. `docDefine` and `docEval` each set `interval`, `model` and `strategy`; `common` holds the `model` and `strategy` they share when unset (no `interval`: each loop runs at its own pace). See [doc-eval.md](doc-eval.md#settings).
 
 ```yaml
 chains:

@@ -61,7 +61,7 @@ The loops share their own `doc-eval` queue, and each keeps at most one waiting t
 
 ## Settings
 
-Each field resolves in this order: the value a sysop saved in the evaluation tab (`app_settings` `doc_eval_settings`), `chains.docEval` or `chains.docDefine` of the `GOAPP_CONFIG` file, `chains.common`, then the built-in default. A value that does not parse falls back to the next.
+Each field resolves in this order: the value a sysop saved in the evaluation tab (`app_settings` `doc_eval_settings`), `chains.docEval` or `chains.docDefine` of the `GOAPP_CONFIG` file, `chains.common` (`model` and `strategy` only), then the built-in default. A value that does not parse falls back to the next.
 
 | Field | Built-in default | Values |
 | --- | --- | --- |

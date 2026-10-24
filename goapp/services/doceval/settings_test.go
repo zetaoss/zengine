@@ -66,7 +66,7 @@ func TestDefaultSettingsBuiltin(t *testing.T) {
 
 func TestDefaultSettingsFromConfig(t *testing.T) {
 	cfg := &config.Config{Chains: config.ChainsConfig{
-		Common:    config.ChainConfig{Interval: "2h", Model: "gemini/gemini-3.8-flash", Strategy: "Newest"},
+		Common:    config.CommonChainConfig{Model: "gemini/gemini-3.8-flash", Strategy: "Newest"},
 		DocDefine: config.ChainConfig{Interval: "10m", Model: "not-a-model"},
 		DocEval:   config.ChainConfig{Interval: "0s"},
 	}}
@@ -80,7 +80,7 @@ func TestDefaultSettingsFromConfig(t *testing.T) {
 	if s.DefineModel != DefaultModel {
 		t.Fatalf("expected an invalid configured model to fall back, got %q", s.DefineModel)
 	}
-	bad := &config.Config{Chains: config.ChainsConfig{Common: config.ChainConfig{Interval: "500ms"}}}
+	bad := &config.Config{Chains: config.ChainsConfig{DocEval: config.ChainConfig{Interval: "500ms"}}}
 	if got := DefaultSettings(bad).Interval; got != "1h" {
 		t.Fatalf("expected an invalid configured interval to fall back, got %q", got)
 	}

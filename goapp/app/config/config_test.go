@@ -123,7 +123,10 @@ func TestLoadFileErrors(t *testing.T) {
 	if err := os.WriteFile(dir+"/typo.yaml", []byte("chains:\n  docEvel:\n    interval: 1h\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	for name, path := range map[string]string{"missing file": dir + "/none.yaml", "unknown key": dir + "/typo.yaml"} {
+	if err := os.WriteFile(dir+"/common-interval.yaml", []byte("chains:\n  common:\n    interval: 1h\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for name, path := range map[string]string{"missing file": dir + "/none.yaml", "unknown key": dir + "/typo.yaml", "interval in common": dir + "/common-interval.yaml"} {
 		t.Setenv("GOAPP_CONFIG", path)
 		if _, err := Load(); err == nil {
 			t.Errorf("%s: expected an error", name)
