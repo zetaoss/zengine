@@ -21,6 +21,7 @@ type DocEvaluation struct {
 	PageID               uint      `json:"page_id" gorm:"column:page_id"`
 	PageTitle            string    `json:"page_title" gorm:"column:page_title"`
 	Revid                uint64    `json:"revid" gorm:"column:revid"`
+	Definition           string    `json:"definition" gorm:"column:definition"`
 	Grade                string    `json:"grade" gorm:"column:grade"`
 	GeneralQuality       uint8     `json:"general_quality" gorm:"column:general_quality"`
 	TextQuality          uint8     `json:"text_quality" gorm:"column:text_quality"`

@@ -1,24 +1,24 @@
 package prompts
 
-// DocEval evaluates a wiki page: rubric builds criteria from the title alone, and judge grades the wikitext
-// against them. Its metadata "version" covers both steps: each evaluation records it, stored rubrics are reused
-// only when it matches, and it is bumped when either step changes.
+// DocEval evaluates a wiki page: rubric builds criteria from the title and the page's definition (DocDefine),
+// and judge grades the wikitext against them. Its metadata "version" covers both steps: each evaluation records
+// it, stored rubrics are reused only when it and the definition match, and it is bumped when either step changes.
 var DocEval = Chain{
 	Name:        "doc-eval",
-	Description: "제목으로 루브릭을 만들고, 그 루브릭과 본문으로 판정한다.",
-	Metadata:    map[string]string{"version": "v1"},
-	Inputs:      []string{"title", "wikitext"},
+	Description: "제목과 대상 정의로 루브릭을 만들고, 그 루브릭과 본문으로 판정한다.",
+	Metadata:    map[string]string{"version": "v2"},
+	Inputs:      []string{"title", "definition", "wikitext"},
 	Steps:       []Step{DocEvalRubric, DocEvalJudge},
 }
 
 var DocEvalRubric = Step{
 	Name:        "rubric",
-	Description: "문서 제목만 보고 전반 품질·글 품질 루브릭을 만든다.",
+	Description: "문서 제목과 대상 정의만 보고 전반 품질·글 품질 루브릭을 만든다.",
 	Prompt: Prompt{
-		Inputs: []string{"title"},
+		Inputs: []string{"title", "definition"},
 		Messages: []Message{
 			{Role: "system", Content: docEvalRubricSystem},
-			{Role: "user", Content: "### 문서 제목: {title}"},
+			{Role: "user", Content: "### 문서 제목: {title}\n### 대상 정의: {definition}"},
 		},
 	},
 	Parser: ParserJSON,
@@ -54,7 +54,8 @@ const docEvalRubricSystem = `당신은 '제타위키'의 문서 평가 기준을
 제타위키는 다양한 분야(기술, 수학, 인문, 문화, 어학, 일상 지식 등)의 실용적인 지식을 정리하는 위키이다.
 
 ## 과제
-문서 제목(표제어)만 보고, 그 제목의 문서라면 갖춰야 할 평가 기준(루브릭)을 만든다. 문서 본문은 주어지지 않는다.
+문서 제목(표제어)과 대상 정의만 보고, 그 대상을 다루는 문서라면 갖춰야 할 평가 기준(루브릭)을 만든다. 문서 본문은 주어지지 않는다.
+대상 정의는 문서가 실제로 다루는 대상이다. 제목이 여러 뜻을 가질 수 있어도 정의된 대상에 대한 기준만 만든다.
 루브릭은 두 묶음이다.
 
 1. general_quality: 이 표제어의 문서가 독자에게 유용하려면 담아야 할 핵심 내용과 갖춰야 할 성질.

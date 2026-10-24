@@ -29,9 +29,23 @@
     last_error?: string
   }
 
+  // zengine's own record of a model over all its chain calls (llm_calls); unlike bob's usage it survives restarts.
+  interface ModelHistory {
+    model: string
+    calls: number
+    oks: number
+    avg_elapsed_ms: number
+    first_call_at: string | null
+    last_ok_at: string | null
+    last_failure_at: string | null
+    last_error: string
+    chains: string
+  }
+
   interface ModelsResp {
     models: { data: ModelInfo[]; errors?: string[] }
     usage: { quota_day: string; next_reset: string; data: ModelUsage[] } | null
+    history: ModelHistory[] | null
   }
 
   let loading = $state(true)
@@ -208,5 +222,50 @@
         </tbody>
       </table>
     </div>
+
+    <h2 class="pt-2 text-sm font-semibold">
+      호출 이력 <span class="font-normal text-xs text-muted-foreground">zengine 체인 호출 전체 (llm_calls)</span>
+    </h2>
+    {#if resp.history?.length}
+      <div class="rounded-lg border bg-card shadow-sm overflow-x-auto">
+        <table class="w-full text-left text-sm border-collapse">
+          <thead>
+            <tr class="border-b bg-muted/50 text-muted-foreground text-xs">
+              <th class="p-2">Model</th>
+              <th class="p-2 text-right">Calls</th>
+              <th class="p-2 text-right">Success</th>
+              <th class="p-2 text-right">Avg</th>
+              <th class="p-2">Last OK</th>
+              <th class="p-2">Last failure</th>
+              <th class="p-2">Chains</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y">
+            {#each resp.history as h (h.model)}
+              <tr>
+                <td class="p-2">{h.model}</td>
+                <td class="p-2 text-right">{h.calls}</td>
+                <td class="p-2 text-right">
+                  {Math.round((h.oks / h.calls) * 100)}% <span class="text-xs text-muted-foreground">({h.oks})</span>
+                </td>
+                <td class="p-2 text-right">{(h.avg_elapsed_ms / 1000).toFixed(1)}s</td>
+                <td class="p-2 text-xs">{h.last_ok_at ? formatTime(h.last_ok_at) : '-'}</td>
+                <td class="p-2 text-xs">
+                  {#if h.last_failure_at}
+                    <div>{formatTime(h.last_failure_at)}</div>
+                    {#if h.last_error}<div class="text-rose-600 dark:text-rose-400 break-words max-w-md">{h.last_error}</div>{/if}
+                  {:else}
+                    -
+                  {/if}
+                </td>
+                <td class="p-2 text-xs text-muted-foreground">{h.chains}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    {:else}
+      <div class="text-xs text-muted-foreground">기록된 호출이 없습니다.</div>
+    {/if}
   {/if}
 </div>
