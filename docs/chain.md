@@ -14,14 +14,14 @@ goapp defines LLM work as chains, following LangChain. Types: `goapp/prompts/cha
 
 ## Built-in chains
 
-| Chain | File | Runs in | Model from |
+| Chain | File | Runs in | Model in the file |
 | :--- | :--- | :--- | :--- |
-| `doc-define` | `goapp/prompts/docdefine.go` | `doc-define-loop` ([doc-eval.md](doc-eval.md)) | evaluation tab, `chains.docDefine` |
-| `doc-eval` | `goapp/prompts/doceval.go` | `doc-eval-loop` ([doc-eval.md](doc-eval.md)) | evaluation tab, `chains.docEval` |
+| `doc-define` | `goapp/prompts/docdefine.go` | `doc-define-loop` ([doc-eval.md](doc-eval.md)) | `chains.docDefine` |
+| `doc-eval` | `goapp/prompts/doceval.go` | `doc-eval-loop` ([doc-eval.md](doc-eval.md)) | `chains.docEval` |
 | `doc-create` | `goapp/prompts/docwrite.go` | `ai-edit`, request type `create` | `chains.docCreate` |
 | `doc-update` | `goapp/prompts/docwrite.go` | `ai-edit`, request type `update` | `chains.docUpdate` |
 
-Each falls back to `chains.common.model` and then to the built-in default (`config.DefaultModel`); see [config.md](config.md#goapp-config-file). `doc-create` and `doc-update` pass through the prompt rendered from an AI edit prompt template, since the templates still live in `aiedit_prompts`.
+The model picked in the chains tab comes first; see [Screen and API](#screen-and-api) and [config.md](config.md#goapp-config-file). `doc-create` and `doc-update` pass through the prompt rendered from an AI edit prompt template, since the templates still live in `aiedit_prompts`.
 
 ## Rules
 
@@ -40,4 +40,9 @@ The scheme gives no key a meaning; each chain picks its own. doc-eval uses `vers
 
 ## Screen and API
 
-The chains tab (`/tool/ai/chains`, sysop-only) shows the built-in chains read-only, next to the aiedit prompts in the database. `GET /api/ai/builtin-chains` returns `prompts.BuiltinChains()`.
+The chains tab (`/tool/ai/chains`, sysop-only) is a table of the built-in chains (name and version, description, number of steps, model). A row expands to its steps (inputs, parser, output, and messages, read-only), and for `doc-create` and `doc-update` to the AI edit prompt templates of that request type instead of their pass-through message. `/tool/ai/prompts` redirects there; a template's own pages stay under it.
+
+Each chain runs on one model, picked in the chains tab (`services/chainsvc`, `app_settings` `chain_models`). Until a sysop picks one, the `GOAPP_CONFIG` file decides (`chains.<chain>.model`, then `chains.common.model`), then `config.DefaultModel`. Several chains may share a model; the models tab lists each model's chains.
+
+- `GET /api/ai/chains`: the built-in chains, each with its `model`
+- `PUT /api/ai/chains/{name}/model`: `{"model": "provider/model"}`; an empty model removes the saved one, so the file decides again

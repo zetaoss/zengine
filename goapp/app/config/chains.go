@@ -105,14 +105,21 @@ func (c ChainConfig) Resolve(common CommonChainConfig) ChainConfig {
 	return c
 }
 
-// ModelFor returns the model of an on-demand chain: its own, else common's, else DefaultModel.
-func (c ChainsConfig) ModelFor(chain ModelChainConfig) string {
-	for _, m := range []string{chain.Model, c.Common.Model} {
+// ModelOf returns the model the file sets for a chain, by chain name (doc-define, doc-eval, doc-create,
+// doc-update): the chain's own, else common's, else "" when neither is set.
+func (c ChainsConfig) ModelOf(chain string) string {
+	own := map[string]string{
+		"doc-define": c.DocDefine.Model,
+		"doc-eval":   c.DocEval.Model,
+		"doc-create": c.DocCreate.Model,
+		"doc-update": c.DocUpdate.Model,
+	}[chain]
+	for _, m := range []string{own, c.Common.Model} {
 		if m = strings.TrimSpace(m); m != "" {
 			return m
 		}
 	}
-	return DefaultModel
+	return ""
 }
 
 // validate rejects a value that would otherwise fall back to a default unnoticed.

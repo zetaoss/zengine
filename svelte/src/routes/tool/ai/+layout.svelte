@@ -16,10 +16,15 @@
   const tabs = [
     { value: 'define', label: '문서정의', href: resolve('/tool/ai/define') },
     { value: 'eval', label: '문서평가', href: resolve('/tool/ai/eval') },
-    { value: 'prompts', label: '프롬프트', href: resolve('/tool/ai/prompts') },
+    { value: 'chains', label: '체인', href: resolve('/tool/ai/chains') },
     { value: 'models', label: '모델', href: resolve('/tool/ai/models') },
   ]
-  let selected = $derived(tabs.find((t) => page.url.pathname.startsWith(t.href))?.value ?? 'eval')
+  // A prompt template's pages belong to the chains tab, which lists them under their chain.
+  let selected = $derived(
+    page.url.pathname.startsWith(resolve('/tool/ai/prompts'))
+      ? 'chains'
+      : (tabs.find((t) => page.url.pathname.startsWith(t.href))?.value ?? 'eval'),
+  )
 </script>
 
 {#if isSysop}

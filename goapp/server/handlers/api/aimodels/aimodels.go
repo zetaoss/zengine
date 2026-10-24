@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/zetaoss/zengine/goapp/app"
 	"github.com/zetaoss/zengine/goapp/prompts"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
+	"github.com/zetaoss/zengine/goapp/services/chainsvc"
 	"github.com/zetaoss/zengine/goapp/services/llmsvc/client"
 	"gorm.io/gorm"
 )
@@ -99,7 +101,45 @@ func modelHistory(db *gorm.DB) ([]ModelHistory, error) {
 	return history, nil
 }
 
-// BuiltinChains lists the built-in prompt chains kept in code (goapp/prompts), read-only.
-func BuiltinChains(c *serverctx.Context) {
-	c.JSON(prompts.BuiltinChains())
+// chainView is a built-in chain with the model it runs on.
+type chainView struct {
+	prompts.Chain
+	Model string `json:"model"`
+}
+
+// Chains lists the built-in chains (goapp/prompts), each with its model.
+func Chains(c *serverctx.Context) {
+	saved, err := chainsvc.Saved(c.DB)
+	if err != nil {
+		c.InternalError()
+		return
+	}
+	views := []chainView{}
+	for _, chain := range prompts.BuiltinChains() {
+		model, _ := chainsvc.Resolve(saved, c.Cfg, chain.Name)
+		views = append(views, chainView{Chain: chain, Model: model})
+	}
+	c.JSON(views)
+}
+
+// SetChainModel sets the model of a built-in chain from {"model": "provider/model"}.
+func SetChainModel(c *serverctx.Context) {
+	name := strings.TrimSpace(c.R.PathValue("name"))
+	var body struct {
+		Model string `json:"model"`
+	}
+	if !c.Decode(&body) {
+		return
+	}
+	if err := chainsvc.Save(c.DB, name, body.Model); err != nil {
+		c.JSONError(http.StatusUnprocessableEntity, err.Error())
+		return
+	}
+	saved, err := chainsvc.Saved(c.DB)
+	if err != nil {
+		c.InternalError()
+		return
+	}
+	model, _ := chainsvc.Resolve(saved, c.Cfg, name)
+	c.JSON(app.H{"ok": true, "chain": name, "model": model})
 }

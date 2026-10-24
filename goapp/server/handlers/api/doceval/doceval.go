@@ -10,7 +10,9 @@ import (
 
 	"github.com/zetaoss/zengine/goapp/app"
 	"github.com/zetaoss/zengine/goapp/models"
+	"github.com/zetaoss/zengine/goapp/prompts"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
+	"github.com/zetaoss/zengine/goapp/services/chainsvc"
 	docevalsvc "github.com/zetaoss/zengine/goapp/services/doceval"
 	"gorm.io/gorm"
 )
@@ -189,14 +191,15 @@ func GetSettings(c *serverctx.Context) {
 	}
 	lastRun, _ := docevalsvc.GetLastRun(c.DB, docevalsvc.SettingKeyDocEvalLastRun)
 	defineLastRun, _ := docevalsvc.GetLastRun(c.DB, docevalsvc.SettingKeyDefineLastRun)
+	// The models are the chains' (chains tab); they are shown here, not set.
 	c.JSON(app.H{
 		"interval":        settings.Interval,
-		"model":           settings.Model,
+		"model":           chainsvc.ModelFor(c.DB, c.Cfg, prompts.DocEval),
 		"strategy":        settings.Strategy,
 		"last_run":        lastRun,
 		"tasks":           queuedTasks(c, docevalsvc.LoopTaskType),
 		"define_interval": settings.DefineInterval,
-		"define_model":    settings.DefineModel,
+		"define_model":    chainsvc.ModelFor(c.DB, c.Cfg, prompts.DocDefine),
 		"define_strategy": settings.DefineStrategy,
 		"define_last_run": defineLastRun,
 		"define_tasks":    queuedTasks(c, docevalsvc.DefineLoopTaskType),
@@ -214,13 +217,11 @@ func queuedTasks(c *serverctx.Context, taskType string) []docevalsvc.QueuedTask 
 }
 
 // updateSettingsReq updates any combination of the evaluation and definition settings; an omitted field keeps
-// its value.
+// its value. Models are set per chain (PUT /api/ai/chains/{name}/model).
 type updateSettingsReq struct {
 	Interval       *string `json:"interval"`
-	Model          *string `json:"model"`
 	Strategy       *string `json:"strategy"`
 	DefineInterval *string `json:"define_interval"`
-	DefineModel    *string `json:"define_model"`
 	DefineStrategy *string `json:"define_strategy"`
 }
 
@@ -252,12 +253,6 @@ func UpdateSettings(c *serverctx.Context) {
 			return
 		}
 		defineDur, settings.DefineInterval = d, norm
-	}
-	if req.Model != nil {
-		settings.Model = *req.Model
-	}
-	if req.DefineModel != nil {
-		settings.DefineModel = *req.DefineModel
 	}
 	if req.Strategy != nil {
 		settings.Strategy = docevalsvc.NormalizeStrategy(*req.Strategy)
@@ -298,10 +293,10 @@ func UpdateSettings(c *serverctx.Context) {
 	c.JSON(app.H{
 		"ok":              true,
 		"interval":        settings.Interval,
-		"model":           settings.Model,
+		"model":           chainsvc.ModelFor(c.DB, c.Cfg, prompts.DocEval),
 		"strategy":        settings.Strategy,
 		"define_interval": settings.DefineInterval,
-		"define_model":    settings.DefineModel,
+		"define_model":    chainsvc.ModelFor(c.DB, c.Cfg, prompts.DocDefine),
 		"define_strategy": settings.DefineStrategy,
 	})
 }

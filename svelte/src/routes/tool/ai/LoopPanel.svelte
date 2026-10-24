@@ -1,8 +1,9 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-  // The heading, settings (model, interval, strategy), Instant button and run status (last, running, next) of
-  // one loop, shared by the definition and evaluation tabs.
+  // The heading, settings (interval, strategy), Instant button and run status (last, running, next) of one loop,
+  // shared by the definition and evaluation tabs. The model is the chain's, shown with a link to the chains tab.
+  import { resolve } from '$app/paths'
   import { displayTitle } from '$shared/utils/mediawiki'
   import { getAge } from '$shared/utils/time'
   import { getWikiViewHref } from '$shared/utils/wikiLink'
@@ -22,9 +23,9 @@
 
   let {
     heading,
+    chain,
     instantTitle,
     settings,
-    modelIds,
     saving,
     lastRun,
     tasks,
@@ -34,19 +35,18 @@
     oninstant,
   }: {
     heading: string
+    chain: string
     instantTitle: string
     settings: LoopSettings
-    modelIds: string[]
     saving: boolean
     lastRun: LastRun | null
     tasks: QueuedTask[]
     now: number
     instantDisabled: boolean
-    onchange: (change: Partial<LoopSettings>) => void
+    onchange: (change: Partial<Omit<LoopSettings, 'model'>>) => void
     oninstant: () => void
   } = $props()
 
-  let modelOptions = $derived(settings.model && !modelIds.includes(settings.model) ? [settings.model, ...modelIds] : modelIds)
   let running = $derived(tasks.filter((t) => t.state === 'active'))
   let waiting = $derived(tasks.filter((t) => t.state === 'pending' || t.state === 'scheduled'))
   let strategyLabel = $derived(strategyLabels[settings.strategy] ?? '랜덤')
@@ -71,18 +71,11 @@
 <div class="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
   <h1 class="text-2xl font-bold tracking-tight">{heading}</h1>
   <div class="flex flex-wrap items-center gap-2">
-    <select
-      class={`${selectClass} max-w-64`}
-      value={settings.model}
-      disabled={saving}
-      aria-label="모델"
-      title="모델"
-      onchange={(e) => onchange({ model: e.currentTarget.value })}
+    <a
+      href={resolve('/tool/ai/chains')}
+      class="h-8 inline-flex items-center rounded border bg-background px-2.5 text-xs text-muted-foreground hover:bg-muted"
+      title={`${chain} 체인의 모델, 체인 탭에서 바꾼다`}>{formatModelLabel(settings.model)}</a
     >
-      {#each modelOptions as id (id)}
-        <option value={id}>{formatModelLabel(id)}</option>
-      {/each}
-    </select>
     <select
       class={`${selectClass} w-24`}
       value={settings.interval}

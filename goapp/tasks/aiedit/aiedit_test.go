@@ -12,13 +12,13 @@ func TestChainFor(t *testing.T) {
 		Common:    config.CommonChainConfig{Model: "gemini/a"},
 		DocUpdate: config.ModelChainConfig{Model: "groq/b"},
 	}}
-	if chain, model := chainFor(cfg, models.AIEditRequestUpdate); chain.Name != "doc-update" || model != "groq/b" {
+	if chain, model := chainFor(nil, cfg, models.AIEditRequestUpdate); chain.Name != "doc-update" || model != "groq/b" {
 		t.Errorf("update: got %s %s", chain.Name, model)
 	}
-	if chain, model := chainFor(cfg, models.AIEditRequestCreate); chain.Name != "doc-create" || model != "gemini/a" {
+	if chain, model := chainFor(nil, cfg, models.AIEditRequestCreate); chain.Name != "doc-create" || model != "gemini/a" {
 		t.Errorf("create: got %s %s", chain.Name, model)
 	}
-	if _, model := chainFor(nil, models.AIEditRequestCreate); model != config.DefaultModel {
+	if _, model := chainFor(nil, nil, models.AIEditRequestCreate); model != config.DefaultModel {
 		t.Errorf("no config: got %s", model)
 	}
 }

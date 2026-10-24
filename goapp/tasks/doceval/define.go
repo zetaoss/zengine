@@ -9,6 +9,8 @@ import (
 
 	"github.com/zetaoss/zengine/goapp/app"
 	"github.com/zetaoss/zengine/goapp/app/taskctx"
+	"github.com/zetaoss/zengine/goapp/prompts"
+	"github.com/zetaoss/zengine/goapp/services/chainsvc"
 	docevalsvc "github.com/zetaoss/zengine/goapp/services/doceval"
 )
 
@@ -45,7 +47,8 @@ func (t *DefineLoopTask) Execute(ctx context.Context, tc taskctx.Context, p Loop
 		return app.H{"skipped": true, "reason": "definition is off"}, nil
 	}
 
-	run := docevalsvc.LastRun{At: time.Now(), Model: settings.DefineModel}
+	model := chainsvc.ModelFor(db, tc.Config(), prompts.DocDefine)
+	run := docevalsvc.LastRun{At: time.Now(), Model: model}
 	fail := func(err error) (app.H, error) {
 		run.At, run.Error = time.Now(), err.Error()
 		saveLastRun(db, docevalsvc.SettingKeyDefineLastRun, run)
@@ -83,7 +86,7 @@ func (t *DefineLoopTask) Execute(ctx context.Context, tc taskctx.Context, p Loop
 	if given {
 		define = evaluator.Define
 	}
-	def, err := define(ctx, db, page, wikitext, settings.DefineModel)
+	def, err := define(ctx, db, page, wikitext, model)
 	if err != nil {
 		return fail(fmt.Errorf("definition failed: %w", err))
 	}

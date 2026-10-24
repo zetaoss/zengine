@@ -162,15 +162,15 @@ func TestLoadRejectsInvalidChainValues(t *testing.T) {
 	}
 }
 
-func TestModelFor(t *testing.T) {
+func TestModelOf(t *testing.T) {
 	c := ChainsConfig{Common: CommonChainConfig{Model: "gemini/a"}, DocUpdate: ModelChainConfig{Model: "groq/b"}}
-	if got := c.ModelFor(c.DocUpdate); got != "groq/b" {
+	if got := c.ModelOf("doc-update"); got != "groq/b" {
 		t.Errorf("own model: got %q", got)
 	}
-	if got := c.ModelFor(c.DocCreate); got != "gemini/a" {
+	if got := c.ModelOf("doc-create"); got != "gemini/a" {
 		t.Errorf("common model: got %q", got)
 	}
-	if got := (ChainsConfig{}).ModelFor(ModelChainConfig{}); got != DefaultModel {
-		t.Errorf("default model: got %q", got)
+	if got := (ChainsConfig{}).ModelOf("doc-eval"); got != "" {
+		t.Errorf("unset: got %q", got)
 	}
 }

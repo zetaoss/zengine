@@ -59,7 +59,7 @@ func TestDefaultSettingsBuiltin(t *testing.T) {
 	if d, active := s.DefineDuration(); !active || d != 30*time.Minute {
 		t.Fatalf("default definition interval must be 30m active, got %v active=%v", d, active)
 	}
-	if s.Model != "groq/openai/gpt-oss-120b" || s.DefineModel != s.Model || s.Strategy != StrategyRandom {
+	if s.Strategy != StrategyRandom || s.DefineStrategy != StrategyRandom {
 		t.Fatalf("unexpected defaults %+v", s)
 	}
 }
@@ -67,18 +67,15 @@ func TestDefaultSettingsBuiltin(t *testing.T) {
 func TestDefaultSettingsFromConfig(t *testing.T) {
 	cfg := &config.Config{Chains: config.ChainsConfig{
 		Common:    config.CommonChainConfig{Model: "gemini/gemini-3.8-flash", Strategy: "Newest"},
-		DocDefine: config.ChainConfig{Interval: "10m", Model: "not-a-model"},
+		DocDefine: config.ChainConfig{Interval: "10m"},
 		DocEval:   config.ChainConfig{Interval: "0s"},
 	}}
 	s := DefaultSettings(cfg)
-	if s.Interval != "0s" || s.Model != "gemini/gemini-3.8-flash" || s.Strategy != StrategyNewest {
+	if s.Interval != "0s" || s.Strategy != StrategyNewest {
 		t.Fatalf("expected docEval over common, got %+v", s)
 	}
 	if s.DefineInterval != "10m" || s.DefineStrategy != StrategyNewest {
 		t.Fatalf("expected docDefine over common, got %+v", s)
-	}
-	if s.DefineModel != DefaultModel {
-		t.Fatalf("expected an invalid configured model to fall back, got %q", s.DefineModel)
 	}
 	bad := &config.Config{Chains: config.ChainsConfig{DocEval: config.ChainConfig{Interval: "500ms"}}}
 	if got := DefaultSettings(bad).Interval; got != "1h" {
@@ -86,11 +83,11 @@ func TestDefaultSettingsFromConfig(t *testing.T) {
 	}
 }
 
-func TestSaveSettingsRejectsInvalidModel(t *testing.T) {
+func TestSaveSettingsRejectsInvalidInterval(t *testing.T) {
 	// Validation runs before the database is touched, so a nil DB is enough.
-	for _, model := range []string{"", "gemini", "/x", "gemini/"} {
-		if err := SaveSettings(nil, Settings{Interval: "0s", Model: model, DefineModel: DefaultModel}); err == nil {
-			t.Errorf("expected an error for model %q", model)
+	for _, s := range []Settings{{Interval: "500ms"}, {Interval: "0s", DefineInterval: "200h"}} {
+		if err := SaveSettings(nil, s); err == nil {
+			t.Errorf("expected an error for %+v", s)
 		}
 	}
 }

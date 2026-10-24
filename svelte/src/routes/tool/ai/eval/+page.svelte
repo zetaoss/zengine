@@ -16,7 +16,7 @@
   import { getWikiViewHref } from '$shared/utils/wikiLink'
 
   import LoopPanel from '../LoopPanel.svelte'
-  import { fetchModelIds, fetchRevisionSource, type LastRun, type LoopSettings, type QueuedTask, splitAtBytes } from '../loop'
+  import { fetchRevisionSource, formatDateTime, type LastRun, type LoopSettings, type QueuedTask, splitAtBytes } from '../loop'
   import ModelId from '../ModelId.svelte'
   import RunModal from '../RunModal.svelte'
 
@@ -111,7 +111,6 @@
   const pageSize = 20
 
   let settings = $state<LoopSettings>({ interval: '1h', model: 'groq/openai/gpt-oss-120b', strategy: 'random' })
-  let modelIds = $state<string[]>([])
   let savingSettings = $state(false)
   let settingsError = $state('')
 
@@ -173,19 +172,6 @@
     }
   }
 
-  function formatDate(iso: string): string {
-    if (!iso) return ''
-    const d = new Date(iso)
-    if (isNaN(d.getTime())) return iso
-    const pad = (n: number) => String(n).padStart(2, '0')
-    const yyyy = d.getFullYear()
-    const mm = pad(d.getMonth() + 1)
-    const dd = pad(d.getDate())
-    const hh = pad(d.getHours())
-    const min = pad(d.getMinutes())
-    return `${yyyy}-${mm}-${dd} ${hh}:${min}`
-  }
-
   async function fetchSummary() {
     const [data, err] = await httpy.get<SummaryResp>('/api/evaluations/summary')
     if (err) {
@@ -218,7 +204,7 @@
     }
   }
 
-  async function handleSaveSettings(change: Partial<LoopSettings>) {
+  async function handleSaveSettings(change: Partial<Omit<LoopSettings, 'model'>>) {
     savingSettings = true
     settingsError = ''
 
@@ -304,7 +290,6 @@
   onMount(() => {
     fetchSummary()
     fetchSettings()
-    fetchModelIds().then((ids) => (modelIds = ids))
     fetchEvaluations()
     let tick = 0
     const timer = setInterval(() => {
@@ -320,10 +305,10 @@
 
 <div class="container mx-auto p-4 md:p-6 max-w-6xl space-y-6">
   <LoopPanel
+    chain="doc-eval"
     heading="문서 평가"
     instantTitle="평가 즉시 실행 대화상자 열기"
     {settings}
-    {modelIds}
     saving={savingSettings}
     {lastRun}
     tasks={queuedTasks}
@@ -419,7 +404,7 @@
               {@const judgment = isExpanded ? parseJSON<Judgment>(item.raw_json) : null}
               {@const rubrics = isExpanded ? parseJSON<Rubrics>(item.rubrics) : null}
               <tr class="hover:bg-muted/30 transition cursor-pointer" onclick={() => toggleExpand(item)}>
-                <td class="p-3 text-xs text-muted-foreground whitespace-nowrap" title={formatDate(item.created_at)}
+                <td class="p-3 text-xs text-muted-foreground whitespace-nowrap" title={formatDateTime(item.created_at)}
                   >{getAge(item.created_at, now)}</td
                 >
                 <td class="p-3">

@@ -15,6 +15,7 @@ import (
 	"github.com/zetaoss/zengine/goapp/app/config"
 	"github.com/zetaoss/zengine/goapp/app/taskctx"
 	"github.com/zetaoss/zengine/goapp/prompts"
+	"github.com/zetaoss/zengine/goapp/services/chainsvc"
 	docevalsvc "github.com/zetaoss/zengine/goapp/services/doceval"
 	"gorm.io/gorm"
 )
@@ -89,10 +90,7 @@ func (t *LoopTask) Execute(ctx context.Context, taskCtx taskctx.Context, p LoopP
 		return app.H{"skipped": true, "reason": "evaluation is off"}, nil
 	}
 
-	modelToRun := strings.TrimSpace(settings.Model)
-	if modelToRun == "" {
-		modelToRun = docevalsvc.DefaultModel
-	}
+	modelToRun := chainsvc.ModelFor(db, taskCtx.Config(), prompts.DocEval)
 
 	var candidate candidatePage
 
@@ -136,7 +134,7 @@ func (t *LoopTask) Execute(ctx context.Context, taskCtx taskctx.Context, p LoopP
 	// it was picked, gets one written here.
 	evaluator := docevalsvc.New(cfg, db)
 	page := docevalsvc.Page{ID: uint(candidate.PageID), Title: candidate.PageTitle, Revid: uint64(revid)}
-	def, err := evaluator.EnsureDefinition(ctx, db, page, wikitext, settings.DefineModel)
+	def, err := evaluator.EnsureDefinition(ctx, db, page, wikitext, chainsvc.ModelFor(db, cfg, prompts.DocDefine))
 	if err != nil {
 		return fail(fmt.Errorf("definition failed: %w", err))
 	}
@@ -146,7 +144,7 @@ func (t *LoopTask) Execute(ctx context.Context, taskCtx taskctx.Context, p LoopP
 		Where("page_id = ? AND page_title = ? AND chain_version = ? AND definition = ?", candidate.PageID, candidate.PageTitle, prompts.DocEval.Metadata["version"], def.Definition).
 		Order("id DESC").Limit(1).Pluck("rubrics", &cachedRubrics).Error
 
-	evalRecord, err := evaluator.Evaluate(ctx, page, def.Definition, wikitext, settings.Model, cachedRubrics)
+	evalRecord, err := evaluator.Evaluate(ctx, page, def.Definition, wikitext, modelToRun, cachedRubrics)
 	if err != nil {
 		return fail(fmt.Errorf("evaluation failed: %w", err))
 	}

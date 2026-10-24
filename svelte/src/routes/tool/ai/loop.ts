@@ -62,6 +62,15 @@ export function formatModelLabel(id: string): string {
   return `${id.slice(0, i)} | ${id.slice(i + 1)}`
 }
 
+// yyyy-MM-dd HH:mm in local time, the hover text of the date columns.
+export function formatDateTime(iso: string): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return iso
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 export function formatTime(iso: string): string {
   const d = new Date(iso)
   if (isNaN(d.getTime())) return iso
