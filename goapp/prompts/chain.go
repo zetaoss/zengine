@@ -94,5 +94,5 @@ func stripCodeFence(raw string) string {
 }
 
 func BuiltinChains() []Chain {
-	return []Chain{DocEval}
+	return []Chain{DocDefine, DocEval}
 }

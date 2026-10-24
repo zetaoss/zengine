@@ -21,7 +21,7 @@ goapp defines LLM work as chains, following LangChain. Types: `goapp/prompts/cha
 
 ## Running
 
-`llmsvc.RunStep(ctx, model, step, vars, out)` renders, calls bob `/aigate`, and parses. A failed parse is retried once; each attempt parses into a fresh value, `out` is set only on success, and the error keeps at most 500 characters of the response. When the retry call itself fails, its error keeps the parse error as `previous attempt`. The service code runs the steps in order and the code between them.
+`llmsvc.RunStep(ctx, model, chain, step, vars, out)` renders, calls bob `/aigate`, and parses; the chain names each call in the call history (`llm_calls`, see [goapp.md](goapp.md)). A failed parse is retried once; each attempt parses into a fresh value, `out` is set only on success, and the error keeps at most 500 characters of the response. When the retry call itself fails, its error keeps the parse error as `previous attempt`. The service code runs the steps in order and the code between them.
 
 ## Metadata
 

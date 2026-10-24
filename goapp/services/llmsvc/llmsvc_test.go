@@ -30,6 +30,8 @@ func newServer(t *testing.T, contents ...string) (*httptest.Server, *atomic.Int3
 	return ts, &calls
 }
 
+var testChain = prompts.Chain{Name: "test-chain", Metadata: map[string]string{"version": "v9"}}
+
 var testStep = prompts.Step{
 	Name:   "test",
 	Prompt: prompts.Prompt{Inputs: []string{"title"}, Messages: []prompts.Message{{Role: "user", Content: "{title}"}}},
@@ -48,7 +50,7 @@ func TestRunStepRetryDropsFailedAttempt(t *testing.T) {
 	// omits violated, so it must stay false rather than carry over from the failed attempt.
 	ts, calls := newServer(t, `{"violated": true, "count": "two"}`, `{"count": 2, "summary": "ok"}`)
 	var out testOutput
-	res, err := NewWithEndpoint(ts.URL).RunStep(context.Background(), "test/model", testStep, map[string]string{"title": "T"}, &out)
+	res, err := NewWithEndpoint(ts.URL).RunStep(context.Background(), "test/model", testChain, testStep, map[string]string{"title": "T"}, &out)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -63,7 +65,7 @@ func TestRunStepRetryDropsFailedAttempt(t *testing.T) {
 func TestRunStepFailureTruncatesRaw(t *testing.T) {
 	ts, calls := newServer(t, "not json "+strings.Repeat("가", 2000))
 	out := testOutput{Summary: "before"}
-	_, err := NewWithEndpoint(ts.URL).RunStep(context.Background(), "test/model", testStep, nil, &out)
+	_, err := NewWithEndpoint(ts.URL).RunStep(context.Background(), "test/model", testChain, testStep, nil, &out)
 	if err == nil || calls.Load() != 2 {
 		t.Fatalf("expected an error after 2 calls, got %v after %d", err, calls.Load())
 	}
@@ -77,7 +79,7 @@ func TestRunStepFailureTruncatesRaw(t *testing.T) {
 
 func TestRunStepRejectsNonPointer(t *testing.T) {
 	var out testOutput
-	if _, err := NewWithEndpoint("http://127.0.0.1:0").RunStep(context.Background(), "m", testStep, nil, out); err == nil {
+	if _, err := NewWithEndpoint("http://127.0.0.1:0").RunStep(context.Background(), "m", testChain, testStep, nil, out); err == nil {
 		t.Fatal("non-pointer out accepted")
 	}
 }
@@ -96,8 +98,30 @@ func TestRunStepKeepsParseErrorWhenRetryFails(t *testing.T) {
 	t.Cleanup(ts.Close)
 
 	var out testOutput
-	_, err := NewWithEndpoint(ts.URL).RunStep(context.Background(), "", testStep, map[string]string{"title": "x"}, &out)
+	_, err := NewWithEndpoint(ts.URL).RunStep(context.Background(), "", testChain, testStep, map[string]string{"title": "x"}, &out)
 	if err == nil || !strings.Contains(err.Error(), "status=429") || !strings.Contains(err.Error(), "previous attempt: invalid") || !strings.Contains(err.Error(), "not json") {
 		t.Fatalf("expected the 429 with the earlier parse error, got %v", err)
+	}
+}
+
+func TestRunStepRecordsEachCall(t *testing.T) {
+	ts, _ := newServer(t, `not json`, `{"count": 1}`)
+	var got []Call
+	svc := NewWithEndpoint(ts.URL).WithRecorder(func(_ context.Context, c Call) { got = append(got, c) })
+
+	var out testOutput
+	if _, err := svc.RunStep(context.Background(), "test/model", testChain, testStep, map[string]string{"title": "T"}, &out); err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("expected both calls recorded, got %+v", got)
+	}
+	first, second := got[0], got[1]
+	if first.OK || first.Err == nil || !strings.Contains(first.Err.Error(), "invalid json output") {
+		t.Fatalf("expected the unparsable answer recorded as a failure, got %+v", first)
+	}
+	if !second.OK || second.Err != nil || second.Chain != "test-chain" || second.ChainVersion != "v9" || second.Step != "test" ||
+		second.Model != "test/model" || second.ResolvedModel != "test/model" || second.Usage.PromptTokens != 10 {
+		t.Fatalf("unexpected recorded success: %+v", second)
 	}
 }

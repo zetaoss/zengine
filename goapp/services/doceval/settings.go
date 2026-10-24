@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/zetaoss/zengine/goapp/app/config"
 	"github.com/zetaoss/zengine/goapp/models"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -38,6 +39,11 @@ type Settings struct {
 	Model string `json:"model"`
 	// Strategy is the candidate page selection strategy: "random", "oldest", or "newest".
 	Strategy string `json:"strategy"`
+	// DefineInterval, DefineModel and DefineStrategy run doc-define-loop, which writes the definitions
+	// evaluations need.
+	DefineInterval string `json:"define_interval"`
+	DefineModel    string `json:"define_model"`
+	DefineStrategy string `json:"define_strategy"`
 }
 
 // NormalizeStrategy validates and normalizes a candidate selection strategy.
@@ -52,13 +58,43 @@ func NormalizeStrategy(s string) string {
 	}
 }
 
-// DefaultSettings returns evaluation defaults (1h interval, DefaultModel, random strategy).
-func DefaultSettings() Settings {
+// builtinSettings are the defaults when the deployment sets none: evaluation every hour and a definition
+// every 30 minutes, both with DefaultModel and the random strategy.
+func builtinSettings() Settings {
 	return Settings{
-		Interval: "1h",
-		Model:    DefaultModel,
-		Strategy: DefaultStrategy,
+		Interval:       "1h",
+		Model:          DefaultModel,
+		Strategy:       DefaultStrategy,
+		DefineInterval: "30m",
+		DefineModel:    DefaultModel,
+		DefineStrategy: DefaultStrategy,
 	}
+}
+
+// DefaultSettings returns the defaults: chains.docEval and chains.docDefine of the GOAPP_CONFIG file, each
+// field falling back to chains.common and then to builtinSettings when unset or invalid. A nil cfg gives
+// builtinSettings.
+func DefaultSettings(cfg *config.Config) Settings {
+	s := builtinSettings()
+	if cfg == nil {
+		return s
+	}
+	eval := cfg.Chains.DocEval.Resolve(cfg.Chains.Common)
+	define := cfg.Chains.DocDefine.Resolve(cfg.Chains.Common)
+	s.Interval, s.Model, s.Strategy = resolved(eval, s.Interval, s.Model, s.Strategy)
+	s.DefineInterval, s.DefineModel, s.DefineStrategy = resolved(define, s.DefineInterval, s.DefineModel, s.DefineStrategy)
+	return s
+}
+
+func resolved(c config.ChainConfig, interval, model, strategy string) (string, string, string) {
+	interval = normalizedInterval(c.Interval, interval)
+	if m, err := validateModel(c.Model); err == nil {
+		model = m
+	}
+	if c.Strategy != "" {
+		strategy = NormalizeStrategy(c.Strategy)
+	}
+	return interval, model, strategy
 }
 
 // ParseInterval validates and parses an interval string.
@@ -94,47 +130,87 @@ func ParseInterval(input string) (time.Duration, string, error) {
 
 // Duration returns the parsed duration and whether evaluation is active (> 0).
 func (s Settings) Duration() (time.Duration, bool) {
-	d, _, err := ParseInterval(s.Interval)
+	return activeDuration(s.Interval)
+}
+
+// DefineDuration returns the parsed definition interval and whether doc-define-loop is active (> 0).
+func (s Settings) DefineDuration() (time.Duration, bool) {
+	return activeDuration(s.DefineInterval)
+}
+
+func activeDuration(interval string) (time.Duration, bool) {
+	d, _, err := ParseInterval(interval)
 	if err != nil || d <= 0 {
 		return 0, false
 	}
 	return d, true
 }
 
-func GetSettings(db *gorm.DB) (Settings, error) {
+// GetSettings returns the saved settings over DefaultSettings(cfg): a field missing from the saved JSON (such
+// as one added later) keeps its default, and an invalid saved value falls back to it.
+func GetSettings(db *gorm.DB, cfg *config.Config) (Settings, error) {
+	defaults := DefaultSettings(cfg)
 	var row models.AppSetting
 	if err := db.Table("app_settings").Where("setting_key = ?", SettingKeyDocEval).Take(&row).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return DefaultSettings(), nil
+			return defaults, nil
 		}
 		return Settings{}, err
 	}
-	var s Settings
+	s := defaults
 	if err := json.Unmarshal([]byte(row.ValueJSON), &s); err != nil {
-		return DefaultSettings(), nil
+		return defaults, nil
 	}
-	if _, norm, err := ParseInterval(s.Interval); err == nil {
-		s.Interval = norm
+	s.Interval = normalizedInterval(s.Interval, defaults.Interval)
+	s.DefineInterval = normalizedInterval(s.DefineInterval, defaults.DefineInterval)
+	if m, err := validateModel(s.Model); err == nil {
+		s.Model = m
 	} else {
-		s.Interval = DefaultSettings().Interval
+		s.Model = defaults.Model
 	}
-	if strings.TrimSpace(s.Model) == "" {
-		s.Model = DefaultModel
+	if m, err := validateModel(s.DefineModel); err == nil {
+		s.DefineModel = m
+	} else {
+		s.DefineModel = defaults.DefineModel
 	}
 	s.Strategy = NormalizeStrategy(s.Strategy)
+	s.DefineStrategy = NormalizeStrategy(s.DefineStrategy)
 	return s, nil
 }
 
+func normalizedInterval(interval, fallback string) string {
+	if strings.TrimSpace(interval) == "" {
+		return fallback
+	}
+	if _, norm, err := ParseInterval(interval); err == nil {
+		return norm
+	}
+	return fallback
+}
+
+func validateModel(model string) (string, error) {
+	model = strings.TrimSpace(model)
+	if provider, name, ok := strings.Cut(model, "/"); !ok || provider == "" || name == "" {
+		return "", fmt.Errorf("model must be provider/model, got %q", model)
+	}
+	return model, nil
+}
+
 func SaveSettings(db *gorm.DB, s Settings) error {
-	_, norm, err := ParseInterval(s.Interval)
-	if err != nil {
+	var err error
+	if _, s.Interval, err = ParseInterval(s.Interval); err != nil {
 		return err
 	}
-	s.Interval = norm
+	if _, s.DefineInterval, err = ParseInterval(s.DefineInterval); err != nil {
+		return fmt.Errorf("define interval: %w", err)
+	}
 	s.Strategy = NormalizeStrategy(s.Strategy)
-	s.Model = strings.TrimSpace(s.Model)
-	if provider, model, ok := strings.Cut(s.Model, "/"); !ok || provider == "" || model == "" {
-		return fmt.Errorf("model must be provider/model, got %q", s.Model)
+	s.DefineStrategy = NormalizeStrategy(s.DefineStrategy)
+	if s.Model, err = validateModel(s.Model); err != nil {
+		return err
+	}
+	if s.DefineModel, err = validateModel(s.DefineModel); err != nil {
+		return fmt.Errorf("define model: %w", err)
 	}
 
 	raw, err := json.Marshal(s)
@@ -151,9 +227,12 @@ func SaveSettings(db *gorm.DB, s Settings) error {
 	}).Create(&setting).Error
 }
 
-const SettingKeyDocEvalLastRun = "doc_eval_last_run"
+const (
+	SettingKeyDocEvalLastRun = "doc_eval_last_run"
+	SettingKeyDefineLastRun  = "doc_define_last_run"
+)
 
-// LastRun is the outcome of the latest doc-eval-loop run, shown next to the interval setting.
+// LastRun is the outcome of the latest doc-eval-loop or doc-define-loop run, shown next to its settings.
 type LastRun struct {
 	At        time.Time `json:"at"`
 	OK        bool      `json:"ok"`
@@ -164,9 +243,10 @@ type LastRun struct {
 	Error     string    `json:"error,omitempty"`
 }
 
-func GetLastRun(db *gorm.DB) (*LastRun, error) {
+// GetLastRun returns the last run stored under key (SettingKeyDocEvalLastRun or SettingKeyDefineLastRun).
+func GetLastRun(db *gorm.DB, key string) (*LastRun, error) {
 	var row models.AppSetting
-	if err := db.Table("app_settings").Where("setting_key = ?", SettingKeyDocEvalLastRun).Take(&row).Error; err != nil {
+	if err := db.Table("app_settings").Where("setting_key = ?", key).Take(&row).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
@@ -179,7 +259,7 @@ func GetLastRun(db *gorm.DB) (*LastRun, error) {
 	return &r, nil
 }
 
-func SaveLastRun(db *gorm.DB, r LastRun) error {
+func SaveLastRun(db *gorm.DB, key string, r LastRun) error {
 	raw, err := json.Marshal(r)
 	if err != nil {
 		return err
@@ -187,5 +267,5 @@ func SaveLastRun(db *gorm.DB, r LastRun) error {
 	return db.Table("app_settings").Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "setting_key"}},
 		DoUpdates: clause.AssignmentColumns([]string{"value_json"}),
-	}).Create(&models.AppSetting{SettingKey: SettingKeyDocEvalLastRun, ValueJSON: string(raw)}).Error
+	}).Create(&models.AppSetting{SettingKey: key, ValueJSON: string(raw)}).Error
 }
