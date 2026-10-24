@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/zetaoss/zengine/goapp/models"
+	"github.com/zetaoss/zengine/goapp/prompts"
 	"github.com/zetaoss/zengine/goapp/services/llmsvc"
 	"github.com/zetaoss/zengine/goapp/services/llmsvc/client"
 )
@@ -61,14 +62,14 @@ func TestEvaluateGeneratesRubricsAndScores(t *testing.T) {
 	ts := newServer(t, testGeneratedRubrics, judgment, &calls)
 	defer ts.Close()
 
-	res, err := newEvaluator(ts.URL).Evaluate(context.Background(), 123, "리눅스 whoami", 456, "본문", "", "")
+	res, err := newEvaluator(ts.URL).Evaluate(context.Background(), Page{ID: 123, Title: "리눅스 whoami", Revid: 456}, "리눅스 whoami는 사용자 이름을 출력하는 명령어이다.", "본문", "", "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if calls.Load() != 2 {
 		t.Fatalf("expected 2 llm calls, got %d", calls.Load())
 	}
-	if res.PageID != 123 || res.PageTitle != "리눅스 whoami" || res.Revid != 456 {
+	if res.PageID != 123 || res.PageTitle != "리눅스 whoami" || res.Revid != 456 || !strings.HasPrefix(res.Definition, "리눅스 whoami는") {
 		t.Fatalf("unexpected page meta: %+v", res)
 	}
 	// g4 is missing from the judgment and counts as fail: 2/4.
@@ -93,7 +94,7 @@ func TestEvaluateReusesCachedRubrics(t *testing.T) {
 	ts := newServer(t, "not json", judgment, &calls)
 	defer ts.Close()
 
-	res, err := newEvaluator(ts.URL).Evaluate(context.Background(), 1, "토막글", 1, "* x\n* z  가", "", testRubrics)
+	res, err := newEvaluator(ts.URL).Evaluate(context.Background(), Page{ID: 1, Title: "토막글", Revid: 1}, "토막글은 짧은 문서이다.", "* x\n* z  가", "", testRubrics)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -115,7 +116,7 @@ func TestEvaluateSafetyFailWins(t *testing.T) {
 	ts := newServer(t, testGeneratedRubrics, judgment, &calls)
 	defer ts.Close()
 
-	res, err := newEvaluator(ts.URL).Evaluate(context.Background(), 1, "광고", 1, "내용", "", "")
+	res, err := newEvaluator(ts.URL).Evaluate(context.Background(), Page{ID: 1, Title: "광고", Revid: 1}, "광고의 정의", "내용", "", "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -129,7 +130,7 @@ func TestEvaluateInvalidRubrics(t *testing.T) {
 	ts := newServer(t, `{"general_quality":[],"text_quality":["흐름"]}`, "{}", &calls)
 	defer ts.Close()
 
-	if _, err := newEvaluator(ts.URL).Evaluate(context.Background(), 1, "제목", 1, "내용", "", ""); err == nil {
+	if _, err := newEvaluator(ts.URL).Evaluate(context.Background(), Page{ID: 1, Title: "제목", Revid: 1}, "제목의 정의", "내용", "", ""); err == nil {
 		t.Fatal("expected error for empty rubrics")
 	}
 }
@@ -139,7 +140,7 @@ func TestEvaluateRetriesInvalidJSON(t *testing.T) {
 	ts := newServer(t, `{"general_quality": ["a": "b"]}`, "{}", &calls)
 	defer ts.Close()
 
-	if _, err := newEvaluator(ts.URL).Evaluate(context.Background(), 1, "제목", 1, "내용", "", ""); err == nil {
+	if _, err := newEvaluator(ts.URL).Evaluate(context.Background(), Page{ID: 1, Title: "제목", Revid: 1}, "제목의 정의", "내용", "", ""); err == nil {
 		t.Fatal("expected error for invalid rubric json")
 	}
 	if calls.Load() != 2 {
@@ -179,5 +180,47 @@ func TestGrade(t *testing.T) {
 		if got := Grade(c.violated, c.score); got != c.want {
 			t.Errorf("Grade(%v, %d) = %s, want %s", c.violated, c.score, got, c.want)
 		}
+	}
+}
+
+func TestRubricPromptCarriesDefinition(t *testing.T) {
+	var rubricUser string
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Messages []client.Message `json:"messages"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		if strings.Contains(req.Messages[0].Content, "평가 기준(루브릭)을 만든다") {
+			rubricUser = req.Messages[1].Content
+			_, _ = w.Write(llmPayload(testGeneratedRubrics))
+			return
+		}
+		_, _ = w.Write(llmPayload(`{"general_quality":[],"text_quality":[],"safety":{"violated":false},"accuracy":{},"summary":""}`))
+	}))
+	defer ts.Close()
+
+	if _, err := newEvaluator(ts.URL).Evaluate(context.Background(), Page{ID: 1, Title: "자바_(섬)", Revid: 1}, "자바는 인도네시아의 섬이다.", "본문", "", ""); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(rubricUser, "문서 제목: 자바 (섬)") || !strings.Contains(rubricUser, "대상 정의: 자바는 인도네시아의 섬이다.") {
+		t.Fatalf("rubric prompt must carry the display title and the definition, got %q", rubricUser)
+	}
+}
+
+func TestDefinitionCurrent(t *testing.T) {
+	page := Page{ID: 1, Title: "자바", Revid: 10}
+	d := &models.DocDefinition{PageID: 1, PageTitle: "자바", Revid: 10, ChainVersion: prompts.DocDefine.Metadata["version"]}
+	if !definitionCurrent(d, page) {
+		t.Fatal("expected a definition of the same revision, title and chain version to be current")
+	}
+	for name, stale := range map[string]Page{"revision": {ID: 1, Title: "자바", Revid: 11}, "title": {ID: 1, Title: "자바_(섬)", Revid: 10}} {
+		if definitionCurrent(d, stale) {
+			t.Errorf("expected another %s to make the definition stale", name)
+		}
+	}
+	old := *d
+	old.ChainVersion = "v0"
+	if definitionCurrent(&old, page) || definitionCurrent(nil, page) {
+		t.Error("expected another chain version or no definition to be stale")
 	}
 }

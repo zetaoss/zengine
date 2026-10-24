@@ -56,16 +56,20 @@ func NewLoopTask() *LoopTask {
 
 // LoopInterval implements registry.Looper for self-perpetuating scheduling.
 func (t *LoopTask) LoopInterval(ctx context.Context, tc taskctx.Context) (time.Duration, bool, error) {
-	db, err := tc.GetDB()
-	if err != nil {
-		return 0, false, err
-	}
-	s, err := docevalsvc.GetSettings(db)
+	s, err := loadSettings(tc)
 	if err != nil {
 		return 0, false, err
 	}
 	d, active := s.Duration()
 	return d, active, nil
+}
+
+func loadSettings(tc taskctx.Context) (docevalsvc.Settings, error) {
+	db, err := tc.GetDB()
+	if err != nil {
+		return docevalsvc.Settings{}, err
+	}
+	return docevalsvc.GetSettings(db, tc.Config())
 }
 
 func (t *LoopTask) Execute(ctx context.Context, taskCtx taskctx.Context, p LoopPayload) (app.H, error) {
@@ -74,10 +78,10 @@ func (t *LoopTask) Execute(ctx context.Context, taskCtx taskctx.Context, p LoopP
 		return nil, fmt.Errorf("failed to get DB: %w", err)
 	}
 
-	settings, err := docevalsvc.GetSettings(db)
+	settings, err := docevalsvc.GetSettings(db, taskCtx.Config())
 	if err != nil {
-		slog.Warn("[doc-eval-loop] Failed to load settings, falling back to off", "err", err)
-		settings = docevalsvc.DefaultSettings()
+		slog.Warn("[doc-eval-loop] Failed to load settings, falling back to defaults", "err", err)
+		settings = docevalsvc.DefaultSettings(taskCtx.Config())
 	}
 
 	if _, active := settings.Duration(); !active && !p.Force {
@@ -95,7 +99,7 @@ func (t *LoopTask) Execute(ctx context.Context, taskCtx taskctx.Context, p LoopP
 	// fail records the failed run for the settings panel. The registry framework handles
 	// loop perpetuation automatically.
 	fail := func(err error) (app.H, error) {
-		saveLastRun(db, docevalsvc.LastRun{At: time.Now(), PageID: candidate.PageID, PageTitle: candidate.PageTitle, Model: modelToRun, Error: err.Error()})
+		saveLastRun(db, docevalsvc.SettingKeyDocEvalLastRun, docevalsvc.LastRun{At: time.Now(), PageID: candidate.PageID, PageTitle: candidate.PageTitle, Model: modelToRun, Error: err.Error()})
 		return nil, err
 	}
 	if p.PageID > 0 {
@@ -189,13 +193,21 @@ func (t *LoopTask) Execute(ctx context.Context, taskCtx taskctx.Context, p LoopP
 		revid = candidate.PageLatest
 	}
 
+	// An auto-picked page already has a current definition; a page given by title or ID, or one edited since
+	// it was picked, gets one written here.
+	evaluator := docevalsvc.New(cfg, db)
+	page := docevalsvc.Page{ID: uint(candidate.PageID), Title: candidate.PageTitle, Revid: uint64(revid)}
+	def, err := evaluator.EnsureDefinition(ctx, db, page, wikitext, settings.DefineModel)
+	if err != nil {
+		return fail(fmt.Errorf("definition failed: %w", err))
+	}
+
 	var cachedRubrics string
 	_ = db.WithContext(ctx).Table("doc_evaluations").
-		Where("page_id = ? AND page_title = ? AND chain_version = ?", candidate.PageID, candidate.PageTitle, prompts.DocEval.Metadata["version"]).
+		Where("page_id = ? AND page_title = ? AND chain_version = ? AND definition = ?", candidate.PageID, candidate.PageTitle, prompts.DocEval.Metadata["version"], def.Definition).
 		Order("id DESC").Limit(1).Pluck("rubrics", &cachedRubrics).Error
 
-	evaluator := docevalsvc.New(cfg)
-	evalRecord, err := evaluator.Evaluate(ctx, uint(candidate.PageID), candidate.PageTitle, uint64(revid), wikitext, settings.Model, cachedRubrics)
+	evalRecord, err := evaluator.Evaluate(ctx, page, def.Definition, wikitext, settings.Model, cachedRubrics)
 	if err != nil {
 		return fail(fmt.Errorf("evaluation failed: %w", err))
 	}
@@ -203,7 +215,7 @@ func (t *LoopTask) Execute(ctx context.Context, taskCtx taskctx.Context, p LoopP
 	if err := db.WithContext(ctx).Create(evalRecord).Error; err != nil {
 		return fail(fmt.Errorf("failed to save doc evaluation: %w", err))
 	}
-	saveLastRun(db, docevalsvc.LastRun{At: time.Now(), OK: true, PageID: candidate.PageID, PageTitle: candidate.PageTitle, Model: evalRecord.Model, EvalID: evalRecord.ID})
+	saveLastRun(db, docevalsvc.SettingKeyDocEvalLastRun, docevalsvc.LastRun{At: time.Now(), OK: true, PageID: candidate.PageID, PageTitle: candidate.PageTitle, Model: evalRecord.Model, EvalID: evalRecord.ID})
 
 	slog.Info("[doc-eval-loop] Evaluation completed successfully",
 		"id", evalRecord.ID,
@@ -224,9 +236,9 @@ func (t *LoopTask) Execute(ctx context.Context, taskCtx taskctx.Context, p LoopP
 	}, nil
 }
 
-func saveLastRun(db *gorm.DB, r docevalsvc.LastRun) {
-	if err := docevalsvc.SaveLastRun(db, r); err != nil {
-		slog.Warn("[doc-eval-loop] Failed to save last run", "err", err)
+func saveLastRun(db *gorm.DB, key string, r docevalsvc.LastRun) {
+	if err := docevalsvc.SaveLastRun(db, key, r); err != nil {
+		slog.Warn("[doc-eval] Failed to save last run", "key", key, "err", err)
 	}
 }
 

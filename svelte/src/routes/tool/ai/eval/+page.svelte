@@ -49,6 +49,7 @@
     page_id: number
     page_title: string
     revid: number
+    definition: string
     grade: string
     general_quality: number
     text_quality: number
@@ -87,6 +88,7 @@
   interface LastRun {
     at: string
     ok: boolean
+    page_id?: number
     page_title?: string
     model?: string
     eval_id?: number
@@ -96,6 +98,7 @@
   interface QueuedTask {
     id: string
     state: 'active' | 'pending' | 'scheduled' | 'failed'
+    page_id?: number
     page_title?: string
     next_process_at?: string
     failed_at?: string
@@ -108,7 +111,24 @@
     strategy?: string
     last_run?: LastRun | null
     tasks?: QueuedTask[] | null
+    define_interval: string
+    define_model: string
+    define_strategy: string
+    define_last_run?: LastRun | null
+    define_tasks?: QueuedTask[] | null
+    definitions: number
   }
+
+  type SettingsChange = {
+    interval?: string
+    model?: string
+    strategy?: string
+    define_interval?: string
+    define_model?: string
+    define_strategy?: string
+  }
+
+  type SettingsSaved = Required<SettingsChange> & { ok: boolean }
 
   let loading = $state(true)
   let evaluations = $state<DocEvaluation[]>([])
@@ -129,8 +149,18 @@
   let currentInterval = $state('1h')
   let currentModel = $state('groq/openai/gpt-oss-120b')
   let currentStrategy = $state('random')
+  let currentDefineInterval = $state('30m')
+  let currentDefineModel = $state('groq/openai/gpt-oss-120b')
+  let currentDefineStrategy = $state('random')
+  let definitionsCount = $state(0)
+  let defineLastRun = $state<LastRun | null>(null)
+  let defineTasks = $state<QueuedTask[]>([])
+  let defineWaiting = $derived(defineTasks.filter((t) => t.state === 'pending' || t.state === 'scheduled'))
   let modelIds = $state<string[]>([])
   let modelOptions = $derived(currentModel && !modelIds.includes(currentModel) ? [currentModel, ...modelIds] : modelIds)
+  let defineModelOptions = $derived(
+    currentDefineModel && !modelIds.includes(currentDefineModel) ? [currentDefineModel, ...modelIds] : modelIds,
+  )
   let savingSettings = $state(false)
   let settingsError = $state('')
 
@@ -224,11 +254,11 @@
     { value: '12h', label: '12시간' },
     { value: '24h', label: '24시간' },
   ]
-  let selectOptions = $derived(
-    intervalOptions.some((o) => o.value === currentInterval)
-      ? intervalOptions
-      : [...intervalOptions, { value: currentInterval, label: currentInterval }],
-  )
+  function withCurrent(value: string) {
+    return intervalOptions.some((o) => o.value === value) ? intervalOptions : [...intervalOptions, { value, label: value }]
+  }
+  let selectOptions = $derived(withCurrent(currentInterval))
+  let defineSelectOptions = $derived(withCurrent(currentDefineInterval))
 
   const strategyOptions = [
     { value: 'random', label: '랜덤' },
@@ -261,6 +291,10 @@
       currentModel = data.model
       if (data.strategy) currentStrategy = data.strategy
       queuedTasks = data.tasks ?? []
+      applyDefineSettings(data)
+      definitionsCount = data.definitions
+      defineLastRun = data.define_last_run ?? null
+      defineTasks = data.define_tasks ?? []
       const prevAt = lastRun?.at
       lastRun = data.last_run ?? null
       if (initialSettingsLoaded) {
@@ -309,11 +343,17 @@
     modelIds = data.usage?.data.map((m) => m.id) ?? data.models.data.filter((m) => m.enabled).map((m) => m.id)
   }
 
-  async function handleSaveSettings(change: { interval?: string; model?: string; strategy?: string }) {
+  function applyDefineSettings(data: Pick<SettingsResp, 'define_interval' | 'define_model' | 'define_strategy'>) {
+    currentDefineInterval = data.define_interval
+    currentDefineModel = data.define_model
+    currentDefineStrategy = data.define_strategy
+  }
+
+  async function handleSaveSettings(change: SettingsChange) {
     savingSettings = true
     settingsError = ''
 
-    const [data, err] = await httpy.put<{ ok: boolean; interval: string; model: string; strategy?: string }>('/api/evaluations/settings', change)
+    const [data, err] = await httpy.put<SettingsSaved>('/api/evaluations/settings', change)
     savingSettings = false
 
     if (err) {
@@ -325,6 +365,7 @@
       currentInterval = data.interval
       currentModel = data.model
       if (data.strategy) currentStrategy = data.strategy
+      applyDefineSettings(data)
       showToast('저장했습니다')
     }
   }
@@ -774,17 +815,98 @@
     </div>
   </div>
 
+  <!-- 문서 정의: 평가는 지금 판의 정의가 있는 문서만 고른다 -->
+  <div class="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 min-w-0">
+      <span class="font-medium text-foreground">문서 정의</span>
+      <span>{definitionsCount.toLocaleString()}개</span>
+      <span class="truncate">
+        최근
+        {#if defineLastRun}
+          {getAge(defineLastRun.at, now)}
+          {#if defineLastRun.page_title}
+            <a
+              href={(defineLastRun.page_id ?? 0) > 0
+                ? `/w/index.php?curid=${defineLastRun.page_id}`
+                : getWikiViewHref(defineLastRun.page_title)}
+              target="_blank"
+              rel="noopener">{displayTitle(defineLastRun.page_title)}</a
+            >
+          {/if}
+          {#if defineLastRun.ok}
+            <span class="font-medium text-a-emerald-600" title="성공">✓</span>
+          {:else}
+            <span class="font-medium text-a-rose-600" title={defineLastRun.error ?? '실패'}>✗</span>
+          {/if}
+        {:else}
+          <span class="text-muted-foreground/60">-</span>
+        {/if}
+      </span>
+      <span>
+        다음
+        {#if defineWaiting.length > 0 && defineWaiting[0].next_process_at}
+          <span title={`${formatTime(defineWaiting[0].next_process_at)} 예정`}>{formatCountdown(defineWaiting[0].next_process_at)}</span>
+        {:else}
+          {currentDefineInterval === '0s' ? '꺼짐' : '없음'}
+        {/if}
+      </span>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <select
+        class="h-8 max-w-64 rounded border bg-background px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+        value={currentDefineModel}
+        disabled={savingSettings}
+        aria-label="정의 모델"
+        title="정의 모델"
+        onchange={(e) => handleSaveSettings({ define_model: e.currentTarget.value })}
+      >
+        {#each defineModelOptions as id (id)}
+          <option value={id}>{formatModelLabel(id)}</option>
+        {/each}
+      </select>
+      <select
+        class="h-8 w-24 rounded border bg-background px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+        value={currentDefineInterval}
+        disabled={savingSettings}
+        aria-label="정의 주기"
+        title="정의 주기"
+        onchange={(e) => handleSaveSettings({ define_interval: e.currentTarget.value })}
+      >
+        {#each defineSelectOptions as option (option.value)}
+          <option value={option.value}>{option.label}</option>
+        {/each}
+      </select>
+      <select
+        class="h-8 w-24 rounded border bg-background px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+        value={currentDefineStrategy}
+        disabled={savingSettings}
+        aria-label="정의 자동선정 방식"
+        title="정의 자동선정 방식"
+        onchange={(e) => handleSaveSettings({ define_strategy: e.currentTarget.value })}
+      >
+        {#each strategyOptions as option (option.value)}
+          <option value={option.value}>{option.label}</option>
+        {/each}
+      </select>
+    </div>
+  </div>
+  {#if defineLastRun && !defineLastRun.ok && defineLastRun.error}
+    <div class="-mt-4 px-3 text-xs text-a-rose-500 break-words">{defineLastRun.error}</div>
+  {/if}
+
   <!-- 실행 상태 요약 바 -->
   <div class="flex flex-wrap items-start justify-between gap-4 rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
     <!-- 최근 -->
     <div class="space-y-0.5 min-w-0">
       <div class="font-medium text-foreground">
-        최근 {#if lastRun}<span class="font-normal text-muted-foreground">{getAge(lastRun.at, now)}</span>{:else}<span class="font-normal text-muted-foreground/60">-</span>{/if}
+        최근 {#if lastRun}<span class="font-normal text-muted-foreground">{getAge(lastRun.at, now)}</span>{:else}<span
+            class="font-normal text-muted-foreground/60">-</span
+          >{/if}
       </div>
       <div class="truncate">
         {#if lastRun?.page_title}
           <a
-            href={lastRun.page_id > 0 ? `/w/index.php?curid=${lastRun.page_id}` : getWikiViewHref(lastRun.page_title)}
+            href={(lastRun.page_id ?? 0) > 0 ? `/w/index.php?curid=${lastRun.page_id}` : getWikiViewHref(lastRun.page_title)}
             target="_blank"
             rel="noopener"
           >
@@ -850,7 +972,9 @@
         {:else}
           {@const task = waitingTasks[0]}
           {#if task.next_process_at}
-            <span class="font-normal text-muted-foreground" title={`${formatTime(task.next_process_at)} 예정`}>{formatCountdown(task.next_process_at)}</span>
+            <span class="font-normal text-muted-foreground" title={`${formatTime(task.next_process_at)} 예정`}
+              >{formatCountdown(task.next_process_at)}</span
+            >
           {:else}
             <span class="font-normal text-muted-foreground">{queueStateLabels[task.state]}</span>
           {/if}
@@ -933,9 +1057,7 @@
                     <div class="space-y-1.5 text-muted-foreground text-[11px]">
                       <div>
                         • <span class="text-foreground font-medium">점수 계산식</span>:
-                        <div class="mt-0.5 pl-2 font-mono text-[10.5px] text-foreground/90">
-                          전반적 품질 80% + 텍스트 품질 20%
-                        </div>
+                        <div class="mt-0.5 pl-2 font-mono text-[10.5px] text-foreground/90">전반적 품질 80% + 텍스트 품질 20%</div>
                         <div class="pl-2 text-[10.5px] text-muted-foreground/80 space-y-0.5 mt-0.5">
                           <div>- 전반적 품질: 핵심 내용 기준 충족율</div>
                           <div>- 텍스트 품질: 문장력·문법·가독성 충족율</div>
@@ -948,9 +1070,7 @@
                         <div>D: 40점 미만</div>
                         <div>F: 안전성 정책 위반 (점수 무관)</div>
                       </div>
-                      <div class="pt-1 text-[10.5px] border-t border-border/60">
-                        ※ 사실 오류 및 안전성 위반(⚠)은 경고 열에 표기됩니다.
-                      </div>
+                      <div class="pt-1 text-[10.5px] border-t border-border/60">※ 사실 오류 및 안전성 위반(⚠)은 경고 열에 표기됩니다.</div>
                     </div>
                   </div>
                 </div>
@@ -990,7 +1110,9 @@
                   </a>
                 </td>
                 <td class="p-3 text-center whitespace-nowrap">
-                  <span class={`inline-flex items-center justify-center w-7 py-0.5 rounded text-sm font-bold border ${getGradeBadgeClass(item.grade)}`}>
+                  <span
+                    class={`inline-flex items-center justify-center w-7 py-0.5 rounded text-sm font-bold border ${getGradeBadgeClass(item.grade)}`}
+                  >
                     {item.grade}
                   </span>
                 </td>
@@ -1099,7 +1221,9 @@
                             {@const split = splitAtBytes(revContent.text, 6000)}
                             <span>{split.evaluated}</span>
                             {#if split.remaining}
-                              <div class="my-3 py-1.5 px-3 border-y border-dashed border-a-amber-300 bg-a-amber-100 text-[11px] text-a-amber-800 font-sans font-medium text-center">
+                              <div
+                                class="my-3 py-1.5 px-3 border-y border-dashed border-a-amber-300 bg-a-amber-100 text-[11px] text-a-amber-800 font-sans font-medium text-center"
+                              >
                                 ✂ 여기까지만 평가 모델에 전달됨 (앞 6,000 바이트)
                               </div>
                               <span class="text-muted-foreground/60">{split.remaining}</span>
@@ -1110,8 +1234,16 @@
                         </div>
                       </div>
 
-                      <!-- 2열: 총평, 안전성, 정확성, 텍스트 품질 -->
+                      <!-- 2열: 대상 정의, 총평, 안전성, 정확성, 텍스트 품질 -->
                       <div class="space-y-3 text-xs py-4 lg:py-0 lg:px-4">
+                        <!-- 대상 정의 -->
+                        {#if item.definition}
+                          <div class="space-y-1.5">
+                            <div class="px-2.5 py-1 rounded bg-muted/70 font-semibold text-foreground">대상 정의</div>
+                            <div class="text-muted-foreground pt-0.5 leading-relaxed select-text break-words">{item.definition}</div>
+                          </div>
+                        {/if}
+
                         <!-- 총평 -->
                         <div class="space-y-1.5">
                           <div class="px-2.5 py-1 rounded bg-muted/70 font-semibold text-foreground">
@@ -1153,9 +1285,7 @@
 
                         <!-- 정확성 -->
                         {#if judgment?.accuracy}
-                          <div
-                            class={`space-y-1.5 ${item.accuracy_contradicted > 0 ? 'text-a-orange-700' : ''}`}
-                          >
+                          <div class={`space-y-1.5 ${item.accuracy_contradicted > 0 ? 'text-a-orange-700' : ''}`}>
                             <div class="px-2.5 py-1 rounded bg-muted/70 font-semibold text-foreground">정확성</div>
                             <div class="text-muted-foreground pt-0.5">
                               맞음 {judgment.accuracy.supported ?? 0} · 틀림 {judgment.accuracy.contradictory ?? 0} · 사실 주장 없음 {judgment
@@ -1181,9 +1311,7 @@
                           <ul class="list-none pl-0 space-y-1.5 pt-1">
                             {#each criteriaWithVerdicts(rubrics?.text_quality, judgment?.text_quality) as row (row.id)}
                               <li class="list-none">
-                                <span class={row.pass ? 'text-a-emerald-700' : 'text-a-rose-700'}
-                                  >{row.pass ? '✓' : '✗'}</span
-                                >
+                                <span class={row.pass ? 'text-a-emerald-700' : 'text-a-rose-700'}>{row.pass ? '✓' : '✗'}</span>
                                 <span class="text-foreground">{row.criterion}</span>
                                 {#if row.reason}
                                   <div class="text-muted-foreground pl-4">{row.reason}</div>
@@ -1214,9 +1342,7 @@
                           <ul class="list-none pl-0 space-y-1.5 pt-1">
                             {#each criteriaWithVerdicts(rubrics?.general_quality, judgment?.general_quality) as row (row.id)}
                               <li class="list-none">
-                                <span class={row.pass ? 'text-a-emerald-700' : 'text-a-rose-700'}
-                                  >{row.pass ? '✓' : '✗'}</span
-                                >
+                                <span class={row.pass ? 'text-a-emerald-700' : 'text-a-rose-700'}>{row.pass ? '✓' : '✗'}</span>
                                 <span class="text-foreground">{row.criterion}</span>
                                 {#if row.reason}
                                   <div class="text-muted-foreground pl-4">{row.reason}</div>
@@ -1338,7 +1464,9 @@
         </div>
 
         {#if showSuggestions && suggestions.length > 0}
-          <div class="absolute left-0 right-0 top-full z-50 mt-1 max-h-56 overflow-y-auto rounded-md border bg-background shadow-lg text-xs">
+          <div
+            class="absolute left-0 right-0 top-full z-50 mt-1 max-h-56 overflow-y-auto rounded-md border bg-background shadow-lg text-xs"
+          >
             {#each suggestions as item, i (item.id)}
               <button
                 type="button"

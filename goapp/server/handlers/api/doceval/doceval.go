@@ -177,24 +177,51 @@ func Summary(c *serverctx.Context) {
 }
 
 func GetSettings(c *serverctx.Context) {
-	settings, err := docevalsvc.GetSettings(c.DB)
+	settings, err := docevalsvc.GetSettings(c.DB, c.Cfg)
 	if err != nil {
 		c.InternalError()
 		return
 	}
-	lastRun, _ := docevalsvc.GetLastRun(c.DB)
-	queued, err := docevalsvc.QueuedLoopTasks(c.Cfg)
-	if err != nil {
-		slog.Warn("[doc-eval] Failed to list loop tasks", "err", err)
+	var definitions int64
+	if err := c.DB.Table("doc_definitions").Count(&definitions).Error; err != nil {
+		c.InternalError()
+		return
 	}
-	c.JSON(app.H{"interval": settings.Interval, "model": settings.Model, "strategy": settings.Strategy, "last_run": lastRun, "tasks": queued})
+	lastRun, _ := docevalsvc.GetLastRun(c.DB, docevalsvc.SettingKeyDocEvalLastRun)
+	defineLastRun, _ := docevalsvc.GetLastRun(c.DB, docevalsvc.SettingKeyDefineLastRun)
+	c.JSON(app.H{
+		"interval":        settings.Interval,
+		"model":           settings.Model,
+		"strategy":        settings.Strategy,
+		"last_run":        lastRun,
+		"tasks":           queuedTasks(c, docevalsvc.LoopTaskType),
+		"define_interval": settings.DefineInterval,
+		"define_model":    settings.DefineModel,
+		"define_strategy": settings.DefineStrategy,
+		"define_last_run": defineLastRun,
+		"define_tasks":    queuedTasks(c, docevalsvc.DefineLoopTaskType),
+		"definitions":     definitions,
+	})
 }
 
-// updateSettingsReq updates the interval, the model, the strategy, or any combination; an omitted field keeps its value.
+// queuedTasks lists a loop's queued tasks for the status panel; a queue error leaves it empty.
+func queuedTasks(c *serverctx.Context, taskType string) []docevalsvc.QueuedTask {
+	tasks, err := docevalsvc.QueuedLoopTasks(c.Cfg, taskType)
+	if err != nil {
+		slog.Warn("[doc-eval] Failed to list loop tasks", "type", taskType, "err", err)
+	}
+	return tasks
+}
+
+// updateSettingsReq updates any combination of the evaluation and definition settings; an omitted field keeps
+// its value.
 type updateSettingsReq struct {
-	Interval *string `json:"interval"`
-	Model    *string `json:"model"`
-	Strategy *string `json:"strategy"`
+	Interval       *string `json:"interval"`
+	Model          *string `json:"model"`
+	Strategy       *string `json:"strategy"`
+	DefineInterval *string `json:"define_interval"`
+	DefineModel    *string `json:"define_model"`
+	DefineStrategy *string `json:"define_strategy"`
 }
 
 func UpdateSettings(c *serverctx.Context) {
@@ -204,51 +231,78 @@ func UpdateSettings(c *serverctx.Context) {
 		return
 	}
 
-	settings, err := docevalsvc.GetSettings(c.DB)
+	settings, err := docevalsvc.GetSettings(c.DB, c.Cfg)
 	if err != nil {
 		c.InternalError()
 		return
 	}
-	var dur time.Duration
+	var evalDur, defineDur time.Duration
 	if req.Interval != nil {
 		d, norm, err := docevalsvc.ParseInterval(*req.Interval)
 		if err != nil {
 			c.JSONError(http.StatusBadRequest, err.Error())
 			return
 		}
-		dur, settings.Interval = d, norm
+		evalDur, settings.Interval = d, norm
+	}
+	if req.DefineInterval != nil {
+		d, norm, err := docevalsvc.ParseInterval(*req.DefineInterval)
+		if err != nil {
+			c.JSONError(http.StatusBadRequest, "define interval: "+err.Error())
+			return
+		}
+		defineDur, settings.DefineInterval = d, norm
 	}
 	if req.Model != nil {
 		settings.Model = *req.Model
 	}
+	if req.DefineModel != nil {
+		settings.DefineModel = *req.DefineModel
+	}
 	if req.Strategy != nil {
 		settings.Strategy = docevalsvc.NormalizeStrategy(*req.Strategy)
+	}
+	if req.DefineStrategy != nil {
+		settings.DefineStrategy = docevalsvc.NormalizeStrategy(*req.DefineStrategy)
 	}
 	if err := docevalsvc.SaveSettings(c.DB, settings); err != nil {
 		c.JSONError(http.StatusBadRequest, err.Error())
 		return
 	}
 
-	// A new interval restarts the loop: its waiting run moves to one interval from now, or is removed when off.
-	if req.Interval != nil {
+	// A new interval restarts its loop: the waiting run moves to one interval from now, or is removed when off.
+	for _, l := range []struct {
+		changed  bool
+		taskType string
+		dur      time.Duration
+	}{
+		{req.Interval != nil, docevalsvc.LoopTaskType, evalDur},
+		{req.DefineInterval != nil, docevalsvc.DefineLoopTaskType, defineDur},
+	} {
+		if !l.changed {
+			continue
+		}
 		var err error
-		if dur > 0 {
-			err = docevalsvc.ScheduleLoop(c.R.Context(), c.Cfg, c, dur)
+		if l.dur > 0 {
+			err = docevalsvc.ScheduleLoop(c.R.Context(), c.Cfg, c, l.taskType, l.dur)
 		} else {
-			err = docevalsvc.StopLoop(c.R.Context(), c.Cfg)
+			err = docevalsvc.StopLoop(c.R.Context(), c.Cfg, l.taskType)
 		}
 		if err != nil {
-			slog.Error("[doc-eval] Failed to reschedule loop after settings update", "err", err)
-			c.JSONError(http.StatusInternalServerError, "settings saved, but failed to reschedule the loop: "+err.Error())
+			slog.Error("[doc-eval] Failed to reschedule loop after settings update", "type", l.taskType, "err", err)
+			c.JSONError(http.StatusInternalServerError, "settings saved, but failed to reschedule "+l.taskType+": "+err.Error())
 			return
 		}
 	}
 
 	c.JSON(app.H{
-		"ok":       true,
-		"interval": settings.Interval,
-		"model":    settings.Model,
-		"strategy": settings.Strategy,
+		"ok":              true,
+		"interval":        settings.Interval,
+		"model":           settings.Model,
+		"strategy":        settings.Strategy,
+		"define_interval": settings.DefineInterval,
+		"define_model":    settings.DefineModel,
+		"define_strategy": settings.DefineStrategy,
 	})
 }
 
@@ -261,7 +315,7 @@ type runReq struct {
 func Candidate(c *serverctx.Context) {
 	strategy := strings.TrimSpace(c.R.URL.Query().Get("strategy"))
 	if strategy == "" {
-		settings, err := docevalsvc.GetSettings(c.DB)
+		settings, err := docevalsvc.GetSettings(c.DB, c.Cfg)
 		if err == nil {
 			strategy = settings.Strategy
 		}

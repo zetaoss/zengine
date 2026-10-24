@@ -122,6 +122,7 @@ AIEdit prompts (`/api/ai-prompts*`) are sysop-only (`r.Sysop()`). The Activity t
 - Client: `goapp/services/llmsvc/client/client.go`
 - Configuration: `API.BobEndpoint` in `goapp/app/config/config.go`; the client calls `BOB_ENDPOINT/aigate/v1/chat/completions`
 - Rate limits: a `429` from aigate is retried once after its `Retry-After` (5 seconds when absent); a delay over 30 seconds, such as a daily quota, fails at once. Errors carry aigate's `error` text.
+- Call history: `llmsvc.RunStep` passes each model call to the service's recorder; `llmsvc.DBRecorder` stores it in `llm_calls` (`goapp/app/database/migrations/202610250002_llm_calls.up.sql`: chain and version, step, requested and answering model, ok, error, tokens, elapsed time). A response that does not parse is a failed call. It is zengine's empirical record of which models work, kept across bob restarts; the model tab shows it per model under the bob usage. Rows are not pruned yet.
 - Models: `GET /api/ai/models` (`r.Sysop()`, `goapp/server/handlers/api/aimodels/aimodels.go`) returns bob's `/aigate/v1/models?all` and `/aigate/v1/usage` (null when bob lacks it); the AI tool menu's model tab (`svelte/src/routes/tool/ai/models/**`) shows them per provider
 
 ### Chains
@@ -231,6 +232,7 @@ On SIGINT or SIGTERM, active handlers are drained for up to 30 seconds.
 | `ai-edit-nanny` | 1 min | 3 | `0 * * * *` | `default` |
 | `common-report` | 5 min | 3 | - | API and nanny, unique for 30 min |
 | `common-report-nanny` | 1 min | 3 | `0 * * * *` | `default` |
+| `doc-define-loop` | 2 min | 0 | - | `doc-eval`, reschedules itself |
 | `doc-eval-loop` | 5 min | 0 | - | `doc-eval`, reschedules itself |
 | `inspire` | 5 sec | 3 | - | Manual |
 | `ping-db` | 10 sec | 3 | - | Manual |

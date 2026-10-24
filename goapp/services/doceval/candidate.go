@@ -2,8 +2,10 @@ package doceval
 
 import (
 	"context"
+	"database/sql"
 	"math/rand/v2"
 
+	"github.com/zetaoss/zengine/goapp/prompts"
 	"gorm.io/gorm"
 )
 
@@ -13,114 +15,63 @@ type CandidatePage struct {
 	PageLatest int    `gorm:"column:page_latest" json:"page_latest"`
 }
 
-// PickCandidate selects an article candidate according to strategy: "random", "oldest", or "newest".
-// In all three strategies, unreviewed articles are picked first (non-duplicate).
-// If all articles have been evaluated, it falls back to the least-recently evaluated articles.
+// currentDefinition matches a definition written for the page's latest revision and title by the current
+// doc-define chain.
+const currentDefinition = `d.page_id = p.page_id AND d.revid = p.page_latest AND d.page_title = p.page_title AND d.chain_version = @defineVersion`
+
+// PickCandidate selects an article to evaluate by strategy: one with a current definition and no evaluation of
+// its latest revision by the current doc-eval chain. An edit or a new chain version makes a page a candidate
+// again. It returns nil when every article is evaluated.
 func PickCandidate(ctx context.Context, db *gorm.DB, strategy string) (*CandidatePage, error) {
-	strategy = NormalizeStrategy(strategy)
+	return pickPage(ctx, db, strategy, `
+		EXISTS (SELECT 1 FROM doc_definitions d WHERE `+currentDefinition+`)
+		AND NOT EXISTS (
+		  SELECT 1 FROM doc_evaluations e
+		  WHERE e.page_id = p.page_id AND e.revid = p.page_latest AND e.chain_version = @evalVersion
+		)`,
+		sql.Named("defineVersion", prompts.DocDefine.Metadata["version"]),
+		sql.Named("evalVersion", prompts.DocEval.Metadata["version"]))
+}
 
-	dbCtx := db
-	if ctx != nil {
-		dbCtx = db.WithContext(ctx)
+// PickUndefined selects an article to define by strategy: one without a current definition (none, or one of
+// another revision, title or chain version). It returns nil when every article is defined.
+func PickUndefined(ctx context.Context, db *gorm.DB, strategy string) (*CandidatePage, error) {
+	return pickPage(ctx, db, strategy, `
+		NOT EXISTS (SELECT 1 FROM doc_definitions d WHERE `+currentDefinition+`)`,
+		sql.Named("defineVersion", prompts.DocDefine.Metadata["version"]))
+}
+
+// pickPage returns one non-redirect article matching cond, ordered by strategy: random (page_random from a
+// random threshold, wrapping around), oldest (smallest page_id), or newest (largest page_id).
+func pickPage(ctx context.Context, db *gorm.DB, strategy, cond string, args ...any) (*CandidatePage, error) {
+	query := func(extra, order string) string {
+		return `
+			SELECT p.page_id, p.page_title, p.page_latest
+			FROM zetawiki.page p
+			WHERE p.page_namespace = 0
+			  AND p.page_is_redirect = 0
+			  AND ` + cond + extra + `
+			ORDER BY ` + order + `
+			LIMIT 1
+		`
 	}
-
-	// 1. Try unreviewed articles first (deduplicated against doc_evaluations).
+	dbCtx := db.WithContext(ctx)
 	var c CandidatePage
 	var err error
-
-	switch strategy {
+	switch NormalizeStrategy(strategy) {
 	case StrategyOldest:
-		query := `
-			SELECT p.page_id, p.page_title, p.page_latest
-			FROM zetawiki.page p
-			WHERE p.page_namespace = 0
-			  AND p.page_is_redirect = 0
-			  AND NOT EXISTS (
-			    SELECT 1 FROM doc_evaluations e WHERE e.page_id = p.page_id
-			  )
-			ORDER BY p.page_id ASC
-			LIMIT 1
-		`
-		err = dbCtx.Raw(query).Scan(&c).Error
-
+		err = dbCtx.Raw(query("", "p.page_id ASC"), args...).Scan(&c).Error
 	case StrategyNewest:
-		query := `
-			SELECT p.page_id, p.page_title, p.page_latest
-			FROM zetawiki.page p
-			WHERE p.page_namespace = 0
-			  AND p.page_is_redirect = 0
-			  AND NOT EXISTS (
-			    SELECT 1 FROM doc_evaluations e WHERE e.page_id = p.page_id
-			  )
-			ORDER BY p.page_id DESC
-			LIMIT 1
-		`
-		err = dbCtx.Raw(query).Scan(&c).Error
-
-	default: // StrategyRandom
-		// Utilize page_random index for fast random pick on unreviewed articles.
-		// Generate random threshold once so MySQL doesn't re-evaluate RAND() per row.
-		randThreshold := rand.Float64()
-		queryWithRand := `
-			SELECT p.page_id, p.page_title, p.page_latest
-			FROM zetawiki.page p
-			WHERE p.page_namespace = 0
-			  AND p.page_is_redirect = 0
-			  AND p.page_random >= ?
-			  AND NOT EXISTS (
-			    SELECT 1 FROM doc_evaluations e WHERE e.page_id = p.page_id
-			  )
-			ORDER BY p.page_random ASC
-			LIMIT 1
-		`
-		err = dbCtx.Raw(queryWithRand, randThreshold).Scan(&c).Error
+		err = dbCtx.Raw(query("", "p.page_id DESC"), args...).Scan(&c).Error
+	default:
+		// One threshold per pick, so MySQL does not evaluate RAND() per row and the page_random index is used.
+		threshold := append(append([]any{}, args...), sql.Named("threshold", rand.Float64()))
+		err = dbCtx.Raw(query(" AND p.page_random >= @threshold", "p.page_random ASC"), threshold...).Scan(&c).Error
 		if err == nil && c.PageID == 0 {
-			// Wrap around if random threshold was near 1.0
-			wrapQuery := `
-				SELECT p.page_id, p.page_title, p.page_latest
-				FROM zetawiki.page p
-				WHERE p.page_namespace = 0
-				  AND p.page_is_redirect = 0
-				  AND NOT EXISTS (
-				    SELECT 1 FROM doc_evaluations e WHERE e.page_id = p.page_id
-				  )
-				ORDER BY p.page_random ASC
-				LIMIT 1
-			`
-			err = dbCtx.Raw(wrapQuery).Scan(&c).Error
+			err = dbCtx.Raw(query("", "p.page_random ASC"), args...).Scan(&c).Error
 		}
 	}
-
 	if err != nil {
-		return nil, err
-	}
-	if c.PageID != 0 {
-		return &c, nil
-	}
-
-	// 2. Fallback when ALL articles have already been evaluated at least once:
-	// pick the article evaluated longest ago, ordered by the chosen strategy.
-	fallbackOrder := "(e.last_eval_at IS NOT NULL), e.last_eval_at ASC, RAND()"
-	switch strategy {
-	case StrategyOldest:
-		fallbackOrder = "e.last_eval_at ASC, p.page_id ASC"
-	case StrategyNewest:
-		fallbackOrder = "e.last_eval_at ASC, p.page_id DESC"
-	}
-
-	fallbackQuery := `
-		SELECT p.page_id, p.page_title, p.page_latest
-		FROM zetawiki.page p
-		LEFT JOIN (
-			SELECT page_id, MAX(created_at) AS last_eval_at
-			FROM doc_evaluations
-			GROUP BY page_id
-		) e ON p.page_id = e.page_id
-		WHERE p.page_namespace = 0 AND p.page_is_redirect = 0
-		ORDER BY ` + fallbackOrder + `
-		LIMIT 1
-	`
-	if err := dbCtx.Raw(fallbackQuery).Scan(&c).Error; err != nil {
 		return nil, err
 	}
 	if c.PageID == 0 {

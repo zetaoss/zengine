@@ -12,6 +12,7 @@ import (
 	"github.com/zetaoss/zengine/goapp/models"
 	"github.com/zetaoss/zengine/goapp/prompts"
 	"github.com/zetaoss/zengine/goapp/services/llmsvc"
+	"gorm.io/gorm"
 )
 
 const maxWikitextLen = 6000
@@ -58,23 +59,23 @@ type Evaluator struct {
 	llm *llmsvc.LLMService
 }
 
-func New(cfg *config.Config) *Evaluator {
-	return &Evaluator{llm: llmsvc.New(cfg)}
+// New returns an Evaluator whose model calls are recorded in db's llm_calls.
+func New(cfg *config.Config, db *gorm.DB) *Evaluator {
+	return &Evaluator{llm: llmsvc.New(cfg).WithRecorder(llmsvc.DBRecorder(db))}
 }
 
-// Evaluate generates rubrics for the title (unless cachedRubrics holds a valid set) and judges the wikitext against them.
-func (e *Evaluator) Evaluate(ctx context.Context, pageID uint, title string, revid uint64, wikitext string, model string, cachedRubrics string) (*models.DocEvaluation, error) {
-	targetModel := strings.TrimSpace(model)
-	if targetModel == "" {
-		targetModel = DefaultModel
-	}
+// Evaluate generates rubrics for the title and definition (unless cachedRubrics holds a valid set) and judges
+// the wikitext against them.
+func (e *Evaluator) Evaluate(ctx context.Context, page Page, definition, wikitext, model, cachedRubrics string) (*models.DocEvaluation, error) {
+	targetModel := modelOrDefault(model)
+	title := page.Title
 
 	// title is the stored DB key (Linux_명령어); the LLM reads it as displayed (Linux 명령어).
 	displayTitle := strings.ReplaceAll(title, "_", " ")
 	start := time.Now()
 	var promptTokens, completionTokens int
 	run := func(st prompts.Step, vars map[string]string, out any) (llmsvc.StepResult, error) {
-		res, err := e.llm.RunStep(ctx, targetModel, st, vars, out)
+		res, err := e.llm.RunStep(ctx, targetModel, prompts.DocEval, st, vars, out)
 		promptTokens += res.Usage.PromptTokens
 		completionTokens += res.Usage.CompletionTokens
 		return res, err
@@ -86,7 +87,7 @@ func (e *Evaluator) Evaluate(ctx context.Context, pageID uint, title string, rev
 			GeneralQuality []string `json:"general_quality"`
 			TextQuality    []string `json:"text_quality"`
 		}
-		_, err := run(prompts.DocEvalRubric, map[string]string{"title": displayTitle}, &generated)
+		_, err := run(prompts.DocEvalRubric, map[string]string{"title": displayTitle, "definition": definition}, &generated)
 		if err != nil {
 			return nil, fmt.Errorf("llm rubric generation failed: %w", err)
 		}
@@ -125,9 +126,10 @@ func (e *Evaluator) Evaluate(ctx context.Context, pageID uint, title string, rev
 	score := models.CompositeScore(generalQuality, textQuality)
 
 	return &models.DocEvaluation{
-		PageID:               pageID,
+		PageID:               page.ID,
 		PageTitle:            title,
-		Revid:                revid,
+		Revid:                page.Revid,
+		Definition:           definition,
 		Grade:                Grade(safetyViolated, score),
 		GeneralQuality:       generalQuality,
 		TextQuality:          textQuality,

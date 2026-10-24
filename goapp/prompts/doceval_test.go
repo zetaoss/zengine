@@ -24,7 +24,7 @@ func TestDocEvalPrompts(t *testing.T) {
 		}
 	}
 
-	if got := DocEvalRubric.Prompt.Render(map[string]string{"title": "테스트 문서"}); got[1].Content != "### 문서 제목: 테스트 문서" {
+	if got := DocEvalRubric.Prompt.Render(map[string]string{"title": "테스트 문서", "definition": "테스트 문서는 시험용 문서이다."}); got[1].Content != "### 문서 제목: 테스트 문서\n### 대상 정의: 테스트 문서는 시험용 문서이다." {
 		t.Errorf("rubric user message rendered incorrectly: %s", got[1].Content)
 	}
 
@@ -36,5 +36,18 @@ func TestDocEvalPrompts(t *testing.T) {
 	user := got[1].Content
 	if !strings.Contains(user, "문서 제목: 테스트 문서") || !strings.Contains(user, `{"general_quality":[]}`) || !strings.Contains(user, "테스트 내용") {
 		t.Errorf("judge user message rendered incorrectly: %s", user)
+	}
+}
+
+func TestDocDefinePrompt(t *testing.T) {
+	if DocDefine.Metadata["version"] == "" {
+		t.Fatal("doc-define needs a metadata version: each definition records it")
+	}
+	got := DocDefineStep.Prompt.Render(map[string]string{"title": "자바", "lead": "'''자바'''는 인도네시아의 섬이다."})
+	if !strings.Contains(got[1].Content, "문서 제목: 자바") || !strings.Contains(got[1].Content, "인도네시아의 섬") {
+		t.Errorf("define user message rendered incorrectly: %s", got[1].Content)
+	}
+	if !strings.Contains(docDefineSystem, `"definition"`) {
+		t.Error("define system message must ask for the definition JSON key")
 	}
 }

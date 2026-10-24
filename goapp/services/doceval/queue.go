@@ -13,22 +13,32 @@ import (
 	appredis "github.com/zetaoss/zengine/goapp/app/redis"
 )
 
-// The loop has its own queue, so listing and replacing its tasks never scans other tasks.
+// The evaluation and definition loops share their own queue, so listing and replacing their tasks never
+// scans other tasks.
 const (
-	LoopTaskType = "doc-eval-loop"
-	LoopQueue    = "doc-eval"
-	LoopTimeout  = 5 * time.Minute
+	LoopTaskType       = "doc-eval-loop"
+	DefineLoopTaskType = "doc-define-loop"
+	LoopQueue          = "doc-eval"
+	LoopTimeout        = 5 * time.Minute
+	DefineLoopTimeout  = 2 * time.Minute
 )
 
-// ScheduleLoop makes the loop's only waiting task a run after delay.
-func ScheduleLoop(ctx context.Context, cfg *config.Config, enq loopq.Enqueuer, delay time.Duration) error {
-	_, err := loopq.Replace(ctx, cfg, enq, LoopQueue, asynq.NewTask(LoopTaskType, nil), loopq.Options(LoopQueue, LoopTimeout, delay)...)
+func loopTimeout(taskType string) time.Duration {
+	if taskType == DefineLoopTaskType {
+		return DefineLoopTimeout
+	}
+	return LoopTimeout
+}
+
+// ScheduleLoop makes the only waiting task of a loop (LoopTaskType or DefineLoopTaskType) a run after delay.
+func ScheduleLoop(ctx context.Context, cfg *config.Config, enq loopq.Enqueuer, taskType string, delay time.Duration) error {
+	_, err := loopq.Replace(ctx, cfg, enq, LoopQueue, asynq.NewTask(taskType, nil), loopq.Options(LoopQueue, loopTimeout(taskType), delay)...)
 	return err
 }
 
-// StopLoop removes the loop's waiting task; a running evaluation finishes and schedules nothing more.
-func StopLoop(ctx context.Context, cfg *config.Config) error {
-	return loopq.Clear(ctx, cfg, LoopQueue, LoopTaskType)
+// StopLoop removes the waiting task of a loop; a running one finishes and schedules nothing more.
+func StopLoop(ctx context.Context, cfg *config.Config, taskType string) error {
+	return loopq.Clear(ctx, cfg, LoopQueue, taskType)
 }
 
 // RunNow makes the loop's only waiting task an immediate run, forced even when the interval is off,
@@ -67,10 +77,10 @@ const (
 	failedShownFor = 24 * time.Hour
 )
 
-// QueuedLoopTasks lists the doc-eval-loop tasks in the queue: active, pending, and scheduled by next
-// run time, then the most recent failed ones. The task is not retried, so a failure is archived by
-// asynq and the loop goes on with its next scheduled run.
-func QueuedLoopTasks(cfg *config.Config) ([]QueuedTask, error) {
+// QueuedLoopTasks lists the tasks of a loop (LoopTaskType or DefineLoopTaskType) in the queue: active,
+// pending, and scheduled by next run time, then the most recent failed ones. The task is not retried, so a
+// failure is archived by asynq and the loop goes on with its next scheduled run.
+func QueuedLoopTasks(cfg *config.Config, taskType string) ([]QueuedTask, error) {
 	conn, err := appredis.AsynqConnOpt(cfg)
 	if err != nil {
 		return nil, err
@@ -90,7 +100,7 @@ func QueuedLoopTasks(cfg *config.Config) ([]QueuedTask, error) {
 	for _, l := range lists {
 		var group []QueuedTask
 		err := loopq.ForEach(l.list, LoopQueue, func(t *asynq.TaskInfo) (bool, error) {
-			if t.Type == LoopTaskType {
+			if t.Type == taskType {
 				var p struct {
 					PageID    int    `json:"page_id"`
 					PageTitle string `json:"page_title"`
@@ -116,7 +126,7 @@ func QueuedLoopTasks(cfg *config.Config) ([]QueuedTask, error) {
 
 	var failed []QueuedTask
 	err = loopq.ForEach(inspector.ListArchivedTasks, LoopQueue, func(t *asynq.TaskInfo) (bool, error) {
-		if t.Type == LoopTaskType && time.Since(t.LastFailedAt) < failedShownFor {
+		if t.Type == taskType && time.Since(t.LastFailedAt) < failedShownFor {
 			var p struct {
 				PageID    int    `json:"page_id"`
 				PageTitle string `json:"page_title"`
