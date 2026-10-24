@@ -12,7 +12,6 @@ import (
 	"github.com/zetaoss/zengine/goapp/models"
 	"github.com/zetaoss/zengine/goapp/prompts"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 // SettingKey is the app_settings row of the saved models: a JSON object of chain name to model.
@@ -71,6 +70,8 @@ func ModelFor(db *gorm.DB, cfg *config.Config, chain prompts.Chain) string {
 }
 
 // Save sets the model of a built-in chain; an empty model removes the saved one, so the config file decides again.
+// Each change is one statement on the chain's key of chain_models, so overlapping saves of different chains keep
+// each other's models.
 func Save(db *gorm.DB, chain, model string) error {
 	if !builtin(chain) {
 		return fmt.Errorf("unknown chain %q", chain)
@@ -82,23 +83,15 @@ func Save(db *gorm.DB, chain, model string) error {
 			return err
 		}
 	}
-	saved, err := Saved(db)
-	if err != nil {
-		return err
-	}
+	// A built-in chain name has no quote, so it is safe inside the JSON path.
+	path := `$."` + chain + `"`
 	if model == "" {
-		delete(saved, chain)
-	} else {
-		saved[chain] = model
+		return db.Exec(`UPDATE app_settings SET value_json = JSON_REMOVE(value_json, ?) WHERE setting_key = ?`, path, SettingKey).Error
 	}
-	raw, err := json.Marshal(saved)
-	if err != nil {
-		return err
-	}
-	return db.Table("app_settings").Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "setting_key"}},
-		DoUpdates: clause.AssignmentColumns([]string{"value_json"}),
-	}).Create(&models.AppSetting{SettingKey: SettingKey, ValueJSON: string(raw)}).Error
+	return db.Exec(`
+		INSERT INTO app_settings (setting_key, value_json) VALUES (?, JSON_OBJECT(?, ?))
+		ON DUPLICATE KEY UPDATE value_json = JSON_SET(value_json, ?, ?)
+	`, SettingKey, chain, model, path, model).Error
 }
 
 func builtin(chain string) bool {
