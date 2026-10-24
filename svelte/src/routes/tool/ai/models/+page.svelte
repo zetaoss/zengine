@@ -35,11 +35,11 @@
     calls: number
     oks: number
     avg_elapsed_ms: number
-    first_call_at: string | null
+    first_ok_at: string | null
     last_ok_at: string | null
     last_failure_at: string | null
     last_error: string
-    chains: string
+    chains: Array<{ chain: string; calls: number; oks: number }>
   }
 
   interface ModelsResp {
@@ -58,11 +58,16 @@
     model: string
     order?: number
     usage?: ModelUsage
+    history?: ModelHistory
+    // retired: recorded calls, but bob no longer offers the model
+    retired?: boolean
   }
+
+  let historyById = $derived(new Map((resp?.history ?? []).map((h) => [h.model, h])))
 
   function toRow(id: string, provider: string, order?: number, usage?: ModelUsage): Row {
     const slash = id.indexOf('/')
-    return { id, provider, model: slash > 0 ? id.slice(slash + 1) : id, order, usage }
+    return { id, provider, model: slash > 0 ? id.slice(slash + 1) : id, order, usage, history: historyById.get(id) }
   }
 
   // Configured models (numbered in fallback order, the usage list's order) and any other enabled ones, most calls first.
@@ -85,7 +90,31 @@
       .sort((a, b) => a.provider.localeCompare(b.provider) || a.model.localeCompare(b.model)),
   )
 
+  // Models with recorded calls that bob no longer lists, last.
+  let retiredRows = $derived.by(() => {
+    const listed = new Set([...configuredRows, ...otherRows].map((r) => r.id))
+    return (resp?.history ?? [])
+      .filter((h) => !listed.has(h.model))
+      .map((h) => ({ ...toRow(h.model, h.model.split('/')[0]), retired: true }))
+  })
+
+  function successRate(h: ModelHistory): string {
+    return `${Math.round((h.oks / h.calls) * 100)}%`
+  }
+
+  function chainBreakdown(h: ModelHistory): string {
+    return h.chains.map((c) => `${c.chain} ${c.oks}/${c.calls}`).join(', ')
+  }
+
   // yyyy-MM-dd HH:mm rounded to the nearest minute (a reset at 15:59:59.9 shows as 16:00); HH:mm alone for today.
+  // yyyy-MM-dd in local time.
+  function formatDate(iso: string): string {
+    const d = new Date(iso)
+    if (isNaN(d.getTime())) return iso
+    const pad = (n: number) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  }
+
   function formatTime(iso?: string): string {
     if (!iso) return ''
     const t = new Date(iso).getTime()
@@ -150,7 +179,8 @@
 
 {#snippet modelRow(row: Row, n: number)}
   {@const u = row.usage}
-  <tr class={row.order ? '' : 'text-muted-foreground'}>
+  {@const h = row.history}
+  <tr class={row.order && !row.retired ? '' : 'text-muted-foreground'}>
     <td class="p-2 text-center text-muted-foreground">{n}</td>
     <td class="p-2">{row.provider}</td>
     <td class="p-2">{row.model}</td>
@@ -165,19 +195,27 @@
         >
       {/if}
     </td>
-    <td class="p-2 text-right">
+    <td class="p-2 text-right border-l">
       {#if u?.requests}{u.successes} <span class="text-xs text-muted-foreground">({u.requests})</span>{:else}-{/if}
     </td>
     <td class="p-2 text-right">{u ? (u.daily_limit ?? '-') : '-'}</td>
     <td class="p-2 text-right">
-      {#if u}
-        {u.remaining ?? '-'}
-        {#if u.quota_source}
-          <span class="text-xs text-muted-foreground">({u.quota_source})</span>
-        {/if}
-      {:else}
+      {#if u?.remaining == null}
         -
+      {:else if u.quota_source === 'estimate'}
+        <span title="bob 추정: 공급자가 남은 한도를 알려 주지 않아 bob이 센 값">≈{u.remaining}</span>
+      {:else}
+        {u.remaining}
       {/if}
+    </td>
+    <td class="p-2 text-right whitespace-nowrap border-l" title={h ? chainBreakdown(h) : undefined}>
+      {#if h}{successRate(h)} <span class="text-xs text-muted-foreground">({h.oks}/{h.calls})</span>{:else}-{/if}
+    </td>
+    <td class="p-2 text-right whitespace-nowrap">{h ? `${(h.avg_elapsed_ms / 1000).toFixed(1)}s` : '-'}</td>
+    <td class="p-2 text-xs whitespace-nowrap">{h?.first_ok_at ? formatDate(h.first_ok_at) : '-'}</td>
+    <td class="p-2 text-xs whitespace-nowrap">{h?.last_ok_at ? formatTime(h.last_ok_at) : '-'}</td>
+    <td class="p-2 text-xs whitespace-nowrap" title={h?.last_error || undefined}>
+      {#if h?.last_failure_at}<span class="text-rose-600 dark:text-rose-400">{formatTime(h.last_failure_at)}</span>{:else}-{/if}
     </td>
   </tr>
 {/snippet}
@@ -202,14 +240,24 @@
     <div class="rounded-lg border bg-card shadow-sm overflow-x-auto">
       <table class="w-full text-left text-sm border-collapse">
         <thead>
+          <!-- Daily: bob's count for the quota day, reset daily. Total: zengine's chain calls (llm_calls). -->
+          <tr class="bg-muted/50 text-muted-foreground text-xs">
+            <th class="p-2 w-12 text-center" rowspan="2">#</th>
+            <th class="p-2" rowspan="2">Provider</th>
+            <th class="p-2" rowspan="2">Model</th>
+            <th class="p-2" rowspan="2">Status</th>
+            <th class="p-2 pb-0 text-center border-l" colspan="3">Daily</th>
+            <th class="p-2 pb-0 text-center border-l" colspan="5">Total</th>
+          </tr>
           <tr class="border-b bg-muted/50 text-muted-foreground text-xs">
-            <th class="p-2 w-12 text-center">#</th>
-            <th class="p-2">Provider</th>
-            <th class="p-2">Model</th>
-            <th class="p-2">Status</th>
-            <th class="p-2 text-right">Calls</th>
+            <th class="p-2 text-right border-l">Calls</th>
             <th class="p-2 text-right">Limit</th>
             <th class="p-2 text-right">Remaining</th>
+            <th class="p-2 text-right border-l" title="마우스를 올리면 체인별">Calls</th>
+            <th class="p-2 text-right" title="평균 응답 시간(생성 포함)">Latency</th>
+            <th class="p-2" title="처음 성공한 날">First</th>
+            <th class="p-2" title="마지막 성공">Last</th>
+            <th class="p-2" title="마지막 실패, 마우스를 올리면 오류">Fail</th>
           </tr>
         </thead>
         <tbody class="divide-y">
@@ -219,53 +267,11 @@
           {#each otherRows as row, i (row.id)}
             {@render modelRow(row, configuredRows.length + i + 1)}
           {/each}
+          {#each retiredRows as row, i (row.id)}
+            {@render modelRow(row, configuredRows.length + otherRows.length + i + 1)}
+          {/each}
         </tbody>
       </table>
     </div>
-
-    <h2 class="pt-2 text-sm font-semibold">
-      호출 이력 <span class="font-normal text-xs text-muted-foreground">zengine 체인 호출 전체 (llm_calls)</span>
-    </h2>
-    {#if resp.history?.length}
-      <div class="rounded-lg border bg-card shadow-sm overflow-x-auto">
-        <table class="w-full text-left text-sm border-collapse">
-          <thead>
-            <tr class="border-b bg-muted/50 text-muted-foreground text-xs">
-              <th class="p-2">Model</th>
-              <th class="p-2 text-right">Calls</th>
-              <th class="p-2 text-right">Success</th>
-              <th class="p-2 text-right">Avg</th>
-              <th class="p-2">Last OK</th>
-              <th class="p-2">Last failure</th>
-              <th class="p-2">Chains</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y">
-            {#each resp.history as h (h.model)}
-              <tr>
-                <td class="p-2">{h.model}</td>
-                <td class="p-2 text-right">{h.calls}</td>
-                <td class="p-2 text-right">
-                  {Math.round((h.oks / h.calls) * 100)}% <span class="text-xs text-muted-foreground">({h.oks})</span>
-                </td>
-                <td class="p-2 text-right">{(h.avg_elapsed_ms / 1000).toFixed(1)}s</td>
-                <td class="p-2 text-xs">{h.last_ok_at ? formatTime(h.last_ok_at) : '-'}</td>
-                <td class="p-2 text-xs">
-                  {#if h.last_failure_at}
-                    <div>{formatTime(h.last_failure_at)}</div>
-                    {#if h.last_error}<div class="text-rose-600 dark:text-rose-400 break-words max-w-md">{h.last_error}</div>{/if}
-                  {:else}
-                    -
-                  {/if}
-                </td>
-                <td class="p-2 text-xs text-muted-foreground">{h.chains}</td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      </div>
-    {:else}
-      <div class="text-xs text-muted-foreground">기록된 호출이 없습니다.</div>
-    {/if}
   {/if}
 </div>
