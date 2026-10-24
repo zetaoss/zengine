@@ -93,13 +93,12 @@ func TestLoadChainsFromFile(t *testing.T) {
 	path := t.TempDir() + "/goapp.yaml"
 	if err := os.WriteFile(path, []byte(`chains:
   common:
-    interval: 1h
     model: groq/openai/gpt-oss-120b
     strategy: random
   docDefine:
     interval: 30m
   docEval:
-    # interval: 1h
+    interval: 1h
 `), 0o600); err != nil {
 		t.Fatal(err)
 	}

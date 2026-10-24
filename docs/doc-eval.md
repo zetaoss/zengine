@@ -72,10 +72,10 @@ Each field resolves in this order: the value a sysop saved in the evaluation tab
 ```yaml
 chains:
   common:
-    interval: 1h
     model: groq/openai/gpt-oss-120b
     strategy: random
   docDefine:
     interval: 30m
   docEval:
+    interval: 1h
 ```

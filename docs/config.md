@@ -45,12 +45,12 @@ A YAML file (`goapp/app/config/config.go`, `GOAPP_CONFIG`) for goapp settings th
 ```yaml
 chains:
   common:
-    interval: 1h
     model: groq/openai/gpt-oss-120b
     strategy: random
   docDefine:
     interval: 30m
   docEval:
+    interval: 1h
 ```
 
 ### MediaWiki (PHP)
