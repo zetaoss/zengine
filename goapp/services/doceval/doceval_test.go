@@ -224,3 +224,12 @@ func TestDefinitionCurrent(t *testing.T) {
 		t.Error("expected another chain version or no definition to be stale")
 	}
 }
+
+func TestDefineVersionArg(t *testing.T) {
+	if arg := DefineVersionArg(); arg.Name != "defineVersion" || arg.Value != prompts.DocDefine.Metadata["version"] {
+		t.Fatalf("unexpected arg %+v", arg)
+	}
+	if !strings.Contains(CurrentDefinitionSQL, "@defineVersion") {
+		t.Fatal("CurrentDefinitionSQL must bind @defineVersion")
+	}
+}

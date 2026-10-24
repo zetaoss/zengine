@@ -21,7 +21,7 @@ const CurrentDefinitionSQL = `d.page_id = p.page_id AND d.revid = p.page_latest 
 
 // DefineVersionArg binds @defineVersion in CurrentDefinitionSQL.
 func DefineVersionArg() sql.NamedArg {
-	return DefineVersionArg()
+	return sql.Named("defineVersion", prompts.DocDefine.Metadata["version"])
 }
 
 // PickCandidate selects an article to evaluate by strategy: one with a current definition and no evaluation of
