@@ -12,6 +12,17 @@ goapp defines LLM work as chains, following LangChain. Types: `goapp/prompts/cha
 
 "System prompt" here is the system message; "user prompt" is not used.
 
+## Built-in chains
+
+| Chain | File | Runs in | Model from |
+| :--- | :--- | :--- | :--- |
+| `doc-define` | `goapp/prompts/docdefine.go` | `doc-define-loop` ([doc-eval.md](doc-eval.md)) | evaluation tab, `chains.docDefine` |
+| `doc-eval` | `goapp/prompts/doceval.go` | `doc-eval-loop` ([doc-eval.md](doc-eval.md)) | evaluation tab, `chains.docEval` |
+| `doc-create` | `goapp/prompts/docwrite.go` | `ai-edit`, request type `create` | `chains.docCreate` |
+| `doc-update` | `goapp/prompts/docwrite.go` | `ai-edit`, request type `update` | `chains.docUpdate` |
+
+Each falls back to `chains.common.model` and then to the built-in default (`config.DefaultModel`); see [config.md](config.md#goapp-config-file). `doc-create` and `doc-update` pass through the prompt rendered from an AI edit prompt template, since the templates still live in `aiedit_prompts`.
+
 ## Rules
 
 - Inputs are chain inputs or earlier outputs; every placeholder is a declared input and every input is used (`chain_test.go`).
