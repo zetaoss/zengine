@@ -36,6 +36,7 @@
   interface ChainInput {
     name: string
     label?: string
+    description?: string
     type?: string
   }
 
@@ -250,7 +251,6 @@
 
   // User inputs whose name the AI edit task also acts on (goapp/tasks/aiedit/request.go).
   const reservedInputs: Record<string, string> = {
-    hint: '제목이 짧으면 필수',
     readBacklinks: '켜면 역링크를 읽어 {backlinkTexts}로 넣음',
   }
 
@@ -418,6 +418,9 @@
           {:else}
             <div class="h-8 rounded border bg-muted/30"></div>
           {/if}
+        {/if}
+        {#if input.description}
+          <div class="text-muted-foreground">{input.description}</div>
         {/if}
       </div>
     {:else}

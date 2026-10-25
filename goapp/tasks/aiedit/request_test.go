@@ -40,9 +40,6 @@ func contents(r Rendered) string {
 
 func TestRenderCreate(t *testing.T) {
 	cfg := fakeWiki(t)
-	if _, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestCreate, Title: "사과"}); !IsInputError(err) {
-		t.Fatalf("a two-letter title needs a hint, got %v", err)
-	}
 	r, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestCreate, Title: "사과", UserInputs: map[string]any{
 		"hint": "apple", "readBacklinks": true, "materials": []any{"자료 하나", ""}, "request": "",
 	}})
@@ -78,14 +75,6 @@ func TestRenderUpdateTemplate(t *testing.T) {
 	}
 	if _, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestUpdate, Title: "자바", UserInputs: map[string]any{"hint": "x"}}); !IsInputError(err) {
 		t.Errorf("doc-update has no hint, got %v", err)
-	}
-}
-
-func TestNeedsHint(t *testing.T) {
-	for title, want := range map[string]bool{"사과": true, "Go": true, "배": true, "사 과": true, "자바 (섬)": false, "사과나무": false, "C++": false} {
-		if got := NeedsHint(title); got != want {
-			t.Errorf("NeedsHint(%q) = %v, want %v", title, got, want)
-		}
 	}
 }
 
@@ -126,7 +115,7 @@ func TestRenderOwnUserInputs(t *testing.T) {
 		Messages:   `[{"role":"user","content":"{title} / {tone}"},{"role":"user","if":"table","content":"표로"}]`}
 	r, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestCreate, Title: "사과", Prompt: prompt, UserInputs: map[string]any{"tone": "존댓말", "table": true}})
 	if err != nil {
-		t.Fatalf("a template without hint does not ask for one, and its own inputs reach the messages: %v", err)
+		t.Fatalf("a template's own inputs reach the messages: %v", err)
 	}
 	if got := contents(r); got != "사과 / 존댓말\n\n표로" {
 		t.Fatalf("unexpected %q", got)

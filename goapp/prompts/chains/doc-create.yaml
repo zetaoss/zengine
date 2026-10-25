@@ -9,6 +9,7 @@ spec:
   userInputs:
     - name: hint
       label: 힌트
+      description: "제목이 짧거나 뜻이 여럿이면 무엇을 가리키는지 적어 주세요. 예: 사과 → apple"
     - name: readBacklinks
       label: 역링크 읽기
       type: bool

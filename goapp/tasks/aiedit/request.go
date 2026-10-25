@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"unicode/utf8"
 
 	"github.com/zetaoss/zengine/goapp/app/config"
 	"github.com/zetaoss/zengine/goapp/models"
@@ -51,16 +50,6 @@ func ChainOf(requestType string) prompts.Chain {
 	return prompts.DocCreate
 }
 
-// NeedsHint reports whether a title is short enough to be ambiguous: two characters or fewer, spaces not
-// counted, and no trailing parenthesis such as "자바 (섬)" that already tells the meaning.
-func NeedsHint(title string) bool {
-	title = strings.TrimSpace(title)
-	if strings.HasSuffix(title, ")") && strings.Contains(title, "(") {
-		return false
-	}
-	return utf8.RuneCountInString(strings.ReplaceAll(title, " ", "")) <= 2
-}
-
 // Render fills the chain's variables (the user inputs as given; the title, the wikitext and, with readBacklinks,
 // the excerpts of the pages that link here) and renders its step.
 func Render(ctx context.Context, cfg *config.Config, req Request) (Rendered, error) {
@@ -74,9 +63,6 @@ func Render(ctx context.Context, cfg *config.Config, req Request) (Rendered, err
 	vars, err := chain.UserVars(req.UserInputs)
 	if err != nil {
 		return Rendered{}, InputError{err.Error()}
-	}
-	if hint, _ := vars["hint"].(string); declares(chain.Spec.UserInputs, "hint") && strings.TrimSpace(hint) == "" && NeedsHint(req.Title) {
-		return Rendered{}, InputError{"제목이 짧아 뜻이 여럿일 수 있습니다. 힌트를 적어 주세요."}
 	}
 	for _, in := range chain.Spec.Inputs {
 		switch in.Name {
@@ -106,7 +92,7 @@ func Render(ctx context.Context, cfg *config.Config, req Request) (Rendered, err
 }
 
 // TemplateUserInputs are a template's run form: its own (aiedit_prompts.user_inputs) or its chain's. Values of a
-// user input reach the messages as they are; hint and readBacklinks also keep what the task does with them.
+// user input reach the messages as they are; readBacklinks also has the task read the pages that link here.
 func TemplateUserInputs(p models.AIEditPrompt) []prompts.Input {
 	var own []prompts.Input
 	if strings.TrimSpace(p.UserInputs) != "" && json.Unmarshal([]byte(p.UserInputs), &own) == nil {
@@ -141,15 +127,6 @@ func TemplateMessages(p models.AIEditPrompt) []prompts.Message {
 		}
 	}
 	return messages
-}
-
-func declares(inputs []prompts.Input, name string) bool {
-	for _, in := range inputs {
-		if in.Name == name {
-			return true
-		}
-	}
-	return false
 }
 
 // MessagesText joins rendered messages for people to read (aiedit_tasks.llm_input).

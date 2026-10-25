@@ -23,7 +23,7 @@ goapp defines LLM work as chains, following LangChain. Types: `goapp/prompts/cha
 | `doc-create` | `doc-create.yaml` | `ai-edit`, request type `create` | `chains.docCreate` |
 | `doc-update` | `doc-update.yaml` | `ai-edit`, request type `update` | `chains.docUpdate` |
 
-The model picked in the chains tab comes first; see [Screen and API](#screen-and-api) and [config.md](config.md#goapp-config-file). For `doc-create` and `doc-update` the requester may pick an AI edit prompt template (`aiedit_prompts`), which runs with its own run form and messages: `user_inputs` in place of the chain's user inputs (`Chain.WithUserInputs`: any names but the task's inputs and `index`; values reach the messages as they are, and `hint` and `readBacklinks` keep what the task does with them) and `messages` in place of the step's (`Chain.ValidateMessages`: the rules of `Validate`, except that it need not use every input). A template saved before it had messages runs its content in place of the step's unconditional messages, followed by the step's `if` and `each` messages (`aiedit.TemplateMessages`).
+The model picked in the chains tab comes first; see [Screen and API](#screen-and-api) and [config.md](config.md#goapp-config-file). For `doc-create` and `doc-update` the requester may pick an AI edit prompt template (`aiedit_prompts`), which runs with its own run form and messages: `user_inputs` in place of the chain's user inputs (`Chain.WithUserInputs`: any names but the task's inputs and `index`; values reach the messages as they are; `readBacklinks` also has the task read the pages that link here) and `messages` in place of the step's (`Chain.ValidateMessages`: the rules of `Validate`, except that it need not use every input). A template saved before it had messages runs its content in place of the step's unconditional messages, followed by the step's `if` and `each` messages (`aiedit.TemplateMessages`).
 
 ## Chain file
 
@@ -71,7 +71,7 @@ spec:
 
 A chain says what to ask a model: its prompts, formats, outputs and version, and which values the requester gives (user inputs) and the task fills (inputs). It does not pick targets, read the wiki, or store results; its model is picked per chain (`services/chainsvc`). A goapp task decides when to run a chain and on what: it picks the target, fills the inputs, runs the steps through its service, stores the result, handles failures, and decides from the chain version whether a stored result can be reused. See the table above for which task runs which chain.
 
-`ai-edit` fills `title`, `wikitext` (the page as it stands in the editor, else the saved page) and `backlinkTexts`: with `readBacklinks` on, up to 10 main-namespace articles linking to the page (the page may not exist yet), each as its title and the text around its first link to the page, references and comments removed, or its beginning when the link comes from a template (`services/wikisvc`). For `doc-create` it asks for a `hint` when the title is two characters or fewer, spaces aside, without a trailing parenthesis such as `자바 (섬)`.
+`ai-edit` fills `title`, `wikitext` (the page as it stands in the editor, else the saved page) and `backlinkTexts`: with `readBacklinks` on, up to 10 main-namespace articles linking to the page (the page may not exist yet), each as its title and the text around its first link to the page, references and comments removed, or its beginning when the link comes from a template (`services/wikisvc`).
 
 ## Rules
 

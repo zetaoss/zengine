@@ -255,6 +255,7 @@
       <div class="flex min-h-0 flex-col gap-3 overflow-auto text-sm">
         {#each userInputs as input (input.name)}
           {@const label = input.label ?? input.name}
+          <div class="flex flex-col gap-1">
           {#if input.type === 'bool'}
             <label class="flex items-center gap-2">
               <input
@@ -307,6 +308,10 @@
               />
             </div>
           {/if}
+            {#if input.description}
+              <div class="text-xs text-a-slate-500">{input.description}</div>
+            {/if}
+          </div>
         {/each}
       </div>
     {/if}
