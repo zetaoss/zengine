@@ -173,3 +173,13 @@ func TestTemplateWithoutUserInputs(t *testing.T) {
 		t.Fatalf("a stored null is no inputs, not the chain's: %#v", got)
 	}
 }
+
+func TestRenderNoMessages(t *testing.T) {
+	cfg := fakeWiki(t)
+	prompt := &models.AIEditPrompt{ID: 6, RequestType: models.AIEditRequestCreate, UserInputs: "[]",
+		Messages: `[{"role":"user","if":"title2","content":"x"}]`}
+	prompt.UserInputs = `[{"name":"title2"}]`
+	if _, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestCreate, Title: "x", Prompt: prompt}); !IsInputError(err) {
+		t.Fatalf("a request that sends no message must be the requester's to fix, got %v", err)
+	}
+}
