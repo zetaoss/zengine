@@ -1,12 +1,10 @@
 package aiedit
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -14,6 +12,7 @@ import (
 	"github.com/zetaoss/zengine/goapp/app"
 	"github.com/zetaoss/zengine/goapp/app/config"
 	"github.com/zetaoss/zengine/goapp/models"
+	"github.com/zetaoss/zengine/goapp/prompts"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
 	"github.com/zetaoss/zengine/goapp/tasks/aiedit"
 
@@ -26,12 +25,18 @@ const (
 	maxPageTaskLimit     = 100
 )
 
+// storePayload is an AI edit request: the page, the request type, an AI edit prompt template (prompt_id, or
+// none for the chain's own messages), the page as it stands in the editor (wikitext, for update) and the run
+// form's values (user_inputs). prompt_title and llm_input come from skins loaded before server rendering.
 type storePayload struct {
-	PageID      int    `json:"page_id"`
-	Title       string `json:"title"`
-	RequestType string `json:"request_type"`
-	PromptTitle string `json:"prompt_title"`
-	LLMInput    string `json:"llm_input"`
+	PageID      int            `json:"page_id"`
+	Title       string         `json:"title"`
+	RequestType string         `json:"request_type"`
+	PromptID    int            `json:"prompt_id"`
+	PromptTitle string         `json:"prompt_title"`
+	Wikitext    string         `json:"wikitext"`
+	UserInputs  map[string]any `json:"user_inputs"`
+	LLMInput    string         `json:"llm_input"`
 }
 
 type taskResponse struct {
@@ -115,71 +120,62 @@ func Store(c *serverctx.Context) {
 	if !c.Decode(&body) {
 		return
 	}
-	requestType, ok := models.NormalizeAIEditRequestType(body.RequestType)
+	req, prompt, ok := request(c, &body)
 	if !ok {
-		c.JSONError(http.StatusUnprocessableEntity, "Invalid payload")
 		return
 	}
-	body.RequestType = requestType
-	title := strings.TrimSpace(body.Title)
-	if title == "" && body.PageID > 0 {
-		title = resolvePageTitle(c.DB, c.Cfg, body.PageID)
-	}
-	if title == "" {
-		c.JSONError(http.StatusUnprocessableEntity, "Invalid payload")
+	var r aiedit.Rendered
+	if body.LLMInput != "" && body.UserInputs == nil && prompt == nil {
+		r = aiedit.Rendered{Chain: aiedit.ChainOf(req.RequestType), Messages: []prompts.Message{{Role: "user", Content: strings.TrimSpace(body.LLMInput)}}}
+	} else if r, ok = render(c, req); !ok {
 		return
 	}
-	llmInput := strings.TrimSpace(body.LLMInput)
-	if llmInput == "" {
-		promptTitle := normalizePromptTitle("", body.RequestType)
-		template, err := fetchWikiPageText(c.R.Context(), c.Cfg, promptTitle)
-		if err != nil {
-			c.InternalError()
-			return
-		}
-		existing := ""
-		if body.RequestType == models.AIEditRequestUpdate {
-			txt, _ := fetchWikiPageText(c.R.Context(), c.Cfg, title)
-			existing = txt
-		}
-		llmInput = renderAIEditInput(template, map[string]string{
-			"제목":   title,
-			"기존문서": existing,
-			"추가요청": "",
-			"참고자료": "",
-			"분류":   "",
-		})
+	messagesJSON, _ := json.Marshal(r.Messages)
+	var inputsJSON []byte
+	if r.Vars != nil {
+		inputsJSON, _ = json.Marshal(r.Vars)
 	}
 	insert := struct {
-		ID          int                `gorm:"column:id"`
-		UserID      int                `gorm:"column:user_id"`
-		UserName    string             `gorm:"column:user_name"`
-		PageID      int                `gorm:"column:page_id"`
-		PageTitle   string             `gorm:"column:page_title"`
-		RequestType string             `gorm:"column:request_type"`
-		LLMOutput   string             `gorm:"column:llm_output"`
-		LLMInput    string             `gorm:"column:llm_input"`
-		Phase       models.AIEditPhase `gorm:"column:phase"`
-		CreatedAt   time.Time          `gorm:"column:created_at"`
-		UpdatedAt   time.Time          `gorm:"column:updated_at"`
+		ID           int                `gorm:"column:id"`
+		UserID       int                `gorm:"column:user_id"`
+		UserName     string             `gorm:"column:user_name"`
+		PageID       int                `gorm:"column:page_id"`
+		PageTitle    string             `gorm:"column:page_title"`
+		RequestType  string             `gorm:"column:request_type"`
+		PromptID     int                `gorm:"column:prompt_id"`
+		ChainVersion string             `gorm:"column:chain_version"`
+		Inputs       string             `gorm:"column:inputs"`
+		LLMMessages  string             `gorm:"column:llm_messages"`
+		LLMOutput    string             `gorm:"column:llm_output"`
+		LLMInput     string             `gorm:"column:llm_input"`
+		Phase        models.AIEditPhase `gorm:"column:phase"`
+		CreatedAt    time.Time          `gorm:"column:created_at"`
+		UpdatedAt    time.Time          `gorm:"column:updated_at"`
 	}{
-		UserID:      user.ID,
-		UserName:    user.Name,
-		PageID:      body.PageID,
-		PageTitle:   title,
-		RequestType: body.RequestType,
-		LLMOutput:   "",
-		LLMInput:    llmInput,
-		Phase:       models.AIEditPhasePending,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		UserID:       user.ID,
+		UserName:     user.Name,
+		PageID:       body.PageID,
+		PageTitle:    req.Title,
+		RequestType:  req.RequestType,
+		PromptID:     promptID(prompt),
+		ChainVersion: r.Chain.Metadata.Version,
+		Inputs:       string(inputsJSON),
+		LLMMessages:  string(messagesJSON),
+		LLMOutput:    "",
+		LLMInput:     aiedit.MessagesText(r.Messages),
+		Phase:        models.AIEditPhasePending,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
 	}
 	if err := c.DB.Table("aiedit_tasks").Create(&insert).Error; err != nil {
 		c.InternalError()
 		return
 	}
 	if insert.ID > 0 {
-		if promptTitle := strings.TrimSpace(body.PromptTitle); promptTitle != "" {
+		switch promptTitle := strings.TrimSpace(body.PromptTitle); {
+		case prompt != nil:
+			c.DB.Model(&models.AIEditPrompt{}).Where("id = ?", prompt.ID).UpdateColumn("use_count", gorm.Expr("use_count + 1"))
+		case promptTitle != "":
 			c.DB.Model(&models.AIEditPrompt{}).Where("title = ?", promptTitle).UpdateColumn("use_count", gorm.Expr("use_count + 1"))
 		}
 		if _, err := aiedit.Enqueue(c.R.Context(), c.AppContext, insert.ID); err != nil {
@@ -190,64 +186,80 @@ func Store(c *serverctx.Context) {
 	c.JSON(app.H{"ok": true, "id": insert.ID, "created": true})
 }
 
-func normalizePromptTitle(title string, requestType string) string {
-	title = strings.TrimSpace(title)
+// Preview renders a request as Store would and returns the messages without storing anything.
+func Preview(c *serverctx.Context) {
+	if user, ok := c.User(); !ok || user.ID < 1 {
+		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
+		return
+	}
+	var body storePayload
+	if !c.Decode(&body) {
+		return
+	}
+	req, _, ok := request(c, &body)
+	if !ok {
+		return
+	}
+	r, ok := render(c, req)
+	if !ok {
+		return
+	}
+	c.JSON(app.H{"chain": r.Chain.Name, "version": r.Chain.Metadata.Version, "messages": r.Messages})
+}
+
+// request checks the payload and loads its template, answering 422 (or 500) itself when it returns false.
+func request(c *serverctx.Context, body *storePayload) (aiedit.Request, *models.AIEditPrompt, bool) {
+	requestType, ok := models.NormalizeAIEditRequestType(body.RequestType)
+	if !ok {
+		c.JSONError(http.StatusUnprocessableEntity, "Invalid payload")
+		return aiedit.Request{}, nil, false
+	}
+	title := strings.TrimSpace(body.Title)
+	if title == "" && body.PageID > 0 {
+		title = resolvePageTitle(c.DB, c.Cfg, body.PageID)
+	}
 	if title == "" {
-		if strings.TrimSpace(requestType) == models.AIEditRequestUpdate {
-			return "틀:프롬프트 편집"
+		c.JSONError(http.StatusUnprocessableEntity, "Invalid payload")
+		return aiedit.Request{}, nil, false
+	}
+	var prompt *models.AIEditPrompt
+	if body.PromptID > 0 {
+		var row models.AIEditPrompt
+		if err := c.DB.Where("id = ?", body.PromptID).Take(&row).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				c.JSONError(http.StatusUnprocessableEntity, "Unknown prompt")
+			} else {
+				c.InternalError()
+			}
+			return aiedit.Request{}, nil, false
 		}
-		return "틀:프롬프트 생성"
+		if row.RequestType != requestType {
+			c.JSONError(http.StatusUnprocessableEntity, "The prompt is for another request type")
+			return aiedit.Request{}, nil, false
+		}
+		prompt = &row
 	}
-	if !strings.HasPrefix(title, "틀:") {
-		return "틀:" + title
-	}
-	return title
+	return aiedit.Request{RequestType: requestType, Title: title, Wikitext: body.Wikitext, Prompt: prompt, UserInputs: body.UserInputs}, prompt, true
 }
 
-func renderAIEditInput(template string, values map[string]string) string {
-	out := template
-	for key, value := range values {
-		out = strings.ReplaceAll(out, "{"+key+"}", value)
-	}
-	return out
-}
-
-func fetchWikiPageText(ctx context.Context, cfg *config.Config, title string) (string, error) {
-	apiServer := strings.TrimRight(cfg.App.APIServer, "/")
-	if apiServer == "" {
-		return "", fmt.Errorf("APP_URL is required")
-	}
-	u := apiServer + "/w/api.php?action=query&format=json&formatversion=2&prop=revisions&rvprop=content&rvslots=main&titles=" + url.QueryEscape(title)
-	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
-	resp, err := (&http.Client{Timeout: 20 * time.Second}).Do(req)
+func render(c *serverctx.Context, req aiedit.Request) (aiedit.Rendered, bool) {
+	r, err := aiedit.Render(c.R.Context(), c.Cfg, req)
 	if err != nil {
-		return "", err
+		if aiedit.IsInputError(err) {
+			c.JSONError(http.StatusUnprocessableEntity, err.Error())
+		} else {
+			c.InternalError()
+		}
+		return aiedit.Rendered{}, false
 	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-	var payload struct {
-		Query struct {
-			Pages []struct {
-				Missing   bool `json:"missing"`
-				Revisions []struct {
-					Slots map[string]struct {
-						Content string `json:"content"`
-					} `json:"slots"`
-				} `json:"revisions"`
-			} `json:"pages"`
-		} `json:"query"`
+	return r, true
+}
+
+func promptID(p *models.AIEditPrompt) int {
+	if p == nil {
+		return 0
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
-		return "", err
-	}
-	if len(payload.Query.Pages) == 0 || payload.Query.Pages[0].Missing {
-		return "", fmt.Errorf("wiki page not found: %s", title)
-	}
-	if len(payload.Query.Pages[0].Revisions) == 0 {
-		return "", nil
-	}
-	return payload.Query.Pages[0].Revisions[0].Slots["main"].Content, nil
+	return p.ID
 }
 
 func retryAt(task models.AIEdit) *string {

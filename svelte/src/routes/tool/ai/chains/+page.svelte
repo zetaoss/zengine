@@ -15,20 +15,42 @@
 
   import { fetchModelIds, formatModelLabel } from '../loop'
 
+  interface ChainMessage {
+    role: string
+    content: string
+    if?: string
+    each?: string
+  }
+
   interface ChainStep {
     name: string
     description: string
     inputs: string[]
-    messages: Array<{ role: string; content: string }>
-    parser: string
-    output: string
+    messages: ChainMessage[]
+    format?: string
+    output?: string
+  }
+
+  interface ChainInput {
+    name: string
+    label?: string
+    type?: string
   }
 
   interface Chain {
     name: string
     metadata: { version: string; description: string }
-    spec: { inputs: string[]; steps: ChainStep[] }
+    spec: { userInputs?: ChainInput[]; inputs: ChainInput[]; steps: ChainStep[] }
     model: string
+  }
+
+  function inputLabel(input: ChainInput) {
+    const type = input.type && input.type !== 'string' ? `: ${input.type}` : ''
+    return input.label ? `${input.label}(${input.name}${type})` : `${input.name}${type}`
+  }
+
+  function messageHeader(m: ChainMessage) {
+    return [m.role, m.if && `if ${m.if}`, m.each && `each ${m.each}`].filter(Boolean).join(' · ')
   }
 
   interface PromptItem {
@@ -168,6 +190,12 @@
               <tr class="bg-muted/10">
                 <td colspan="5" class="p-4">
                   <div class="space-y-4">
+                    <div class="space-y-1 text-xs text-muted-foreground">
+                      {#if chain.spec.userInputs?.length}
+                        <div>실행 입력: <span class="font-mono">{chain.spec.userInputs.map(inputLabel).join(', ')}</span></div>
+                      {/if}
+                      <div>task 입력: <span class="font-mono">{chain.spec.inputs.map(inputLabel).join(', ')}</span></div>
+                    </div>
                     <div class="space-y-3 min-w-0">
                       {#each chain.spec.steps as st, n (st.name)}
                         <div class="space-y-1.5 text-xs">
@@ -175,18 +203,16 @@
                             <span class="text-muted-foreground">{n + 1}.</span>
                             <span class="font-mono font-medium">{st.name}</span>
                             <span class="ml-1 font-mono text-muted-foreground"
-                              >{st.inputs.join(', ')} → {st.parser} → {st.output}</span
+                              >{st.inputs.join(', ')} → {st.format ?? 'text'}{st.output ? ` → ${st.output}` : ''}</span
                             >
                             <span class="ml-2 text-muted-foreground">{st.description}</span>
                           </div>
-                          {#if !promptType}
-                            {#each st.messages as m (m.role)}
-                              <div class="rounded border">
-                                <div class="border-b bg-muted/50 px-3 py-1 font-mono text-muted-foreground">{m.role}</div>
-                                <pre class="max-h-80 overflow-auto whitespace-pre-wrap bg-muted/30 p-3 text-[11px]">{m.content}</pre>
-                              </div>
-                            {/each}
-                          {/if}
+                          {#each st.messages as m, i (i)}
+                            <div class="rounded border">
+                              <div class="border-b bg-muted/50 px-3 py-1 font-mono text-muted-foreground">{messageHeader(m)}</div>
+                              <pre class="max-h-80 overflow-auto whitespace-pre-wrap bg-muted/30 p-3 text-[11px]">{m.content}</pre>
+                            </div>
+                          {/each}
                         </div>
                       {/each}
                     </div>
@@ -195,7 +221,7 @@
                       {@const items = prompts.filter((p) => p.request_type === promptType)}
                       <div class="space-y-2 min-w-0 text-xs">
                         <p class="text-muted-foreground">
-                          아래 프롬프트 틀 중 하나를 제목과 기존 문서로 채운 내용이 그대로 모델에 들어갑니다.
+                          프롬프트 틀을 고르면 그 틀이 위 메시지 중 조건 없는 것(system과 제목·기존 문서)을 대신하고, 실행 입력 메시지(if·each)는 그대로 붙습니다. 틀의 변수: {"{title}"}, {"{wikitext}"}(편집).
                         </p>
                         <div class="flex items-center justify-between">
                           <span class="font-medium">프롬프트 틀 <span class="text-muted-foreground">{items.length}</span></span>

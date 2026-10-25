@@ -5,6 +5,9 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"regexp"
+	"slices"
+	"strconv"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -27,19 +30,133 @@ type Metadata struct {
 	Description string `json:"description" yaml:"description"`
 }
 
+// Spec.UserInputs are what the requester of a run gives (the run form); they reach the messages as they are.
+// Spec.Inputs are what the task running the chain fills (a page's title, its wikitext). Together they are the
+// chain's variables.
 type Spec struct {
-	Inputs []string `json:"inputs" yaml:"inputs"`
-	Steps  []Step   `json:"steps" yaml:"steps"`
+	UserInputs []Input `json:"userInputs,omitempty" yaml:"userInputs,omitempty"`
+	Inputs     []Input `json:"inputs" yaml:"inputs"`
+	Steps      []Step  `json:"steps" yaml:"steps"`
+}
+
+// Input is a variable of a chain. Label names a user input in the run form.
+type Input struct {
+	Name  string    `json:"name" yaml:"name"`
+	Label string    `json:"label,omitempty" yaml:"label,omitempty"`
+	Type  InputType `json:"type,omitempty" yaml:"type,omitempty"`
+}
+
+// UnmarshalYAML also reads an input written as its name alone.
+func (in *Input) UnmarshalYAML(n *yaml.Node) error {
+	if n.Kind == yaml.ScalarNode {
+		in.Name = n.Value
+		return nil
+	}
+	type plain Input
+	return n.Decode((*plain)(in))
+}
+
+// InputType is the type of a variable's value: string (the default, "" in a file), bool, or texts ([]string).
+type InputType string
+
+const (
+	TypeString InputType = "string"
+	TypeBool   InputType = "bool"
+	TypeTexts  InputType = "texts"
+)
+
+func (t InputType) orString() InputType {
+	if t == "" {
+		return TypeString
+	}
+	return t
+}
+
+// Vars are the values of a chain's variables for one run: a string, a bool, or a []string per name.
+type Vars map[string]any
+
+// present reports whether v counts as given for a message's If: a non-blank string, true, or a non-empty list.
+func present(v any) bool {
+	switch v := v.(type) {
+	case string:
+		return strings.TrimSpace(v) != ""
+	case bool:
+		return v
+	case []string:
+		return len(v) > 0
+	}
+	return false
+}
+
+func text(v any) string {
+	switch v := v.(type) {
+	case string:
+		return v
+	case bool:
+		return strconv.FormatBool(v)
+	case []string:
+		return strings.Join(v, "\n\n")
+	}
+	return ""
+}
+
+// UserVars turns the run form's values into Vars, checking each against its user input's type: a string, a
+// bool, or a list of strings whose blank items are dropped. Missing user inputs are left out.
+func (c Chain) UserVars(raw map[string]any) (Vars, error) {
+	vars := Vars{}
+	for name := range raw {
+		if !slices.ContainsFunc(c.Spec.UserInputs, func(in Input) bool { return in.Name == name }) {
+			return nil, fmt.Errorf("unknown user input %q", name)
+		}
+	}
+	for _, in := range c.Spec.UserInputs {
+		v, ok := raw[in.Name]
+		if !ok || v == nil {
+			continue
+		}
+		switch in.Type.orString() {
+		case TypeString:
+			s, ok := v.(string)
+			if !ok {
+				return nil, fmt.Errorf("user input %s must be a string", in.Name)
+			}
+			vars[in.Name] = s
+		case TypeBool:
+			b, ok := v.(bool)
+			if !ok {
+				return nil, fmt.Errorf("user input %s must be true or false", in.Name)
+			}
+			vars[in.Name] = b
+		case TypeTexts:
+			items, ok := v.([]any)
+			if !ok {
+				return nil, fmt.Errorf("user input %s must be a list of texts", in.Name)
+			}
+			texts := []string{}
+			for _, it := range items {
+				s, ok := it.(string)
+				if !ok {
+					return nil, fmt.Errorf("user input %s must be a list of texts", in.Name)
+				}
+				if strings.TrimSpace(s) != "" {
+					texts = append(texts, s)
+				}
+			}
+			vars[in.Name] = texts
+		}
+	}
+	return vars, nil
 }
 
 // Step is one LLM call of a chain, LangChain's prompt | model | parser: the prompt is rendered, sent to the
-// model, and the response is parsed into the value named by Output.
+// model, and the response is read in the step's Format. Output names the parsed value when a later step reads it (like ADK's
+// output_key); a step whose value only goes back to the service needs none.
 type Step struct {
 	Name        string `json:"name" yaml:"name"`
 	Description string `json:"description" yaml:"description"`
 	Prompt      `yaml:",inline"`
-	Parser      Parser `json:"parser" yaml:"parser"`
-	Output      string `json:"output" yaml:"output"`
+	Format      Format `json:"format,omitempty" yaml:"format,omitempty"`
+	Output      string `json:"output,omitempty" yaml:"output,omitempty"`
 }
 
 // Major returns the major part of a version: "v2" for "v2.3", and for "v2" (written before minors).
@@ -64,55 +181,90 @@ func (c Chain) Step(name string) Step {
 }
 
 // Prompt is a chat prompt template. Message contents may hold {name} placeholders for the variables listed in
-// Inputs, which are chain inputs or outputs of earlier steps.
+// Inputs, which are the chain's variables or outputs of earlier steps.
 type Prompt struct {
 	Inputs   []string  `json:"inputs" yaml:"inputs"`
 	Messages []Message `json:"messages" yaml:"messages"`
 }
 
+// Message is one message of a prompt. If sends it only when that variable is given (present). Each sends it once
+// per item of a texts variable, with {name} as the item and {index} as its number from 1; an empty list sends
+// none. Rendered messages carry neither.
 type Message struct {
 	Role    string `json:"role" yaml:"role"`
 	Content string `json:"content" yaml:"content"`
+	If      string `json:"if,omitempty" yaml:"if,omitempty"`
+	Each    string `json:"each,omitempty" yaml:"each,omitempty"`
 }
 
-// Parser turns a model response into a value.
-type Parser string
+// Format is what a step asks the model to return, like an API's response_format: text (the default, "" in a
+// file) or json. Parse reads a response in it.
+type Format string
 
 const (
-	ParserText Parser = "text"
-	ParserJSON Parser = "json"
+	FormatText Format = "text"
+	FormatJSON Format = "json"
 )
 
-// Render returns the messages with each {input} placeholder replaced by vars[input]. Values are inserted as
-// they are, so placeholders inside a value are not expanded.
-func (p Prompt) Render(vars map[string]string) []Message {
-	pairs := make([]string, 0, 2*len(p.Inputs))
-	for _, in := range p.Inputs {
-		pairs = append(pairs, "{"+in+"}", vars[in])
-	}
-	r := strings.NewReplacer(pairs...)
-	out := make([]Message, len(p.Messages))
-	for i, m := range p.Messages {
-		out[i] = Message{Role: m.Role, Content: r.Replace(m.Content)}
+// Render returns the messages to send, following each message's If and Each, with each {input} placeholder
+// replaced by vars[input]. Values are inserted as they are, so placeholders inside a value are not expanded.
+func (p Prompt) Render(vars Vars) []Message {
+	var out []Message
+	for _, m := range p.Messages {
+		if m.If != "" && !present(vars[m.If]) {
+			continue
+		}
+		if m.Each == "" {
+			out = append(out, Message{Role: m.Role, Content: p.replace(m.Content, vars, nil)})
+			continue
+		}
+		items, _ := vars[m.Each].([]string)
+		for i, item := range items {
+			own := map[string]string{m.Each: item, "index": strconv.Itoa(i + 1)}
+			out = append(out, Message{Role: m.Role, Content: p.replace(m.Content, vars, own)})
+		}
 	}
 	return out
 }
 
-// Parse decodes a model response into out: for ParserJSON a JSON value (a surrounding code fence is stripped)
-// into what out points to, for ParserText the trimmed text into a *string.
-func (p Parser) Parse(raw string, out any) error {
-	switch p {
-	case ParserJSON:
+func (p Prompt) replace(content string, vars Vars, own map[string]string) string {
+	pairs := make([]string, 0, 2*(len(p.Inputs)+1))
+	for _, in := range p.Inputs {
+		v, ok := own[in]
+		if !ok {
+			v = text(vars[in])
+		}
+		pairs = append(pairs, "{"+in+"}", v)
+	}
+	if idx, ok := own["index"]; ok {
+		pairs = append(pairs, "{index}", idx)
+	}
+	return strings.NewReplacer(pairs...).Replace(content)
+}
+
+// Parse reads a model response, with a code fence around the whole of it stripped: for FormatJSON a JSON value
+// into what out points to, for FormatText the trimmed text into a *string.
+func (f Format) Parse(raw string, out any) error {
+	switch f {
+	case FormatJSON:
 		return json.Unmarshal([]byte(stripCodeFence(raw)), out)
-	case ParserText:
+	case FormatText, "":
 		s, ok := out.(*string)
 		if !ok {
 			return fmt.Errorf("text output needs a *string, got %T", out)
 		}
-		*s = strings.TrimSpace(raw)
+		*s = stripCodeFence(raw)
 		return nil
 	}
-	return fmt.Errorf("unknown parser %q", string(p))
+	return fmt.Errorf("unknown format %q", string(f))
+}
+
+// OrText is the format, text when none is set.
+func (f Format) OrText() Format {
+	if f == "" {
+		return FormatText
+	}
+	return f
 }
 
 func stripCodeFence(raw string) string {
@@ -146,7 +298,106 @@ func mustLoad(name string) Chain {
 	if c.Name != name {
 		panic(fmt.Sprintf("chains/%s.yaml: name is %q", name, c.Name))
 	}
+	if err := c.Validate(); err != nil {
+		panic(fmt.Sprintf("chains/%s.yaml: %v", name, err))
+	}
 	return c
+}
+
+var (
+	nameRe        = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*$`)
+	placeholderRe = regexp.MustCompile(`\{([A-Za-z][A-Za-z0-9_]*)\}`)
+)
+
+// Validate checks a chain's structure: variable and output names and types; each step's inputs are variables
+// or earlier outputs and each is used by its messages; placeholders, If and Each name the step's inputs, Each a texts
+// variable, and a texts variable appears as a placeholder only in its own Each message; every task input is used.
+func (c Chain) Validate() error {
+	types := map[string]InputType{}
+	for _, in := range slices.Concat(c.Spec.UserInputs, c.Spec.Inputs) {
+		if !nameRe.MatchString(in.Name) || in.Name == "index" {
+			return fmt.Errorf("invalid variable name %q", in.Name)
+		}
+		if _, dup := types[in.Name]; dup {
+			return fmt.Errorf("duplicate variable %q", in.Name)
+		}
+		t := in.Type.orString()
+		if t != TypeString && t != TypeBool && t != TypeTexts {
+			return fmt.Errorf("variable %s: unknown type %q", in.Name, in.Type)
+		}
+		types[in.Name] = t
+	}
+	if len(c.Spec.Steps) == 0 {
+		return fmt.Errorf("no steps")
+	}
+	used := map[string]bool{}
+	for _, st := range c.Spec.Steps {
+		if err := st.validate(types, used); err != nil {
+			return fmt.Errorf("step %s: %w", st.Name, err)
+		}
+		if st.Output == "" {
+			continue
+		}
+		if _, dup := types[st.Output]; dup || !nameRe.MatchString(st.Output) {
+			return fmt.Errorf("step %s: invalid or duplicate output %q", st.Name, st.Output)
+		}
+		types[st.Output] = TypeString
+	}
+	for _, in := range c.Spec.Inputs {
+		if !used[in.Name] {
+			return fmt.Errorf("input %q is not used", in.Name)
+		}
+	}
+	return nil
+}
+
+func (st Step) validate(types map[string]InputType, used map[string]bool) error {
+	if st.Name == "" || len(st.Messages) == 0 {
+		return fmt.Errorf("name and messages are required")
+	}
+	if f := st.Format.OrText(); f != FormatJSON && f != FormatText {
+		return fmt.Errorf("unknown format %q", st.Format)
+	}
+	for _, in := range st.Inputs {
+		if _, ok := types[in]; !ok {
+			return fmt.Errorf("input %q is neither a variable nor an earlier output", in)
+		}
+	}
+	stepUsed := map[string]bool{}
+	for _, m := range st.Messages {
+		if m.Content == "" || (m.Role != "system" && m.Role != "user") {
+			return fmt.Errorf("invalid %q message", m.Role)
+		}
+		for _, name := range []string{m.If, m.Each} {
+			if name != "" && !slices.Contains(st.Inputs, name) {
+				return fmt.Errorf("%q is not an input of the step", name)
+			}
+			stepUsed[name] = true
+		}
+		if m.Each != "" && types[m.Each] != TypeTexts {
+			return fmt.Errorf("each %q is not a texts variable", m.Each)
+		}
+		for _, sub := range placeholderRe.FindAllStringSubmatch(m.Content, -1) {
+			name := sub[1]
+			if name == "index" && m.Each != "" {
+				continue
+			}
+			if !slices.Contains(st.Inputs, name) {
+				return fmt.Errorf("placeholder {%s} is not an input of the step", name)
+			}
+			if types[name] == TypeTexts && name != m.Each {
+				return fmt.Errorf("texts variable {%s} is used outside its each message", name)
+			}
+			stepUsed[name] = true
+		}
+	}
+	for _, in := range st.Inputs {
+		if !stepUsed[in] {
+			return fmt.Errorf("input %q is not used by its messages", in)
+		}
+		used[in] = true
+	}
+	return nil
 }
 
 var (

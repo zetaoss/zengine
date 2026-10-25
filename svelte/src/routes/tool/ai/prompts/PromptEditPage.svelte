@@ -275,7 +275,7 @@
         <textarea
           bind:value={row.content}
           class="border-border rounded p-1 bg-background min-h-[500px] w-full font-mono text-sm leading-relaxed"
-          placeholder={'프롬프트 내용을 입력하세요. {제목}, {기존 문서 내용} 변수를 사용할 수 있습니다.'}
+          placeholder={'프롬프트 내용을 입력하세요. {title}, {wikitext}(편집용) 변수를 사용할 수 있습니다.'}
         ></textarea>
       {:else}
         <div class="min-h-[300px] rounded border border-border bg-background p-4">

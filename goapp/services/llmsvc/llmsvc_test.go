@@ -35,7 +35,7 @@ var testChain = prompts.Chain{Name: "test-chain", Metadata: prompts.Metadata{Ver
 var testStep = prompts.Step{
 	Name:   "test",
 	Prompt: prompts.Prompt{Inputs: []string{"title"}, Messages: []prompts.Message{{Role: "user", Content: "{title}"}}},
-	Parser: prompts.ParserJSON,
+	Format: prompts.FormatJSON,
 	Output: "result",
 }
 
@@ -50,7 +50,7 @@ func TestRunStepRetryDropsFailedAttempt(t *testing.T) {
 	// omits violated, so it must stay false rather than carry over from the failed attempt.
 	ts, calls := newServer(t, `{"violated": true, "count": "two"}`, `{"count": 2, "summary": "ok"}`)
 	var out testOutput
-	res, err := NewWithEndpoint(ts.URL).RunStep(context.Background(), "test/model", testChain, testStep, map[string]string{"title": "T"}, &out)
+	res, err := NewWithEndpoint(ts.URL).RunStep(context.Background(), "test/model", testChain, testStep, prompts.Vars{"title": "T"}, &out)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -98,7 +98,7 @@ func TestRunStepKeepsParseErrorWhenRetryFails(t *testing.T) {
 	t.Cleanup(ts.Close)
 
 	var out testOutput
-	_, err := NewWithEndpoint(ts.URL).RunStep(context.Background(), "", testChain, testStep, map[string]string{"title": "x"}, &out)
+	_, err := NewWithEndpoint(ts.URL).RunStep(context.Background(), "", testChain, testStep, prompts.Vars{"title": "x"}, &out)
 	if err == nil || !strings.Contains(err.Error(), "status=429") || !strings.Contains(err.Error(), "previous attempt: invalid") || !strings.Contains(err.Error(), "not json") {
 		t.Fatalf("expected the 429 with the earlier parse error, got %v", err)
 	}
@@ -110,7 +110,7 @@ func TestRunStepRecordsEachCall(t *testing.T) {
 	svc := NewWithEndpoint(ts.URL).WithRecorder(func(_ context.Context, c Call) { got = append(got, c) })
 
 	var out testOutput
-	if _, err := svc.RunStep(context.Background(), "test/model", testChain, testStep, map[string]string{"title": "T"}, &out); err != nil {
+	if _, err := svc.RunStep(context.Background(), "test/model", testChain, testStep, prompts.Vars{"title": "T"}, &out); err != nil {
 		t.Fatal(err)
 	}
 	if len(got) != 2 {

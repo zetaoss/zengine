@@ -10,12 +10,28 @@ export interface AIEditPromptForRunner {
   content: string
 }
 
-export interface AIEditRunnerSubmitPayload {
+// A user input of the chain a request type runs (doc-create, doc-update): a field of the run form.
+export interface AIEditUserInput {
+  name: string
+  label?: string
+  type?: 'string' | 'bool' | 'texts'
+}
+
+export type AIEditUserInputValue = string | boolean | string[]
+
+export interface AIEditRequestPayload {
   requestType: AIEditRequestType
   title: string
   pageId?: number
+  promptId?: number
   promptTitle: string
-  llmInput: string
+  wikitext: string
+  userInputs: Record<string, AIEditUserInputValue>
+}
+
+export interface AIEditRenderedMessage {
+  role: string
+  content: string
 }
 
 export interface AIEditStoreResult {

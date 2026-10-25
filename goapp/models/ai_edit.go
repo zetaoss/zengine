@@ -40,7 +40,11 @@ type AIEdit struct {
 	PageID       uint        `json:"page_id" gorm:"column:page_id"`
 	PageTitle    string      `json:"page_title" gorm:"column:page_title"`
 	RequestType  string      `json:"request_type" gorm:"column:request_type"`
+	PromptID     int         `json:"prompt_id" gorm:"column:prompt_id"`
+	ChainVersion string      `json:"chain_version" gorm:"column:chain_version"`
 	Phase        AIEditPhase `json:"phase" gorm:"column:phase"`
+	Inputs       string      `json:"inputs" gorm:"column:inputs"`
+	LLMMessages  string      `json:"llm_messages" gorm:"column:llm_messages"`
 	LLMInput     string      `json:"llm_input" gorm:"column:llm_input"`
 	LLMOutput    string      `json:"llm_output" gorm:"column:llm_output"`
 	LLMModel     string      `json:"llm_model" gorm:"column:llm_model"`

@@ -1,0 +1,135 @@
+package aiedit
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"strings"
+	"unicode/utf8"
+
+	"github.com/zetaoss/zengine/goapp/app/config"
+	"github.com/zetaoss/zengine/goapp/models"
+	"github.com/zetaoss/zengine/goapp/prompts"
+	"github.com/zetaoss/zengine/goapp/services/wikisvc"
+)
+
+// Request is what a requester asks AI edit for: a page, its request type, an AI edit prompt template or none
+// (the chain's own messages), and the run form's values (the chain's user inputs).
+type Request struct {
+	RequestType string
+	Title       string
+	// Wikitext is the page as it stands in the editor, for update; when empty the saved page is read.
+	Wikitext   string
+	Prompt     *models.AIEditPrompt
+	UserInputs map[string]any
+}
+
+// Rendered is a request rendered on its chain: the variables it filled and the messages to send.
+type Rendered struct {
+	Chain    prompts.Chain
+	Vars     prompts.Vars
+	Messages []prompts.Message
+}
+
+// InputError is a request the requester has to fix, answered with 422.
+type InputError struct{ msg string }
+
+func (e InputError) Error() string { return e.msg }
+
+// IsInputError reports whether err is an InputError.
+func IsInputError(err error) bool {
+	var ie InputError
+	return errors.As(err, &ie)
+}
+
+// ChainOf returns the chain of a request type: doc-update for update, doc-create otherwise.
+func ChainOf(requestType string) prompts.Chain {
+	if requestType == models.AIEditRequestUpdate {
+		return prompts.DocUpdate
+	}
+	return prompts.DocCreate
+}
+
+// NeedsHint reports whether a title is short enough to be ambiguous: two characters or fewer, spaces not
+// counted, and no trailing parenthesis such as "자바 (섬)" that already tells the meaning.
+func NeedsHint(title string) bool {
+	title = strings.TrimSpace(title)
+	if strings.HasSuffix(title, ")") && strings.Contains(title, "(") {
+		return false
+	}
+	return utf8.RuneCountInString(strings.ReplaceAll(title, " ", "")) <= 2
+}
+
+// Render fills the chain's variables (the user inputs as given; the title, the wikitext and, with readBacklinks,
+// the excerpts of the pages that link here) and renders its step.
+func Render(ctx context.Context, cfg *config.Config, req Request) (Rendered, error) {
+	chain := ChainOf(req.RequestType)
+	vars, err := chain.UserVars(req.UserInputs)
+	if err != nil {
+		return Rendered{}, InputError{err.Error()}
+	}
+	if hint, _ := vars["hint"].(string); declares(chain.Spec.UserInputs, "hint") && strings.TrimSpace(hint) == "" && NeedsHint(req.Title) {
+		return Rendered{}, InputError{"제목이 짧아 뜻이 여럿일 수 있습니다. 힌트를 적어 주세요."}
+	}
+	for _, in := range chain.Spec.Inputs {
+		switch in.Name {
+		case "title":
+			vars["title"] = req.Title
+		case "wikitext":
+			text := req.Wikitext
+			if strings.TrimSpace(text) == "" {
+				if text, _, err = wikisvc.PageText(ctx, cfg, req.Title); err != nil {
+					return Rendered{}, fmt.Errorf("read page: %w", err)
+				}
+			}
+			vars["wikitext"] = text
+		case "backlinkTexts":
+			texts := []string{}
+			if read, _ := vars["readBacklinks"].(bool); read {
+				if texts, err = wikisvc.BacklinkTexts(ctx, cfg, req.Title); err != nil {
+					return Rendered{}, fmt.Errorf("read backlinks: %w", err)
+				}
+			}
+			vars["backlinkTexts"] = texts
+		default:
+			return Rendered{}, fmt.Errorf("chain %s: no way to fill input %q", chain.Name, in.Name)
+		}
+	}
+	step := chain.Spec.Steps[0]
+	if req.Prompt != nil {
+		step = withTemplate(step, req.Prompt.Content)
+	}
+	return Rendered{Chain: chain, Vars: vars, Messages: step.Render(vars)}, nil
+}
+
+// withTemplate puts an AI edit prompt template in place of the step's unconditional messages (its instructions
+// and the page) and keeps the messages that carry the run form's values (If, Each). This holds until the
+// templates become custom chains with messages of their own.
+func withTemplate(st prompts.Step, template string) prompts.Step {
+	messages := []prompts.Message{{Role: "user", Content: template}}
+	for _, m := range st.Messages {
+		if m.If != "" || m.Each != "" {
+			messages = append(messages, m)
+		}
+	}
+	st.Messages = messages
+	return st
+}
+
+func declares(inputs []prompts.Input, name string) bool {
+	for _, in := range inputs {
+		if in.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+// MessagesText joins rendered messages for people to read (aiedit_tasks.llm_input).
+func MessagesText(messages []prompts.Message) string {
+	parts := make([]string, len(messages))
+	for i, m := range messages {
+		parts[i] = m.Content
+	}
+	return strings.Join(parts, "\n\n")
+}
