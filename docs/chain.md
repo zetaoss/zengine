@@ -7,7 +7,7 @@ goapp defines LLM work as chains, following LangChain. Types: `goapp/prompts/cha
 | Chain | `doc-eval` | Steps run in order; a step's output feeds later steps | `RunnableSequence` |
 | Step | `doc-eval/rubric` | One LLM call: prompt, model, format, and an output name when a later step reads it | `prompt \| model \| parser` (three `steps` there, one here); output name like ADK `output_key` |
 | Prompt | | Messages (`system`, `user`) with `{name}` placeholders, each optionally sent only `if` a variable is given or once for `each` item of a list | `ChatPromptTemplate` (f-string); `if`/`each` like `MessagesPlaceholder` |
-| User inputs | `hint`, `materials` | What the requester gives in the run form; they reach the messages as they are | graph input schema (LangGraph) |
+| User inputs | `hint`, `copiedTexts` | What the requester gives in the run form; they reach the messages as they are | graph input schema (LangGraph) |
 | Inputs | `title`, `wikitext` | What the task running the chain fills | |
 | Format | `json` (`text` when omitted) | What the step asks the model to return; the response is read in it | `response_format` (OpenAI), output parser |
 | Version | `v2.0` | `v<major>.<minor>`, recorded with each call and result; a stored result of the same major is current | |
@@ -40,7 +40,7 @@ spec:
     - name: readBacklinks
       label: 역링크 읽기
       type: bool
-    - name: materials
+    - name: copiedTexts
       label: 자료
       type: textList
   inputs:                     # filled by the task
@@ -49,7 +49,7 @@ spec:
       type: textList
   steps:
     - name: generate
-      inputs: [title, hint, materials, backlinkTexts]
+      inputs: [title, hint, copiedTexts, backlinkTexts]
       messages:
         - role: system
           content: |-
@@ -60,10 +60,10 @@ spec:
           if: hint
           content: "### 힌트: {hint}"
         - role: user
-          each: materials
+          each: copiedTexts
           content: |-
             ### 자료 {index}:
-            {materials}
+            {copiedTexts}
 ```
 
 `metadata` describes the chain; `spec` is what decides its results. A variable's `type` is `string` (the default; one line), `text` (several lines), `textList` (a list of texts) or `bool`; a user input may have a `label` and a `placeholder` for its empty field; an input may be written as its name alone (`inputs: [title, lead]`). A step names its `output` only when a later step reads it (doc-eval's `rubrics`), and writes `format: json` only when it takes JSON. The files are read at start with unknown fields rejected, and a missing file or step (`Chain.Step`) panics there. Go keeps what the services need beyond the file: the structs a response is parsed into, values that check results (`DocEvalSafetyPolicies`), and the code between steps.

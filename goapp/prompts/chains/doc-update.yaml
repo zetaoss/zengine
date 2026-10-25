@@ -10,7 +10,7 @@ spec:
     - name: readBacklinks
       label: 역링크 읽기
       type: bool
-    - name: materials
+    - name: copiedTexts
       label: 자료
       type: textList
     - name: request
@@ -24,7 +24,7 @@ spec:
   steps:
     - name: generate
       description: 기존 위키텍스트를 요청사항·자료·역링크를 참고해 고쳐 쓴다.
-      inputs: [title, wikitext, request, materials, backlinkTexts]
+      inputs: [title, wikitext, request, copiedTexts, backlinkTexts]
       messages:
         - role: system
           content: |-
@@ -78,10 +78,10 @@ spec:
             ### 요청사항:
             {request}
         - role: user
-          each: materials
+          each: copiedTexts
           content: |-
             ### 자료 {index}:
-            {materials}
+            {copiedTexts}
         - role: user
           each: backlinkTexts
           content: |-
