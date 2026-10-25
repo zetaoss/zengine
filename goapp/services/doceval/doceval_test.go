@@ -211,26 +211,34 @@ func TestDefinitionCurrent(t *testing.T) {
 	page := Page{ID: 1, Title: "자바", Revid: 10}
 	d := &models.DocDefinition{PageID: 1, PageTitle: "자바", Revid: 10, ChainVersion: prompts.DocDefine.Metadata.Version}
 	if !definitionCurrent(d, page) {
-		t.Fatal("expected a definition of the same revision, title and chain version to be current")
+		t.Fatal("expected a definition of the same revision, title and major version to be current")
 	}
 	for name, stale := range map[string]Page{"revision": {ID: 1, Title: "자바", Revid: 11}, "title": {ID: 1, Title: "자바_(섬)", Revid: 10}} {
 		if definitionCurrent(d, stale) {
 			t.Errorf("expected another %s to make the definition stale", name)
 		}
 	}
+	major := prompts.Major(prompts.DocDefine.Metadata.Version)
+	for _, v := range []string{major, major + ".0", major + ".99"} {
+		same := *d
+		same.ChainVersion = v
+		if !definitionCurrent(&same, page) {
+			t.Errorf("expected a definition of version %s to be current", v)
+		}
+	}
 	old := *d
-	old.ChainVersion = "v0"
+	old.ChainVersion = "v0.9"
 	if definitionCurrent(&old, page) || definitionCurrent(nil, page) {
-		t.Error("expected another chain version or no definition to be stale")
+		t.Error("expected another major version or no definition to be stale")
 	}
 }
 
-func TestDefineVersionArg(t *testing.T) {
-	if arg := defineVersionArg(); arg.Name != "defineVersion" || arg.Value != prompts.DocDefine.Metadata.Version {
+func TestDefineMajorArg(t *testing.T) {
+	if arg := defineMajorArg(); arg.Name != "defineMajor" || arg.Value != prompts.Major(prompts.DocDefine.Metadata.Version) {
 		t.Fatalf("unexpected arg %+v", arg)
 	}
-	if !strings.Contains(currentDefinitionSQL, "@defineVersion") {
-		t.Fatal("currentDefinitionSQL must bind @defineVersion")
+	if !strings.Contains(currentDefinitionSQL, "SUBSTRING_INDEX(d.chain_version, '.', 1) = @defineMajor") {
+		t.Fatal("currentDefinitionSQL must compare the major of d.chain_version with @defineMajor")
 	}
 }
 

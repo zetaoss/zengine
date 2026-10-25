@@ -3,7 +3,7 @@
 # Its version is stored with each definition; bump it when the spec changes.
 name: doc-define
 metadata:
-  version: v2
+  version: v2.0
   description: 제목과 본문 앞부분으로 문서가 다루는 대상을 한 줄로 정의한다.
 spec:
   inputs: [title, lead]

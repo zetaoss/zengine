@@ -20,8 +20,8 @@ type Chain struct {
 	Spec     Spec     `json:"spec" yaml:"spec"`
 }
 
-// Metadata.Version is recorded with each call and result of the chain; the services decide from it whether a
-// stored result is still current.
+// Metadata.Version is v<major>.<minor>, recorded with each call and result of the chain. A stored result of the
+// same major is current (SameMajor): a minor bump keeps earlier results, a major bump makes them all stale.
 type Metadata struct {
 	Version     string `json:"version" yaml:"version"`
 	Description string `json:"description" yaml:"description"`
@@ -40,6 +40,17 @@ type Step struct {
 	Prompt      `yaml:",inline"`
 	Parser      Parser `json:"parser" yaml:"parser"`
 	Output      string `json:"output" yaml:"output"`
+}
+
+// Major returns the major part of a version: "v2" for "v2.3", and for "v2" (written before minors).
+func Major(version string) string {
+	major, _, _ := strings.Cut(version, ".")
+	return major
+}
+
+// SameMajor reports whether a result recorded with version a is current for version b.
+func SameMajor(a, b string) bool {
+	return Major(a) == Major(b)
 }
 
 // Step returns the step named name and panics when there is none, so a wrong name fails at start.

@@ -15,35 +15,40 @@ type CandidatePage struct {
 	PageLatest int    `gorm:"column:page_latest" json:"page_latest"`
 }
 
-// currentDefinitionSQL matches a definition d written for page p's latest revision and title by the current
-// doc-define chain, whose version is bound as @defineVersion (defineVersionArg).
-const currentDefinitionSQL = `d.page_id = p.page_id AND d.revid = p.page_latest AND d.page_title = p.page_title AND d.chain_version = @defineVersion`
+// majorSQL is the major part of a chain_version column, as prompts.Major gives it.
+func majorSQL(col string) string {
+	return "SUBSTRING_INDEX(" + col + ", '.', 1)"
+}
 
-// defineVersionArg binds @defineVersion in currentDefinitionSQL.
-func defineVersionArg() sql.NamedArg {
-	return sql.Named("defineVersion", prompts.DocDefine.Metadata.Version)
+// currentDefinitionSQL matches a definition d written for page p's latest revision and title by the current
+// doc-define chain's major version, bound as @defineMajor (defineMajorArg).
+var currentDefinitionSQL = `d.page_id = p.page_id AND d.revid = p.page_latest AND d.page_title = p.page_title AND ` + majorSQL("d.chain_version") + ` = @defineMajor`
+
+// defineMajorArg binds @defineMajor in currentDefinitionSQL.
+func defineMajorArg() sql.NamedArg {
+	return sql.Named("defineMajor", prompts.Major(prompts.DocDefine.Metadata.Version))
 }
 
 // PickCandidate selects an article to evaluate by strategy: one with a current definition and no evaluation of
-// its latest revision by the current doc-eval chain. An edit or a new chain version makes a page a candidate
-// again. It returns nil when every article is evaluated.
+// its latest revision by the current doc-eval major version. An edit or a new major version makes a page a
+// candidate again. It returns nil when every article is evaluated.
 func PickCandidate(ctx context.Context, db *gorm.DB, strategy string) (*CandidatePage, error) {
 	return pickPage(ctx, db, strategy, `
 		EXISTS (SELECT 1 FROM doc_definitions d WHERE `+currentDefinitionSQL+`)
 		AND NOT EXISTS (
 		  SELECT 1 FROM doc_evaluations e
-		  WHERE e.page_id = p.page_id AND e.revid = p.page_latest AND e.chain_version = @evalVersion
+		  WHERE e.page_id = p.page_id AND e.revid = p.page_latest AND `+majorSQL("e.chain_version")+` = @evalMajor
 		)`,
-		defineVersionArg(),
-		sql.Named("evalVersion", prompts.DocEval.Metadata.Version))
+		defineMajorArg(),
+		sql.Named("evalMajor", prompts.Major(prompts.DocEval.Metadata.Version)))
 }
 
 // PickUndefined selects an article to define by strategy: one without a current definition (none, or one of
-// another revision, title or chain version). It returns nil when every article is defined.
+// another revision, title or major version). It returns nil when every article is defined.
 func PickUndefined(ctx context.Context, db *gorm.DB, strategy string) (*CandidatePage, error) {
 	return pickPage(ctx, db, strategy, `
 		NOT EXISTS (SELECT 1 FROM doc_definitions d WHERE `+currentDefinitionSQL+`)`,
-		defineVersionArg())
+		defineMajorArg())
 }
 
 // pickPage returns one non-redirect article matching cond, ordered by strategy: random (page_random from a

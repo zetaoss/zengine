@@ -2,7 +2,7 @@
 # template (aiedit_prompts), so its single step passes it through.
 name: doc-update
 metadata:
-  version: v1
+  version: v1.0
   description: 기존 문서의 위키텍스트를 고쳐 쓴다.
 spec:
   inputs: [prompt]

@@ -1,9 +1,44 @@
 package prompts
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"strings"
 	"testing"
 )
+
+// specVersions pins each built-in chain's version to a hash of its spec, so a spec change fails here until the
+// version is bumped and the entry updated: a minor bump keeps stored results, a major bump makes them stale.
+var specVersions = map[string]string{
+	"doc-define": "v2.0 d20569b4687f",
+	"doc-eval":   "v2.0 276a1525e692",
+	"doc-create": "v1.0 9ea4da4d66e6",
+	"doc-update": "v1.0 d341fec7db34",
+}
+
+func specHash(c Chain) string {
+	b, err := json.Marshal(c.Spec)
+	if err != nil {
+		panic(err)
+	}
+	sum := sha256.Sum256(b)
+	return hex.EncodeToString(sum[:])[:12]
+}
+
+func TestSpecVersions(t *testing.T) {
+	for _, c := range BuiltinChains() {
+		got := c.Metadata.Version + " " + specHash(c)
+		want := specVersions[c.Name]
+		switch {
+		case got == want:
+		case strings.HasPrefix(want, c.Metadata.Version+" "):
+			t.Errorf("%s: spec changed but version is still %s; bump metadata.version (minor keeps stored results, major makes them stale), then update specVersions", c.Name, c.Metadata.Version)
+		default:
+			t.Errorf("%s: set specVersions[%q] = %q", c.Name, c.Name, got)
+		}
+	}
+}
 
 func system(st Step) string {
 	return st.Messages[0].Content
