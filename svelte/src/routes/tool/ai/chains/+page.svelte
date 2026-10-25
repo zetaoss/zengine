@@ -411,7 +411,7 @@
             {@const promptType = promptTypeOf[chain.name]}
             <tr class="bg-muted/50 hover:bg-muted transition cursor-pointer" onclick={() => toggle(chain.name)}>
               <td class="p-3 text-muted-foreground">-</td>
-              <td class="p-3 whitespace-nowrap font-mono font-medium">{chain.name}</td>
+              <td class="p-3 whitespace-nowrap">{chain.name}</td>
               <td class="p-3 text-muted-foreground">{chain.metadata.description}</td>
               <td class="p-3 text-xs">{formatModelLabel(chain.model)}</td>
               <td class="p-3 text-center text-muted-foreground tabular-nums" title="이 체인이 끝까지 돈 횟수(프롬프트 틀로 돈 것 포함)">{chain.uses || '-'}</td>
@@ -475,7 +475,7 @@
                   onclick={() => toggle(key)}
                 >
                   <td class="p-3 whitespace-nowrap text-muted-foreground">{item.user_name}</td>
-                  <td class="p-3 whitespace-nowrap font-medium">{item.title}</td>
+                  <td class="p-3 whitespace-nowrap">{item.title}</td>
                   <td class="p-3 text-muted-foreground">{item.description}</td>
                   <td class="p-3 text-xs">{formatModelLabel(item.model || chain.model)}</td>
                   <td class="p-3 text-center text-muted-foreground tabular-nums">{item.use_count || '-'}</td>
