@@ -55,6 +55,79 @@
     return input.label ? `${input.label}(${input.name}${type})` : `${input.name}${type}`
   }
 
+  type PreviewValue = string | boolean | string[]
+
+  // Values typed into a user inputs preview, by name, to see the messages they make. Kept on screen only.
+  let previewValues = $state<Record<string, PreviewValue>>({})
+
+  function previewTexts(name: string): string[] {
+    const v = previewValues[name]
+    return Array.isArray(v) ? v : []
+  }
+
+  function setPreview(name: string, v: PreviewValue) {
+    previewValues = { ...previewValues, [name]: v }
+  }
+
+  // given is prompts' present: a non-blank string, true, or a non-empty list.
+  function given(v: PreviewValue | undefined) {
+    return typeof v === 'string' ? v.trim() !== '' : Array.isArray(v) ? v.length > 0 : v === true
+  }
+
+  interface Part {
+    text?: string
+    name?: string
+    value?: string
+  }
+
+  interface PreviewMessage {
+    header: string
+    parts: Part[]
+    skipped: boolean
+  }
+
+  const placeholderRe = /\{([A-Za-z][A-Za-z0-9_]*)\}/g
+
+  // The content split at its {name} placeholders, as prompts' placeholders finds them (one right after another
+  // brace is wiki markup), each with the value it gets here, if any.
+  function parts(content: string, own: Record<string, string>): Part[] {
+    const out: Part[] = []
+    let last = 0
+    for (const m of content.matchAll(placeholderRe)) {
+      const at = m.index ?? 0
+      if (at > 0 && content[at - 1] === '{') continue
+      out.push({ text: content.slice(last, at) })
+      const name = m[1]
+      const v = own[name] ?? previewValues[name]
+      const value = typeof v === 'string' && v !== '' ? v : typeof v === 'boolean' ? String(v) : undefined
+      out.push({ name, value })
+      last = at + m[0].length
+    }
+    out.push({ text: content.slice(last) })
+    return out
+  }
+
+  // The messages as they would be sent with the values typed in (prompts' Render): a message whose if is not given,
+  // or an each with no items, shows once, marked skipped; an each sends one per item.
+  function previewMessages(messages: ChainMessage[]): PreviewMessage[] {
+    const out: PreviewMessage[] = []
+    for (const m of messages) {
+      const header = messageHeader(m)
+      if (m.if && !given(previewValues[m.if])) {
+        out.push({ header, parts: parts(m.content, {}), skipped: true })
+        continue
+      }
+      if (!m.each) {
+        out.push({ header, parts: parts(m.content, {}), skipped: false })
+        continue
+      }
+      const items = previewTexts(m.each).filter((x) => x.trim() !== '')
+      if (items.length === 0) out.push({ header, parts: parts(m.content, {}), skipped: true })
+      items.forEach((item, i) => out.push({ header, parts: parts(m.content, { [m.each!]: item, index: String(i + 1) }), skipped: false }))
+    }
+    return out
+  }
+
   function messageHeader(m: ChainMessage) {
     return [m.role, m.if && `if ${m.if}`, m.each && `each ${m.each}`].filter(Boolean).join(' · ')
   }
@@ -376,12 +449,7 @@
             {#if specCheck.user_inputs?.length}
               {@render runForm(specCheck.user_inputs)}
             {/if}
-            {#each specCheck.messages ?? [] as m, i (i)}
-              <div class="rounded border">
-                <div class="border-b bg-muted/50 px-3 py-1 font-mono text-muted-foreground">{messageHeader(m)}</div>
-                <pre class="max-h-80 overflow-auto whitespace-pre-wrap bg-muted/30 p-3 text-[11px]">{m.content}</pre>
-              </div>
-            {/each}
+            {@render messagesView(specCheck.messages ?? [])}
           {/if}
         </div>
       </div>
@@ -392,18 +460,51 @@
 {#snippet runForm(inputs: ChainInput[])}
   <div class="rounded border bg-background p-3 text-xs text-foreground">
     <div class="mb-2 text-muted-foreground">사용자 입력</div>
-    <div class="grid grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-x-4 gap-y-2">
+    <div class="grid grid-cols-[auto_auto_minmax(0,1fr)] items-start gap-x-4 gap-y-2">
       {#each inputs as input (input.name)}
         {@const label = input.label || input.name}
-        <div><code class="rounded bg-muted px-1.5 py-0.5 font-mono">{input.name}</code></div>
-        <div class="font-medium">{label}</div>
+        <div class="pt-1.5"><code class="rounded bg-muted px-1.5 py-0.5 font-mono">{input.name}</code></div>
+        <div class="pt-1.5 font-medium">{label}</div>
         <div class="min-w-0">
           {#if input.type === 'bool'}
-            <input type="checkbox" disabled aria-label={label} />
+            <input
+              class="mt-2"
+              type="checkbox"
+              aria-label={label}
+              checked={previewValues[input.name] === true}
+              onchange={(e) => setPreview(input.name, e.currentTarget.checked)}
+            />
           {:else if input.type === 'texts'}
-            <span class="inline-flex rounded border px-2 py-1 text-muted-foreground">+ {label}</span>
+            <div class="space-y-1">
+              {#each previewTexts(input.name) as item, i (i)}
+                <div class="flex items-center gap-1">
+                  <input
+                    class="h-8 min-w-0 flex-1 rounded border bg-background px-2.5"
+                    placeholder={input.placeholder ?? `${label} ${i + 1}`}
+                    value={item}
+                    oninput={(e) => setPreview(input.name, previewTexts(input.name).map((x, j) => (j === i ? e.currentTarget.value : x)))}
+                  />
+                  <button
+                    type="button"
+                    class="rounded px-1.5 text-muted-foreground hover:bg-muted"
+                    aria-label={`${label} ${i + 1} 빼기`}
+                    onclick={() => setPreview(input.name, previewTexts(input.name).filter((_, j) => j !== i))}>✕</button
+                  >
+                </div>
+              {/each}
+              <button
+                type="button"
+                class="rounded border px-2 py-1 text-muted-foreground hover:bg-muted"
+                onclick={() => setPreview(input.name, [...previewTexts(input.name), ''])}>+ {label}</button
+              >
+            </div>
           {:else}
-            <div class="h-8 truncate rounded border bg-muted/30 px-2.5 py-1.5 text-muted-foreground">{input.placeholder ?? ''}</div>
+            <input
+              class="h-8 w-full rounded border bg-background px-2.5"
+              placeholder={input.placeholder ?? ''}
+              value={typeof previewValues[input.name] === 'string' ? previewValues[input.name] : ''}
+              oninput={(e) => setPreview(input.name, e.currentTarget.value)}
+            />
           {/if}
         </div>
       {:else}
@@ -411,6 +512,19 @@
       {/each}
     </div>
   </div>
+{/snippet}
+
+{#snippet messagesView(messages: ChainMessage[])}
+  {#each previewMessages(messages) as pm, i (i)}
+    <div class={['rounded border', pm.skipped && 'opacity-50']}>
+      <div class="border-b bg-muted/50 px-3 py-1 font-mono text-muted-foreground">
+        {pm.header}{#if pm.skipped}<span class="ml-2 font-sans">· 보내지 않음</span>{/if}
+      </div>
+      <pre class="max-h-80 overflow-auto whitespace-pre-wrap bg-muted/30 p-3 text-[11px]">{#each pm.parts as part, k (k)}{#if part.name !== undefined}{#if part.value !== undefined}<mark
+              class="rounded bg-blue-100 px-0.5 dark:bg-blue-900/50">{part.value}</mark
+            >{:else}<code class="rounded bg-muted px-1 font-mono">{part.name}</code>{/if}{:else}{part.text}{/if}{/each}</pre>
+    </div>
+  {/each}
 {/snippet}
 
 {#snippet stepView(st: ChainStep, n: number, messages: ChainMessage[])}
@@ -421,12 +535,7 @@
       <span class="ml-1 font-mono text-muted-foreground">{st.inputs.join(', ')} → {st.format ?? 'text'}{st.output ? ` → ${st.output}` : ''}</span>
       <span class="ml-2 text-muted-foreground">{st.description}</span>
     </div>
-    {#each messages as m, i (i)}
-      <div class="rounded border">
-        <div class="border-b bg-muted/50 px-3 py-1 font-mono text-muted-foreground">{messageHeader(m)}</div>
-        <pre class="max-h-80 overflow-auto whitespace-pre-wrap bg-muted/30 p-3 text-[11px]">{m.content}</pre>
-      </div>
-    {/each}
+    {@render messagesView(messages)}
   </div>
 {/snippet}
 
