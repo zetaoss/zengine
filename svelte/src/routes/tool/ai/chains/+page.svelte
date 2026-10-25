@@ -393,7 +393,13 @@
                 {@const itemExpanded = expanded === key}
                 {@const editing = draft?.id === item.id}
                 {@const own = item.user_id === $userInfo?.id}
-                <tr class={['hover:bg-muted/30 transition cursor-pointer', own && 'border-l-2 border-l-primary']} onclick={() => toggle(key)}>
+                <tr
+                  class={[
+                    'transition cursor-pointer',
+                    own ? 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/40' : 'hover:bg-muted/30',
+                  ]}
+                  onclick={() => toggle(key)}
+                >
                   <td class="p-3 whitespace-nowrap text-muted-foreground">{item.user_name}</td>
                   <td class="p-3 whitespace-nowrap font-medium">{item.title}</td>
                   <td class="p-3 text-muted-foreground">{chain.name}의 프롬프트 틀</td>
