@@ -248,9 +248,39 @@
     return d.spec !== d.original
   }
 
+  // User inputs whose name the AI edit task also acts on (goapp/tasks/aiedit/request.go).
+  const reservedInputs: Record<string, string> = {
+    hint: '제목이 짧으면 필수',
+    readBacklinks: '켜면 역링크를 읽어 {backlinkTexts}로 넣음',
+  }
+
   function setDraftSpec(value: string) {
     if (draft) draft.spec = value
   }
+
+  interface SpecCheck {
+    ok: boolean
+    error?: string
+    user_inputs?: ChainInput[]
+    messages?: ChainMessage[]
+  }
+
+  // The editor's YAML as the server reads it on save (POST /api/ai-prompts/check), shortly after typing stops.
+  let specCheck = $state<SpecCheck | null>(null)
+  $effect(() => {
+    const d = draft
+    if (!d) {
+      specCheck = null
+      return
+    }
+    const spec = d.spec
+    const requestType = d.request_type
+    const timer = setTimeout(async () => {
+      const [data] = await httpy.post<SpecCheck>('/api/ai-prompts/check', { request_type: requestType, spec })
+      if (draft?.spec === spec && data) specCheck = data
+    }, 400)
+    return () => clearTimeout(timer)
+  })
 
   async function saveDraft() {
     if (!draft || !draft.title.trim()) return
@@ -340,10 +370,59 @@
       <div class="text-destructive">{draftError}</div>
     {/if}
     <div class="space-y-1">
-      <div class="font-mono text-[11px]">
-        <ZTextarea id={`ai-template-${d.id}`} modelValue={d.spec} placeholder={undefined} maxHeight={640} onUpdateModelValue={setDraftSpec} />
+      <div class="grid gap-3 md:grid-cols-2">
+        <div class="min-w-0 font-mono text-[11px]">
+          <ZTextarea id={`ai-template-${d.id}`} modelValue={d.spec} placeholder={undefined} maxHeight={720} onUpdateModelValue={setDraftSpec} />
+        </div>
+        <div class="min-w-0 space-y-2">
+          {#if specCheck && !specCheck.ok}
+            <div class="rounded border border-destructive/40 p-2 text-destructive">{specCheck.error}</div>
+          {:else if specCheck?.ok}
+            {#if specCheck.user_inputs?.length}
+              {@render runForm(specCheck.user_inputs)}
+            {/if}
+            {#each specCheck.messages ?? [] as m, i (i)}
+              <div class="rounded border">
+                <div class="border-b bg-muted/50 px-3 py-1 font-mono text-muted-foreground">{messageHeader(m)}</div>
+                <pre class="max-h-80 overflow-auto whitespace-pre-wrap bg-muted/30 p-3 text-[11px]">{m.content}</pre>
+              </div>
+            {/each}
+          {/if}
+        </div>
       </div>
     </div>
+  </div>
+{/snippet}
+
+{#snippet runForm(inputs: ChainInput[])}
+  <div class="space-y-2 rounded border bg-background p-3 text-xs text-foreground">
+    <div class="text-muted-foreground">실행 폼</div>
+    {#each inputs as input (input.name)}
+      {@const label = input.label || input.name}
+      <div class="space-y-1">
+        {#if input.type === 'bool'}
+          <label class="flex items-center gap-2">
+            <input type="checkbox" disabled />
+            {label}
+            <span class="font-mono text-muted-foreground">{`{${input.name}}`}</span>
+            {#if reservedInputs[input.name]}<span class="text-muted-foreground">· {reservedInputs[input.name]}</span>{/if}
+          </label>
+        {:else}
+          <div class="flex items-center gap-2">
+            <span class="font-medium">{label}</span>
+            <span class="font-mono text-muted-foreground">{`{${input.name}}`}{input.type === 'texts' ? ' · 여러 개' : ''}</span>
+            {#if reservedInputs[input.name]}<span class="text-muted-foreground">· {reservedInputs[input.name]}</span>{/if}
+          </div>
+          {#if input.type === 'texts'}
+            <div class="inline-flex rounded border px-2 py-1 text-muted-foreground">+ {label}</div>
+          {:else}
+            <div class="h-8 rounded border bg-muted/30"></div>
+          {/if}
+        {/if}
+      </div>
+    {:else}
+      <div class="text-muted-foreground">없음</div>
+    {/each}
   </div>
 {/snippet}
 
@@ -425,7 +504,7 @@
                     <div class="space-y-1 text-xs text-muted-foreground">
                       <div>버전: <span class="font-mono">{chain.metadata.version}</span></div>
                       {#if chain.spec.userInputs?.length}
-                        <div>실행 입력: <span class="font-mono">{chain.spec.userInputs.map(inputLabel).join(', ')}</span></div>
+                        {@render runForm(chain.spec.userInputs)}
                       {/if}
                       <div>task 입력: <span class="font-mono">{chain.spec.inputs.map(inputLabel).join(', ')}</span></div>
                     </div>
@@ -503,7 +582,7 @@
                           <div class="space-y-1 text-xs text-muted-foreground">
                             <div>버전: <span class="font-mono">{item.version}</span> · 원본: <span class="font-mono">{chain.name}</span></div>
                             {#if item.user_inputs.length}
-                              <div>실행 입력: <span class="font-mono">{item.user_inputs.map(inputLabel).join(', ')}</span></div>
+                              {@render runForm(item.user_inputs)}
                             {/if}
                           </div>
                           {#each chain.spec.steps as st, n (st.name)}

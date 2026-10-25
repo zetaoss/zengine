@@ -245,6 +245,35 @@ func Store(c *serverctx.Context) {
 	c.JSON(newPromptView(row))
 }
 
+// Check reads {"request_type", "spec"} as Store would and returns the run form and messages it holds, or the
+// error that would stop it from saving, without storing anything.
+func Check(c *serverctx.Context) {
+	var body struct {
+		RequestType string `json:"request_type"`
+		Spec        string `json:"spec"`
+	}
+	if !c.Decode(&body) {
+		return
+	}
+	requestType, ok := models.NormalizeAIEditRequestType(body.RequestType)
+	if !ok {
+		c.JSONError(http.StatusUnprocessableEntity, "유효하지 않은 요청 유형입니다.")
+		return
+	}
+	t, err := prompts.ParseTemplate(body.Spec)
+	if err == nil {
+		var chain prompts.Chain
+		if chain, err = aiedit.ChainOf(requestType).WithUserInputs(t.UserInputs); err == nil {
+			err = chain.ValidateMessages(t.Messages)
+		}
+	}
+	if err != nil {
+		c.JSON(app.H{"ok": false, "error": err.Error()})
+		return
+	}
+	c.JSON(app.H{"ok": true, "user_inputs": t.UserInputs, "messages": t.Messages})
+}
+
 func Destroy(c *serverctx.Context) {
 	id, ok := c.PathInt("id")
 	if !ok {
