@@ -438,11 +438,12 @@
                           {/each}
                         </select>
                       </label>
-                      {#if promptType}
-                        <CButton variant="outline" size="small" onclick={() => openCloneChain(chain, promptType)}>
-                          <ZIcon path={mdiContentCopy} class="mr-1" />
-                          복제
-                        </CButton>
+                      <CButton variant="outline" size="small" disabled={!promptType} onclick={() => promptType && openCloneChain(chain, promptType)}>
+                        <ZIcon path={mdiContentCopy} class="mr-1" />
+                        복제
+                      </CButton>
+                      {#if !promptType}
+                        <span class="text-muted-foreground">복제할 수 없는 체인입니다.</span>
                       {/if}
                     </div>
                     <div class="space-y-1 text-xs text-muted-foreground">
