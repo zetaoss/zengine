@@ -27,7 +27,7 @@ func TestBuiltinChains(t *testing.T) {
 
 func testChain(messages ...Message) Chain {
 	return Chain{Name: "t", Spec: Spec{
-		UserInputs: []Input{{Name: "hint"}, {Name: "flag", Type: TypeBool}, {Name: "notes", Type: TypeTexts}},
+		UserInputs: []Input{{Name: "hint"}, {Name: "flag", Type: TypeBool}, {Name: "notes", Type: TypeTextList}},
 		Inputs:     []Input{{Name: "title"}},
 		Steps:      []Step{{Name: "s", Prompt: Prompt{Inputs: []string{"title", "hint", "notes"}, Messages: messages}, Output: "out"}},
 	}}
@@ -44,7 +44,7 @@ func TestValidate(t *testing.T) {
 	}
 	for name, c := range map[string]Chain{
 		"undeclared placeholder": testChain(Message{Role: "user", Content: "{title} {hint} {notes} {other}"}),
-		"texts outside each":     testChain(Message{Role: "user", Content: "{title} {hint} {notes}"}),
+		"textList outside each":  testChain(Message{Role: "user", Content: "{title} {hint} {notes}"}),
 		"each on a string":       testChain(Message{Role: "user", Each: "hint", Content: "{title} {notes}"}),
 		"index outside each":     testChain(Message{Role: "user", Content: "{title} {index}"}, Message{Role: "user", If: "hint", Each: "notes", Content: "{notes}"}),
 		"unused step input":      testChain(Message{Role: "user", Content: "{title}"}),

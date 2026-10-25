@@ -17,7 +17,7 @@ export interface AIEditUserInput {
   name: string
   label?: string
   placeholder?: string
-  type?: 'string' | 'bool' | 'texts'
+  type?: 'string' | 'text' | 'textList' | 'bool'
 }
 
 export type AIEditUserInputValue = string | boolean | string[]

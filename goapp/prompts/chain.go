@@ -58,14 +58,24 @@ func (in *Input) UnmarshalYAML(n *yaml.Node) error {
 	return n.Decode((*plain)(in))
 }
 
-// InputType is the type of a variable's value: string (the default, "" in a file), bool, or texts ([]string).
+// InputType is the type of a variable's value and, for a user input, its field in the run form: string (the
+// default, "" in a file; one line), text (a string over lines), textList ([]string, a text per item), or bool.
 type InputType string
 
 const (
-	TypeString InputType = "string"
-	TypeBool   InputType = "bool"
-	TypeTexts  InputType = "texts"
+	TypeString   InputType = "string"
+	TypeText     InputType = "text"
+	TypeTextList InputType = "textList"
+	TypeBool     InputType = "bool"
 )
+
+func (t InputType) valid() bool {
+	switch t.orString() {
+	case TypeString, TypeText, TypeTextList, TypeBool:
+		return true
+	}
+	return false
+}
 
 func (t InputType) orString() InputType {
 	if t == "" {
@@ -117,7 +127,7 @@ func (c Chain) UserVars(raw map[string]any) (Vars, error) {
 			continue
 		}
 		switch in.Type.orString() {
-		case TypeString:
+		case TypeString, TypeText:
 			s, ok := v.(string)
 			if !ok {
 				return nil, fmt.Errorf("user input %s must be a string", in.Name)
@@ -129,7 +139,7 @@ func (c Chain) UserVars(raw map[string]any) (Vars, error) {
 				return nil, fmt.Errorf("user input %s must be true or false", in.Name)
 			}
 			vars[in.Name] = b
-		case TypeTexts:
+		case TypeTextList:
 			items, ok := v.([]any)
 			if !ok {
 				return nil, fmt.Errorf("user input %s must be a list of texts", in.Name)
@@ -202,7 +212,7 @@ type Prompt struct {
 }
 
 // Message is one message of a prompt. If sends it only when that variable is given (present). Each sends it once
-// per item of a texts variable, with {name} as the item and {index} as its number from 1; an empty list sends
+// per item of a textList variable, with {name} as the item and {index} as its number from 1; an empty list sends
 // none. Rendered messages carry neither.
 type Message struct {
 	Role    string `json:"role" yaml:"role"`
@@ -346,8 +356,8 @@ var (
 )
 
 // Validate checks a chain's structure: variable and output names and types; each step's inputs are variables
-// or earlier outputs and each is used by its messages; placeholders, If and Each name the step's inputs, Each a texts
-// variable, and a texts variable appears as a placeholder only in its own Each message; every task input is used.
+// or earlier outputs and each is used by its messages; placeholders, If and Each name the step's inputs, Each a
+// textList variable, and a textList variable appears as a placeholder only in its own Each message; every task input is used.
 func (c Chain) Validate() error {
 	types := map[string]InputType{}
 	for _, in := range slices.Concat(c.Spec.UserInputs, c.Spec.Inputs) {
@@ -358,7 +368,7 @@ func (c Chain) Validate() error {
 			return fmt.Errorf("duplicate variable %q", in.Name)
 		}
 		t := in.Type.orString()
-		if t != TypeString && t != TypeBool && t != TypeTexts {
+		if !in.Type.valid() {
 			return fmt.Errorf("variable %s: unknown type %q", in.Name, in.Type)
 		}
 		types[in.Name] = t
@@ -412,7 +422,7 @@ func (c Chain) WithUserInputs(inputs []Input) (Chain, error) {
 			return c, fmt.Errorf("user input %q is already a variable", in.Name)
 		}
 		seen[in.Name] = true
-		if t := in.Type.orString(); t != TypeString && t != TypeBool && t != TypeTexts {
+		if !in.Type.valid() {
 			return c, fmt.Errorf("user input %s: unknown type %q", in.Name, in.Type)
 		}
 	}
@@ -502,8 +512,8 @@ func (st Step) validate(types map[string]InputType, used map[string]bool, strict
 			}
 			stepUsed[name] = true
 		}
-		if m.Each != "" && types[m.Each] != TypeTexts {
-			return fmt.Errorf("each %q is not a texts variable", m.Each)
+		if m.Each != "" && types[m.Each] != TypeTextList {
+			return fmt.Errorf("each %q is not a textList variable", m.Each)
 		}
 		for _, ph := range placeholders(m.Content) {
 			name := ph.name
@@ -513,8 +523,8 @@ func (st Step) validate(types map[string]InputType, used map[string]bool, strict
 			if !slices.Contains(st.Inputs, name) {
 				return fmt.Errorf("placeholder {%s} is not an input of the step", name)
 			}
-			if types[name] == TypeTexts && name != m.Each {
-				return fmt.Errorf("texts variable {%s} is used outside its each message", name)
+			if types[name] == TypeTextList && name != m.Each {
+				return fmt.Errorf("textList variable {%s} is used outside its each message", name)
 			}
 			stepUsed[name] = true
 		}

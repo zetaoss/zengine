@@ -90,7 +90,7 @@
   // not sent.
   function fits(input: AIEditUserInput, v: AIEditUserInputValue | undefined) {
     if (input.type === 'bool') return typeof v === 'boolean'
-    if (input.type === 'texts') return Array.isArray(v)
+    if (input.type === 'textList') return Array.isArray(v)
     return typeof v === 'string'
   }
 
@@ -274,7 +274,7 @@
               />
               {label}
             </label>
-          {:else if input.type === 'texts'}
+          {:else if input.type === 'textList'}
             <div class="flex flex-col gap-2">
               {#each textsValue(input.name) as item, i (i)}
                 <div class="flex items-start gap-1">
@@ -310,13 +310,23 @@
               <div>
                 <span class="font-semibold">{label}</span>
               </div>
-              <ZTextarea
-                id={`ai-edit-input-${input.name}`}
-                modelValue={textValue(input.name)}
-                placeholder={input.placeholder}
-                maxHeight={160}
-                onUpdateModelValue={(v: string) => setText(input.name, v)}
-              />
+              {#if input.type === 'text'}
+                <ZTextarea
+                  id={`ai-edit-input-${input.name}`}
+                  modelValue={textValue(input.name)}
+                  placeholder={input.placeholder}
+                  maxHeight={160}
+                  onUpdateModelValue={(v: string) => setText(input.name, v)}
+                />
+              {:else}
+                <input
+                  id={`ai-edit-input-${input.name}`}
+                  class="border-border h-8 rounded border bg-background px-2"
+                  placeholder={input.placeholder}
+                  value={textValue(input.name)}
+                  oninput={(e) => setText(input.name, e.currentTarget.value)}
+                />
+              {/if}
             </div>
           {/if}
           </div>

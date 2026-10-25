@@ -15,13 +15,14 @@ spec:
       type: bool
     - name: materials
       label: 자료
-      type: texts
+      type: textList
     - name: request
       label: 요청사항
+      type: text
   inputs:
     - name: title
     - name: backlinkTexts
-      type: texts
+      type: textList
   steps:
     - name: generate
       description: 제목과 힌트·요청사항·자료·역링크로 새 문서의 위키텍스트를 쓴다.

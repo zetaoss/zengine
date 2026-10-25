@@ -42,11 +42,11 @@ spec:
       type: bool
     - name: materials
       label: 자료
-      type: texts
+      type: textList
   inputs:                     # filled by the task
     - name: title
     - name: backlinkTexts
-      type: texts
+      type: textList
   steps:
     - name: generate
       inputs: [title, hint, materials, backlinkTexts]
@@ -66,7 +66,7 @@ spec:
             {materials}
 ```
 
-`metadata` describes the chain; `spec` is what decides its results. A variable's `type` is `string` (the default), `bool` or `texts` (a list of strings); a user input may have a `label` and a `placeholder` for its empty field; an input may be written as its name alone (`inputs: [title, lead]`). A step names its `output` only when a later step reads it (doc-eval's `rubrics`), and writes `format: json` only when it takes JSON. The files are read at start with unknown fields rejected, and a missing file or step (`Chain.Step`) panics there. Go keeps what the services need beyond the file: the structs a response is parsed into, values that check results (`DocEvalSafetyPolicies`), and the code between steps.
+`metadata` describes the chain; `spec` is what decides its results. A variable's `type` is `string` (the default; one line), `text` (several lines), `textList` (a list of texts) or `bool`; a user input may have a `label` and a `placeholder` for its empty field; an input may be written as its name alone (`inputs: [title, lead]`). A step names its `output` only when a later step reads it (doc-eval's `rubrics`), and writes `format: json` only when it takes JSON. The files are read at start with unknown fields rejected, and a missing file or step (`Chain.Step`) panics there. Go keeps what the services need beyond the file: the structs a response is parsed into, values that check results (`DocEvalSafetyPolicies`), and the code between steps.
 
 ## Chains and tasks
 
@@ -79,7 +79,7 @@ A chain says what to ask a model: its prompts, formats, outputs and version, and
 `Chain.Validate` checks these at start (`mustLoad`), and in `chain_test.go`:
 
 - A step's inputs are variables or earlier outputs, and each is used by its messages as a placeholder, `if` or `each`. Every task input is used; a user input need not be (`readBacklinks` only tells the task to read).
-- Placeholders, `if` and `each` name the step's inputs. `each` names a `texts` variable, and inside its message `{name}` is the item and `{index}` its number from 1; a `texts` variable is a placeholder only there.
+- Placeholders, `if` and `each` name the step's inputs. `each` names a `textList` variable, and inside its message `{name}` is the item and `{index}` its number from 1; a `textList` variable is a placeholder only there.
 - Variable names start with a letter (`backlinkTexts`, `wikitext`). System messages are fixed; changing values go into user messages.
 - `Prompt.Render` skips a message whose `if` variable is not given (a blank string, false, an empty list), sends an `each` message per item, and inserts values as they are (a `{title}` inside a wikitext is not expanded); braces that are not variables stay: `{|`, JSON, and wiki templates, since a `{name}` right after another brace (`{{title}}`, `{{Infobox}}`, `{{{1}}}`) is not a placeholder, while one inside a template's parameter (`{{틀|{title}}}`) is.
 - `Format.Parse` strips a code fence around the whole response; `json` decodes into a struct, `text` trims. It checks the format only; the service checks what values mean.

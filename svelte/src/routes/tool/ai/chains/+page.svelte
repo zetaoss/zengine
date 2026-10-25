@@ -474,16 +474,16 @@
               checked={previewValues[input.name] === true}
               onchange={(e) => setPreview(input.name, e.currentTarget.checked)}
             />
-          {:else if input.type === 'texts'}
+          {:else if input.type === 'textList'}
             <div class="space-y-1">
               {#each previewTexts(input.name) as item, i (i)}
                 <div class="flex items-center gap-1">
-                  <input
-                    class="h-8 min-w-0 flex-1 rounded border bg-background px-2.5"
+                  <textarea
+                    class="min-h-16 min-w-0 flex-1 rounded border bg-background px-2.5 py-1.5"
                     placeholder={input.placeholder ?? `${label} ${i + 1}`}
                     value={item}
                     oninput={(e) => setPreview(input.name, previewTexts(input.name).map((x, j) => (j === i ? e.currentTarget.value : x)))}
-                  />
+                  ></textarea>
                   <button
                     type="button"
                     class="rounded px-1.5 text-muted-foreground hover:bg-muted"
@@ -499,12 +499,22 @@
               >
             </div>
           {:else}
-            <input
-              class="h-8 w-full rounded border bg-background px-2.5"
-              placeholder={input.placeholder ?? ''}
-              value={typeof previewValues[input.name] === 'string' ? previewValues[input.name] : ''}
-              oninput={(e) => setPreview(input.name, e.currentTarget.value)}
-            />
+            {@const value = typeof previewValues[input.name] === 'string' ? (previewValues[input.name] as string) : ''}
+            {#if input.type === 'text'}
+              <textarea
+                class="min-h-16 w-full rounded border bg-background px-2.5 py-1.5"
+                placeholder={input.placeholder ?? ''}
+                {value}
+                oninput={(e) => setPreview(input.name, e.currentTarget.value)}
+              ></textarea>
+            {:else}
+              <input
+                class="h-8 w-full rounded border bg-background px-2.5"
+                placeholder={input.placeholder ?? ''}
+                {value}
+                oninput={(e) => setPreview(input.name, e.currentTarget.value)}
+              />
+            {/if}
           {/if}
         </div>
       {:else}
