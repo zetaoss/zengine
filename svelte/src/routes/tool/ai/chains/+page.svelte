@@ -729,7 +729,7 @@
     padding: 0.125em 0.25em;
     border: 1px solid var(--color-border);
     border-radius: 0.25rem;
-    background: var(--color-code);
+    background: light-dark(oklch(0.96 0.05 85), oklch(0.32 0.05 85));
     color: var(--color-code-foreground);
   }
 </style>
