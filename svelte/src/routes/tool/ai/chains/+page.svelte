@@ -3,7 +3,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
 
-  import { mdiArrowDown, mdiArrowUp, mdiChevronDown, mdiClose, mdiContentCopy, mdiDelete, mdiPencil, mdiPlus } from '@mdi/js'
+  import { mdiChevronDown, mdiContentCopy, mdiDelete, mdiPencil } from '@mdi/js'
 
   import useAuthStore from '$lib/stores/auth'
   import CButton from '$shared/ui/CButton.svelte'
@@ -46,6 +46,7 @@
     model: string
     uses: number
     used_at?: string | null
+    template: string
   }
 
   function inputLabel(input: ChainInput) {
@@ -67,6 +68,7 @@
     content: string
     messages: ChainMessage[]
     user_inputs: ChainInput[]
+    spec: string
     description: string
     version: string
     model: string
@@ -170,11 +172,11 @@
     title: string
     description: string
     request_type: string
-    userInputs: ChainInput[]
-    messages: ChainMessage[]
+    // The run form and messages as YAML (prompts.Template).
+    spec: string
     model: string
     version: string
-    // The run form and messages when editing began (JSON); changing them bumps the version on save.
+    // The spec when editing began; changing it bumps the version on save.
     original: string
     bump: 'minor' | 'major'
   }
@@ -196,11 +198,10 @@
       title: item.title,
       description: item.description,
       request_type: item.request_type,
-      userInputs: copyInputs(item.user_inputs),
-      messages: copyMessages(item.messages),
+      spec: item.spec,
       model: item.model,
       version: item.version,
-      original: snapshot(item.user_inputs, item.messages),
+      original: item.spec,
       bump: 'minor',
     }
     expanded = `prompt:${item.id}`
@@ -214,31 +215,27 @@
       title: `${item.title} (복제본)`,
       description: item.description,
       request_type: item.request_type,
-      userInputs: copyInputs(item.user_inputs),
-      messages: copyMessages(item.messages),
+      spec: item.spec,
       model: item.model || chain.model,
       version: 'v1.0',
-      original: snapshot(item.user_inputs, item.messages),
+      original: item.spec,
       bump: 'minor',
     }
   }
 
-  // A template cloned from a built-in chain starts with the step's messages as they are; its model is the chain's,
-  // as a value.
+  // A template cloned from a built-in chain starts with its run form and step messages as they are; its model is the
+  // chain's, as a value.
   function openCloneChain(chain: Chain, requestType: string) {
     draftError = ''
-    const messages = copyMessages(chain.spec.steps[0].messages)
-    const userInputs = copyInputs(chain.spec.userInputs ?? [])
     draft = {
       id: 0,
       title: `${chain.name} (복제본)`,
       description: chain.metadata.description,
       request_type: requestType,
-      userInputs,
-      messages,
+      spec: chain.template,
       model: chain.model,
       version: 'v1.0',
-      original: snapshot(userInputs, messages),
+      original: chain.template,
       bump: 'minor',
     }
   }
@@ -247,62 +244,12 @@
     if (!savingDraft) draft = null
   }
 
-  function copyMessages(messages: ChainMessage[]): ChainMessage[] {
-    return messages.map((m) => ({ ...m }))
-  }
-
-  function copyInputs(inputs: ChainInput[]): ChainInput[] {
-    return inputs.map((i) => ({ ...i }))
-  }
-
-  function snapshot(userInputs: ChainInput[], messages: ChainMessage[]) {
-    return JSON.stringify({ userInputs, messages })
-  }
-
   function draftChanged(d: TemplateDraft) {
-    return snapshot(d.userInputs, d.messages) !== d.original
+    return d.spec !== d.original
   }
 
-  // User inputs whose name the AI edit task also acts on (goapp/tasks/aiedit/request.go).
-  const reservedInputs: Record<string, string> = {
-    hint: '제목이 짧으면 필수',
-    readBacklinks: '켜면 역링크를 읽음',
-  }
-
-  // The variables of a template: its user inputs and the chain's task inputs. Which a message may use is checked
-  // when it is saved (prompts.Chain.ValidateMessages).
-  function draftVariables(d: TemplateDraft, chain: Chain): ChainInput[] {
-    return [...d.userInputs, ...chain.spec.inputs]
-  }
-
-  type Condition = 'always' | 'if' | 'each'
-
-  // The variables a condition can name: any for if (sent when given), texts ones for each (once per item).
-  function conditionVariables(kind: Condition, vars: ChainInput[]) {
-    return vars.filter((v) => v.name && (kind === 'if' || v.type === 'texts')).map((v) => v.name)
-  }
-
-  function conditionOf(m: ChainMessage): Condition {
-    return m.each ? 'each' : m.if ? 'if' : 'always'
-  }
-
-  function setCondition(m: ChainMessage, kind: Condition, vars: ChainInput[]) {
-    const name = conditionVariables(kind, vars)[0]
-    m.if = kind === 'if' ? name : undefined
-    m.each = kind === 'each' ? name : undefined
-  }
-
-  function setConditionVariable(m: ChainMessage, name: string) {
-    if (m.each) m.each = name
-    else m.if = name
-  }
-
-  function moveMessage(d: TemplateDraft, i: number, by: number) {
-    const j = i + by
-    if (j < 0 || j >= d.messages.length) return
-    const next = [...d.messages]
-    ;[next[i], next[j]] = [next[j], next[i]]
-    d.messages = next
+  function setDraftSpec(value: string) {
+    if (draft) draft.spec = value
   }
 
   async function saveDraft() {
@@ -313,10 +260,7 @@
       title: draft.title.trim(),
       description: draft.description,
       request_type: draft.request_type,
-      messages: draft.messages.map((m) => ({ role: m.role, content: m.content, ...(m.if ? { if: m.if } : {}), ...(m.each ? { each: m.each } : {}) })),
-      user_inputs: draft.userInputs
-        .filter((i) => i.name.trim())
-        .map((i) => ({ name: i.name.trim(), ...(i.label ? { label: i.label } : {}), ...(i.type && i.type !== 'string' ? { type: i.type } : {}) })),
+      spec: draft.spec,
       bump: draft.bump,
     }
     if (draft.id === 0) body.model = draft.model
@@ -389,90 +333,25 @@
       <span class="font-medium">설명</span>
       <input class="h-8 w-full rounded border bg-background px-2.5" bind:value={d.description} />
     </label>
-    <div class="space-y-1.5">
-      <div class="font-medium">실행 입력</div>
-      {#each d.userInputs as input, i (i)}
-        <div class="flex flex-wrap items-center gap-2">
-          <input class="h-8 w-40 rounded border bg-background px-2.5 font-mono" placeholder="이름" bind:value={input.name} />
-          <input class="h-8 w-40 rounded border bg-background px-2.5" placeholder="라벨" bind:value={input.label} />
-          <select class="h-8 rounded border bg-background px-1.5 font-mono" value={input.type ?? 'string'} onchange={(e) => (input.type = e.currentTarget.value)}>
-            <option value="string">string</option>
-            <option value="bool">bool</option>
-            <option value="texts">texts</option>
-          </select>
-          {#if reservedInputs[input.name]}
-            <span class="text-muted-foreground">{reservedInputs[input.name]}</span>
-          {/if}
-          <CButton variant="ghost" size="icon-sm" aria-label="입력 삭제" onclick={() => (d.userInputs = d.userInputs.filter((_, j) => j !== i))}>
-            <ZIcon path={mdiClose} />
-          </CButton>
-        </div>
-      {/each}
-      <CButton variant="outline" size="small" onclick={() => (d.userInputs = [...d.userInputs, { name: '', label: '' }])}>
-        <ZIcon path={mdiPlus} class="mr-1" />
-        입력
-      </CButton>
-      <div class="text-muted-foreground">
-        값이 그대로 메시지 변수가 됩니다. 변수: <span class="font-mono">{draftVariables(d, chain).filter((v) => v.name).map((v) => `{${v.name}}`).join(' ')}</span>, each 안의
-        <span class="font-mono">{'{index}'}</span>. 맞게 썼는지는 저장할 때 확인합니다.
-      </div>
-    </div>
     {#if d.id > 0 && draftChanged(d) && d.bump === 'major'}
       <div class="text-muted-foreground">메이저 범프: 이 틀로 돈 이전 결과와 다른 것으로 구분합니다(AI 편집은 다시 돌리는 대상이 없습니다).</div>
     {/if}
     {#if draftError}
       <div class="text-destructive">{draftError}</div>
     {/if}
-    {#each chain.spec.steps.slice(0, 1) as st (st.name)}
-      {@const vars = draftVariables(d, chain)}
-      <div class="space-y-2 min-w-0">
-        {#each d.messages as m, i (i)}
-          {@const kind = conditionOf(m)}
-          <div class="rounded border">
-            <div class="flex flex-wrap items-center gap-2 border-b bg-muted/50 px-2 py-1">
-              <select class="h-7 rounded border bg-background px-1.5 font-mono" bind:value={m.role}>
-                <option value="system">system</option>
-                <option value="user">user</option>
-              </select>
-              <select
-                class="h-7 rounded border bg-background px-1.5 font-mono"
-                value={kind}
-                onchange={(e) => setCondition(m, e.currentTarget.value as Condition, vars)}
-              >
-                <option value="always">always</option>
-                <option value="if">if</option>
-                <option value="each" disabled={conditionVariables('each', vars).length === 0}>each</option>
-              </select>
-              {#if kind !== 'always'}
-                <select class="h-7 rounded border bg-background px-1.5 font-mono" value={m.each ?? m.if} onchange={(e) => setConditionVariable(m, e.currentTarget.value)}>
-                  {#each conditionVariables(kind, vars) as name (name)}
-                    <option value={name}>{name}</option>
-                  {/each}
-                </select>
-              {/if}
-              <div class="ml-auto flex items-center">
-                <CButton variant="ghost" size="icon-sm" aria-label="위로" disabled={i === 0} onclick={() => moveMessage(d, i, -1)}>
-                  <ZIcon path={mdiArrowUp} />
-                </CButton>
-                <CButton variant="ghost" size="icon-sm" aria-label="아래로" disabled={i === d.messages.length - 1} onclick={() => moveMessage(d, i, 1)}>
-                  <ZIcon path={mdiArrowDown} />
-                </CButton>
-                <CButton variant="ghost" size="icon-sm" aria-label="삭제" disabled={d.messages.length === 1} onclick={() => (d.messages = d.messages.filter((_, j) => j !== i))}>
-                  <ZIcon path={mdiClose} />
-                </CButton>
-              </div>
-            </div>
-            <div class="font-mono text-[11px]">
-              <ZTextarea id={`ai-template-${d.id}-${i}`} modelValue={m.content} placeholder={undefined} maxHeight={480} onUpdateModelValue={(v: string) => (m.content = v)} />
-            </div>
-          </div>
-        {/each}
-        <CButton variant="outline" size="small" onclick={() => (d.messages = [...d.messages, { role: 'user', content: '' }])}>
-          <ZIcon path={mdiPlus} class="mr-1" />
-          메시지
-        </CButton>
+    <div class="space-y-1">
+      <div class="text-muted-foreground">
+        <span class="font-mono">userInputs</span>는 실행 폼(값이 그대로 메시지 변수가 됨; <span class="font-mono">hint</span>는 제목이 짧으면 필수,
+        <span class="font-mono">readBacklinks</span>는 켜면 역링크를 읽음), <span class="font-mono">messages</span>는 보낼 메시지(<span class="font-mono"
+          >if</span
+        >·<span class="font-mono">each</span>
+        조건, each 안에서 <span class="font-mono">{'{index}'}</span>). task가 채우는 변수:
+        <span class="font-mono">{chain.spec.inputs.map((i) => `{${i.name}}`).join(' ')}</span>. 저장할 때 확인합니다.
       </div>
-    {/each}
+      <div class="font-mono text-[11px]">
+        <ZTextarea id={`ai-template-${d.id}`} modelValue={d.spec} placeholder={undefined} maxHeight={640} onUpdateModelValue={setDraftSpec} />
+      </div>
+    </div>
   </div>
 {/snippet}
 

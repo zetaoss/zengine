@@ -17,15 +17,18 @@ import (
 	"gorm.io/gorm"
 )
 
-// promptView is a template with the run form and messages it runs with (aiedit.TemplateUserInputs, Messages).
+// promptView is a template with the run form and messages it runs with (aiedit.TemplateUserInputs, Messages),
+// and the two as the YAML its editor shows (spec).
 type promptView struct {
 	models.AIEditPrompt
 	UserInputs []prompts.Input   `json:"user_inputs"`
 	Messages   []prompts.Message `json:"messages"`
+	Spec       string            `json:"spec"`
 }
 
 func newPromptView(p models.AIEditPrompt) promptView {
-	return promptView{AIEditPrompt: p, UserInputs: aiedit.TemplateUserInputs(p), Messages: aiedit.TemplateMessages(p)}
+	t := prompts.Template{UserInputs: aiedit.TemplateUserInputs(p), Messages: aiedit.TemplateMessages(p)}
+	return promptView{AIEditPrompt: p, UserInputs: t.UserInputs, Messages: t.Messages, Spec: t.YAML()}
 }
 
 func Index(c *serverctx.Context) {
@@ -95,6 +98,8 @@ func Store(c *serverctx.Context) {
 		Messages *[]prompts.Message `json:"messages"`
 		// UserInputs, when given, are the template's own run form (aiedit.TemplateUserInputs).
 		UserInputs *[]prompts.Input `json:"user_inputs"`
+		// Spec, when given, is the run form and messages as YAML (prompts.Template), in place of both.
+		Spec *string `json:"spec"`
 		// Bump is how an edit that changes the messages moves the version: "minor" (the default) or "major".
 		Bump string `json:"bump"`
 	}
@@ -123,6 +128,14 @@ func Store(c *serverctx.Context) {
 		return
 	}
 	body.RequestType = requestType
+	if body.Spec != nil {
+		t, err := prompts.ParseTemplate(*body.Spec)
+		if err != nil {
+			c.JSONError(http.StatusUnprocessableEntity, err.Error())
+			return
+		}
+		body.UserInputs, body.Messages = &t.UserInputs, &t.Messages
+	}
 	var messagesJSON, userInputsJSON string
 	if body.Messages != nil || body.UserInputs != nil {
 		draft := models.AIEditPrompt{RequestType: requestType, Content: body.Content}

@@ -408,6 +408,41 @@ func (c Chain) WithUserInputs(inputs []Input) (Chain, error) {
 	return c, nil
 }
 
+// Template is the part of a chain a custom template rewrites, as written in YAML: the run form and the first step's
+// messages.
+type Template struct {
+	UserInputs []Input   `json:"userInputs" yaml:"userInputs"`
+	Messages   []Message `json:"messages" yaml:"messages"`
+}
+
+// Template returns the chain's own run form and first step's messages.
+func (c Chain) Template() Template {
+	return Template{UserInputs: c.Spec.UserInputs, Messages: c.Spec.Steps[0].Messages}
+}
+
+// YAML writes the template as the chain files do (multi-line contents as blocks).
+func (t Template) YAML() string {
+	var buf bytes.Buffer
+	enc := yaml.NewEncoder(&buf)
+	enc.SetIndent(2)
+	if err := enc.Encode(t); err != nil {
+		return ""
+	}
+	return buf.String()
+}
+
+// ParseTemplate reads a template written in YAML, rejecting unknown fields. It does not check it against a chain
+// (WithUserInputs, ValidateMessages).
+func ParseTemplate(text string) (Template, error) {
+	var t Template
+	dec := yaml.NewDecoder(strings.NewReader(text))
+	dec.KnownFields(true)
+	if err := dec.Decode(&t); err != nil {
+		return t, fmt.Errorf("YAML: %w", err)
+	}
+	return t, nil
+}
+
 func (c Chain) variableTypes() map[string]InputType {
 	types := map[string]InputType{}
 	for _, in := range slices.Concat(c.Spec.UserInputs, c.Spec.Inputs) {

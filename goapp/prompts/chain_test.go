@@ -163,3 +163,18 @@ func TestNextVersion(t *testing.T) {
 		}
 	}
 }
+
+func TestTemplateYAML(t *testing.T) {
+	tpl := DocCreate.Template()
+	text := tpl.YAML()
+	if !strings.Contains(text, "userInputs:") || !strings.Contains(text, "content: |-") {
+		t.Fatalf("template YAML should read like the chain files:\n%s", text)
+	}
+	back, err := ParseTemplate(text)
+	if err != nil || !reflect.DeepEqual(back, tpl) {
+		t.Fatalf("round trip: %v\n%+v", err, back)
+	}
+	if _, err := ParseTemplate("messages: []\nsteps: []\n"); err == nil {
+		t.Error("unknown fields must be rejected")
+	}
+}

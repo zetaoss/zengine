@@ -140,3 +140,20 @@ func TestRenderOwnUserInputs(t *testing.T) {
 		t.Error("a user input named like a task input must be rejected")
 	}
 }
+
+func TestBuiltinTemplatesValidate(t *testing.T) {
+	for _, rt := range []string{models.AIEditRequestCreate, models.AIEditRequestUpdate} {
+		chain := ChainOf(rt)
+		tpl, err := prompts.ParseTemplate(chain.Template().YAML())
+		if err != nil {
+			t.Fatal(err)
+		}
+		c, err := chain.WithUserInputs(tpl.UserInputs)
+		if err == nil {
+			err = c.ValidateMessages(tpl.Messages)
+		}
+		if err != nil {
+			t.Errorf("%s: a clone of the built-in chain must save as it is: %v", chain.Name, err)
+		}
+	}
+}
