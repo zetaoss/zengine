@@ -90,7 +90,9 @@
       showToast(err.message || '체인을 불러오지 못했습니다.')
       return
     }
-    chains = data ?? []
+    // Most recently used first; chains never run keep their order (that of goapp/prompts) after them.
+    const usedAt = (c: Chain) => (c.used_at ? new Date(c.used_at).getTime() : 0)
+    chains = (data ?? []).map((c, i) => ({ c, i })).sort((a, b) => usedAt(b.c) - usedAt(a.c) || a.i - b.i).map(({ c }) => c)
   }
 
   // Templates, most recently used first; those not run since used_at was recorded follow by use count.
