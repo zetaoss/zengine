@@ -340,14 +340,6 @@
       <div class="text-destructive">{draftError}</div>
     {/if}
     <div class="space-y-1">
-      <div class="text-muted-foreground">
-        <span class="font-mono">userInputs</span>는 실행 폼(값이 그대로 메시지 변수가 됨; <span class="font-mono">hint</span>는 제목이 짧으면 필수,
-        <span class="font-mono">readBacklinks</span>는 켜면 역링크를 읽음), <span class="font-mono">messages</span>는 보낼 메시지(<span class="font-mono"
-          >if</span
-        >·<span class="font-mono">each</span>
-        조건, each 안에서 <span class="font-mono">{'{index}'}</span>). task가 채우는 변수:
-        <span class="font-mono">{chain.spec.inputs.map((i) => `{${i.name}}`).join(' ')}</span>. 저장할 때 확인합니다.
-      </div>
       <div class="font-mono text-[11px]">
         <ZTextarea id={`ai-template-${d.id}`} modelValue={d.spec} placeholder={undefined} maxHeight={640} onUpdateModelValue={setDraftSpec} />
       </div>
