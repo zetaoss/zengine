@@ -145,7 +145,7 @@
   }
 
   function openSaveAsModal() {
-    saveAsTitle = `${prompt.title} 복사본`
+    saveAsTitle = `${prompt.title} (복제본)`
     saveAsModalOpen = true
   }
 

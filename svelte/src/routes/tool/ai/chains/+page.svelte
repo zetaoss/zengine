@@ -212,7 +212,7 @@
     draftError = ''
     draft = {
       id: 0,
-      title: `${item.title} 복사본`,
+      title: `${item.title} (복제본)`,
       description: item.description,
       request_type: item.request_type,
       content: item.content,
@@ -233,7 +233,7 @@
       .join('\n\n')
     draft = {
       id: 0,
-      title: `${chain.name} 복사본`,
+      title: `${chain.name} (복제본)`,
       description: chain.metadata.description,
       request_type: requestType,
       content,
