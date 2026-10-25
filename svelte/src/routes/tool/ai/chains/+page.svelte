@@ -395,7 +395,7 @@
     <div class="grid grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-x-4 gap-y-2">
       {#each inputs as input (input.name)}
         {@const label = input.label || input.name}
-        <div class="font-mono text-muted-foreground">{`{${input.name}}`}</div>
+        <div><code class="rounded bg-muted px-1.5 py-0.5 font-mono">{input.name}</code></div>
         <div class="font-medium">{label}</div>
         <div class="min-w-0">
           {#if input.type === 'bool'}
