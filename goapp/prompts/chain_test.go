@@ -1,69 +1,109 @@
 package prompts
 
 import (
+	"reflect"
 	"regexp"
-	"slices"
+	"strings"
 	"testing"
 )
-
-var placeholderRe = regexp.MustCompile(`\{([a-z_]+)\}`)
 
 var versionRe = regexp.MustCompile(`^v[0-9]+\.[0-9]+$`)
 
 func TestBuiltinChains(t *testing.T) {
 	seen := map[string]bool{}
 	for _, c := range BuiltinChains() {
-		if c.Name == "" || c.Metadata.Version == "" || len(c.Spec.Steps) == 0 || seen[c.Name] {
-			t.Fatalf("invalid or duplicate chain (name, version and steps are required): %q", c.Name)
+		if c.Name == "" || seen[c.Name] {
+			t.Fatalf("invalid or duplicate chain: %q", c.Name)
 		}
 		seen[c.Name] = true
 		if !versionRe.MatchString(c.Metadata.Version) {
 			t.Errorf("%s: version %q is not v<major>.<minor>", c.Name, c.Metadata.Version)
 		}
-		available := slices.Clone(c.Spec.Inputs)
-		for _, st := range c.Spec.Steps {
-			if st.Name == "" || st.Output == "" || len(st.Messages) == 0 {
-				t.Fatalf("%s/%s: name, output and messages are required", c.Name, st.Name)
-			}
-			if st.Parser != ParserJSON && st.Parser != ParserText {
-				t.Errorf("%s/%s: unknown parser %q", c.Name, st.Name, st.Parser)
-			}
-			used := map[string]bool{}
-			for _, m := range st.Messages {
-				if m.Content == "" || (m.Role != "system" && m.Role != "user") {
-					t.Fatalf("%s/%s: invalid %q message", c.Name, st.Name, m.Role)
-				}
-				for _, sub := range placeholderRe.FindAllStringSubmatch(m.Content, -1) {
-					if !slices.Contains(st.Inputs, sub[1]) {
-						t.Errorf("%s/%s: placeholder {%s} is not an input", c.Name, st.Name, sub[1])
-					}
-					used[sub[1]] = true
-				}
-			}
-			for _, in := range st.Inputs {
-				if !slices.Contains(available, in) {
-					t.Errorf("%s/%s: input %q is neither a chain input nor an earlier output", c.Name, st.Name, in)
-				}
-				if !used[in] {
-					t.Errorf("%s/%s: input %q has no placeholder", c.Name, st.Name, in)
-				}
-			}
-			available = append(available, st.Output)
+		if err := c.Validate(); err != nil {
+			t.Errorf("%s: %v", c.Name, err)
 		}
+	}
+}
+
+func testChain(messages ...Message) Chain {
+	return Chain{Name: "t", Spec: Spec{
+		UserInputs: []Input{{Name: "hint"}, {Name: "flag", Type: TypeBool}, {Name: "notes", Type: TypeTextList}},
+		Inputs:     []Input{{Name: "title"}},
+		Steps:      []Step{{Name: "s", Prompt: Prompt{Inputs: []string{"title", "hint", "notes"}, Messages: messages}, Output: "out"}},
+	}}
+}
+
+func TestValidate(t *testing.T) {
+	ok := testChain(
+		Message{Role: "user", Content: "{title}"},
+		Message{Role: "user", If: "hint", Content: "{hint}"},
+		Message{Role: "user", Each: "notes", Content: "{index}: {notes}"},
+	)
+	if err := ok.Validate(); err != nil {
+		t.Fatalf("valid chain rejected: %v", err)
+	}
+	for name, c := range map[string]Chain{
+		"undeclared placeholder": testChain(Message{Role: "user", Content: "{title} {hint} {notes} {other}"}),
+		"textList outside each":  testChain(Message{Role: "user", Content: "{title} {hint} {notes}"}),
+		"each on a string":       testChain(Message{Role: "user", Each: "hint", Content: "{title} {notes}"}),
+		"index outside each":     testChain(Message{Role: "user", Content: "{title} {index}"}, Message{Role: "user", If: "hint", Each: "notes", Content: "{notes}"}),
+		"unused step input":      testChain(Message{Role: "user", Content: "{title}"}),
+		"unknown role":           testChain(Message{Role: "assistant", Content: "{title} {hint}"}, Message{Role: "user", Each: "notes", Content: "{notes}"}),
+	} {
+		if err := c.Validate(); err == nil {
+			t.Errorf("%s: expected an error", name)
+		}
+	}
+	unused := ok
+	unused.Spec.Inputs = append(unused.Spec.Inputs, Input{Name: "wikitext"})
+	if err := unused.Validate(); err == nil {
+		t.Error("an unused task input must be rejected")
+	}
+	dup := ok
+	dup.Spec.Inputs = []Input{{Name: "title"}, {Name: "hint"}}
+	if err := dup.Validate(); err == nil {
+		t.Error("a duplicate variable must be rejected")
 	}
 }
 
 func TestRender(t *testing.T) {
 	p := Prompt{
-		Inputs: []string{"title", "body"},
+		Inputs: []string{"title", "body", "hint", "notes"},
 		Messages: []Message{
-			{Role: "system", Content: `fixed {"id": 1}`},
+			{Role: "system", Content: `fixed {"id": 1} {{틀}} {| class="wikitable"`},
 			{Role: "user", Content: "{title}: {body}"},
+			{Role: "user", If: "hint", Content: "hint {hint}"},
+			{Role: "user", Each: "notes", Content: "{index}. {notes} ({title})"},
 		},
 	}
-	got := p.Render(map[string]string{"title": "T", "body": "{title} {{틀}}"})
-	if got[0].Content != `fixed {"id": 1}` || got[1].Content != "T: {title} {{틀}}" {
-		t.Fatalf("unexpected render: %+v", got)
+	got := p.Render(Vars{"title": "T", "body": "{title} {{틀}}", "hint": " ", "notes": []string{"a", "b {index}"}})
+	want := []Message{
+		{Role: "system", Content: `fixed {"id": 1} {{틀}} {| class="wikitable"`},
+		{Role: "user", Content: "T: {title} {{틀}}"},
+		{Role: "user", Content: "1. a (T)"},
+		{Role: "user", Content: "2. b {index} (T)"},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("unexpected render:\n%+v\nwant\n%+v", got, want)
+	}
+	if got := p.Render(Vars{"title": "T", "hint": "x"}); len(got) != 3 || got[2].Content != "hint x" {
+		t.Fatalf("a given hint and no notes: %+v", got)
+	}
+}
+
+func TestUserVars(t *testing.T) {
+	c := testChain()
+	vars, err := c.UserVars(map[string]any{"hint": "apple", "flag": true, "notes": []any{"a", "  ", "b"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(vars, Vars{"hint": "apple", "flag": true, "notes": []string{"a", "b"}}) {
+		t.Fatalf("unexpected vars %+v", vars)
+	}
+	for _, raw := range []map[string]any{{"other": "x"}, {"hint": 1}, {"flag": "yes"}, {"notes": "a"}, {"notes": []any{1}}} {
+		if _, err := c.UserVars(raw); err == nil {
+			t.Errorf("expected an error for %v", raw)
+		}
 	}
 }
 
@@ -71,24 +111,27 @@ func TestParse(t *testing.T) {
 	var v struct {
 		A int `json:"a"`
 	}
-	if err := ParserJSON.Parse("```json\n{\"a\": 1}\n```", &v); err != nil || v.A != 1 {
+	if err := FormatJSON.Parse("```json\n{\"a\": 1}\n```", &v); err != nil || v.A != 1 {
 		t.Fatalf("json in a code fence: %v %+v", err, v)
 	}
-	if err := ParserJSON.Parse(`{"a": 2}`, &v); err != nil || v.A != 2 {
+	if err := FormatJSON.Parse(`{"a": 2}`, &v); err != nil || v.A != 2 {
 		t.Fatalf("plain json: %v %+v", err, v)
 	}
-	if err := ParserJSON.Parse("not json", &v); err == nil {
+	if err := FormatJSON.Parse("not json", &v); err == nil {
 		t.Fatal("invalid json parsed")
 	}
 	var s string
-	if err := ParserText.Parse("  == 개요 ==\n본문\n", &s); err != nil || s != "== 개요 ==\n본문" {
+	if err := FormatText.Parse("  == 개요 ==\n본문\n", &s); err != nil || s != "== 개요 ==\n본문" {
 		t.Fatalf("text: %v %q", err, s)
 	}
-	if err := ParserText.Parse("x", &v); err == nil {
+	if err := FormatText.Parse("x", &v); err == nil {
 		t.Fatal("text into a non-string accepted")
 	}
-	if err := Parser("").Parse("x", &s); err == nil {
-		t.Fatal("missing parser accepted")
+	if err := Format("").Parse("```\n== 개요 ==\n```", &s); err != nil || s != "== 개요 ==" {
+		t.Fatalf("text is the default and its code fence is stripped: %v %q", err, s)
+	}
+	if err := Format("xml").Parse("x", &s); err == nil {
+		t.Fatal("unknown format accepted")
 	}
 }
 
@@ -100,5 +143,65 @@ func TestMajor(t *testing.T) {
 	}
 	if !SameMajor("v2", "v2.1") || !SameMajor("v2.0", "v2.9") || SameMajor("v2.1", "v3.0") || SameMajor("v1.0", "v10.0") {
 		t.Error("SameMajor must compare majors only")
+	}
+}
+
+func TestInputYAML(t *testing.T) {
+	if !strings.Contains(DocEval.Spec.Inputs[0].Name, "title") || DocCreate.Spec.UserInputs[0].Placeholder == "" {
+		t.Fatalf("inputs written as a name and as a mapping must both load: %+v %+v", DocEval.Spec.Inputs, DocCreate.Spec.UserInputs)
+	}
+}
+
+func TestNextVersion(t *testing.T) {
+	for _, c := range []struct {
+		v     string
+		major bool
+		want  string
+	}{{"v1.0", false, "v1.1"}, {"v1.9", false, "v1.10"}, {"v1.3", true, "v2.0"}, {"v2", false, "v2.1"}, {"", false, "v0.1"}} {
+		if got := NextVersion(c.v, c.major); got != c.want {
+			t.Errorf("NextVersion(%q, %v) = %q, want %q", c.v, c.major, got, c.want)
+		}
+	}
+}
+
+func TestTemplateYAML(t *testing.T) {
+	tpl := DocCreate.Template()
+	text := tpl.YAML()
+	if !strings.Contains(text, "userInputs:") || !strings.Contains(text, "content: |-") {
+		t.Fatalf("template YAML should read like the chain files:\n%s", text)
+	}
+	back, err := ParseTemplate(text)
+	if err != nil || !reflect.DeepEqual(back, tpl) {
+		t.Fatalf("round trip: %v\n%+v", err, back)
+	}
+	if _, err := ParseTemplate("messages: []\nsteps: []\n"); err == nil {
+		t.Error("unknown fields must be rejected")
+	}
+}
+
+func TestWikiBraces(t *testing.T) {
+	p := Prompt{Inputs: []string{"title"}, Messages: []Message{{Role: "user", Content: "{title} {{title}} {{Infobox}} {{{1}}} {{틀|{title}}}"}}}
+	got := p.Render(Vars{"title": "Apple"})[0].Content
+	if got != "Apple {{title}} {{Infobox}} {{{1}}} {{틀|Apple}}" {
+		t.Fatalf("wiki braces must stay: %q", got)
+	}
+	c := testChain(
+		Message{Role: "user", Content: "{title} {{Infobox}} {{{1}}} {{other}}"},
+		Message{Role: "user", If: "hint", Content: "{hint}"},
+		Message{Role: "user", Each: "notes", Content: "{notes}"},
+	)
+	if err := c.Validate(); err != nil {
+		t.Fatalf("wiki markup is not a placeholder: %v", err)
+	}
+}
+
+func TestMagicWords(t *testing.T) {
+	c := testChain(
+		Message{Role: "user", Content: "{title} 끝에 {{reflist}}, 연도는 {{CURRENTYEAR}}"},
+		Message{Role: "user", If: "hint", Content: "{hint}"},
+		Message{Role: "user", Each: "notes", Content: "{notes}"},
+	)
+	if err := c.Validate(); err != nil {
+		t.Fatalf("parameterless templates and magic words are wiki markup: %v", err)
 	}
 }

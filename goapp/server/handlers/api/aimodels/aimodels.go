@@ -101,15 +101,26 @@ func modelHistory(db *gorm.DB) ([]ModelHistory, error) {
 	return history, nil
 }
 
-// chainView is a built-in chain with the model it runs on.
+// chainView is a built-in chain with the model it runs on, how many times it has run and when it last did.
 type chainView struct {
 	prompts.Chain
-	Model string `json:"model"`
+	Model  string     `json:"model"`
+	Uses   int        `json:"uses"`
+	UsedAt *time.Time `json:"used_at"`
+	// Template is the chain's run form and first step's messages as YAML, which a clone starts from.
+	Template string `json:"template"`
 }
 
-// Chains lists the built-in chains (goapp/prompts), each with its model.
+// Chains lists the built-in chains (goapp/prompts), each with its model and its runs: the successful calls of its
+// last step in llm_calls, which every finished run makes (an earlier step may be skipped, as doc-eval's rubric is
+// when stored rubrics are reused).
 func Chains(c *serverctx.Context) {
 	saved, err := chainsvc.Saved(c.DB)
+	if err != nil {
+		c.InternalError()
+		return
+	}
+	uses, err := chainUses(c.DB)
 	if err != nil {
 		c.InternalError()
 		return
@@ -117,9 +128,33 @@ func Chains(c *serverctx.Context) {
 	views := []chainView{}
 	for _, chain := range prompts.BuiltinChains() {
 		model, _ := chainsvc.Resolve(saved, c.Cfg, chain.Name)
-		views = append(views, chainView{Chain: chain, Model: model})
+		u := uses[chain.Name+"/"+chain.Spec.Steps[len(chain.Spec.Steps)-1].Name]
+		views = append(views, chainView{Chain: chain, Model: model, Uses: u.n, UsedAt: u.last, Template: chain.Template().YAML()})
 	}
 	c.JSON(views)
+}
+
+type stepUses struct {
+	n    int
+	last *time.Time
+}
+
+// chainUses counts the successful calls of each chain step and keeps the time of the latest, keyed chain/step.
+func chainUses(db *gorm.DB) (map[string]stepUses, error) {
+	var rows []struct {
+		Chain string     `gorm:"column:chain"`
+		Step  string     `gorm:"column:step"`
+		N     int        `gorm:"column:n"`
+		Last  *time.Time `gorm:"column:last"`
+	}
+	if err := db.Raw("SELECT chain, step, COUNT(*) AS n, MAX(created_at) AS last FROM llm_calls WHERE ok = 1 GROUP BY chain, step").Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	uses := map[string]stepUses{}
+	for _, r := range rows {
+		uses[r.Chain+"/"+r.Step] = stepUses{n: r.N, last: r.Last}
+	}
+	return uses, nil
 }
 
 // SetChainModel sets the model of a built-in chain from {"model": "provider/model"}.

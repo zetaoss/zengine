@@ -84,19 +84,24 @@ type StepResult struct {
 	Usage client.Usage
 }
 
-// RunStep renders the step's prompt with vars, calls the model, and parses the response into out, a non-nil
-// pointer, with the step's parser. When the response does not parse, it calls once more. Each attempt parses
+// RunStep renders the step's prompt with vars and runs it (RunMessages).
+func (s *LLMService) RunStep(ctx context.Context, model string, chain prompts.Chain, st prompts.Step, vars prompts.Vars, out any) (StepResult, error) {
+	return s.RunMessages(ctx, model, chain, st, st.Render(vars), out)
+}
+
+// RunMessages sends rendered messages of the step to the model and parses the response into out, a non-nil
+// pointer, in the step's format. When the response does not parse, it calls once more. Each attempt parses
 // into a fresh value and out is set only on success, so a failed attempt leaves nothing behind. When the second
 // call fails, its error keeps the first attempt's parse error. Each call goes to the recorder, if any, under
 // the chain's name and version.
-func (s *LLMService) RunStep(ctx context.Context, model string, chain prompts.Chain, st prompts.Step, vars map[string]string, out any) (StepResult, error) {
+func (s *LLMService) RunMessages(ctx context.Context, model string, chain prompts.Chain, st prompts.Step, rendered []prompts.Message, out any) (StepResult, error) {
 	var res StepResult
 	target := reflect.ValueOf(out)
 	if target.Kind() != reflect.Pointer || target.IsNil() {
 		return res, fmt.Errorf("step %s: out must be a non-nil pointer, got %T", st.Name, out)
 	}
 	var messages []client.Message
-	for _, m := range st.Render(vars) {
+	for _, m := range rendered {
 		messages = append(messages, client.Message{Role: m.Role, Content: m.Content})
 	}
 	var err error
@@ -124,12 +129,12 @@ func (s *LLMService) RunStep(ctx context.Context, model string, chain prompts.Ch
 		res.Usage.CompletionTokens += resp.Usage.CompletionTokens
 		res.Usage.TotalTokens += resp.Usage.TotalTokens
 		fresh := reflect.New(target.Elem().Type())
-		if err = st.Parser.Parse(resp.Content, fresh.Interface()); err == nil {
+		if err = st.Format.Parse(resp.Content, fresh.Interface()); err == nil {
 			record(start, resp, nil)
 			target.Elem().Set(fresh.Elem())
 			return res, nil
 		}
-		err = fmt.Errorf("invalid %s output: %w (raw: %s)", st.Parser, err, truncateRunes(resp.Content, maxRawInError))
+		err = fmt.Errorf("invalid %s output: %w (raw: %s)", st.Format.OrText(), err, truncateRunes(resp.Content, maxRawInError))
 		record(start, resp, err)
 	}
 	return res, err

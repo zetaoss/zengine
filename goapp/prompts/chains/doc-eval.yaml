@@ -51,7 +51,7 @@ spec:
           content: |-
             ### 문서 제목: {title}
             ### 대상 정의: {definition}
-      parser: json
+      format: json
       output: rubrics
     - name: judge
       description: 루브릭과 본문(6000바이트까지)으로 전반 품질·글 품질·안전성·정확성을 판정한다.
@@ -127,5 +127,4 @@ spec:
 
             ### 문서 본문(Wikitext):
             {wikitext}
-      parser: json
-      output: judgment
+      format: json

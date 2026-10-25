@@ -3,32 +3,96 @@
 <script lang="ts">
   import { onMount } from 'svelte'
 
-  import { mdiChevronDown, mdiDelete, mdiPlus } from '@mdi/js'
+  import { mdiChevronDown, mdiContentCopy, mdiDelete, mdiPencil } from '@mdi/js'
 
-  import { resolve } from '$app/paths'
-  import AvatarUser from '$lib/components/avatar/AvatarUser.svelte'
+  import useAuthStore from '$lib/stores/auth'
   import CButton from '$shared/ui/CButton.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'
   import ZIcon from '$shared/ui/ZIcon.svelte'
+  import ZModal from '$shared/ui/ZModal.svelte'
+  import ZTextarea from '$shared/ui/ZTextarea.svelte'
   import httpy from '$shared/utils/httpy'
+  import { getAge } from '$shared/utils/time'
 
   import { fetchModelIds, formatModelLabel } from '../loop'
+
+  interface ChainMessage {
+    role: string
+    content: string
+    if?: string
+    each?: string
+  }
 
   interface ChainStep {
     name: string
     description: string
     inputs: string[]
-    messages: Array<{ role: string; content: string }>
-    parser: string
-    output: string
+    messages: ChainMessage[]
+    format?: string
+    output?: string
+  }
+
+  interface ChainInput {
+    name: string
+    placeholder?: string
+    type?: string
   }
 
   interface Chain {
     name: string
     metadata: { version: string; description: string }
-    spec: { inputs: string[]; steps: ChainStep[] }
+    spec: { userInputs?: ChainInput[]; inputs: ChainInput[]; steps: ChainStep[] }
     model: string
+    uses: number
+    used_at?: string | null
+    template: string
+  }
+
+  // A user input's name as the run form shows it: copiedTexts as "Copied texts" (as in the skin's AiEditRunner).
+  function humanize(name: string) {
+    const words = name.replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase()
+    return words.charAt(0).toUpperCase() + words.slice(1)
+  }
+
+  function inputLabel(input: ChainInput) {
+    const type = input.type && input.type !== 'string' ? `: ${input.type}` : ''
+    return `${input.name}${type}`
+  }
+
+  type PreviewValue = string | boolean | string[]
+
+  // Values typed into a user inputs preview, by name, to see the messages they make. Kept on screen only.
+  let previewValues = $state<Record<string, PreviewValue>>({})
+
+  function previewTexts(name: string): string[] {
+    const v = previewValues[name]
+    return Array.isArray(v) ? v : []
+  }
+
+  function setPreview(name: string, v: PreviewValue) {
+    previewValues = { ...previewValues, [name]: v }
+  }
+
+  // A message's content split at its {name} placeholders, as prompts' placeholders finds them (one right after
+  // another brace is wiki markup), to show the variables.
+  const placeholderRe = /\{([A-Za-z][A-Za-z0-9_]*)\}/g
+
+  function parts(content: string): Array<{ text?: string; name?: string }> {
+    const out: Array<{ text?: string; name?: string }> = []
+    let last = 0
+    for (const m of content.matchAll(placeholderRe)) {
+      const at = m.index ?? 0
+      if (at > 0 && content[at - 1] === '{') continue
+      out.push({ text: content.slice(last, at) }, { name: m[1] })
+      last = at + m[0].length
+    }
+    out.push({ text: content.slice(last) })
+    return out
+  }
+
+  function messageHeader(m: ChainMessage) {
+    return [m.role, m.if && `if ${m.if}`, m.each && `each ${m.each}`].filter(Boolean).join(' · ')
   }
 
   interface PromptItem {
@@ -38,6 +102,14 @@
     title: string
     request_type: string
     use_count: number
+    content: string
+    messages: ChainMessage[]
+    user_inputs: ChainInput[]
+    spec: string
+    description: string
+    version: string
+    model: string
+    used_at?: string | null
     updated_at?: string
   }
 
@@ -51,6 +123,9 @@
   let savingChain = $state('')
   let expanded = $state<string | null>(null)
   let deletingPromptId = $state<number | null>(null)
+  let savingPromptId = $state<number | null>(null)
+  const now = Date.now()
+  const userInfo = useAuthStore().userInfo
 
   async function fetchChains() {
     const [data, err] = await httpy.get<Chain[]>('/api/ai/chains')
@@ -59,13 +134,22 @@
       showToast(err.message || '체인을 불러오지 못했습니다.')
       return
     }
-    chains = data ?? []
+    // Most recently used first; chains never run keep their order (that of goapp/prompts) after them.
+    const usedAt = (c: Chain) => (c.used_at ? new Date(c.used_at).getTime() : 0)
+    chains = (data ?? []).map((c, i) => ({ c, i })).sort((a, b) => usedAt(b.c) - usedAt(a.c) || a.i - b.i).map(({ c }) => c)
   }
 
+  // Templates, most recently used first; those not run since used_at was recorded follow by use count.
   async function fetchPrompts() {
     const [data, err] = await httpy.get<PromptItem[]>('/api/ai-prompts')
     if (err) return
-    prompts = (data ?? []).sort((a, b) => b.use_count - a.use_count || b.id - a.id)
+    const usedAt = (p: PromptItem) => (p.used_at ? new Date(p.used_at).getTime() : 0)
+    prompts = (data ?? []).sort((a, b) => usedAt(b) - usedAt(a) || b.use_count - a.use_count || b.id - a.id)
+  }
+
+  // The built-in chain a template runs on: doc-create or doc-update by its request type.
+  function chainOf(requestType: string): Chain | undefined {
+    return chains.find((c) => promptTypeOf[c.name] === requestType)
   }
 
   async function setModel(chain: Chain, model: string) {
@@ -97,8 +181,159 @@
     return modelIds.includes(chain.model) ? modelIds : [chain.model, ...modelIds]
   }
 
-  function toggle(chain: Chain) {
-    expanded = expanded === chain.name ? null : chain.name
+  function toggle(key: string) {
+    expanded = expanded === key ? null : key
+  }
+
+  async function setPromptModel(item: PromptItem, model: string) {
+    savingPromptId = item.id
+    const [, err] = await httpy.post('/api/ai-prompts', {
+      id: item.id,
+      title: item.title,
+      description: item.description,
+      request_type: item.request_type,
+      content: item.content,
+      model,
+    })
+    savingPromptId = null
+    if (err) {
+      showToast(err.message || '모델 저장에 실패했습니다.')
+      return
+    }
+    item.model = model
+    showToast('저장했습니다')
+  }
+
+  interface TemplateDraft {
+    id: number
+    title: string
+    description: string
+    request_type: string
+    // The run form and messages as YAML (prompts.Template).
+    spec: string
+    model: string
+    version: string
+    // The spec when editing began; changing it bumps the version on save.
+    original: string
+    bump: 'minor' | 'major'
+  }
+
+  // nextVersion is prompts.NextVersion: the minor, or with major the major with the minor back to 0.
+  function nextVersion(version: string, major: boolean) {
+    const [m, n] = version.replace(/^v/, '').split('.').map((x) => Number(x) || 0)
+    return major ? `v${m + 1}.0` : `v${m}.${(n ?? 0) + 1}`
+  }
+
+  let draft = $state<TemplateDraft | null>(null)
+  let draftError = $state('')
+  let savingDraft = $state(false)
+
+  function openEdit(item: PromptItem) {
+    draftError = ''
+    draft = {
+      id: item.id,
+      title: item.title,
+      description: item.description,
+      request_type: item.request_type,
+      spec: item.spec,
+      model: item.model,
+      version: item.version,
+      original: item.spec,
+      bump: 'minor',
+    }
+    expanded = `prompt:${item.id}`
+  }
+
+  // A clone takes the model its source runs on as a value, so later changes to the source do not follow.
+  function openClone(item: PromptItem, chain: Chain) {
+    draftError = ''
+    draft = {
+      id: 0,
+      title: `${item.title} (복제본)`,
+      description: item.description,
+      request_type: item.request_type,
+      spec: item.spec,
+      model: item.model || chain.model,
+      version: 'v1.0',
+      original: item.spec,
+      bump: 'minor',
+    }
+  }
+
+  // A template cloned from a built-in chain starts with its run form and step messages as they are; its model is the
+  // chain's, as a value.
+  function openCloneChain(chain: Chain, requestType: string) {
+    draftError = ''
+    draft = {
+      id: 0,
+      title: `${chain.name} (복제본)`,
+      description: chain.metadata.description,
+      request_type: requestType,
+      spec: chain.template,
+      model: chain.model,
+      version: 'v1.0',
+      original: chain.template,
+      bump: 'minor',
+    }
+  }
+
+  function closeDraft() {
+    if (!savingDraft) draft = null
+  }
+
+  function draftChanged(d: TemplateDraft) {
+    return d.spec !== d.original
+  }
+
+  function setDraftSpec(value: string) {
+    if (draft) draft.spec = value
+  }
+
+  interface SpecCheck {
+    ok: boolean
+    error?: string
+    user_inputs?: ChainInput[]
+    messages?: ChainMessage[]
+  }
+
+  // The editor's YAML as the server reads it on save (POST /api/ai-prompts/check), shortly after typing stops.
+  let specCheck = $state<SpecCheck | null>(null)
+  $effect(() => {
+    const d = draft
+    if (!d) {
+      specCheck = null
+      return
+    }
+    const spec = d.spec
+    const requestType = d.request_type
+    const timer = setTimeout(async () => {
+      const [data] = await httpy.post<SpecCheck>('/api/ai-prompts/check', { request_type: requestType, spec })
+      if (draft?.spec === spec && data) specCheck = data
+    }, 400)
+    return () => clearTimeout(timer)
+  })
+
+  async function saveDraft() {
+    if (!draft || !draft.title.trim()) return
+    savingDraft = true
+    const body: Record<string, unknown> = {
+      id: draft.id,
+      title: draft.title.trim(),
+      description: draft.description,
+      request_type: draft.request_type,
+      spec: draft.spec,
+      bump: draft.bump,
+    }
+    if (draft.id === 0) body.model = draft.model
+    const [, err] = await httpy.post('/api/ai-prompts', body)
+    savingDraft = false
+    if (err) {
+      draftError = err.message || '저장 실패'
+      return
+    }
+    showToast(draft.id === 0 ? '복제했습니다' : '저장했습니다')
+    draft = null
+    await fetchPrompts()
   }
 
   onMount(() => {
@@ -108,6 +343,173 @@
   })
 </script>
 
+{#snippet expandButton(key: string, isExpanded: boolean)}
+  <button
+    type="button"
+    class="text-muted-foreground hover:text-foreground transition p-1 inline-flex items-center justify-center rounded hover:bg-muted"
+    aria-label={isExpanded ? '접기' : '펼치기'}
+    onclick={(e) => {
+      e.stopPropagation()
+      toggle(key)
+    }}
+  >
+    <ZIcon path={mdiChevronDown} size={18} class={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+  </button>
+{/snippet}
+
+{#snippet templateEditor(chain: Chain, d: TemplateDraft)}
+  <div class="space-y-4 text-xs">
+    <div class="flex flex-wrap items-center gap-2">
+      <label class="flex min-w-0 flex-1 items-center gap-2">
+        <span class="font-medium">제목</span>
+        <input class="h-8 w-full max-w-72 rounded border bg-background px-2.5" bind:value={d.title} />
+      </label>
+      {#if d.id === 0}
+        <label class="flex items-center gap-2">
+          <span class="font-medium">모델</span>
+          <select class="h-8 max-w-72 rounded border bg-background px-2.5" bind:value={d.model}>
+            {#each modelOptions(chain) as id (id)}
+              <option value={id}>{formatModelLabel(id)}</option>
+            {/each}
+          </select>
+        </label>
+      {/if}
+      {#if d.id > 0 && draftChanged(d)}
+        <label class="flex items-center gap-2">
+          <span class="font-medium">버전</span>
+          <select class="h-8 rounded border bg-background px-2.5" bind:value={d.bump}>
+            <option value="minor">마이너 {d.version} → {nextVersion(d.version, false)}</option>
+            <option value="major">메이저 {d.version} → {nextVersion(d.version, true)}</option>
+          </select>
+        </label>
+      {/if}
+      {#if d.id > 0}
+        <CButton variant="default" size="small" disabled={!d.title.trim() || savingDraft} onclick={() => void saveDraft()}>
+          {savingDraft ? '저장 중...' : '저장'}
+        </CButton>
+        <CButton variant="outline" size="small" disabled={savingDraft} onclick={closeDraft}>취소</CButton>
+      {/if}
+    </div>
+    <label class="flex items-center gap-2">
+      <span class="font-medium">설명</span>
+      <input class="h-8 w-full rounded border bg-background px-2.5" bind:value={d.description} />
+    </label>
+    {#if d.id > 0 && draftChanged(d) && d.bump === 'major'}
+      <div class="text-muted-foreground">메이저 범프: 이 틀로 돈 이전 결과와 다른 것으로 구분합니다(AI 편집은 다시 돌리는 대상이 없습니다).</div>
+    {/if}
+    {#if draftError}
+      <div class="text-destructive">{draftError}</div>
+    {/if}
+    <div class="space-y-1">
+      <div class="grid gap-3 md:grid-cols-2">
+        <div class="min-w-0 font-mono text-[11px]">
+          <ZTextarea id={`ai-template-${d.id}`} modelValue={d.spec} placeholder={undefined} maxHeight={720} onUpdateModelValue={setDraftSpec} />
+        </div>
+        <div class="min-w-0 space-y-2">
+          {#if specCheck && !specCheck.ok}
+            <div class="rounded border border-destructive/40 p-2 text-destructive">{specCheck.error}</div>
+          {:else if specCheck?.ok}
+            {#if specCheck.user_inputs?.length}
+              {@render runForm(specCheck.user_inputs)}
+            {/if}
+            {@render messagesView(specCheck.messages ?? [])}
+          {/if}
+        </div>
+      </div>
+    </div>
+  </div>
+{/snippet}
+
+{#snippet runForm(inputs: ChainInput[])}
+  <div class="rounded border bg-background p-3 text-xs text-foreground">
+    <div class="mb-2 text-muted-foreground">사용자 입력</div>
+    <div class="grid grid-cols-[auto_auto_minmax(0,1fr)] items-start gap-x-4 gap-y-2">
+      {#each inputs as input (input.name)}
+        {@const label = humanize(input.name)}
+        <div class="pt-1.5"><code class="var">{input.name}</code></div>
+        <div class="pt-1.5 font-medium">{label}</div>
+        <div class="min-w-0">
+          {#if input.type === 'bool'}
+            <input
+              class="mt-2"
+              type="checkbox"
+              aria-label={label}
+              checked={previewValues[input.name] === true}
+              onchange={(e) => setPreview(input.name, e.currentTarget.checked)}
+            />
+          {:else if input.type === 'textList'}
+            <div class="space-y-1">
+              {#each previewTexts(input.name) as item, i (i)}
+                <div class="flex items-center gap-1">
+                  <textarea
+                    class="min-h-16 min-w-0 flex-1 rounded border bg-background px-2.5 py-1.5"
+                    placeholder={input.placeholder ?? `${label} ${i + 1}`}
+                    value={item}
+                    oninput={(e) => setPreview(input.name, previewTexts(input.name).map((x, j) => (j === i ? e.currentTarget.value : x)))}
+                  ></textarea>
+                  <button
+                    type="button"
+                    class="rounded px-1.5 text-muted-foreground hover:bg-muted"
+                    aria-label={`${label} ${i + 1} 빼기`}
+                    onclick={() => setPreview(input.name, previewTexts(input.name).filter((_, j) => j !== i))}>✕</button
+                  >
+                </div>
+              {/each}
+              <button
+                type="button"
+                class="rounded border px-2 py-1 text-muted-foreground hover:bg-muted"
+                onclick={() => setPreview(input.name, [...previewTexts(input.name), ''])}>+ {label}</button
+              >
+            </div>
+          {:else}
+            {@const value = typeof previewValues[input.name] === 'string' ? (previewValues[input.name] as string) : ''}
+            {#if input.type === 'text'}
+              <textarea
+                class="min-h-16 w-full rounded border bg-background px-2.5 py-1.5"
+                placeholder={input.placeholder ?? ''}
+                {value}
+                oninput={(e) => setPreview(input.name, e.currentTarget.value)}
+              ></textarea>
+            {:else}
+              <input
+                class="h-8 w-full rounded border bg-background px-2.5"
+                placeholder={input.placeholder ?? ''}
+                {value}
+                oninput={(e) => setPreview(input.name, e.currentTarget.value)}
+              />
+            {/if}
+          {/if}
+        </div>
+      {:else}
+        <div class="col-span-3 text-muted-foreground">없음</div>
+      {/each}
+    </div>
+  </div>
+{/snippet}
+
+{#snippet messagesView(messages: ChainMessage[])}
+  {#each messages as m, i (i)}
+    <div class="rounded border">
+      <div class="border-b bg-muted/50 px-3 py-1 font-mono text-muted-foreground">{messageHeader(m)}</div>
+      <pre class="max-h-80 overflow-auto whitespace-pre-wrap bg-muted/30 p-3 text-[11px]">{#each parts(m.content) as part, k (k)}{#if part.name !== undefined}<code
+              class="var">{part.name}</code
+            >{:else}{part.text}{/if}{/each}</pre>
+    </div>
+  {/each}
+{/snippet}
+
+{#snippet stepView(st: ChainStep, n: number, messages: ChainMessage[])}
+  <div class="space-y-1.5 text-xs min-w-0">
+    <div>
+      <span class="text-muted-foreground">{n + 1}.</span>
+      <span class="font-mono font-medium">{st.name}</span>
+      <span class="ml-1 font-mono text-muted-foreground">{st.inputs.join(', ')} → {st.format ?? 'text'}{st.output ? ` → ${st.output}` : ''}</span>
+      <span class="ml-2 text-muted-foreground">{st.description}</span>
+    </div>
+    {@render messagesView(messages)}
+  </div>
+{/snippet}
+
 <div class="container mx-auto p-4 md:p-6 max-w-6xl space-y-6">
   <h1 class="text-2xl font-bold tracking-tight border-b pb-4">체인</h1>
 
@@ -116,129 +518,148 @@
       <table class="w-full text-left border-collapse text-sm">
         <thead>
           <tr class="border-b bg-muted/50 text-muted-foreground text-xs font-medium">
+            <th class="p-3">소유자</th>
             <th class="p-3">체인</th>
             <th class="p-3">설명</th>
-            <th class="p-3 text-center whitespace-nowrap">Steps</th>
             <th class="p-3">모델</th>
+            <th class="p-3 text-center whitespace-nowrap">사용</th>
+            <th class="p-3 whitespace-nowrap">최근</th>
             <th class="p-3 w-14 text-center">상세</th>
           </tr>
         </thead>
         <tbody class="divide-y">
           {#if loading}
-            <tr><td colspan="5" class="p-8 text-center text-muted-foreground">불러오는 중...</td></tr>
+            <tr><td colspan="7" class="p-8 text-center text-muted-foreground">불러오는 중...</td></tr>
           {/if}
           {#each chains as chain (chain.name)}
             {@const isExpanded = expanded === chain.name}
             {@const promptType = promptTypeOf[chain.name]}
-            <tr class="hover:bg-muted/30 transition cursor-pointer" onclick={() => toggle(chain)}>
-              <td class="p-3 whitespace-nowrap">
-                <span class="font-mono font-medium">{chain.name}</span>
-                <span class="ml-1 font-mono text-xs text-muted-foreground">{chain.metadata.version}</span>
-              </td>
+            <tr class="bg-muted/50 hover:bg-muted transition cursor-pointer" onclick={() => toggle(chain.name)}>
+              <td class="p-3 text-muted-foreground">-</td>
+              <td class="p-3 whitespace-nowrap">{chain.name}</td>
               <td class="p-3 text-muted-foreground">{chain.metadata.description}</td>
-              <td class="p-3 text-center text-muted-foreground">{chain.spec.steps.length}</td>
-              <td class="p-3" onclick={(e) => e.stopPropagation()}>
-                <select
-                  class="h-8 w-full max-w-72 rounded border bg-background px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-                  value={chain.model}
-                  disabled={savingChain === chain.name}
-                  aria-label={`${chain.name} 모델`}
-                  onchange={(e) => setModel(chain, e.currentTarget.value)}
-                >
-                  {#each modelOptions(chain) as id (id)}
-                    <option value={id}>{formatModelLabel(id)}</option>
-                  {/each}
-                </select>
-              </td>
+              <td class="p-3 text-xs">{formatModelLabel(chain.model)}</td>
+              <td class="p-3 text-center text-muted-foreground tabular-nums" title="이 체인이 끝까지 돈 횟수(프롬프트 틀로 돈 것 포함)">{chain.uses || '-'}</td>
+              <td class="p-3 whitespace-nowrap text-xs text-muted-foreground">{chain.used_at ? getAge(chain.used_at, now) : '-'}</td>
               <td class="p-3 text-center">
-                <button
-                  type="button"
-                  class="text-muted-foreground hover:text-foreground transition p-1 inline-flex items-center justify-center rounded hover:bg-muted"
-                  aria-label={isExpanded ? '접기' : '펼치기'}
-                  onclick={(e) => {
-                    e.stopPropagation()
-                    toggle(chain)
-                  }}
-                >
-                  <ZIcon path={mdiChevronDown} size={18} class={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
-                </button>
+                {@render expandButton(chain.name, isExpanded)}
               </td>
             </tr>
             {#if isExpanded}
               <tr class="bg-muted/10">
-                <td colspan="5" class="p-4">
+                <td colspan="7" class="p-4">
                   <div class="space-y-4">
-                    <div class="space-y-3 min-w-0">
-                      {#each chain.spec.steps as st, n (st.name)}
-                        <div class="space-y-1.5 text-xs">
-                          <div>
-                            <span class="text-muted-foreground">{n + 1}.</span>
-                            <span class="font-mono font-medium">{st.name}</span>
-                            <span class="ml-1 font-mono text-muted-foreground"
-                              >{st.inputs.join(', ')} → {st.parser} → {st.output}</span
-                            >
-                            <span class="ml-2 text-muted-foreground">{st.description}</span>
-                          </div>
-                          {#if !promptType}
-                            {#each st.messages as m (m.role)}
-                              <div class="rounded border">
-                                <div class="border-b bg-muted/50 px-3 py-1 font-mono text-muted-foreground">{m.role}</div>
-                                <pre class="max-h-80 overflow-auto whitespace-pre-wrap bg-muted/30 p-3 text-[11px]">{m.content}</pre>
-                              </div>
-                            {/each}
-                          {/if}
-                        </div>
-                      {/each}
+                    <div class="flex flex-wrap items-center gap-2 text-xs">
+                      <label class="flex min-w-0 flex-1 items-center gap-2">
+                        <span class="font-medium">모델</span>
+                        <select
+                          class="h-8 w-full max-w-72 rounded border bg-background px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                          value={chain.model}
+                          disabled={savingChain === chain.name}
+                          onchange={(e) => setModel(chain, e.currentTarget.value)}
+                        >
+                          {#each modelOptions(chain) as id (id)}
+                            <option value={id}>{formatModelLabel(id)}</option>
+                          {/each}
+                        </select>
+                      </label>
+                      <CButton variant="outline" size="small" disabled={!promptType} onclick={() => promptType && openCloneChain(chain, promptType)}>
+                        <ZIcon path={mdiContentCopy} class="mr-1" />
+                        {promptType ? '복제' : '복제 불가'}
+                      </CButton>
                     </div>
-
-                    {#if promptType}
-                      {@const items = prompts.filter((p) => p.request_type === promptType)}
-                      <div class="space-y-2 min-w-0 text-xs">
-                        <p class="text-muted-foreground">
-                          아래 프롬프트 틀 중 하나를 제목과 기존 문서로 채운 내용이 그대로 모델에 들어갑니다.
-                        </p>
-                        <div class="flex items-center justify-between">
-                          <span class="font-medium">프롬프트 틀 <span class="text-muted-foreground">{items.length}</span></span>
-                          <CButton variant="outline" size="small" href={resolve('/tool/ai/prompts/new')}>
-                            <ZIcon path={mdiPlus} class="mr-1" />
-                            새 프롬프트
-                          </CButton>
-                        </div>
-                        {#if items.length === 0}
-                          <div class="text-muted-foreground">등록된 프롬프트가 없습니다.</div>
-                        {:else}
-                          <table class="w-full text-left">
-                            <tbody class="divide-y">
-                              {#each items as item (item.id)}
-                                <tr>
-                                  <td class="py-1.5">
-                                    <a
-                                      class="font-medium hover:underline"
-                                      href={resolve(`/tool/ai/prompts/${item.id}` as '/tool/ai/prompts/[id]')}>{item.title}</a
-                                    >
-                                  </td>
-                                  <td class="py-1.5 text-right text-muted-foreground w-12" title="사용 횟수">{item.use_count || '-'}</td>
-                                  <td class="py-1.5 pl-3 w-32"><AvatarUser user={{ id: item.user_id, name: item.user_name }} /></td>
-                                  <td class="py-1.5 w-10 text-right">
-                                    <CButton
-                                      variant="ghost"
-                                      size="small"
-                                      disabled={deletingPromptId === item.id}
-                                      onclick={() => void delPrompt(item)}
-                                    >
-                                      <ZIcon path={mdiDelete} />
-                                    </CButton>
-                                  </td>
-                                </tr>
-                              {/each}
-                            </tbody>
-                          </table>
-                        {/if}
-                      </div>
-                    {/if}
+                    <div class="space-y-1 text-xs text-muted-foreground">
+                      <div>버전: <span class="font-mono">{chain.metadata.version}</span></div>
+                      {#if chain.spec.userInputs?.length}
+                        {@render runForm(chain.spec.userInputs)}
+                      {/if}
+                      <div>task 입력: <span class="font-mono">{chain.spec.inputs.map(inputLabel).join(', ')}</span></div>
+                    </div>
+                    {#each chain.spec.steps as st, n (st.name)}
+                      {@render stepView(st, n, st.messages)}
+                    {/each}
                   </div>
                 </td>
               </tr>
+            {/if}
+          {/each}
+          {#each prompts as item (item.id)}
+            {@const chain = chainOf(item.request_type)}
+            {#if chain}
+                {@const key = `prompt:${item.id}`}
+                {@const itemExpanded = expanded === key}
+                {@const editing = draft?.id === item.id}
+                {@const own = item.user_id === $userInfo?.id}
+                <tr
+                  class={[
+                    'transition cursor-pointer',
+                    own ? 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/40' : 'hover:bg-muted/30',
+                  ]}
+                  onclick={() => toggle(key)}
+                >
+                  <td class="p-3 whitespace-nowrap text-muted-foreground">{item.user_name}</td>
+                  <td class="p-3 whitespace-nowrap">{item.title}</td>
+                  <td class="p-3 text-muted-foreground">{item.description}</td>
+                  <td class="p-3 text-xs">{formatModelLabel(item.model || chain.model)}</td>
+                  <td class="p-3 text-center text-muted-foreground tabular-nums">{item.use_count || '-'}</td>
+                  <td class="p-3 whitespace-nowrap text-xs text-muted-foreground">{item.used_at ? getAge(item.used_at, now) : '-'}</td>
+                  <td class="p-3 text-center">
+                    {@render expandButton(key, itemExpanded)}
+                  </td>
+                </tr>
+                {#if itemExpanded}
+                  <tr class="bg-muted/10">
+                    <td colspan="7" class="p-4">
+                      {#if editing && draft}
+                        {@render templateEditor(chain, draft)}
+                      {:else}
+                        <div class="space-y-4">
+                          <div class="flex flex-wrap items-center gap-2 text-xs">
+                            <label class="flex min-w-0 flex-1 items-center gap-2">
+                              <span class="font-medium">모델</span>
+                              <select
+                                class="h-8 w-full max-w-72 rounded border bg-background px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                                value={item.model || chain.model}
+                                disabled={!own || savingPromptId === item.id}
+                                title={own ? '' : '만든 사람만 바꿀 수 있습니다'}
+                                onchange={(e) => setPromptModel(item, e.currentTarget.value)}
+                              >
+                                {#each modelOptions(chain) as id (id)}
+                                  <option value={id}>{formatModelLabel(id)}</option>
+                                {/each}
+                              </select>
+                            </label>
+                            {#if own}
+                              <CButton variant="outline" size="small" onclick={() => openEdit(item)}>
+                                <ZIcon path={mdiPencil} class="mr-1" />
+                                편집
+                              </CButton>
+                            {/if}
+                            <CButton variant="outline" size="small" onclick={() => openClone(item, chain)}>
+                              <ZIcon path={mdiContentCopy} class="mr-1" />
+                              복제
+                            </CButton>
+                            {#if own}
+                              <CButton variant="outline" size="small" disabled={deletingPromptId === item.id} onclick={() => void delPrompt(item)}>
+                                <ZIcon path={mdiDelete} class="mr-1" />
+                                삭제
+                              </CButton>
+                            {/if}
+                          </div>
+                          <div class="space-y-1 text-xs text-muted-foreground">
+                            <div>버전: <span class="font-mono">{item.version}</span> · 원본: <span class="font-mono">{chain.name}</span></div>
+                            {#if item.user_inputs.length}
+                              {@render runForm(item.user_inputs)}
+                            {/if}
+                          </div>
+                          {#each chain.spec.steps as st, n (st.name)}
+                            {@render stepView(st, n, item.messages)}
+                          {/each}
+                        </div>
+                      {/if}
+                    </td>
+                  </tr>
+                {/if}
             {/if}
           {/each}
         </tbody>
@@ -246,3 +667,30 @@
     </div>
   </div>
 </div>
+
+<ZModal
+  show={draft !== null && draft.id === 0}
+  title="프롬프트 틀 복제"
+  okText={savingDraft ? '저장 중...' : '저장'}
+  okVariant="default"
+  okDisabled={!draft?.title.trim() || savingDraft}
+  closable={!savingDraft}
+  backdropClosable={!savingDraft}
+  panelClass="max-w-[calc(100vw-2rem)] md:max-w-4xl"
+  onOk={saveDraft}
+  onCancel={closeDraft}
+>
+  {#if draft && draft.id === 0 && chainOf(draft.request_type)}
+    {@render templateEditor(chainOf(draft.request_type)!, draft)}
+  {/if}
+</ZModal>
+
+<style>
+  .var {
+    padding: 0.125em 0.25em;
+    border: 1px solid var(--color-border);
+    border-radius: 0.25rem;
+    background: light-dark(oklch(0.96 0.05 85), oklch(0.32 0.05 85));
+    color: var(--color-code-foreground);
+  }
+</style>

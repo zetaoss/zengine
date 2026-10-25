@@ -134,28 +134,48 @@ func findRunnableTaskByID(gdb *gorm.DB, taskID int) (models.AIEdit, error) {
 	return task, nil
 }
 
+// generateContent sends the messages rendered when the task was requested (llm_messages). A task stored before
+// them, or by a skin that still sends llm_input, runs its llm_input as one user message.
 func (j *AIEditTask) generateContent(ctx context.Context, taskCtx taskctx.Context, db *gorm.DB, task models.AIEdit) (string, string, string, error) {
-	llmInput := strings.TrimSpace(task.LLMInput)
-	if llmInput == "" {
-		return "", "", "", fmt.Errorf("llm_input is required")
+	var messages []prompts.Message
+	if strings.TrimSpace(task.LLMMessages) != "" {
+		if err := json.Unmarshal([]byte(task.LLMMessages), &messages); err != nil {
+			return "", "", task.LLMInput, fmt.Errorf("invalid llm_messages: %w", err)
+		}
+	} else if strings.TrimSpace(task.LLMInput) != "" {
+		messages = []prompts.Message{{Role: "user", Content: task.LLMInput}}
+	}
+	if len(messages) == 0 {
+		return "", "", "", fmt.Errorf("llm_messages or llm_input is required")
 	}
 	chain, model := chainFor(db, taskCtx.Config(), task.RequestType)
+	if m := promptModel(db, task.PromptID); m != "" {
+		model = m
+	}
 	svc := llmsvc.New(taskCtx.Config()).WithRecorder(llmsvc.DBRecorder(db))
 	var content string
-	res, err := svc.RunStep(ctx, model, chain, chain.Spec.Steps[0], map[string]string{"prompt": llmInput}, &content)
+	res, err := svc.RunMessages(ctx, model, chain, chain.Spec.Steps[0], messages, &content)
 	if res.Model == "" {
 		res.Model = model
 	}
-	return content, res.Model, llmInput, err
+	return content, res.Model, task.LLMInput, err
 }
 
-// chainFor returns the chain of a request type, doc-update for update and doc-create otherwise, and the model it
-// runs on (chainsvc).
-func chainFor(db *gorm.DB, cfg *config.Config, requestType string) (prompts.Chain, string) {
-	chain := prompts.DocCreate
-	if requestType == models.AIEditRequestUpdate {
-		chain = prompts.DocUpdate
+// promptModel is the model a template picked, "" when it picked none (or there is no template).
+func promptModel(db *gorm.DB, promptID int) string {
+	if promptID < 1 {
+		return ""
 	}
+	var p models.AIEditPrompt
+	if err := db.Select("model").Where("id = ?", promptID).Take(&p).Error; err != nil {
+		return ""
+	}
+	return strings.TrimSpace(p.Model)
+}
+
+// chainFor returns the chain of a request type (ChainOf) and the model it runs on (chainsvc).
+func chainFor(db *gorm.DB, cfg *config.Config, requestType string) (prompts.Chain, string) {
+	chain := ChainOf(requestType)
 	return chain, chainsvc.ModelFor(db, cfg, chain)
 }
 

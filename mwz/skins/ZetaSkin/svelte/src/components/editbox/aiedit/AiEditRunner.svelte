@@ -1,10 +1,9 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-  import { mdiDotsVertical, mdiPlay } from '@mdi/js'
-  import { untrack, type Snippet } from 'svelte'
+  import { mdiClose, mdiDotsVertical, mdiPlay, mdiPlus } from '@mdi/js'
+  import type { Snippet } from 'svelte'
 
-  import getRLCONF from '$lib/utils/rlconf'
   import CButton from '$shared/ui/CButton.svelte'
   import CMenu from '$shared/ui/CMenu.svelte'
   import { showToast } from '$shared/ui/toast/toast'
@@ -17,21 +16,23 @@
   import AiEditTaskResults from './AiEditTaskResults.svelte'
   import type {
     AIEditPromptForRunner,
+    AIEditRenderedMessage,
+    AIEditRequestPayload,
     AIEditRequestType,
-    AIEditRunnerSubmitPayload,
     AIEditStoreResult,
     AIEditTaskPhase,
+    AIEditUserInput,
+    AIEditUserInputValue,
   } from './aiEditTypes'
-  import { renderFinalPrompt } from './prompt/promptRenderer'
-
-  type SubmitHandler = (payload: AIEditRunnerSubmitPayload) => Promise<AIEditStoreResult>
 
   let {
     prompt,
     title,
     pageId,
     editorContent,
+    userInputs,
     submit,
+    preview,
     promptHeader = undefined,
     onPromptListChanged = undefined,
     onRequestTypeChange = undefined,
@@ -40,7 +41,9 @@
     title: string
     pageId: number | undefined
     editorContent: string
-    submit: SubmitHandler
+    userInputs: AIEditUserInput[]
+    submit: (payload: AIEditRequestPayload) => Promise<AIEditStoreResult>
+    preview: (payload: AIEditRequestPayload) => Promise<AIEditRenderedMessage[]>
     promptHeader?: Snippet
     onPromptListChanged?: () => void | Promise<void>
     onRequestTypeChange?: (newType: AIEditRequestType) => void
@@ -52,55 +55,66 @@
   let submittedTaskPhase = $state<AIEditTaskPhase | undefined>(undefined)
   let submittedTaskId = $state<number | undefined>(undefined)
   let taskResetToken = $state(0)
-  let workingTemplate = $state('')
-  let lastRunnerIdentity = $state('')
-  let lastRunnerContextIdentity = $state('')
-  let lastSavedContent: string | undefined
+  let values = $state<Record<string, AIEditUserInputValue>>({})
   let previewModalOpen = $state(false)
-  let savingPrompt = $state(false)
+  let previewLoading = $state(false)
+  let previewMessages = $state<AIEditRenderedMessage[]>([])
   let saveAsModalOpen = $state(false)
   let saveAsTitle = $state('')
   let savingPromptAs = $state(false)
 
-  const promptTextareaMaxHeight = 500
-
-  let renderedLlmInput = $derived(
-    renderFinalPrompt({
-      template: workingTemplate,
-      displayTitle: title,
-      existingContent: editorContent,
-      variableValues: { '기존 문서 내용': editorContent },
-    }),
-  )
-  let hasPromptContent = $derived(workingTemplate.trim().length > 0)
-  let canSavePrompt = $derived((getRLCONF()?.wgUserId ?? 0) > 0 && prompt.userId === getRLCONF()?.wgUserId)
+  let hasPromptContent = $derived(prompt.content.trim().length > 0)
   let trimmedTitle = $derived(title.trim())
-  let canSubmit = $derived(hasPromptContent && trimmedTitle.length > 0 && renderedLlmInput.trim().length > 0 && !submitting)
+  let canSubmit = $derived(hasPromptContent && trimmedTitle.length > 0 && !submitting)
   let displayedTaskStatus = $derived(submitting ? 'Creating' : submittedTaskPhase === 'Completed' ? undefined : submittedTaskPhase)
 
-  $effect(() => {
-    const nextRunnerContextIdentity = `${prompt.id ?? ''}\u0000${prompt.title}\u0000${prompt.requestType}\u0000${title}\u0000${pageId ?? ''}`
-    const nextPromptIdentity = `${prompt.id ?? ''}\u0000${prompt.title}\u0000${prompt.requestType}\u0000${prompt.content}\u0000${title}\u0000${pageId ?? ''}`
-    if (nextPromptIdentity === lastRunnerIdentity) return
+  function textValue(name: string) {
+    const v = values[name]
+    return typeof v === 'string' ? v : ''
+  }
 
-    const contextChanged = nextRunnerContextIdentity !== lastRunnerContextIdentity
-    lastRunnerIdentity = nextPromptIdentity
-    lastRunnerContextIdentity = nextRunnerContextIdentity
-    if (!contextChanged && prompt.content === lastSavedContent) {
-      lastSavedContent = undefined
-      return
+  function textsValue(name: string) {
+    const v = values[name]
+    return Array.isArray(v) ? v : []
+  }
+
+  function setText(name: string, value: string) {
+    values = { ...values, [name]: value }
+  }
+
+  function setTexts(name: string, items: string[]) {
+    values = { ...values, [name]: items }
+  }
+
+  // A user input's name as the run form shows it: copiedTexts as "Copied texts".
+  function inputLabel(name: string) {
+    const words = name.replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase()
+    return words.charAt(0).toUpperCase() + words.slice(1)
+  }
+
+  // A value fits an input of its type: a value kept from another template with the same name but another type is
+  // not sent.
+  function fits(input: AIEditUserInput, v: AIEditUserInputValue | undefined) {
+    if (input.type === 'bool') return typeof v === 'boolean'
+    if (input.type === 'textList') return Array.isArray(v)
+    return typeof v === 'string'
+  }
+
+  function payload(): AIEditRequestPayload {
+    const userValues: Record<string, AIEditUserInputValue> = {}
+    for (const input of userInputs) {
+      const v = values[input.name]
+      if (v !== undefined && fits(input, v)) userValues[input.name] = v
     }
-    lastSavedContent = undefined
-    if (!contextChanged && prompt.content === untrack(() => workingTemplate)) return
-
-    workingTemplate = prompt.content
-    submitError = ''
-    resetResultState()
-  })
-
-  function handlePromptUpdate(value: string) {
-    workingTemplate = value
-    submitError = ''
+    return {
+      pageId,
+      title: trimmedTitle,
+      promptId: prompt.id,
+      promptTitle: prompt.title,
+      requestType: prompt.requestType,
+      wikitext: editorContent,
+      userInputs: userValues,
+    }
   }
 
   async function handleSubmitClick() {
@@ -111,19 +125,31 @@
     resetResultState()
 
     try {
-      const data = await submit({
-        pageId,
-        title: trimmedTitle,
-        promptTitle: prompt.title,
-        requestType: prompt.requestType,
-        llmInput: renderedLlmInput,
-      })
+      const data = await submit(payload())
       submittedTaskId = data.id
     } catch (error) {
       submitError = error instanceof Error && error.message ? error.message : 'AI 편집 등록에 실패했습니다.'
     } finally {
       submitting = false
     }
+  }
+
+  async function openPreview() {
+    previewModalOpen = true
+    previewLoading = true
+    previewMessages = []
+    try {
+      previewMessages = await preview(payload())
+    } catch (error) {
+      previewModalOpen = false
+      showToast(error instanceof Error && error.message ? error.message : '미리보기를 만들지 못했습니다.')
+    } finally {
+      previewLoading = false
+    }
+  }
+
+  function closePreview() {
+    previewModalOpen = false
   }
 
   function resetResultState() {
@@ -133,45 +159,8 @@
     taskResetToken += 1
   }
 
-  function closePreviewModal() {
-    previewModalOpen = false
-  }
-
-  async function savePrompt() {
-    if (!prompt.id) {
-      showToast('저장할 프롬프트 정보가 없습니다.')
-      return
-    }
-    if (!canSavePrompt) {
-      showToast('자신의 프롬프트만 저장할 수 있습니다.')
-      return
-    }
-
-    const savedContent = workingTemplate
-    savingPrompt = true
-    try {
-      const [, err] = await httpy.post('/api/ai-prompts', {
-        id: prompt.id,
-        title: prompt.title,
-        request_type: prompt.requestType,
-        content: savedContent,
-      })
-      if (err) {
-        showToast(err.message || '프롬프트 저장에 실패했습니다.')
-        return
-      }
-      showToast('프롬프트를 저장했습니다.')
-      lastSavedContent = savedContent
-      void onPromptListChanged?.()
-    } catch (error) {
-      showToast(error instanceof Error && error.message ? error.message : '프롬프트 저장에 실패했습니다.')
-    } finally {
-      savingPrompt = false
-    }
-  }
-
   function openSaveAsModal() {
-    saveAsTitle = `${prompt.title} 복사본`
+    saveAsTitle = `${prompt.title} (복제본)`
     saveAsModalOpen = true
   }
 
@@ -184,7 +173,10 @@
       const [, err] = await httpy.post('/api/ai-prompts', {
         title: newTitle,
         request_type: prompt.requestType,
-        content: workingTemplate,
+        content: prompt.content,
+        messages: prompt.messages,
+        user_inputs: userInputs,
+        model: prompt.model,
       })
       if (err) {
         showToast(err.message || '새 프롬프트 저장에 실패했습니다.')
@@ -199,7 +191,6 @@
       savingPromptAs = false
     }
   }
-
 </script>
 
 <div class="flex h-full min-h-0 flex-col gap-3">
@@ -216,103 +207,144 @@
 
   <div class="flex min-h-0 flex-1 flex-col gap-3 border bg-a-gray-100 p-4">
     {@render promptHeader?.()}
-  {#if !hasPromptContent}
-    <div class="rounded border border-a-amber-200 bg-a-amber-50 px-3 py-2 text-sm text-a-amber-700">프롬프트 내용이 없습니다.</div>
-  {/if}
+    {#if !hasPromptContent}
+      <div class="rounded border border-a-amber-200 bg-a-amber-50 px-3 py-2 text-sm text-a-amber-700">프롬프트 내용이 없습니다.</div>
+    {/if}
 
-  <div class="flex min-h-0 flex-1 flex-col gap-3">
-    <div class="flex min-h-0 flex-col gap-1">
-      <div id="ai-edit-runner-prompt" class="relative min-h-40 font-mono text-xs leading-relaxed">
-        <ZTextarea
-          id="ai-edit-runner-prompt-textarea"
-          class="bg-a-gray-50"
-          modelValue={workingTemplate}
-          placeholder="프롬프트 내용을 입력하세요."
-          maxHeight={promptTextareaMaxHeight}
-          onUpdateModelValue={handlePromptUpdate}
-        />
-        <div class="absolute right-5 top-1 flex items-center">
-          {#if displayedTaskStatus}
-            <div class="flex items-center rounded-lg bg-a-gray-500/20 px-2 py-1 text-xs text-a-slate-500">
-              {#if submitting || polling}
-                <ZSpinner size="0.875rem" extraClass="mr-1" />
-              {/if}
-              {displayedTaskStatus}
-            </div>
-          {/if}
-          <CButton
-            type="button"
-            variant="subtle"
-            size="small"
-            disabled={!canSubmit || polling}
-            onclick={() => void handleSubmitClick()}
-          >
-            <ZIcon path={mdiPlay} />
-            Run
-          </CButton>
-          <CMenu>
-            {#snippet trigger({ toggle })}
+    <div class="relative">
+      <pre
+        id="ai-edit-runner-prompt"
+        class="max-h-60 overflow-auto whitespace-pre-wrap rounded border bg-a-gray-50 p-3 font-mono text-xs leading-relaxed">{prompt.content}</pre>
+      <div class="absolute right-5 top-1 flex items-center">
+        {#if displayedTaskStatus}
+          <div class="flex items-center rounded-lg bg-a-gray-500/20 px-2 py-1 text-xs text-a-slate-500">
+            {#if submitting || polling}
+              <ZSpinner size="0.875rem" extraClass="mr-1" />
+            {/if}
+            {displayedTaskStatus}
+          </div>
+        {/if}
+        <CButton type="button" variant="subtle" size="small" disabled={!canSubmit || polling} onclick={() => void handleSubmitClick()}>
+          <ZIcon path={mdiPlay} />
+          Run
+        </CButton>
+        <CMenu>
+          {#snippet trigger({ toggle })}
+            <CButton type="button" variant="subtle" size="icon-sm" aria-label="프롬프트 메뉴" onclick={toggle}>
+              <ZIcon path={mdiDotsVertical} />
+            </CButton>
+          {/snippet}
+          {#snippet menu({ close })}
+            <div class="flex flex-col items-stretch">
               <CButton
                 type="button"
-                variant="subtle"
-                size="icon-sm"
-                aria-label="프롬프트 메뉴"
-                onclick={toggle}
+                variant="ghost"
+                class="w-full justify-start! rounded-none!"
+                disabled={!canSubmit}
+                onclick={() => {
+                  void openPreview()
+                  close()
+                }}
               >
-                <ZIcon path={mdiDotsVertical} />
+                Render
               </CButton>
-            {/snippet}
-            {#snippet menu({ close })}
-              <div class="flex flex-col items-stretch">
-                <CButton
-                  type="button"
-                  variant="ghost"
-                  class="w-full justify-start! rounded-none!"
-                  disabled={!hasPromptContent}
-                  onclick={() => {
-                    previewModalOpen = true
-                    close()
-                  }}
-                >
-                  Render
-                </CButton>
-                <CButton
-                  type="button"
-                  variant="ghost"
-                  class="w-full justify-start! rounded-none!"
-                  disabled={!hasPromptContent || savingPrompt || !prompt.id || !canSavePrompt}
-                  onclick={() => {
-                    void savePrompt()
-                    close()
-                  }}
-                >
-                  {savingPrompt ? '저장 중...' : 'Save'}
-                </CButton>
-                <CButton
-                  type="button"
-                  variant="ghost"
-                  class="w-full justify-start! rounded-none!"
-                  disabled={!hasPromptContent || savingPromptAs}
-                  onclick={() => {
-                    openSaveAsModal()
-                    close()
-                  }}
-                >
-                  Save As...
-                </CButton>
-              </div>
-            {/snippet}
-          </CMenu>
-        </div>
+              <CButton
+                type="button"
+                variant="ghost"
+                class="w-full justify-start! rounded-none!"
+                disabled={!hasPromptContent || savingPromptAs}
+                onclick={() => {
+                  openSaveAsModal()
+                  close()
+                }}
+              >
+                Save As...
+              </CButton>
+            </div>
+          {/snippet}
+        </CMenu>
       </div>
     </div>
-  </div>
 
-  <div class="flex flex-col items-start gap-2">
-    {#if submitError}
-      <div class="text-sm text-a-red-500">{submitError}</div>
+    {#if userInputs.length > 0}
+      <div class="flex min-h-0 flex-col gap-3 overflow-auto text-sm">
+        {#each userInputs as input (input.name)}
+          {@const label = inputLabel(input.name)}
+          <div class="flex flex-col gap-1">
+          {#if input.type === 'bool'}
+            <label class="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={values[input.name] === true}
+                onchange={(e) => (values = { ...values, [input.name]: e.currentTarget.checked })}
+              />
+              {label}
+            </label>
+          {:else if input.type === 'textList'}
+            <div class="flex flex-col gap-2">
+              {#each textsValue(input.name) as item, i (i)}
+                <div class="flex items-start gap-1">
+                  <div class="min-w-0 flex-1 text-xs">
+                    <ZTextarea
+                      id={`ai-edit-input-${input.name}-${i}`}
+                      modelValue={item}
+                      placeholder={input.placeholder ?? `${label} ${i + 1}`}
+                      maxHeight={240}
+                      onUpdateModelValue={(v: string) => setTexts(input.name, textsValue(input.name).map((x, j) => (j === i ? v : x)))}
+                    />
+                  </div>
+                  <CButton
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={`${label} ${i + 1} 빼기`}
+                    onclick={() => setTexts(input.name, textsValue(input.name).filter((_, j) => j !== i))}
+                  >
+                    <ZIcon path={mdiClose} />
+                  </CButton>
+                </div>
+              {/each}
+              <div>
+                <CButton type="button" variant="outline" size="small" onclick={() => setTexts(input.name, [...textsValue(input.name), ''])}>
+                  <ZIcon path={mdiPlus} />
+                  {label}
+                </CButton>
+              </div>
+            </div>
+          {:else}
+            <div class="flex flex-col gap-1 text-xs">
+              <div>
+                <span class="font-semibold">{label}</span>
+              </div>
+              {#if input.type === 'text'}
+                <ZTextarea
+                  id={`ai-edit-input-${input.name}`}
+                  modelValue={textValue(input.name)}
+                  placeholder={input.placeholder}
+                  maxHeight={160}
+                  onUpdateModelValue={(v: string) => setText(input.name, v)}
+                />
+              {:else}
+                <input
+                  id={`ai-edit-input-${input.name}`}
+                  class="border-border h-8 rounded border bg-background px-2"
+                  placeholder={input.placeholder}
+                  value={textValue(input.name)}
+                  oninput={(e) => setText(input.name, e.currentTarget.value)}
+                />
+              {/if}
+            </div>
+          {/if}
+          </div>
+        {/each}
+      </div>
     {/if}
-  </div>
+
+    <div class="flex flex-col items-start gap-2">
+      {#if submitError}
+        <div class="text-sm text-a-red-500">{submitError}</div>
+      {/if}
+    </div>
   </div>
 </div>
 
@@ -324,11 +356,20 @@
   showCancel={false}
   panelClass="max-w-[calc(100vw-2rem)] md:max-w-4xl"
   sectionClass="min-h-0 flex-1 overflow-hidden p-5"
-  onOk={closePreviewModal}
-  onCancel={closePreviewModal}
+  onOk={closePreview}
+  onCancel={closePreview}
 >
-  <pre
-    class="max-h-[calc(100dvh-14rem)] overflow-auto whitespace-pre-wrap rounded border border-a-slate-200 bg-a-slate-50 p-3 font-mono text-xs text-a-slate-800">{renderedLlmInput}</pre>
+  <div class="flex max-h-[calc(100dvh-14rem)] flex-col gap-3 overflow-auto">
+    {#if previewLoading}
+      <ZSpinner />
+    {/if}
+    {#each previewMessages as m, i (i)}
+      <div class="rounded border border-a-slate-200">
+        <div class="border-b border-a-slate-200 bg-a-slate-100 px-3 py-1 font-mono text-xs text-a-slate-500">{m.role}</div>
+        <pre class="whitespace-pre-wrap bg-a-slate-50 p-3 font-mono text-xs text-a-slate-800">{m.content}</pre>
+      </div>
+    {/each}
+  </div>
 </ZModal>
 
 <ZModal

@@ -67,7 +67,7 @@ func (e *Evaluator) Define(ctx context.Context, db *gorm.DB, page Page, wikitext
 	var out struct {
 		Definition string `json:"definition"`
 	}
-	res, err := e.llm.RunStep(ctx, modelOrDefault(model), prompts.DocDefine, prompts.DocDefineStep, map[string]string{
+	res, err := e.llm.RunStep(ctx, modelOrDefault(model), prompts.DocDefine, prompts.DocDefineStep, prompts.Vars{
 		"title": strings.ReplaceAll(page.Title, "_", " "),
 		"lead":  lead,
 	}, &out)

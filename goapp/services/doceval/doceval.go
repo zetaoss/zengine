@@ -74,7 +74,7 @@ func (e *Evaluator) Evaluate(ctx context.Context, page Page, definition, wikitex
 	displayTitle := strings.ReplaceAll(title, "_", " ")
 	start := time.Now()
 	var promptTokens, completionTokens int
-	run := func(st prompts.Step, vars map[string]string, out any) (llmsvc.StepResult, error) {
+	run := func(st prompts.Step, vars prompts.Vars, out any) (llmsvc.StepResult, error) {
 		res, err := e.llm.RunStep(ctx, targetModel, prompts.DocEval, st, vars, out)
 		promptTokens += res.Usage.PromptTokens
 		completionTokens += res.Usage.CompletionTokens
@@ -87,7 +87,7 @@ func (e *Evaluator) Evaluate(ctx context.Context, page Page, definition, wikitex
 			GeneralQuality []string `json:"general_quality"`
 			TextQuality    []string `json:"text_quality"`
 		}
-		_, err := run(prompts.DocEvalRubric, map[string]string{"title": displayTitle, "definition": definition}, &generated)
+		_, err := run(prompts.DocEvalRubric, prompts.Vars{"title": displayTitle, "definition": definition}, &generated)
 		if err != nil {
 			return nil, fmt.Errorf("llm rubric generation failed: %w", err)
 		}
@@ -104,7 +104,7 @@ func (e *Evaluator) Evaluate(ctx context.Context, page Page, definition, wikitex
 	}
 
 	var judgment Judgment
-	resp, err := run(prompts.DocEvalJudge, map[string]string{
+	resp, err := run(prompts.DocEvalJudge, prompts.Vars{
 		"title":    displayTitle,
 		"rubrics":  string(rubricsJSON),
 		"wikitext": trimmedWikitext,

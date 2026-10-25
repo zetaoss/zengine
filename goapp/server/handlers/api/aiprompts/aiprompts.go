@@ -1,6 +1,7 @@
 package aiprompts
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -8,10 +9,27 @@ import (
 	"time"
 
 	"github.com/zetaoss/zengine/goapp/app"
+	"github.com/zetaoss/zengine/goapp/app/config"
 	"github.com/zetaoss/zengine/goapp/models"
+	"github.com/zetaoss/zengine/goapp/prompts"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
+	"github.com/zetaoss/zengine/goapp/tasks/aiedit"
 	"gorm.io/gorm"
 )
+
+// promptView is a template with the run form and messages it runs with (aiedit.TemplateUserInputs, Messages),
+// and the two as the YAML its editor shows (spec).
+type promptView struct {
+	models.AIEditPrompt
+	UserInputs []prompts.Input   `json:"user_inputs"`
+	Messages   []prompts.Message `json:"messages"`
+	Spec       string            `json:"spec"`
+}
+
+func newPromptView(p models.AIEditPrompt) promptView {
+	t := prompts.Template{UserInputs: aiedit.TemplateUserInputs(p), Messages: aiedit.TemplateMessages(p)}
+	return promptView{AIEditPrompt: p, UserInputs: t.UserInputs, Messages: t.Messages, Spec: t.YAML()}
+}
 
 func Index(c *serverctx.Context) {
 	var rows []models.AIEditPrompt
@@ -20,7 +38,11 @@ func Index(c *serverctx.Context) {
 		c.InternalError()
 		return
 	}
-	c.JSON(rows)
+	views := make([]promptView, len(rows))
+	for i, r := range rows {
+		views[i] = newPromptView(r)
+	}
+	c.JSON(views)
 }
 
 func Show(c *serverctx.Context) {
@@ -40,7 +62,7 @@ func Show(c *serverctx.Context) {
 		return
 	}
 
-	c.JSON(row)
+	c.JSON(newPromptView(row))
 }
 
 func Exists(c *serverctx.Context) {
@@ -66,11 +88,34 @@ func Store(c *serverctx.Context) {
 	var body struct {
 		ID          int    `json:"id"`
 		Title       string `json:"title"`
+		Description string `json:"description"`
 		RequestType string `json:"request_type"`
 		Content     string `json:"content"`
+		// Model is left as it is when omitted; "" runs the template on its chain's model.
+		Model *string `json:"model"`
+		// Messages, when given, are the template's own messages in place of the chain step's; they are checked
+		// against the chain (prompts.Chain.ValidateMessages) and content becomes their text.
+		Messages *[]prompts.Message `json:"messages"`
+		// UserInputs, when given, are the template's own run form (aiedit.TemplateUserInputs).
+		UserInputs *[]prompts.Input `json:"user_inputs"`
+		// Spec, when given, is the run form and messages as YAML (prompts.Template), in place of both.
+		Spec *string `json:"spec"`
+		// Bump is how an edit that changes the messages moves the version: "minor" (the default) or "major".
+		Bump string `json:"bump"`
 	}
 	if !c.Decode(&body) {
 		return
+	}
+	if body.Model != nil {
+		m := strings.TrimSpace(*body.Model)
+		if m != "" {
+			var err error
+			if m, err = config.ValidateModel(m); err != nil {
+				c.JSONError(http.StatusUnprocessableEntity, err.Error())
+				return
+			}
+		}
+		body.Model = &m
 	}
 	body.Title = strings.TrimSpace(body.Title)
 	if body.Title == "" {
@@ -83,6 +128,47 @@ func Store(c *serverctx.Context) {
 		return
 	}
 	body.RequestType = requestType
+	if body.Spec != nil {
+		t, err := prompts.ParseTemplate(*body.Spec)
+		if err != nil {
+			c.JSONError(http.StatusUnprocessableEntity, err.Error())
+			return
+		}
+		body.UserInputs, body.Messages = &t.UserInputs, &t.Messages
+	}
+	var messagesJSON, userInputsJSON string
+	if body.Messages != nil || body.UserInputs != nil {
+		draft := models.AIEditPrompt{RequestType: requestType, Content: body.Content}
+		if body.ID > 0 {
+			_ = c.DB.Where("id = ?", body.ID).Take(&draft).Error
+			draft.RequestType = requestType
+		}
+		if body.UserInputs != nil {
+			b, _ := json.Marshal(*body.UserInputs)
+			userInputsJSON = string(b)
+			draft.UserInputs = userInputsJSON
+		}
+		if body.Messages != nil {
+			b, _ := json.Marshal(*body.Messages)
+			messagesJSON = string(b)
+			draft.Messages = messagesJSON
+			body.Content = aiedit.MessagesText(*body.Messages)
+		}
+		// Messages given are checked as they are: the fallback of a template without messages (its content) must
+		// not stand in for an empty list that would be saved.
+		messages := aiedit.TemplateMessages(draft)
+		if body.Messages != nil {
+			messages = *body.Messages
+		}
+		chain, err := aiedit.ChainOf(requestType).WithUserInputs(aiedit.TemplateUserInputs(draft))
+		if err == nil {
+			err = chain.ValidateMessages(messages)
+		}
+		if err != nil {
+			c.JSONError(http.StatusUnprocessableEntity, err.Error())
+			return
+		}
+	}
 
 	user, _ := c.User()
 
@@ -90,9 +176,23 @@ func Store(c *serverctx.Context) {
 	row := models.AIEditPrompt{
 		ID:          body.ID,
 		Title:       body.Title,
+		Description: strings.TrimSpace(body.Description),
 		RequestType: body.RequestType,
 		Content:     body.Content,
 		UpdatedAt:   now,
+	}
+	columns := []string{"title", "description", "request_type", "content", "version", "updated_at"}
+	if body.Messages != nil {
+		row.Messages = messagesJSON
+		columns = append(columns, "messages")
+	}
+	if body.UserInputs != nil {
+		row.UserInputs = userInputsJSON
+		columns = append(columns, "user_inputs")
+	}
+	if body.Model != nil {
+		row.Model = *body.Model
+		columns = append(columns, "model")
 	}
 
 	if row.ID > 0 {
@@ -105,6 +205,19 @@ func Store(c *serverctx.Context) {
 			c.JSONError(http.StatusForbidden, "본인만 편집할 수 있습니다.")
 			return
 		}
+		row.Version = existing.Version
+		changed := row.Content != existing.Content
+		if body.Messages != nil {
+			before, _ := json.Marshal(aiedit.TemplateMessages(existing))
+			changed = messagesJSON != string(before)
+		}
+		if body.UserInputs != nil {
+			before, _ := json.Marshal(aiedit.TemplateUserInputs(existing))
+			changed = changed || userInputsJSON != string(before)
+		}
+		if changed {
+			row.Version = prompts.NextVersion(existing.Version, body.Bump == "major")
+		}
 
 		var count int64
 		c.DB.Model(&models.AIEditPrompt{}).Where("title = ? AND id != ?", row.Title, row.ID).Count(&count)
@@ -113,7 +226,7 @@ func Store(c *serverctx.Context) {
 			return
 		}
 
-		if err := c.DB.Model(&models.AIEditPrompt{}).Where("id = ?", row.ID).Select("title", "request_type", "content", "updated_at").Updates(&row).Error; err != nil {
+		if err := c.DB.Model(&models.AIEditPrompt{}).Where("id = ?", row.ID).Select(columns).Updates(&row).Error; err != nil {
 			c.InternalError()
 			return
 		}
@@ -121,6 +234,7 @@ func Store(c *serverctx.Context) {
 		row.UserID = user.ID
 		row.UserName = user.Name
 		row.CreatedAt = now
+		row.Version = "v1.0"
 
 		var count int64
 		c.DB.Model(&models.AIEditPrompt{}).Where("title = ?", row.Title).Count(&count)
@@ -134,7 +248,36 @@ func Store(c *serverctx.Context) {
 			return
 		}
 	}
-	c.JSON(row)
+	c.JSON(newPromptView(row))
+}
+
+// Check reads {"request_type", "spec"} as Store would and returns the run form and messages it holds, or the
+// error that would stop it from saving, without storing anything.
+func Check(c *serverctx.Context) {
+	var body struct {
+		RequestType string `json:"request_type"`
+		Spec        string `json:"spec"`
+	}
+	if !c.Decode(&body) {
+		return
+	}
+	requestType, ok := models.NormalizeAIEditRequestType(body.RequestType)
+	if !ok {
+		c.JSONError(http.StatusUnprocessableEntity, "유효하지 않은 요청 유형입니다.")
+		return
+	}
+	t, err := prompts.ParseTemplate(body.Spec)
+	if err == nil {
+		var chain prompts.Chain
+		if chain, err = aiedit.ChainOf(requestType).WithUserInputs(t.UserInputs); err == nil {
+			err = chain.ValidateMessages(t.Messages)
+		}
+	}
+	if err != nil {
+		c.JSON(app.H{"ok": false, "error": err.Error()})
+		return
+	}
+	c.JSON(app.H{"ok": true, "user_inputs": t.UserInputs, "messages": t.Messages})
 }
 
 func Destroy(c *serverctx.Context) {

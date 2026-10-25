@@ -35,5 +35,4 @@ spec:
 
             ### 문서 본문 앞부분(Wikitext):
             {lead}
-      parser: json
-      output: definition
+      format: json

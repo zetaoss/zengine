@@ -9,13 +9,23 @@
 
   import { subscribeWikiEditorContent } from '../wikiEditor'
   import AiEditRunner from './AiEditRunner.svelte'
-  import type { AIEditPromptForRunner, AIEditRequestType, AIEditRunnerSubmitPayload, AIEditStoreResult } from './aiEditTypes'
+  import type {
+    AIEditPromptForRunner,
+    AIEditRenderedMessage,
+    AIEditRequestPayload,
+    AIEditRequestType,
+    AIEditStoreResult,
+    AIEditUserInput,
+  } from './aiEditTypes'
 
   interface PromptItem {
     id: number
     user_id: number
     title: string
     content: string
+    messages?: AIEditRenderedMessage[]
+    user_inputs?: AIEditUserInput[]
+    model: string
     request_type: string
     use_count: number
     user_name: string
@@ -26,6 +36,14 @@
     value: string
     label: string
   }
+
+  interface ChainItem {
+    name: string
+    spec: { userInputs?: AIEditUserInput[] }
+  }
+
+  // The chain each request type runs; its user inputs make the run form.
+  const chainOfType: Record<AIEditRequestType, string> = { create: 'doc-create', update: 'doc-update' }
 
   let {
     requestType,
@@ -45,6 +63,7 @@
   }
 
   let promptItems = $state<PromptItem[]>([])
+  let userInputsByChain = $state<Record<string, AIEditUserInput[]>>({})
   let promptTitle = $state('')
   let promptListLoading = $state(false)
   let mwEditorContent = $state('')
@@ -76,6 +95,8 @@
           title: currentPromptItem.title,
           requestType: currentPromptItem.request_type,
           content: currentPromptItem.content,
+          model: currentPromptItem.model ?? '',
+          messages: currentPromptItem.messages,
         }
       : null,
   )
@@ -91,6 +112,7 @@
 
   $effect(() => {
     void fetchPromptList()
+    void fetchChains()
   })
 
   $effect(() => {
@@ -158,22 +180,44 @@
     }
   }
 
+  async function fetchChains() {
+    const [data, err] = await httpy.get<ChainItem[]>('/api/ai/chains')
+    if (err) {
+      console.error(err)
+      return
+    }
+    userInputsByChain = Object.fromEntries((data ?? []).map((c) => [c.name, c.spec.userInputs ?? []]))
+  }
+
   async function refreshPromptList() {
     await fetchPromptList()
   }
 
-  async function submitRunner(payload: AIEditRunnerSubmitPayload) {
-    const [data, err] = await httpy.post<AIEditStoreResult>('/api/ai-edit', {
+  function requestBody(payload: AIEditRequestPayload) {
+    return {
       page_id: payload.pageId ?? pageId,
       title: payload.title,
+      prompt_id: payload.promptId,
       prompt_title: payload.promptTitle,
       request_type: payload.requestType,
-      llm_input: payload.llmInput,
-    })
+      wikitext: payload.requestType === 'update' ? payload.wikitext : '',
+      user_inputs: payload.userInputs,
+    }
+  }
+
+  async function submitRunner(payload: AIEditRequestPayload) {
+    const [data, err] = await httpy.post<AIEditStoreResult>('/api/ai-edit', requestBody(payload))
 
     if (err) throw err
     if (!data) throw new Error('AI 편집 등록에 실패했습니다.')
     return data
+  }
+
+  async function previewRunner(payload: AIEditRequestPayload) {
+    const [data, err] = await httpy.post<{ messages: AIEditRenderedMessage[] }>('/api/ai-edit/preview', requestBody(payload))
+
+    if (err) throw err
+    return data?.messages ?? []
   }
 </script>
 
@@ -207,7 +251,9 @@
     {title}
     {pageId}
     editorContent={mwEditorContent}
+    userInputs={currentPromptItem?.user_inputs ?? userInputsByChain[chainOfType[currentRunnerPrompt.requestType]] ?? []}
     submit={submitRunner}
+    preview={previewRunner}
     {promptHeader}
     onPromptListChanged={refreshPromptList}
     onRequestTypeChange={handleRequestTypeChange}

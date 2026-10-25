@@ -61,11 +61,13 @@ func RegisterRoutes(mux *http.ServeMux, serverCtx *serverctx.Context, components
 	r.GET("/api/my-ai-edits", aiedit.MyIndex, r.Unblocked())
 	r.GET("/api/ai-edit/{id}", aiedit.Show, r.OwnerOrSysop(models.AIEdit{}))
 	r.POST("/api/ai-edit", aiedit.Store, r.Unblocked())
+	r.POST("/api/ai-edit/preview", aiedit.Preview, r.Unblocked())
 
 	r.GET("/api/ai-prompts", aiprompts.Index, r.Sysop())
 	r.GET("/api/ai-prompts/exists", aiprompts.Exists, r.Sysop())
 	r.GET("/api/ai-prompts/{id}", aiprompts.Show, r.Sysop())
 	r.POST("/api/ai-prompts", aiprompts.Store, r.Sysop())
+	r.POST("/api/ai-prompts/check", aiprompts.Check, r.Sysop())
 	r.DELETE("/api/ai-prompts/{id}", aiprompts.Destroy, r.Sysop())
 
 	r.GET("/api/internal/profiles/{id}", internalprofile.Show, r.Internal())
