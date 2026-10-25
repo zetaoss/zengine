@@ -297,10 +297,7 @@
 {/snippet}
 
 {#snippet templateNote(chain: Chain)}
-  <p class="text-xs text-muted-foreground">
-    틀이 {chain.name}의 조건 없는 메시지(system과 제목·기존 문서)를 대신하고, 실행 입력 메시지(if·each)는 그대로 붙습니다. 틀의 변수:
-    {'{title}'}, {'{wikitext}'}(편집).
-  </p>
+  <p class="text-xs text-muted-foreground">변수: {'{title}'}{promptTypeOf[chain.name] === 'update' ? `, {wikitext}` : ''}</p>
 {/snippet}
 
 {#snippet templateEditor(chain: Chain, d: TemplateDraft)}
@@ -531,7 +528,6 @@
                             {/if}
                           </div>
                           <div class="text-xs text-muted-foreground">버전: <span class="font-mono">{item.version}</span> · 원본: <span class="font-mono">{chain.name}</span></div>
-                          {@render templateNote(chain)}
                           {#each chain.spec.steps as st, n (st.name)}
                             {@render stepView(st, n, templateMessages(item.content, st))}
                           {/each}
