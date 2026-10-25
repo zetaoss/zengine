@@ -34,7 +34,7 @@ type storePayload struct {
 	RequestType string         `json:"request_type"`
 	PromptID    int            `json:"prompt_id"`
 	PromptTitle string         `json:"prompt_title"`
-	Wikitext    string         `json:"wikitext"`
+	Wikitext    *string        `json:"wikitext"`
 	UserInputs  map[string]any `json:"user_inputs"`
 	LLMInput    string         `json:"llm_input"`
 }

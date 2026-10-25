@@ -18,8 +18,9 @@ import (
 type Request struct {
 	RequestType string
 	Title       string
-	// Wikitext is the page as it stands in the editor, for update; when empty the saved page is read.
-	Wikitext   string
+	// Wikitext is the page as it stands in the editor, for update, even when emptied; when nil the saved page is
+	// read.
+	Wikitext   *string
 	Prompt     *models.AIEditPrompt
 	UserInputs map[string]any
 }
@@ -69,11 +70,11 @@ func Render(ctx context.Context, cfg *config.Config, req Request) (Rendered, err
 		case "title":
 			vars["title"] = req.Title
 		case "wikitext":
-			text := req.Wikitext
-			if strings.TrimSpace(text) == "" {
-				if text, _, err = wikisvc.PageText(ctx, cfg, req.Title); err != nil {
-					return Rendered{}, fmt.Errorf("read page: %w", err)
-				}
+			var text string
+			if req.Wikitext != nil {
+				text = *req.Wikitext
+			} else if text, _, err = wikisvc.PageText(ctx, cfg, req.Title); err != nil {
+				return Rendered{}, fmt.Errorf("read page: %w", err)
 			}
 			vars["wikitext"] = text
 		case "backlinkTexts":
@@ -96,6 +97,9 @@ func Render(ctx context.Context, cfg *config.Config, req Request) (Rendered, err
 func TemplateUserInputs(p models.AIEditPrompt) []prompts.Input {
 	var own []prompts.Input
 	if strings.TrimSpace(p.UserInputs) != "" && json.Unmarshal([]byte(p.UserInputs), &own) == nil {
+		if own == nil {
+			own = []prompts.Input{}
+		}
 		return own
 	}
 	return ChainOf(p.RequestType).Spec.UserInputs

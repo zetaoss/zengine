@@ -441,6 +441,9 @@ func ParseTemplate(text string) (Template, error) {
 	if err := dec.Decode(&t); err != nil {
 		return t, fmt.Errorf("YAML: %w", err)
 	}
+	if t.UserInputs == nil {
+		t.UserInputs = []Input{}
+	}
 	return t, nil
 }
 

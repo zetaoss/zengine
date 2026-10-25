@@ -146,3 +146,30 @@ func TestBuiltinTemplatesValidate(t *testing.T) {
 		}
 	}
 }
+
+func TestRenderEmptiedEditor(t *testing.T) {
+	cfg := fakeWiki(t)
+	empty := ""
+	r, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestUpdate, Title: "자바", Wikitext: &empty})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r.Vars["wikitext"] != "" || strings.Contains(contents(r), "저장된 본문") {
+		t.Fatalf("an emptied editor must not bring the saved page back: %q", r.Vars["wikitext"])
+	}
+	r, err = Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestUpdate, Title: "자바"})
+	if err != nil || r.Vars["wikitext"] != "저장된 본문" {
+		t.Fatalf("without the editor's text the saved page is read: %v %q", err, r.Vars["wikitext"])
+	}
+}
+
+func TestTemplateWithoutUserInputs(t *testing.T) {
+	tpl, err := prompts.ParseTemplate("messages:\n  - role: user\n    content: \"{title}\"\n")
+	if err != nil || tpl.UserInputs == nil || len(tpl.UserInputs) != 0 {
+		t.Fatalf("omitted userInputs read as an empty list: %v %#v", err, tpl.UserInputs)
+	}
+	p := models.AIEditPrompt{RequestType: models.AIEditRequestCreate, UserInputs: "null"}
+	if got := TemplateUserInputs(p); got == nil || len(got) != 0 {
+		t.Fatalf("a stored null is no inputs, not the chain's: %#v", got)
+	}
+}
