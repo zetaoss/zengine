@@ -86,6 +86,12 @@
     values = { ...values, [name]: items }
   }
 
+  // A user input's name as the run form shows it: copiedTexts as "Copied texts".
+  function inputLabel(name: string) {
+    const words = name.replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase()
+    return words.charAt(0).toUpperCase() + words.slice(1)
+  }
+
   // A value fits an input of its type: a value kept from another template with the same name but another type is
   // not sent.
   function fits(input: AIEditUserInput, v: AIEditUserInputValue | undefined) {
@@ -263,7 +269,7 @@
     {#if userInputs.length > 0}
       <div class="flex min-h-0 flex-col gap-3 overflow-auto text-sm">
         {#each userInputs as input (input.name)}
-          {@const label = input.label ?? input.name}
+          {@const label = inputLabel(input.name)}
           <div class="flex flex-col gap-1">
           {#if input.type === 'bool'}
             <label class="flex items-center gap-2">

@@ -111,7 +111,7 @@ func TestValidateTemplateMessages(t *testing.T) {
 func TestRenderOwnUserInputs(t *testing.T) {
 	cfg := fakeWiki(t)
 	prompt := &models.AIEditPrompt{ID: 5, RequestType: models.AIEditRequestCreate,
-		UserInputs: `[{"name":"tone","label":"문체"},{"name":"table","type":"bool"}]`,
+		UserInputs: `[{"name":"tone"},{"name":"table","type":"bool"}]`,
 		Messages:   `[{"role":"user","content":"{title} / {tone}"},{"role":"user","if":"table","content":"표로"}]`}
 	r, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestCreate, Title: "사과", Prompt: prompt, UserInputs: map[string]any{"tone": "존댓말", "table": true}})
 	if err != nil {

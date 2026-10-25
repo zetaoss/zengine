@@ -15,7 +15,6 @@ export interface AIEditPromptForRunner {
 // A user input of the chain a request type runs (doc-create, doc-update): a field of the run form.
 export interface AIEditUserInput {
   name: string
-  label?: string
   placeholder?: string
   type?: 'string' | 'text' | 'textList' | 'bool'
 }

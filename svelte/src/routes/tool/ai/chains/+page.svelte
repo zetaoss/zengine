@@ -35,7 +35,6 @@
 
   interface ChainInput {
     name: string
-    label?: string
     placeholder?: string
     type?: string
   }
@@ -50,9 +49,15 @@
     template: string
   }
 
+  // A user input's name as the run form shows it: copiedTexts as "Copied texts" (as in the skin's AiEditRunner).
+  function humanize(name: string) {
+    const words = name.replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase()
+    return words.charAt(0).toUpperCase() + words.slice(1)
+  }
+
   function inputLabel(input: ChainInput) {
     const type = input.type && input.type !== 'string' ? `: ${input.type}` : ''
-    return input.label ? `${input.label}(${input.name}${type})` : `${input.name}${type}`
+    return `${input.name}${type}`
   }
 
   type PreviewValue = string | boolean | string[]
@@ -420,7 +425,7 @@
     <div class="mb-2 text-muted-foreground">사용자 입력</div>
     <div class="grid grid-cols-[auto_auto_minmax(0,1fr)] items-start gap-x-4 gap-y-2">
       {#each inputs as input (input.name)}
-        {@const label = input.label || input.name}
+        {@const label = humanize(input.name)}
         <div class="pt-1.5"><code class="var">{input.name}</code></div>
         <div class="pt-1.5 font-medium">{label}</div>
         <div class="min-w-0">

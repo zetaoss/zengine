@@ -147,7 +147,7 @@ func TestMajor(t *testing.T) {
 }
 
 func TestInputYAML(t *testing.T) {
-	if !strings.Contains(DocEval.Spec.Inputs[0].Name, "title") || DocCreate.Spec.UserInputs[0].Label == "" {
+	if !strings.Contains(DocEval.Spec.Inputs[0].Name, "title") || DocCreate.Spec.UserInputs[0].Placeholder == "" {
 		t.Fatalf("inputs written as a name and as a mapping must both load: %+v %+v", DocEval.Spec.Inputs, DocCreate.Spec.UserInputs)
 	}
 }

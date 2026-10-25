@@ -13,8 +13,8 @@ import (
 var specVersions = map[string]string{
 	"doc-define": "v2.0 95600152bd0d",
 	"doc-eval":   "v2.0 3e49e3826803",
-	"doc-create": "v2.0 ad09e707d6c0",
-	"doc-update": "v2.0 e0f54653d6e2",
+	"doc-create": "v2.0 2bed2e99cdb4",
+	"doc-update": "v2.0 6c79862cd737",
 }
 
 func specHash(c Chain) string {

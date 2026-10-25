@@ -8,13 +8,10 @@ metadata:
 spec:
   userInputs:
     - name: readBacklinks
-      label: 역링크 읽기
       type: bool
     - name: copiedTexts
-      label: 자료
       type: textList
     - name: request
-      label: 요청사항
       type: text
   inputs:
     - name: title
