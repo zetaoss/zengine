@@ -3,13 +3,17 @@
 -- JSON) that the worker sends. llm_input keeps the messages joined as text.
 ALTER TABLE aiedit_tasks
   ADD COLUMN IF NOT EXISTS prompt_id BIGINT UNSIGNED NOT NULL DEFAULT 0 AFTER request_type,
-  ADD COLUMN IF NOT EXISTS chain_version VARCHAR(16) NOT NULL DEFAULT '' AFTER prompt_id,
+  ADD COLUMN IF NOT EXISTS prompt_version VARCHAR(16) NOT NULL DEFAULT '' AFTER prompt_id,
+  ADD COLUMN IF NOT EXISTS chain_version VARCHAR(16) NOT NULL DEFAULT '' AFTER prompt_version,
   ADD COLUMN IF NOT EXISTS inputs LONGTEXT NULL AFTER phase,
   ADD COLUMN IF NOT EXISTS llm_messages LONGTEXT NULL AFTER inputs;
 
--- A template picks its own model; '' runs it on its chain's model. used_at is when it was last run (unknown for
--- runs before this, which did not record their template).
+-- A template has a description, its own version (v<major>.<minor>, from v1.0, bumped when its content changes) and
+-- its own model ('' runs it on its chain's model). used_at is when it was last run (unknown for runs before this,
+-- which did not record their template).
 ALTER TABLE aiedit_prompts
+  ADD COLUMN IF NOT EXISTS version VARCHAR(16) NOT NULL DEFAULT 'v1.0' AFTER request_type,
+  ADD COLUMN IF NOT EXISTS description VARCHAR(255) NOT NULL DEFAULT '' AFTER title,
   ADD COLUMN IF NOT EXISTS model VARCHAR(128) NOT NULL DEFAULT '' AFTER content,
   ADD COLUMN IF NOT EXISTS used_at TIMESTAMP NULL AFTER use_count;
 

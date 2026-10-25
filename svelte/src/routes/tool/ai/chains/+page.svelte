@@ -64,6 +64,8 @@
     request_type: string
     use_count: number
     content: string
+    description: string
+    version: string
     model: string
     used_at?: string | null
     updated_at?: string
@@ -152,6 +154,7 @@
     const [, err] = await httpy.post('/api/ai-prompts', {
       id: item.id,
       title: item.title,
+      description: item.description,
       request_type: item.request_type,
       content: item.content,
       model,
@@ -168,9 +171,20 @@
   interface TemplateDraft {
     id: number
     title: string
+    description: string
     request_type: string
     content: string
     model: string
+    version: string
+    // The content when editing began; changing it bumps the version on save.
+    original: string
+    bump: 'minor' | 'major'
+  }
+
+  // nextVersion is prompts.NextVersion: the minor, or with major the major with the minor back to 0.
+  function nextVersion(version: string, major: boolean) {
+    const [m, n] = version.replace(/^v/, '').split('.').map((x) => Number(x) || 0)
+    return major ? `v${m + 1}.0` : `v${m}.${(n ?? 0) + 1}`
   }
 
   let draft = $state<TemplateDraft | null>(null)
@@ -179,14 +193,34 @@
 
   function openEdit(item: PromptItem) {
     draftError = ''
-    draft = { id: item.id, title: item.title, request_type: item.request_type, content: item.content, model: item.model }
+    draft = {
+      id: item.id,
+      title: item.title,
+      description: item.description,
+      request_type: item.request_type,
+      content: item.content,
+      model: item.model,
+      version: item.version,
+      original: item.content,
+      bump: 'minor',
+    }
     expanded = `prompt:${item.id}`
   }
 
   // A clone takes the model its source runs on as a value, so later changes to the source do not follow.
   function openClone(item: PromptItem, chain: Chain) {
     draftError = ''
-    draft = { id: 0, title: `${item.title} 복사본`, request_type: item.request_type, content: item.content, model: item.model || chain.model }
+    draft = {
+      id: 0,
+      title: `${item.title} 복사본`,
+      description: item.description,
+      request_type: item.request_type,
+      content: item.content,
+      model: item.model || chain.model,
+      version: 'v1.0',
+      original: item.content,
+      bump: 'minor',
+    }
   }
 
   // A template cloned from a built-in chain holds the step's unconditional messages (the ones a template takes the
@@ -197,7 +231,17 @@
       .filter((m) => !m.if && !m.each)
       .map((m) => m.content)
       .join('\n\n')
-    draft = { id: 0, title: `${chain.name} 복사본`, request_type: requestType, content, model: chain.model }
+    draft = {
+      id: 0,
+      title: `${chain.name} 복사본`,
+      description: chain.metadata.description,
+      request_type: requestType,
+      content,
+      model: chain.model,
+      version: 'v1.0',
+      original: content,
+      bump: 'minor',
+    }
   }
 
   function closeDraft() {
@@ -211,7 +255,14 @@
   async function saveDraft() {
     if (!draft || !draft.title.trim()) return
     savingDraft = true
-    const body: Record<string, unknown> = { id: draft.id, title: draft.title.trim(), request_type: draft.request_type, content: draft.content }
+    const body: Record<string, unknown> = {
+      id: draft.id,
+      title: draft.title.trim(),
+      description: draft.description,
+      request_type: draft.request_type,
+      content: draft.content,
+      bump: draft.bump,
+    }
     if (draft.id === 0) body.model = draft.model
     const [, err] = await httpy.post('/api/ai-prompts', body)
     savingDraft = false
@@ -269,11 +320,27 @@
           </select>
         </label>
       {/if}
+      {#if d.id > 0 && d.content !== d.original}
+        <label class="flex items-center gap-2">
+          <span class="font-medium">버전</span>
+          <select class="h-8 rounded border bg-background px-2.5" bind:value={d.bump}>
+            <option value="minor">마이너 {d.version} → {nextVersion(d.version, false)}</option>
+            <option value="major">메이저 {d.version} → {nextVersion(d.version, true)}</option>
+          </select>
+        </label>
+      {/if}
       <CButton variant="default" size="small" disabled={!d.title.trim() || savingDraft} onclick={() => void saveDraft()}>
         {savingDraft ? '저장 중...' : '저장'}
       </CButton>
       <CButton variant="outline" size="small" disabled={savingDraft} onclick={closeDraft}>취소</CButton>
     </div>
+    <label class="flex items-center gap-2">
+      <span class="font-medium">설명</span>
+      <input class="h-8 w-full rounded border bg-background px-2.5" bind:value={d.description} />
+    </label>
+    {#if d.id > 0 && d.content !== d.original && d.bump === 'major'}
+      <div class="text-muted-foreground">메이저 범프: 이 틀로 돈 이전 결과와 다른 것으로 구분합니다(AI 편집은 다시 돌리는 대상이 없습니다).</div>
+    {/if}
     {#if draftError}
       <div class="text-destructive">{draftError}</div>
     {/if}
@@ -416,7 +483,7 @@
                 >
                   <td class="p-3 whitespace-nowrap text-muted-foreground">{item.user_name}</td>
                   <td class="p-3 whitespace-nowrap font-medium">{item.title}</td>
-                  <td class="p-3 text-muted-foreground">{chain.name}의 프롬프트 틀</td>
+                  <td class="p-3 text-muted-foreground">{item.description || `${chain.name}의 프롬프트 틀`}</td>
                   <td class="p-3 text-xs">{formatModelLabel(item.model || chain.model)}</td>
                   <td class="p-3 text-center text-muted-foreground tabular-nums">{item.use_count || '-'}</td>
                   <td class="p-3 whitespace-nowrap text-xs text-muted-foreground">{item.used_at ? getAge(item.used_at, now) : '-'}</td>
@@ -463,6 +530,7 @@
                               </CButton>
                             {/if}
                           </div>
+                          <div class="text-xs text-muted-foreground">버전: <span class="font-mono">{item.version}</span> · 원본: <span class="font-mono">{chain.name}</span></div>
                           {@render templateNote(chain)}
                           {#each chain.spec.steps as st, n (st.name)}
                             {@render stepView(st, n, templateMessages(item.content, st))}

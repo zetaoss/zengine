@@ -10,6 +10,7 @@ import (
 	"github.com/zetaoss/zengine/goapp/app"
 	"github.com/zetaoss/zengine/goapp/app/config"
 	"github.com/zetaoss/zengine/goapp/models"
+	"github.com/zetaoss/zengine/goapp/prompts"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
 	"gorm.io/gorm"
 )
@@ -67,10 +68,13 @@ func Store(c *serverctx.Context) {
 	var body struct {
 		ID          int    `json:"id"`
 		Title       string `json:"title"`
+		Description string `json:"description"`
 		RequestType string `json:"request_type"`
 		Content     string `json:"content"`
 		// Model is left as it is when omitted; "" runs the template on its chain's model.
 		Model *string `json:"model"`
+		// Bump is how an edit that changes the content moves the version: "minor" (the default) or "major".
+		Bump string `json:"bump"`
 	}
 	if !c.Decode(&body) {
 		return
@@ -104,11 +108,12 @@ func Store(c *serverctx.Context) {
 	row := models.AIEditPrompt{
 		ID:          body.ID,
 		Title:       body.Title,
+		Description: strings.TrimSpace(body.Description),
 		RequestType: body.RequestType,
 		Content:     body.Content,
 		UpdatedAt:   now,
 	}
-	columns := []string{"title", "request_type", "content", "updated_at"}
+	columns := []string{"title", "description", "request_type", "content", "version", "updated_at"}
 	if body.Model != nil {
 		row.Model = *body.Model
 		columns = append(columns, "model")
@@ -123,6 +128,10 @@ func Store(c *serverctx.Context) {
 		if existing.UserID != user.ID {
 			c.JSONError(http.StatusForbidden, "본인만 편집할 수 있습니다.")
 			return
+		}
+		row.Version = existing.Version
+		if row.Content != existing.Content {
+			row.Version = prompts.NextVersion(existing.Version, body.Bump == "major")
 		}
 
 		var count int64
@@ -140,6 +149,7 @@ func Store(c *serverctx.Context) {
 		row.UserID = user.ID
 		row.UserName = user.Name
 		row.CreatedAt = now
+		row.Version = "v1.0"
 
 		var count int64
 		c.DB.Model(&models.AIEditPrompt{}).Where("title = ?", row.Title).Count(&count)

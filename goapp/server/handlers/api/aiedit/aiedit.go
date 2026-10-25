@@ -136,36 +136,38 @@ func Store(c *serverctx.Context) {
 		inputsJSON, _ = json.Marshal(r.Vars)
 	}
 	insert := struct {
-		ID           int                `gorm:"column:id"`
-		UserID       int                `gorm:"column:user_id"`
-		UserName     string             `gorm:"column:user_name"`
-		PageID       int                `gorm:"column:page_id"`
-		PageTitle    string             `gorm:"column:page_title"`
-		RequestType  string             `gorm:"column:request_type"`
-		PromptID     int                `gorm:"column:prompt_id"`
-		ChainVersion string             `gorm:"column:chain_version"`
-		Inputs       string             `gorm:"column:inputs"`
-		LLMMessages  string             `gorm:"column:llm_messages"`
-		LLMOutput    string             `gorm:"column:llm_output"`
-		LLMInput     string             `gorm:"column:llm_input"`
-		Phase        models.AIEditPhase `gorm:"column:phase"`
-		CreatedAt    time.Time          `gorm:"column:created_at"`
-		UpdatedAt    time.Time          `gorm:"column:updated_at"`
+		ID            int                `gorm:"column:id"`
+		UserID        int                `gorm:"column:user_id"`
+		UserName      string             `gorm:"column:user_name"`
+		PageID        int                `gorm:"column:page_id"`
+		PageTitle     string             `gorm:"column:page_title"`
+		RequestType   string             `gorm:"column:request_type"`
+		PromptID      int                `gorm:"column:prompt_id"`
+		PromptVersion string             `gorm:"column:prompt_version"`
+		ChainVersion  string             `gorm:"column:chain_version"`
+		Inputs        string             `gorm:"column:inputs"`
+		LLMMessages   string             `gorm:"column:llm_messages"`
+		LLMOutput     string             `gorm:"column:llm_output"`
+		LLMInput      string             `gorm:"column:llm_input"`
+		Phase         models.AIEditPhase `gorm:"column:phase"`
+		CreatedAt     time.Time          `gorm:"column:created_at"`
+		UpdatedAt     time.Time          `gorm:"column:updated_at"`
 	}{
-		UserID:       user.ID,
-		UserName:     user.Name,
-		PageID:       body.PageID,
-		PageTitle:    req.Title,
-		RequestType:  req.RequestType,
-		PromptID:     promptID(prompt),
-		ChainVersion: r.Chain.Metadata.Version,
-		Inputs:       string(inputsJSON),
-		LLMMessages:  string(messagesJSON),
-		LLMOutput:    "",
-		LLMInput:     aiedit.MessagesText(r.Messages),
-		Phase:        models.AIEditPhasePending,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
+		UserID:        user.ID,
+		UserName:      user.Name,
+		PageID:        body.PageID,
+		PageTitle:     req.Title,
+		RequestType:   req.RequestType,
+		PromptID:      promptID(prompt),
+		PromptVersion: promptVersion(prompt),
+		ChainVersion:  r.Chain.Metadata.Version,
+		Inputs:        string(inputsJSON),
+		LLMMessages:   string(messagesJSON),
+		LLMOutput:     "",
+		LLMInput:      aiedit.MessagesText(r.Messages),
+		Phase:         models.AIEditPhasePending,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
 	}
 	if err := c.DB.Table("aiedit_tasks").Create(&insert).Error; err != nil {
 		c.InternalError()
@@ -260,6 +262,13 @@ func promptID(p *models.AIEditPrompt) int {
 		return 0
 	}
 	return p.ID
+}
+
+func promptVersion(p *models.AIEditPrompt) string {
+	if p == nil {
+		return ""
+	}
+	return p.Version
 }
 
 func retryAt(task models.AIEdit) *string {

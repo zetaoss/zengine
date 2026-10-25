@@ -165,6 +165,18 @@ func Major(version string) string {
 	return major
 }
 
+// NextVersion bumps a v<major>.<minor> version: the minor, or with major the major (minor back to 0). A version
+// without a minor (v2) reads as v2.0.
+func NextVersion(version string, major bool) string {
+	m, n, _ := strings.Cut(strings.TrimPrefix(version, "v"), ".")
+	mi, _ := strconv.Atoi(m)
+	ni, _ := strconv.Atoi(n)
+	if major {
+		return fmt.Sprintf("v%d.0", mi+1)
+	}
+	return fmt.Sprintf("v%d.%d", mi, ni+1)
+}
+
 // SameMajor reports whether a result recorded with version a is current for version b.
 func SameMajor(a, b string) bool {
 	return Major(a) == Major(b)

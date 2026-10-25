@@ -151,3 +151,15 @@ func TestInputYAML(t *testing.T) {
 		t.Fatalf("inputs written as a name and as a mapping must both load: %+v %+v", DocEval.Spec.Inputs, DocCreate.Spec.UserInputs)
 	}
 }
+
+func TestNextVersion(t *testing.T) {
+	for _, c := range []struct {
+		v     string
+		major bool
+		want  string
+	}{{"v1.0", false, "v1.1"}, {"v1.9", false, "v1.10"}, {"v1.3", true, "v2.0"}, {"v2", false, "v2.1"}, {"", false, "v0.1"}} {
+		if got := NextVersion(c.v, c.major); got != c.want {
+			t.Errorf("NextVersion(%q, %v) = %q, want %q", c.v, c.major, got, c.want)
+		}
+	}
+}
