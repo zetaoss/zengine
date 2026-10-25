@@ -3,10 +3,11 @@
 <script lang="ts">
   import { onMount } from 'svelte'
 
-  import { mdiChevronDown, mdiDelete, mdiPlus } from '@mdi/js'
+  import { mdiChevronDown, mdiContentCopy, mdiDelete, mdiPencil, mdiPlus } from '@mdi/js'
 
   import { resolve } from '$app/paths'
   import AvatarUser from '$lib/components/avatar/AvatarUser.svelte'
+  import useAuthStore from '$lib/stores/auth'
   import CButton from '$shared/ui/CButton.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'
@@ -60,6 +61,7 @@
     title: string
     request_type: string
     use_count: number
+    content: string
     updated_at?: string
   }
 
@@ -73,6 +75,8 @@
   let savingChain = $state('')
   let expanded = $state<string | null>(null)
   let deletingPromptId = $state<number | null>(null)
+  let cloningPromptId = $state<number | null>(null)
+  const userInfo = useAuthStore().userInfo
 
   async function fetchChains() {
     const [data, err] = await httpy.get<Chain[]>('/api/ai/chains')
@@ -119,8 +123,26 @@
     return modelIds.includes(chain.model) ? modelIds : [chain.model, ...modelIds]
   }
 
-  function toggle(chain: Chain) {
-    expanded = expanded === chain.name ? null : chain.name
+  function toggle(key: string) {
+    expanded = expanded === key ? null : key
+  }
+
+  // The messages a template runs with until templates become chains of their own: the template in place of the
+  // step's unconditional messages, then the run form's (if, each). goapp/tasks/aiedit/request.go withTemplate.
+  function templateMessages(item: PromptItem, st: ChainStep): ChainMessage[] {
+    return [{ role: 'user', content: item.content }, ...st.messages.filter((m) => m.if || m.each)]
+  }
+
+  async function clonePrompt(item: PromptItem) {
+    cloningPromptId = item.id
+    const [, err] = await httpy.post('/api/ai-prompts', { title: `${item.title} 복사본`, request_type: item.request_type, content: item.content })
+    cloningPromptId = null
+    if (err) {
+      showToast(err.message || '복제 실패')
+      return
+    }
+    showToast('복제했습니다')
+    await fetchPrompts()
   }
 
   onMount(() => {
@@ -129,6 +151,37 @@
     fetchModelIds().then((ids) => (modelIds = ids))
   })
 </script>
+
+{#snippet expandButton(key: string, isExpanded: boolean)}
+  <button
+    type="button"
+    class="text-muted-foreground hover:text-foreground transition p-1 inline-flex items-center justify-center rounded hover:bg-muted"
+    aria-label={isExpanded ? '접기' : '펼치기'}
+    onclick={(e) => {
+      e.stopPropagation()
+      toggle(key)
+    }}
+  >
+    <ZIcon path={mdiChevronDown} size={18} class={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+  </button>
+{/snippet}
+
+{#snippet stepView(st: ChainStep, n: number, messages: ChainMessage[])}
+  <div class="space-y-1.5 text-xs min-w-0">
+    <div>
+      <span class="text-muted-foreground">{n + 1}.</span>
+      <span class="font-mono font-medium">{st.name}</span>
+      <span class="ml-1 font-mono text-muted-foreground">{st.inputs.join(', ')} → {st.format ?? 'text'}{st.output ? ` → ${st.output}` : ''}</span>
+      <span class="ml-2 text-muted-foreground">{st.description}</span>
+    </div>
+    {#each messages as m, i (i)}
+      <div class="rounded border">
+        <div class="border-b bg-muted/50 px-3 py-1 font-mono text-muted-foreground">{messageHeader(m)}</div>
+        <pre class="max-h-80 overflow-auto whitespace-pre-wrap bg-muted/30 p-3 text-[11px]">{m.content}</pre>
+      </div>
+    {/each}
+  </div>
+{/snippet}
 
 <div class="container mx-auto p-4 md:p-6 max-w-6xl space-y-6">
   <h1 class="text-2xl font-bold tracking-tight border-b pb-4">체인</h1>
@@ -152,10 +205,11 @@
           {#each chains as chain (chain.name)}
             {@const isExpanded = expanded === chain.name}
             {@const promptType = promptTypeOf[chain.name]}
-            <tr class="hover:bg-muted/30 transition cursor-pointer" onclick={() => toggle(chain)}>
+            <tr class="hover:bg-muted/30 transition cursor-pointer" onclick={() => toggle(chain.name)}>
               <td class="p-3 whitespace-nowrap">
                 <span class="font-mono font-medium">{chain.name}</span>
                 <span class="ml-1 font-mono text-xs text-muted-foreground">{chain.metadata.version}</span>
+                <div class="text-xs text-muted-foreground">System</div>
               </td>
               <td class="p-3 text-muted-foreground">{chain.metadata.description}</td>
               <td class="p-3 text-center text-muted-foreground">{chain.spec.steps.length}</td>
@@ -173,17 +227,7 @@
                 </select>
               </td>
               <td class="p-3 text-center">
-                <button
-                  type="button"
-                  class="text-muted-foreground hover:text-foreground transition p-1 inline-flex items-center justify-center rounded hover:bg-muted"
-                  aria-label={isExpanded ? '접기' : '펼치기'}
-                  onclick={(e) => {
-                    e.stopPropagation()
-                    toggle(chain)
-                  }}
-                >
-                  <ZIcon path={mdiChevronDown} size={18} class={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
-                </button>
+                {@render expandButton(chain.name, isExpanded)}
               </td>
             </tr>
             {#if isExpanded}
@@ -196,75 +240,77 @@
                       {/if}
                       <div>task 입력: <span class="font-mono">{chain.spec.inputs.map(inputLabel).join(', ')}</span></div>
                     </div>
-                    <div class="space-y-3 min-w-0">
-                      {#each chain.spec.steps as st, n (st.name)}
-                        <div class="space-y-1.5 text-xs">
-                          <div>
-                            <span class="text-muted-foreground">{n + 1}.</span>
-                            <span class="font-mono font-medium">{st.name}</span>
-                            <span class="ml-1 font-mono text-muted-foreground"
-                              >{st.inputs.join(', ')} → {st.format ?? 'text'}{st.output ? ` → ${st.output}` : ''}</span
-                            >
-                            <span class="ml-2 text-muted-foreground">{st.description}</span>
-                          </div>
-                          {#each st.messages as m, i (i)}
-                            <div class="rounded border">
-                              <div class="border-b bg-muted/50 px-3 py-1 font-mono text-muted-foreground">{messageHeader(m)}</div>
-                              <pre class="max-h-80 overflow-auto whitespace-pre-wrap bg-muted/30 p-3 text-[11px]">{m.content}</pre>
-                            </div>
-                          {/each}
-                        </div>
-                      {/each}
-                    </div>
-
+                    {#each chain.spec.steps as st, n (st.name)}
+                      {@render stepView(st, n, st.messages)}
+                    {/each}
                     {#if promptType}
-                      {@const items = prompts.filter((p) => p.request_type === promptType)}
-                      <div class="space-y-2 min-w-0 text-xs">
-                        <p class="text-muted-foreground">
-                          프롬프트 틀을 고르면 그 틀이 위 메시지 중 조건 없는 것(system과 제목·기존 문서)을 대신하고, 실행 입력 메시지(if·each)는 그대로 붙습니다. 틀의 변수: {"{title}"}, {"{wikitext}"}(편집).
-                        </p>
-                        <div class="flex items-center justify-between">
-                          <span class="font-medium">프롬프트 틀 <span class="text-muted-foreground">{items.length}</span></span>
-                          <CButton variant="outline" size="small" href={resolve('/tool/ai/prompts/new')}>
-                            <ZIcon path={mdiPlus} class="mr-1" />
-                            새 프롬프트
-                          </CButton>
-                        </div>
-                        {#if items.length === 0}
-                          <div class="text-muted-foreground">등록된 프롬프트가 없습니다.</div>
-                        {:else}
-                          <table class="w-full text-left">
-                            <tbody class="divide-y">
-                              {#each items as item (item.id)}
-                                <tr>
-                                  <td class="py-1.5">
-                                    <a
-                                      class="font-medium hover:underline"
-                                      href={resolve(`/tool/ai/prompts/${item.id}` as '/tool/ai/prompts/[id]')}>{item.title}</a
-                                    >
-                                  </td>
-                                  <td class="py-1.5 text-right text-muted-foreground w-12" title="사용 횟수">{item.use_count || '-'}</td>
-                                  <td class="py-1.5 pl-3 w-32"><AvatarUser user={{ id: item.user_id, name: item.user_name }} /></td>
-                                  <td class="py-1.5 w-10 text-right">
-                                    <CButton
-                                      variant="ghost"
-                                      size="small"
-                                      disabled={deletingPromptId === item.id}
-                                      onclick={() => void delPrompt(item)}
-                                    >
-                                      <ZIcon path={mdiDelete} />
-                                    </CButton>
-                                  </td>
-                                </tr>
-                              {/each}
-                            </tbody>
-                          </table>
-                        {/if}
+                      <div class="flex justify-end">
+                        <CButton variant="outline" size="small" href={resolve('/tool/ai/prompts/new')}>
+                          <ZIcon path={mdiPlus} class="mr-1" />
+                          새 프롬프트 틀
+                        </CButton>
                       </div>
                     {/if}
                   </div>
                 </td>
               </tr>
+            {/if}
+            {#if promptType}
+              {#each prompts.filter((p) => p.request_type === promptType) as item (item.id)}
+                {@const key = `prompt:${item.id}`}
+                {@const itemExpanded = expanded === key}
+                <tr class="hover:bg-muted/30 transition cursor-pointer" onclick={() => toggle(key)}>
+                  <td class="p-3 pl-6 whitespace-nowrap">
+                    <span class="text-muted-foreground">↳</span>
+                    <a
+                      class="font-medium hover:underline"
+                      href={resolve(`/tool/ai/prompts/${item.id}` as '/tool/ai/prompts/[id]')}
+                      onclick={(e) => e.stopPropagation()}>{item.title}</a
+                    >
+                    <div class="pl-4 text-xs"><AvatarUser user={{ id: item.user_id, name: item.user_name }} /></div>
+                  </td>
+                  <td class="p-3 text-muted-foreground">
+                    {chain.name}의 프롬프트 틀 · 사용 {item.use_count || 0}회
+                  </td>
+                  <td class="p-3 text-center text-muted-foreground">{chain.spec.steps.length}</td>
+                  <td class="p-3 text-xs text-muted-foreground" title="커스텀별 모델은 아직 없어 원본 체인의 모델로 돕니다">
+                    {formatModelLabel(chain.model)} ({chain.name})
+                  </td>
+                  <td class="p-3 text-center">
+                    {@render expandButton(key, itemExpanded)}
+                  </td>
+                </tr>
+                {#if itemExpanded}
+                  <tr class="bg-muted/10">
+                    <td colspan="5" class="p-4">
+                      <div class="space-y-4">
+                        <p class="text-xs text-muted-foreground">
+                          틀이 {chain.name}의 조건 없는 메시지(system과 제목·기존 문서)를 대신하고, 실행 입력 메시지(if·each)는 그대로 붙습니다. 틀의
+                          변수: {'{title}'}, {'{wikitext}'}(편집).
+                        </p>
+                        {#each chain.spec.steps as st, n (st.name)}
+                          {@render stepView(st, n, templateMessages(item, st))}
+                        {/each}
+                        <div class="flex justify-end gap-2">
+                          {#if item.user_id === $userInfo?.id}
+                            <CButton variant="outline" size="small" href={resolve(`/tool/ai/prompts/${item.id}` as '/tool/ai/prompts/[id]')}>
+                              <ZIcon path={mdiPencil} class="mr-1" />
+                              편집
+                            </CButton>
+                          {/if}
+                          <CButton variant="outline" size="small" disabled={cloningPromptId === item.id} onclick={() => void clonePrompt(item)}>
+                            <ZIcon path={mdiContentCopy} class="mr-1" />
+                            복제
+                          </CButton>
+                          <CButton variant="ghost" size="small" disabled={deletingPromptId === item.id} onclick={() => void delPrompt(item)}>
+                            <ZIcon path={mdiDelete} />
+                          </CButton>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                {/if}
+              {/each}
             {/if}
           {/each}
         </tbody>
