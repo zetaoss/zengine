@@ -1,6 +1,7 @@
 package aiprompts
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -12,8 +13,19 @@ import (
 	"github.com/zetaoss/zengine/goapp/models"
 	"github.com/zetaoss/zengine/goapp/prompts"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
+	"github.com/zetaoss/zengine/goapp/tasks/aiedit"
 	"gorm.io/gorm"
 )
+
+// promptView is a template with the messages it runs with (aiedit.TemplateMessages).
+type promptView struct {
+	models.AIEditPrompt
+	Messages []prompts.Message `json:"messages"`
+}
+
+func newPromptView(p models.AIEditPrompt) promptView {
+	return promptView{AIEditPrompt: p, Messages: aiedit.TemplateMessages(p)}
+}
 
 func Index(c *serverctx.Context) {
 	var rows []models.AIEditPrompt
@@ -22,7 +34,11 @@ func Index(c *serverctx.Context) {
 		c.InternalError()
 		return
 	}
-	c.JSON(rows)
+	views := make([]promptView, len(rows))
+	for i, r := range rows {
+		views[i] = newPromptView(r)
+	}
+	c.JSON(views)
 }
 
 func Show(c *serverctx.Context) {
@@ -42,7 +58,7 @@ func Show(c *serverctx.Context) {
 		return
 	}
 
-	c.JSON(row)
+	c.JSON(newPromptView(row))
 }
 
 func Exists(c *serverctx.Context) {
@@ -73,7 +89,10 @@ func Store(c *serverctx.Context) {
 		Content     string `json:"content"`
 		// Model is left as it is when omitted; "" runs the template on its chain's model.
 		Model *string `json:"model"`
-		// Bump is how an edit that changes the content moves the version: "minor" (the default) or "major".
+		// Messages, when given, are the template's own messages in place of the chain step's; they are checked
+		// against the chain (prompts.Chain.ValidateMessages) and content becomes their text.
+		Messages *[]prompts.Message `json:"messages"`
+		// Bump is how an edit that changes the messages moves the version: "minor" (the default) or "major".
 		Bump string `json:"bump"`
 	}
 	if !c.Decode(&body) {
@@ -101,6 +120,17 @@ func Store(c *serverctx.Context) {
 		return
 	}
 	body.RequestType = requestType
+	var messagesJSON string
+	if body.Messages != nil {
+		messages := *body.Messages
+		if err := aiedit.ChainOf(requestType).ValidateMessages(messages); err != nil {
+			c.JSONError(http.StatusUnprocessableEntity, "메시지: "+err.Error())
+			return
+		}
+		b, _ := json.Marshal(messages)
+		messagesJSON = string(b)
+		body.Content = aiedit.MessagesText(messages)
+	}
 
 	user, _ := c.User()
 
@@ -114,6 +144,10 @@ func Store(c *serverctx.Context) {
 		UpdatedAt:   now,
 	}
 	columns := []string{"title", "description", "request_type", "content", "version", "updated_at"}
+	if body.Messages != nil {
+		row.Messages = messagesJSON
+		columns = append(columns, "messages")
+	}
 	if body.Model != nil {
 		row.Model = *body.Model
 		columns = append(columns, "model")
@@ -130,7 +164,12 @@ func Store(c *serverctx.Context) {
 			return
 		}
 		row.Version = existing.Version
-		if row.Content != existing.Content {
+		changed := row.Content != existing.Content
+		if body.Messages != nil {
+			before, _ := json.Marshal(aiedit.TemplateMessages(existing))
+			changed = messagesJSON != string(before)
+		}
+		if changed {
 			row.Version = prompts.NextVersion(existing.Version, body.Bump == "major")
 		}
 
@@ -163,7 +202,7 @@ func Store(c *serverctx.Context) {
 			return
 		}
 	}
-	c.JSON(row)
+	c.JSON(newPromptView(row))
 }
 
 func Destroy(c *serverctx.Context) {

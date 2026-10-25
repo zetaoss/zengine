@@ -10,6 +10,7 @@ import (
 
 	"github.com/zetaoss/zengine/goapp/app/config"
 	"github.com/zetaoss/zengine/goapp/models"
+	"github.com/zetaoss/zengine/goapp/prompts"
 )
 
 // fakeWiki answers the MediaWiki API calls Render makes: the saved page, its backlinks and their wikitext.
@@ -84,6 +85,36 @@ func TestNeedsHint(t *testing.T) {
 	for title, want := range map[string]bool{"사과": true, "Go": true, "배": true, "사 과": true, "자바 (섬)": false, "사과나무": false, "C++": false} {
 		if got := NeedsHint(title); got != want {
 			t.Errorf("NeedsHint(%q) = %v, want %v", title, got, want)
+		}
+	}
+}
+
+func TestRenderOwnMessages(t *testing.T) {
+	cfg := fakeWiki(t)
+	own := `[{"role":"system","content":"규칙"},{"role":"user","content":"{title}"},{"role":"user","if":"request","content":"요청: {request}"},{"role":"user","each":"materials","content":"{index}) {materials}"}]`
+	prompt := &models.AIEditPrompt{ID: 4, RequestType: models.AIEditRequestCreate, Content: "unused", Messages: own}
+	r, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestCreate, Title: "자바 (섬)", Prompt: prompt, UserInputs: map[string]any{"request": "짧게", "materials": []any{"a", "b"}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := contents(r); got != "규칙\n\n자바 (섬)\n\n요청: 짧게\n\n1) a\n\n2) b" {
+		t.Fatalf("a template's own messages replace the step's: %q", got)
+	}
+}
+
+func TestValidateTemplateMessages(t *testing.T) {
+	chain := ChainOf(models.AIEditRequestCreate)
+	if err := chain.ValidateMessages([]prompts.Message{{Role: "user", Content: "{title}만 쓴다"}}); err != nil {
+		t.Errorf("a template need not use every input: %v", err)
+	}
+	for name, msgs := range map[string][]prompts.Message{
+		"unknown placeholder": {{Role: "user", Content: "{other}"}},
+		"each on a string":    {{Role: "user", Each: "request", Content: "{request}"}},
+		"texts outside each":  {{Role: "user", Content: "{materials}"}},
+		"no messages":         {},
+	} {
+		if err := chain.ValidateMessages(msgs); err == nil {
+			t.Errorf("%s: expected an error", name)
 		}
 	}
 }

@@ -159,6 +159,7 @@
         title: newTitle,
         request_type: prompt.requestType,
         content: prompt.content,
+        messages: prompt.messages,
         model: prompt.model,
       })
       if (err) {

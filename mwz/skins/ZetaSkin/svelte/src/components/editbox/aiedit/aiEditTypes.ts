@@ -8,6 +8,7 @@ export interface AIEditPromptForRunner {
   title: string
   requestType: AIEditRequestType
   content: string
+  messages?: AIEditRenderedMessage[]
   model: string
 }
 

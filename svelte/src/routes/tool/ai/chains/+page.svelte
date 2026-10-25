@@ -3,7 +3,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
 
-  import { mdiChevronDown, mdiContentCopy, mdiDelete, mdiPencil } from '@mdi/js'
+  import { mdiArrowDown, mdiArrowUp, mdiChevronDown, mdiClose, mdiContentCopy, mdiDelete, mdiPencil, mdiPlus } from '@mdi/js'
 
   import useAuthStore from '$lib/stores/auth'
   import CButton from '$shared/ui/CButton.svelte'
@@ -65,6 +65,7 @@
     request_type: string
     use_count: number
     content: string
+    messages: ChainMessage[]
     description: string
     version: string
     model: string
@@ -144,12 +145,6 @@
     expanded = expanded === key ? null : key
   }
 
-  // The messages a template runs with until templates become chains of their own: the template in place of the
-  // step's unconditional messages, then the run form's (if, each). goapp/tasks/aiedit/request.go withTemplate.
-  function templateMessages(content: string, st: ChainStep): ChainMessage[] {
-    return [{ role: 'user', content }, ...st.messages.filter((m) => m.if || m.each)]
-  }
-
   async function setPromptModel(item: PromptItem, model: string) {
     savingPromptId = item.id
     const [, err] = await httpy.post('/api/ai-prompts', {
@@ -174,10 +169,10 @@
     title: string
     description: string
     request_type: string
-    content: string
+    messages: ChainMessage[]
     model: string
     version: string
-    // The content when editing began; changing it bumps the version on save.
+    // The messages when editing began (JSON); changing them bumps the version on save.
     original: string
     bump: 'minor' | 'major'
   }
@@ -199,10 +194,10 @@
       title: item.title,
       description: item.description,
       request_type: item.request_type,
-      content: item.content,
+      messages: copyMessages(item.messages),
       model: item.model,
       version: item.version,
-      original: item.content,
+      original: JSON.stringify(item.messages),
       bump: 'minor',
     }
     expanded = `prompt:${item.id}`
@@ -216,31 +211,28 @@
       title: `${item.title} (복제본)`,
       description: item.description,
       request_type: item.request_type,
-      content: item.content,
+      messages: copyMessages(item.messages),
       model: item.model || chain.model,
       version: 'v1.0',
-      original: item.content,
+      original: JSON.stringify(item.messages),
       bump: 'minor',
     }
   }
 
-  // A template cloned from a built-in chain holds the step's unconditional messages (the ones a template takes the
-  // place of), so it starts out asking what the chain asks; its model is the chain's, as a value.
+  // A template cloned from a built-in chain starts with the step's messages as they are; its model is the chain's,
+  // as a value.
   function openCloneChain(chain: Chain, requestType: string) {
     draftError = ''
-    const content = chain.spec.steps[0].messages
-      .filter((m) => !m.if && !m.each)
-      .map((m) => m.content)
-      .join('\n\n')
+    const messages = copyMessages(chain.spec.steps[0].messages)
     draft = {
       id: 0,
       title: `${chain.name} (복제본)`,
       description: chain.metadata.description,
       request_type: requestType,
-      content,
+      messages,
       model: chain.model,
       version: 'v1.0',
-      original: content,
+      original: JSON.stringify(messages),
       bump: 'minor',
     }
   }
@@ -249,8 +241,40 @@
     if (!savingDraft) draft = null
   }
 
-  function setDraftContent(value: string) {
-    if (draft) draft.content = value
+  function copyMessages(messages: ChainMessage[]): ChainMessage[] {
+    return messages.map((m) => ({ ...m }))
+  }
+
+  function draftChanged(d: TemplateDraft) {
+    return JSON.stringify(d.messages) !== d.original
+  }
+
+  // The conditions a message of the step can take: if a variable is given, or each item of a texts variable.
+  function conditionOptions(chain: Chain, st: ChainStep): Array<{ value: string; label: string }> {
+    const types = new Map([...(chain.spec.userInputs ?? []), ...chain.spec.inputs].map((i) => [i.name, i.type ?? 'string']))
+    return [
+      { value: '', label: '항상' },
+      ...st.inputs.map((name) => ({ value: `if:${name}`, label: `if ${name}` })),
+      ...st.inputs.filter((name) => types.get(name) === 'texts').map((name) => ({ value: `each:${name}`, label: `each ${name}` })),
+    ]
+  }
+
+  function conditionOf(m: ChainMessage) {
+    return m.each ? `each:${m.each}` : m.if ? `if:${m.if}` : ''
+  }
+
+  function setCondition(m: ChainMessage, value: string) {
+    const [kind, name] = value.split(':')
+    m.if = kind === 'if' ? name : undefined
+    m.each = kind === 'each' ? name : undefined
+  }
+
+  function moveMessage(d: TemplateDraft, i: number, by: number) {
+    const j = i + by
+    if (j < 0 || j >= d.messages.length) return
+    const next = [...d.messages]
+    ;[next[i], next[j]] = [next[j], next[i]]
+    d.messages = next
   }
 
   async function saveDraft() {
@@ -261,7 +285,7 @@
       title: draft.title.trim(),
       description: draft.description,
       request_type: draft.request_type,
-      content: draft.content,
+      messages: draft.messages.map((m) => ({ role: m.role, content: m.content, ...(m.if ? { if: m.if } : {}), ...(m.each ? { each: m.each } : {}) })),
       bump: draft.bump,
     }
     if (draft.id === 0) body.model = draft.model
@@ -318,7 +342,7 @@
           </select>
         </label>
       {/if}
-      {#if d.id > 0 && d.content !== d.original}
+      {#if d.id > 0 && draftChanged(d)}
         <label class="flex items-center gap-2">
           <span class="font-medium">버전</span>
           <select class="h-8 rounded border bg-background px-2.5" bind:value={d.bump}>
@@ -338,31 +362,48 @@
       <span class="font-medium">설명</span>
       <input class="h-8 w-full rounded border bg-background px-2.5" bind:value={d.description} />
     </label>
-    {#if d.id > 0 && d.content !== d.original && d.bump === 'major'}
+    {#if d.id > 0 && draftChanged(d) && d.bump === 'major'}
       <div class="text-muted-foreground">메이저 범프: 이 틀로 돈 이전 결과와 다른 것으로 구분합니다(AI 편집은 다시 돌리는 대상이 없습니다).</div>
     {/if}
     {#if draftError}
       <div class="text-destructive">{draftError}</div>
     {/if}
     {@render templateNote(chain)}
-    {#each chain.spec.steps as st, n (st.name)}
-      <div class="space-y-1.5 min-w-0">
-        <div>
-          <span class="text-muted-foreground">{n + 1}.</span>
-          <span class="font-mono font-medium">{st.name}</span>
-        </div>
-        <div class="rounded border">
-          <div class="border-b bg-muted/50 px-3 py-1 font-mono text-muted-foreground">user · 프롬프트 틀</div>
-          <div class="font-mono text-[11px]">
-            <ZTextarea id={`ai-template-${d.id}`} modelValue={d.content} placeholder={undefined} maxHeight={480} onUpdateModelValue={setDraftContent} />
-          </div>
-        </div>
-        {#each templateMessages(d.content, st).slice(1) as m, i (i)}
+    {#each chain.spec.steps.slice(0, 1) as st (st.name)}
+      <div class="space-y-2 min-w-0">
+        {#each d.messages as m, i (i)}
           <div class="rounded border">
-            <div class="border-b bg-muted/50 px-3 py-1 font-mono text-muted-foreground">{messageHeader(m)}</div>
-            <pre class="max-h-80 overflow-auto whitespace-pre-wrap bg-muted/30 p-3 text-[11px]">{m.content}</pre>
+            <div class="flex flex-wrap items-center gap-2 border-b bg-muted/50 px-2 py-1">
+              <select class="h-7 rounded border bg-background px-1.5 font-mono" bind:value={m.role}>
+                <option value="system">system</option>
+                <option value="user">user</option>
+              </select>
+              <select class="h-7 rounded border bg-background px-1.5 font-mono" value={conditionOf(m)} onchange={(e) => setCondition(m, e.currentTarget.value)}>
+                {#each conditionOptions(chain, st) as o (o.value)}
+                  <option value={o.value}>{o.label}</option>
+                {/each}
+              </select>
+              <div class="ml-auto flex items-center">
+                <CButton variant="ghost" size="icon-sm" aria-label="위로" disabled={i === 0} onclick={() => moveMessage(d, i, -1)}>
+                  <ZIcon path={mdiArrowUp} />
+                </CButton>
+                <CButton variant="ghost" size="icon-sm" aria-label="아래로" disabled={i === d.messages.length - 1} onclick={() => moveMessage(d, i, 1)}>
+                  <ZIcon path={mdiArrowDown} />
+                </CButton>
+                <CButton variant="ghost" size="icon-sm" aria-label="삭제" disabled={d.messages.length === 1} onclick={() => (d.messages = d.messages.filter((_, j) => j !== i))}>
+                  <ZIcon path={mdiClose} />
+                </CButton>
+              </div>
+            </div>
+            <div class="font-mono text-[11px]">
+              <ZTextarea id={`ai-template-${d.id}-${i}`} modelValue={m.content} placeholder={undefined} maxHeight={480} onUpdateModelValue={(v: string) => (m.content = v)} />
+            </div>
           </div>
         {/each}
+        <CButton variant="outline" size="small" onclick={() => (d.messages = [...d.messages, { role: 'user', content: '' }])}>
+          <ZIcon path={mdiPlus} class="mr-1" />
+          메시지
+        </CButton>
       </div>
     {/each}
   </div>
@@ -523,7 +564,7 @@
                           </div>
                           <div class="text-xs text-muted-foreground">버전: <span class="font-mono">{item.version}</span> · 원본: <span class="font-mono">{chain.name}</span></div>
                           {#each chain.spec.steps as st, n (st.name)}
-                            {@render stepView(st, n, templateMessages(item.content, st))}
+                            {@render stepView(st, n, item.messages)}
                           {/each}
                         </div>
                       {/if}

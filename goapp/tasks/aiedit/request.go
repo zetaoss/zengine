@@ -2,6 +2,7 @@ package aiedit
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -97,23 +98,26 @@ func Render(ctx context.Context, cfg *config.Config, req Request) (Rendered, err
 	}
 	step := chain.Spec.Steps[0]
 	if req.Prompt != nil {
-		step = withTemplate(step, req.Prompt.Content)
+		step.Messages = TemplateMessages(*req.Prompt)
 	}
 	return Rendered{Chain: chain, Vars: vars, Messages: step.Render(vars)}, nil
 }
 
-// withTemplate puts an AI edit prompt template in place of the step's unconditional messages (its instructions
-// and the page) and keeps the messages that carry the run form's values (If, Each). This holds until the
-// templates become custom chains with messages of their own.
-func withTemplate(st prompts.Step, template string) prompts.Step {
-	messages := []prompts.Message{{Role: "user", Content: template}}
-	for _, m := range st.Messages {
+// TemplateMessages are the messages a template runs with: its own (aiedit_prompts.messages) or, for a template
+// saved before it had them, its content in place of the chain step's unconditional messages (the instructions
+// and the page) followed by the step's messages that carry the run form's values (If, Each).
+func TemplateMessages(p models.AIEditPrompt) []prompts.Message {
+	var own []prompts.Message
+	if strings.TrimSpace(p.Messages) != "" && json.Unmarshal([]byte(p.Messages), &own) == nil && len(own) > 0 {
+		return own
+	}
+	messages := []prompts.Message{{Role: "user", Content: p.Content}}
+	for _, m := range ChainOf(p.RequestType).Spec.Steps[0].Messages {
 		if m.If != "" || m.Each != "" {
 			messages = append(messages, m)
 		}
 	}
-	st.Messages = messages
-	return st
+	return messages
 }
 
 func declares(inputs []prompts.Input, name string) bool {

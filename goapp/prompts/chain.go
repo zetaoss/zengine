@@ -344,7 +344,7 @@ func (c Chain) Validate() error {
 	}
 	used := map[string]bool{}
 	for _, st := range c.Spec.Steps {
-		if err := st.validate(types, used); err != nil {
+		if err := st.validate(types, used, true); err != nil {
 			return fmt.Errorf("step %s: %w", st.Name, err)
 		}
 		if st.Output == "" {
@@ -363,7 +363,25 @@ func (c Chain) Validate() error {
 	return nil
 }
 
-func (st Step) validate(types map[string]InputType, used map[string]bool) error {
+// ValidateMessages checks messages written to replace those of the chain's first step (a custom template): the
+// same rules as Validate, except that they need not use every input of the step.
+func (c Chain) ValidateMessages(messages []Message) error {
+	types := c.variableTypes()
+	st := c.Spec.Steps[0]
+	st.Messages = messages
+	return st.validate(types, map[string]bool{}, false)
+}
+
+func (c Chain) variableTypes() map[string]InputType {
+	types := map[string]InputType{}
+	for _, in := range slices.Concat(c.Spec.UserInputs, c.Spec.Inputs) {
+		types[in.Name] = in.Type.orString()
+	}
+	return types
+}
+
+// validate checks a step; strict also requires every input of the step to be used by its messages.
+func (st Step) validate(types map[string]InputType, used map[string]bool, strict bool) error {
 	if st.Name == "" || len(st.Messages) == 0 {
 		return fmt.Errorf("name and messages are required")
 	}
@@ -404,7 +422,7 @@ func (st Step) validate(types map[string]InputType, used map[string]bool) error 
 		}
 	}
 	for _, in := range st.Inputs {
-		if !stepUsed[in] {
+		if strict && !stepUsed[in] {
 			return fmt.Errorf("input %q is not used by its messages", in)
 		}
 		used[in] = true

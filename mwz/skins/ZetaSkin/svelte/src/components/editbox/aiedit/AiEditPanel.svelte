@@ -23,6 +23,7 @@
     user_id: number
     title: string
     content: string
+    messages?: AIEditRenderedMessage[]
     model: string
     request_type: string
     use_count: number
@@ -94,6 +95,7 @@
           requestType: currentPromptItem.request_type,
           content: currentPromptItem.content,
           model: currentPromptItem.model ?? '',
+          messages: currentPromptItem.messages,
         }
       : null,
   )
