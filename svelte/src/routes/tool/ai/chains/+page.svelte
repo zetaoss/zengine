@@ -219,8 +219,8 @@
           <tr class="border-b bg-muted/50 text-muted-foreground text-xs font-medium">
             <th class="p-3">체인</th>
             <th class="p-3">설명</th>
-            <th class="p-3 text-center whitespace-nowrap">Use</th>
             <th class="p-3">모델</th>
+            <th class="p-3 text-center whitespace-nowrap">Use</th>
             <th class="p-3 w-14 text-center">상세</th>
           </tr>
         </thead>
@@ -238,8 +238,8 @@
                 <span class="ml-1 font-mono text-xs text-muted-foreground">{chain.metadata.version}</span>
               </td>
               <td class="p-3 text-muted-foreground">{chain.metadata.description}</td>
-              <td class="p-3 text-center text-muted-foreground tabular-nums" title="이 체인이 끝까지 돈 횟수(프롬프트 틀로 돈 것 포함)">{chain.uses || '-'}</td>
               <td class="p-3 text-xs">{formatModelLabel(chain.model)}</td>
+              <td class="p-3 text-center text-muted-foreground tabular-nums" title="이 체인이 끝까지 돈 횟수(프롬프트 틀로 돈 것 포함)">{chain.uses || '-'}</td>
               <td class="p-3 text-center">
                 {@render expandButton(chain.name, isExpanded)}
               </td>
@@ -298,8 +298,8 @@
                   <td class="p-3 text-muted-foreground">
                     {chain.name}의 프롬프트 틀
                   </td>
-                  <td class="p-3 text-center text-muted-foreground tabular-nums">{item.use_count || '-'}</td>
                   <td class="p-3 text-xs">{formatModelLabel(item.model || chain.model)}</td>
+                  <td class="p-3 text-center text-muted-foreground tabular-nums">{item.use_count || '-'}</td>
                   <td class="p-3 text-center">
                     {@render expandButton(key, itemExpanded)}
                   </td>
