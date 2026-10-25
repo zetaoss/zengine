@@ -41,7 +41,7 @@ func GetDefinition(ctx context.Context, db *gorm.DB, pageID uint) (*models.DocDe
 
 // definitionCurrent reports whether d was written for this revision and title by the current doc-define chain.
 func definitionCurrent(d *models.DocDefinition, page Page) bool {
-	return d != nil && d.Revid == page.Revid && d.PageTitle == page.Title && d.ChainVersion == prompts.DocDefine.Metadata["version"]
+	return d != nil && d.Revid == page.Revid && d.PageTitle == page.Title && d.ChainVersion == prompts.DocDefine.Metadata.Version
 }
 
 // EnsureDefinition returns the page's definition, writing a new one with model (Define) when there is none or
@@ -85,7 +85,7 @@ func (e *Evaluator) Define(ctx context.Context, db *gorm.DB, page Page, wikitext
 		Revid:        page.Revid,
 		Definition:   definition,
 		Model:        res.Model,
-		ChainVersion: prompts.DocDefine.Metadata["version"],
+		ChainVersion: prompts.DocDefine.Metadata.Version,
 		UpdatedAt:    time.Now(),
 	}
 	err = db.WithContext(ctx).Clauses(clause.OnConflict{

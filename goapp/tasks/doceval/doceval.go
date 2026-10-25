@@ -141,7 +141,7 @@ func (t *LoopTask) Execute(ctx context.Context, taskCtx taskctx.Context, p LoopP
 
 	var cachedRubrics string
 	_ = db.WithContext(ctx).Table("doc_evaluations").
-		Where("page_id = ? AND page_title = ? AND chain_version = ? AND definition = ?", candidate.PageID, candidate.PageTitle, prompts.DocEval.Metadata["version"], def.Definition).
+		Where("page_id = ? AND page_title = ? AND chain_version = ? AND definition = ?", candidate.PageID, candidate.PageTitle, prompts.DocEval.Metadata.Version, def.Definition).
 		Order("id DESC").Limit(1).Pluck("rubrics", &cachedRubrics).Error
 
 	evalRecord, err := evaluator.Evaluate(ctx, page, def.Definition, wikitext, modelToRun, cachedRubrics)

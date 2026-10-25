@@ -209,7 +209,7 @@ func TestRubricPromptCarriesDefinition(t *testing.T) {
 
 func TestDefinitionCurrent(t *testing.T) {
 	page := Page{ID: 1, Title: "자바", Revid: 10}
-	d := &models.DocDefinition{PageID: 1, PageTitle: "자바", Revid: 10, ChainVersion: prompts.DocDefine.Metadata["version"]}
+	d := &models.DocDefinition{PageID: 1, PageTitle: "자바", Revid: 10, ChainVersion: prompts.DocDefine.Metadata.Version}
 	if !definitionCurrent(d, page) {
 		t.Fatal("expected a definition of the same revision, title and chain version to be current")
 	}
@@ -226,7 +226,7 @@ func TestDefinitionCurrent(t *testing.T) {
 }
 
 func TestDefineVersionArg(t *testing.T) {
-	if arg := defineVersionArg(); arg.Name != "defineVersion" || arg.Value != prompts.DocDefine.Metadata["version"] {
+	if arg := defineVersionArg(); arg.Name != "defineVersion" || arg.Value != prompts.DocDefine.Metadata.Version {
 		t.Fatalf("unexpected arg %+v", arg)
 	}
 	if !strings.Contains(currentDefinitionSQL, "@defineVersion") {

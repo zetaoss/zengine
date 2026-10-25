@@ -11,31 +11,31 @@ var placeholderRe = regexp.MustCompile(`\{([a-z_]+)\}`)
 func TestBuiltinChains(t *testing.T) {
 	seen := map[string]bool{}
 	for _, c := range BuiltinChains() {
-		if c.Name == "" || len(c.Steps) == 0 || seen[c.Name] {
-			t.Fatalf("invalid or duplicate chain: %q", c.Name)
+		if c.Name == "" || c.Metadata.Version == "" || len(c.Spec.Steps) == 0 || seen[c.Name] {
+			t.Fatalf("invalid or duplicate chain (name, version and steps are required): %q", c.Name)
 		}
 		seen[c.Name] = true
-		available := slices.Clone(c.Inputs)
-		for _, st := range c.Steps {
-			if st.Name == "" || st.Output == "" || len(st.Prompt.Messages) == 0 {
+		available := slices.Clone(c.Spec.Inputs)
+		for _, st := range c.Spec.Steps {
+			if st.Name == "" || st.Output == "" || len(st.Messages) == 0 {
 				t.Fatalf("%s/%s: name, output and messages are required", c.Name, st.Name)
 			}
 			if st.Parser != ParserJSON && st.Parser != ParserText {
 				t.Errorf("%s/%s: unknown parser %q", c.Name, st.Name, st.Parser)
 			}
 			used := map[string]bool{}
-			for _, m := range st.Prompt.Messages {
+			for _, m := range st.Messages {
 				if m.Content == "" || (m.Role != "system" && m.Role != "user") {
 					t.Fatalf("%s/%s: invalid %q message", c.Name, st.Name, m.Role)
 				}
 				for _, sub := range placeholderRe.FindAllStringSubmatch(m.Content, -1) {
-					if !slices.Contains(st.Prompt.Inputs, sub[1]) {
+					if !slices.Contains(st.Inputs, sub[1]) {
 						t.Errorf("%s/%s: placeholder {%s} is not an input", c.Name, st.Name, sub[1])
 					}
 					used[sub[1]] = true
 				}
 			}
-			for _, in := range st.Prompt.Inputs {
+			for _, in := range st.Inputs {
 				if !slices.Contains(available, in) {
 					t.Errorf("%s/%s: input %q is neither a chain input nor an earlier output", c.Name, st.Name, in)
 				}

@@ -139,7 +139,7 @@ The `ai-edit` task runs the request's rendered prompt (`llm_input`) on the `doc-
 - Handler: `goapp/server/handlers/api/doceval/doceval.go`
 - Service: `goapp/services/doceval/doceval.go`
 - Model: `goapp/models/doc_evaluation.go`
-- Chain: `doc-eval` (`rubric` → `judge`) in `goapp/prompts/doceval.go`
+- Chain: `doc-eval` (`rubric` → `judge`) in `goapp/prompts/chains/doc-eval.yaml`
 - Guide: [doc-eval.md](doc-eval.md)
 
 ## Asynq task processing
