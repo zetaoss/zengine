@@ -396,7 +396,7 @@
 
 {#snippet runForm(inputs: ChainInput[])}
   <div class="space-y-2 rounded border bg-background p-3 text-xs text-foreground">
-    <div class="text-muted-foreground">실행 폼</div>
+    <div class="text-muted-foreground">사용자 입력</div>
     {#each inputs as input (input.name)}
       {@const label = input.label || input.name}
       <div class="space-y-1">
