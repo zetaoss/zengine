@@ -483,7 +483,7 @@
                 >
                   <td class="p-3 whitespace-nowrap text-muted-foreground">{item.user_name}</td>
                   <td class="p-3 whitespace-nowrap font-medium">{item.title}</td>
-                  <td class="p-3 text-muted-foreground">{item.description || `${chain.name}의 프롬프트 틀`}</td>
+                  <td class="p-3 text-muted-foreground">{item.description}</td>
                   <td class="p-3 text-xs">{formatModelLabel(item.model || chain.model)}</td>
                   <td class="p-3 text-center text-muted-foreground tabular-nums">{item.use_count || '-'}</td>
                   <td class="p-3 whitespace-nowrap text-xs text-muted-foreground">{item.used_at ? getAge(item.used_at, now) : '-'}</td>
