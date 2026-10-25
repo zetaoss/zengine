@@ -183,3 +183,17 @@ func TestRenderNoMessages(t *testing.T) {
 		t.Fatalf("a request that sends no message must be the requester's to fix, got %v", err)
 	}
 }
+
+func TestRenderUnsetInputIsEmpty(t *testing.T) {
+	cfg := fakeWiki(t)
+	prompt := &models.AIEditPrompt{ID: 7, RequestType: models.AIEditRequestCreate,
+		UserInputs: `[{"name":"tone"}]`,
+		Messages:   `[{"role":"user","content":"{title} / {tone} / {example}"}]`}
+	r, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestCreate, Title: "Apple", Prompt: prompt})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := contents(r); got != "Apple /  / {example}" {
+		t.Fatalf("a declared input left unset renders as nothing, an undeclared name stays: %q", got)
+	}
+}

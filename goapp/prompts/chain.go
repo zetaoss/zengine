@@ -50,11 +50,26 @@ type Input struct {
 	MaxChars    int       `json:"maxChars,omitempty" yaml:"maxChars,omitempty"`
 }
 
-// Fill returns vars with each derived input set from its source (From), cut to MaxChars characters.
+// Fill returns vars with every declared variable that has no value set empty (an empty string or list, false),
+// so its placeholders render as nothing, and each derived input set from its source (From), cut to MaxChars
+// characters. A {name} that is not a declared variable stays as written.
 func (c Chain) Fill(vars Vars) Vars {
 	out := Vars{}
 	for k, v := range vars {
 		out[k] = v
+	}
+	for _, in := range slices.Concat(c.Spec.UserInputs, c.Spec.Inputs) {
+		if _, ok := out[in.Name]; ok || in.From != "" {
+			continue
+		}
+		switch in.Type.orString() {
+		case TypeTextList:
+			out[in.Name] = []string{}
+		case TypeBool:
+			out[in.Name] = false
+		default:
+			out[in.Name] = ""
+		}
 	}
 	for _, in := range c.Spec.Inputs {
 		if in.From == "" {
