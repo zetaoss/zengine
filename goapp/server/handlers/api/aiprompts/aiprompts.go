@@ -154,9 +154,15 @@ func Store(c *serverctx.Context) {
 			draft.Messages = messagesJSON
 			body.Content = aiedit.MessagesText(*body.Messages)
 		}
+		// Messages given are checked as they are: the fallback of a template without messages (its content) must
+		// not stand in for an empty list that would be saved.
+		messages := aiedit.TemplateMessages(draft)
+		if body.Messages != nil {
+			messages = *body.Messages
+		}
 		chain, err := aiedit.ChainOf(requestType).WithUserInputs(aiedit.TemplateUserInputs(draft))
 		if err == nil {
-			err = chain.ValidateMessages(aiedit.TemplateMessages(draft))
+			err = chain.ValidateMessages(messages)
 		}
 		if err != nil {
 			c.JSONError(http.StatusUnprocessableEntity, err.Error())

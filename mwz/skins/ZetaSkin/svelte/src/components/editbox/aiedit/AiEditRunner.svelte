@@ -86,10 +86,19 @@
     values = { ...values, [name]: items }
   }
 
+  // A value fits an input of its type: a value kept from another template with the same name but another type is
+  // not sent.
+  function fits(input: AIEditUserInput, v: AIEditUserInputValue | undefined) {
+    if (input.type === 'bool') return typeof v === 'boolean'
+    if (input.type === 'texts') return Array.isArray(v)
+    return typeof v === 'string'
+  }
+
   function payload(): AIEditRequestPayload {
     const userValues: Record<string, AIEditUserInputValue> = {}
     for (const input of userInputs) {
-      if (values[input.name] !== undefined) userValues[input.name] = values[input.name]
+      const v = values[input.name]
+      if (v !== undefined && fits(input, v)) userValues[input.name] = v
     }
     return {
       pageId,

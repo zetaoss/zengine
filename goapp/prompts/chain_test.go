@@ -194,3 +194,14 @@ func TestWikiBraces(t *testing.T) {
 		t.Fatalf("wiki markup is not a placeholder: %v", err)
 	}
 }
+
+func TestMagicWords(t *testing.T) {
+	c := testChain(
+		Message{Role: "user", Content: "{title} 끝에 {{reflist}}, 연도는 {{CURRENTYEAR}}"},
+		Message{Role: "user", If: "hint", Content: "{hint}"},
+		Message{Role: "user", Each: "notes", Content: "{notes}"},
+	)
+	if err := c.Validate(); err != nil {
+		t.Fatalf("parameterless templates and magic words are wiki markup: %v", err)
+	}
+}
