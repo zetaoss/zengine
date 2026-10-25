@@ -3,7 +3,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
 
-  import { mdiChevronDown, mdiContentCopy, mdiDelete, mdiPencil, mdiPlus } from '@mdi/js'
+  import { mdiChevronDown, mdiContentCopy, mdiDelete, mdiPencil } from '@mdi/js'
 
   import { resolve } from '$app/paths'
   import useAuthStore from '$lib/stores/auth'
@@ -77,6 +77,7 @@
   let expanded = $state<string | null>(null)
   let deletingPromptId = $state<number | null>(null)
   let cloningPromptId = $state<number | null>(null)
+  let cloningChain = $state('')
   let savingPromptId = $state<number | null>(null)
   const userInfo = useAuthStore().userInfo
 
@@ -151,6 +152,29 @@
     }
     item.model = model
     showToast('저장했습니다')
+  }
+
+  // A template cloned from a built-in chain holds the step's unconditional messages (the ones a template takes the
+  // place of), so it starts out asking what the chain asks; its model is the chain's, as a value.
+  async function cloneChain(chain: Chain, requestType: string) {
+    cloningChain = chain.name
+    const content = chain.spec.steps[0].messages
+      .filter((m) => !m.if && !m.each)
+      .map((m) => m.content)
+      .join('\n\n')
+    const [, err] = await httpy.post('/api/ai-prompts', {
+      title: `${chain.name} 복사본`,
+      request_type: requestType,
+      content,
+      model: chain.model,
+    })
+    cloningChain = ''
+    if (err) {
+      showToast(err.message || '복제 실패')
+      return
+    }
+    showToast('복제했습니다')
+    await fetchPrompts()
   }
 
   // A clone takes the model its source runs on as a value, so later changes to the source do not follow.
@@ -248,19 +272,27 @@
               <tr class="bg-muted/10">
                 <td colspan="5" class="p-4">
                   <div class="space-y-4">
-                    <label class="flex items-center gap-2 text-xs">
-                      <span class="font-medium">모델</span>
-                      <select
-                        class="h-8 w-full max-w-72 rounded border bg-background px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-                        value={chain.model}
-                        disabled={savingChain === chain.name}
-                        onchange={(e) => setModel(chain, e.currentTarget.value)}
-                      >
-                        {#each modelOptions(chain) as id (id)}
-                          <option value={id}>{formatModelLabel(id)}</option>
-                        {/each}
-                      </select>
-                    </label>
+                    <div class="flex flex-wrap items-center gap-2 text-xs">
+                      <label class="flex min-w-0 flex-1 items-center gap-2">
+                        <span class="font-medium">모델</span>
+                        <select
+                          class="h-8 w-full max-w-72 rounded border bg-background px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                          value={chain.model}
+                          disabled={savingChain === chain.name}
+                          onchange={(e) => setModel(chain, e.currentTarget.value)}
+                        >
+                          {#each modelOptions(chain) as id (id)}
+                            <option value={id}>{formatModelLabel(id)}</option>
+                          {/each}
+                        </select>
+                      </label>
+                      {#if promptType}
+                        <CButton variant="outline" size="small" disabled={cloningChain === chain.name} onclick={() => void cloneChain(chain, promptType)}>
+                          <ZIcon path={mdiContentCopy} class="mr-1" />
+                          복제
+                        </CButton>
+                      {/if}
+                    </div>
                     <div class="space-y-1 text-xs text-muted-foreground">
                       {#if chain.spec.userInputs?.length}
                         <div>실행 입력: <span class="font-mono">{chain.spec.userInputs.map(inputLabel).join(', ')}</span></div>
@@ -270,14 +302,6 @@
                     {#each chain.spec.steps as st, n (st.name)}
                       {@render stepView(st, n, st.messages)}
                     {/each}
-                    {#if promptType}
-                      <div class="flex justify-end">
-                        <CButton variant="outline" size="small" href={resolve('/tool/ai/prompts/new')}>
-                          <ZIcon path={mdiPlus} class="mr-1" />
-                          새 프롬프트 틀
-                        </CButton>
-                      </div>
-                    {/if}
                   </div>
                 </td>
               </tr>
@@ -304,7 +328,8 @@
                   <tr class="bg-muted/10">
                     <td colspan="5" class="p-4">
                       <div class="space-y-4">
-                        <label class="flex items-center gap-2 text-xs">
+                        <div class="flex flex-wrap items-center gap-2 text-xs">
+                        <label class="flex min-w-0 flex-1 items-center gap-2">
                           <span class="font-medium">모델</span>
                           <select
                             class="h-8 w-full max-w-72 rounded border bg-background px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
@@ -318,14 +343,6 @@
                             {/each}
                           </select>
                         </label>
-                        <p class="text-xs text-muted-foreground">
-                          틀이 {chain.name}의 조건 없는 메시지(system과 제목·기존 문서)를 대신하고, 실행 입력 메시지(if·each)는 그대로 붙습니다. 틀의
-                          변수: {'{title}'}, {'{wikitext}'}(편집).
-                        </p>
-                        {#each chain.spec.steps as st, n (st.name)}
-                          {@render stepView(st, n, templateMessages(item, st))}
-                        {/each}
-                        <div class="flex justify-end gap-2">
                           {#if item.user_id === $userInfo?.id}
                             <CButton variant="outline" size="small" href={resolve(`/tool/ai/prompts/${item.id}` as '/tool/ai/prompts/[id]')}>
                               <ZIcon path={mdiPencil} class="mr-1" />
@@ -336,10 +353,20 @@
                             <ZIcon path={mdiContentCopy} class="mr-1" />
                             복제
                           </CButton>
-                          <CButton variant="ghost" size="small" disabled={deletingPromptId === item.id} onclick={() => void delPrompt(item)}>
-                            <ZIcon path={mdiDelete} />
-                          </CButton>
+                          {#if item.user_id === $userInfo?.id}
+                            <CButton variant="outline" size="small" disabled={deletingPromptId === item.id} onclick={() => void delPrompt(item)}>
+                              <ZIcon path={mdiDelete} class="mr-1" />
+                              삭제
+                            </CButton>
+                          {/if}
                         </div>
+                        <p class="text-xs text-muted-foreground">
+                          틀이 {chain.name}의 조건 없는 메시지(system과 제목·기존 문서)를 대신하고, 실행 입력 메시지(if·each)는 그대로 붙습니다. 틀의
+                          변수: {'{title}'}, {'{wikitext}'}(편집).
+                        </p>
+                        {#each chain.spec.steps as st, n (st.name)}
+                          {@render stepView(st, n, templateMessages(item, st))}
+                        {/each}
                       </div>
                     </td>
                   </tr>
