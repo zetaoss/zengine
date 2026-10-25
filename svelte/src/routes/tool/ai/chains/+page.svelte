@@ -313,6 +313,7 @@
       <table class="w-full text-left border-collapse text-sm">
         <thead>
           <tr class="border-b bg-muted/50 text-muted-foreground text-xs font-medium">
+            <th class="p-3">소유자</th>
             <th class="p-3">체인</th>
             <th class="p-3">설명</th>
             <th class="p-3">모델</th>
@@ -322,16 +323,14 @@
         </thead>
         <tbody class="divide-y">
           {#if loading}
-            <tr><td colspan="5" class="p-8 text-center text-muted-foreground">불러오는 중...</td></tr>
+            <tr><td colspan="6" class="p-8 text-center text-muted-foreground">불러오는 중...</td></tr>
           {/if}
           {#each chains as chain (chain.name)}
             {@const isExpanded = expanded === chain.name}
             {@const promptType = promptTypeOf[chain.name]}
             <tr class="hover:bg-muted/30 transition cursor-pointer" onclick={() => toggle(chain.name)}>
-              <td class="p-3 whitespace-nowrap">
-                <span class="text-muted-foreground">System |</span>
-                <span class="font-mono font-medium">{chain.name}</span>
-              </td>
+              <td class="p-3 whitespace-nowrap text-muted-foreground">System</td>
+              <td class="p-3 whitespace-nowrap font-mono font-medium">{chain.name}</td>
               <td class="p-3 text-muted-foreground">{chain.metadata.description}</td>
               <td class="p-3 text-xs">{formatModelLabel(chain.model)}</td>
               <td class="p-3 text-center text-muted-foreground tabular-nums" title="이 체인이 끝까지 돈 횟수(프롬프트 틀로 돈 것 포함)">{chain.uses || '-'}</td>
@@ -341,7 +340,7 @@
             </tr>
             {#if isExpanded}
               <tr class="bg-muted/10">
-                <td colspan="5" class="p-4">
+                <td colspan="6" class="p-4">
                   <div class="space-y-4">
                     <div class="flex flex-wrap items-center gap-2 text-xs">
                       <label class="flex min-w-0 flex-1 items-center gap-2">
@@ -381,7 +380,7 @@
             {#if promptType}
               {#if draft && draft.id === 0 && draft.request_type === promptType}
                 <tr class="bg-muted/10">
-                  <td colspan="5" class="p-4">
+                  <td colspan="6" class="p-4">
                     {@render templateEditor(chain, draft)}
                   </td>
                 </tr>
@@ -392,10 +391,8 @@
                 {@const editing = draft?.id === item.id}
                 {@const own = item.user_id === $userInfo?.id}
                 <tr class="hover:bg-muted/30 transition cursor-pointer" onclick={() => toggle(key)}>
-                  <td class="p-3 whitespace-nowrap">
-                    <span class="text-muted-foreground">{item.user_name} |</span>
-                    <span class="font-medium">{item.title}</span>
-                  </td>
+                  <td class="p-3 whitespace-nowrap text-muted-foreground">{item.user_name}</td>
+                  <td class="p-3 whitespace-nowrap font-medium">{item.title}</td>
                   <td class="p-3 text-muted-foreground">{chain.name}의 프롬프트 틀</td>
                   <td class="p-3 text-xs">{formatModelLabel(item.model || chain.model)}</td>
                   <td class="p-3 text-center text-muted-foreground tabular-nums">{item.use_count || '-'}</td>
@@ -405,7 +402,7 @@
                 </tr>
                 {#if itemExpanded}
                   <tr class="bg-muted/10">
-                    <td colspan="5" class="p-4">
+                    <td colspan="6" class="p-4">
                       {#if editing && draft}
                         {@render templateEditor(chain, draft)}
                       {:else}
