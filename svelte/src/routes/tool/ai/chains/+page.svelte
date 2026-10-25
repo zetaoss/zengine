@@ -249,11 +249,6 @@
     return d.spec !== d.original
   }
 
-  // User inputs whose name the AI edit task also acts on (goapp/tasks/aiedit/request.go).
-  const reservedInputs: Record<string, string> = {
-    readBacklinks: '켜면 역링크를 읽어 {backlinkTexts}로 넣음',
-  }
-
   function setDraftSpec(value: string) {
     if (draft) draft.spec = value
   }
@@ -395,37 +390,34 @@
 {/snippet}
 
 {#snippet runForm(inputs: ChainInput[])}
-  <div class="space-y-2 rounded border bg-background p-3 text-xs text-foreground">
-    <div class="text-muted-foreground">사용자 입력</div>
-    {#each inputs as input (input.name)}
-      {@const label = input.label || input.name}
-      <div class="space-y-1">
-        {#if input.type === 'bool'}
-          <label class="flex items-center gap-2">
-            <input type="checkbox" disabled />
-            {label}
-            <span class="font-mono text-muted-foreground">{`{${input.name}}`}</span>
-            {#if reservedInputs[input.name]}<span class="text-muted-foreground">· {reservedInputs[input.name]}</span>{/if}
-          </label>
-        {:else}
-          <div class="flex items-center gap-2">
-            <span class="font-medium">{label}</span>
-            <span class="font-mono text-muted-foreground">{`{${input.name}}`}{input.type === 'texts' ? ' · 여러 개' : ''}</span>
-            {#if reservedInputs[input.name]}<span class="text-muted-foreground">· {reservedInputs[input.name]}</span>{/if}
-          </div>
-          {#if input.type === 'texts'}
-            <div class="inline-flex rounded border px-2 py-1 text-muted-foreground">+ {label}</div>
+  <div class="rounded border bg-background p-3 text-xs text-foreground">
+    <div class="mb-2 text-muted-foreground">사용자 입력</div>
+    <div class="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-4 gap-y-2">
+      {#each inputs as input (input.name)}
+        {@const label = input.label || input.name}
+        <div class="pt-1 font-mono text-muted-foreground">{`{${input.name}}`}</div>
+        <div class="space-y-1">
+          {#if input.type === 'bool'}
+            <label class="flex items-center gap-2 pt-1">
+              <input type="checkbox" disabled />
+              {label}
+            </label>
           {:else}
-            <div class="h-8 rounded border bg-muted/30"></div>
+            <div class="font-medium">{label}</div>
+            {#if input.type === 'texts'}
+              <div class="inline-flex rounded border px-2 py-1 text-muted-foreground">+ {label}</div>
+            {:else}
+              <div class="h-8 rounded border bg-muted/30"></div>
+            {/if}
           {/if}
-        {/if}
-        {#if input.description}
-          <div class="text-muted-foreground">{input.description}</div>
-        {/if}
-      </div>
-    {:else}
-      <div class="text-muted-foreground">없음</div>
-    {/each}
+          {#if input.description}
+            <div class="text-muted-foreground">{input.description}</div>
+          {/if}
+        </div>
+      {:else}
+        <div class="col-span-2 text-muted-foreground">없음</div>
+      {/each}
+    </div>
   </div>
 {/snippet}
 
