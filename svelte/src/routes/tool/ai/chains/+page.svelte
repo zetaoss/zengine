@@ -220,7 +220,7 @@
             <th class="p-3">체인</th>
             <th class="p-3">설명</th>
             <th class="p-3">모델</th>
-            <th class="p-3 text-center whitespace-nowrap">Use</th>
+            <th class="p-3 text-center whitespace-nowrap">사용</th>
             <th class="p-3 w-14 text-center">상세</th>
           </tr>
         </thead>
