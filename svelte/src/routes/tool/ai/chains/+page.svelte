@@ -37,6 +37,8 @@
     name: string
     placeholder?: string
     type?: string
+    from?: string
+    maxChars?: number
   }
 
   interface Chain {
@@ -57,7 +59,8 @@
 
   function inputLabel(input: ChainInput) {
     const type = input.type && input.type !== 'string' ? `: ${input.type}` : ''
-    return `${input.name}${type}`
+    const from = input.from ? ` ← ${input.from}${input.maxChars ? `, ${input.maxChars}자까지` : ''}` : ''
+    return `${input.name}${type}${from}`
   }
 
   type PreviewValue = string | boolean | string[]

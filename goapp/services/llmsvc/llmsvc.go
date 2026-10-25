@@ -84,9 +84,9 @@ type StepResult struct {
 	Usage client.Usage
 }
 
-// RunStep renders the step's prompt with vars and runs it (RunMessages).
+// RunStep renders the step's prompt with vars, derived inputs filled (Chain.Fill), and runs it (RunMessages).
 func (s *LLMService) RunStep(ctx context.Context, model string, chain prompts.Chain, st prompts.Step, vars prompts.Vars, out any) (StepResult, error) {
-	return s.RunMessages(ctx, model, chain, st, st.Render(vars), out)
+	return s.RunMessages(ctx, model, chain, st, st.Render(chain.Fill(vars)), out)
 }
 
 // RunMessages sends rendered messages of the step to the model and parses the response into out, a non-nil

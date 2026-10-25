@@ -3,7 +3,7 @@
 # each link to this page in the pages that link here. A custom chain cloned from this one rewrites the messages.
 name: doc-update
 metadata:
-  version: v2.0
+  version: v2.1
   description: 기존 문서의 위키텍스트를 고쳐 쓴다.
 spec:
   userInputs:
@@ -21,7 +21,6 @@ spec:
   steps:
     - name: generate
       description: 기존 위키텍스트를 요청사항·자료·역링크를 참고해 고쳐 쓴다.
-      inputs: [title, wikitext, request, copiedTexts, backlinkTexts]
       messages:
         - role: system
           content: |-

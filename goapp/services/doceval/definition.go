@@ -13,9 +13,6 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// maxLeadLen is how much of the wikitext the define step reads: the lead says what the page is about.
-const maxLeadLen = 1500
-
 // maxDefinitionLen matches doc_definitions.definition and doc_evaluations.definition.
 const maxDefinitionLen = 500
 
@@ -60,16 +57,12 @@ func (e *Evaluator) EnsureDefinition(ctx context.Context, db *gorm.DB, page Page
 // Define writes the page's definition with model from its title and lead, and stores it in place of any
 // earlier one. With EnsureDefinition it is the only writer of doc_definitions.
 func (e *Evaluator) Define(ctx context.Context, db *gorm.DB, page Page, wikitext, model string) (*models.DocDefinition, error) {
-	lead := wikitext
-	if len(lead) > maxLeadLen {
-		lead = strings.ToValidUTF8(lead[:maxLeadLen], "")
-	}
 	var out struct {
 		Definition string `json:"definition"`
 	}
 	res, err := e.llm.RunStep(ctx, modelOrDefault(model), prompts.DocDefine, prompts.DocDefineStep, prompts.Vars{
-		"title": strings.ReplaceAll(page.Title, "_", " "),
-		"lead":  lead,
+		"title":    strings.ReplaceAll(page.Title, "_", " "),
+		"wikitext": wikitext,
 	}, &out)
 	if err != nil {
 		return nil, fmt.Errorf("llm definition failed: %w", err)

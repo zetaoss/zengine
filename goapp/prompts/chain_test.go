@@ -47,7 +47,6 @@ func TestValidate(t *testing.T) {
 		"textList outside each":  testChain(Message{Role: "user", Content: "{title} {hint} {notes}"}),
 		"each on a string":       testChain(Message{Role: "user", Each: "hint", Content: "{title} {notes}"}),
 		"index outside each":     testChain(Message{Role: "user", Content: "{title} {index}"}, Message{Role: "user", If: "hint", Each: "notes", Content: "{notes}"}),
-		"unused step input":      testChain(Message{Role: "user", Content: "{title}"}),
 		"unknown role":           testChain(Message{Role: "assistant", Content: "{title} {hint}"}, Message{Role: "user", Each: "notes", Content: "{notes}"}),
 	} {
 		if err := c.Validate(); err == nil {
@@ -203,5 +202,23 @@ func TestMagicWords(t *testing.T) {
 	)
 	if err := c.Validate(); err != nil {
 		t.Fatalf("parameterless templates and magic words are wiki markup: %v", err)
+	}
+}
+
+func TestFill(t *testing.T) {
+	long := strings.Repeat("가", 1500)
+	if got := DocDefine.Fill(Vars{"wikitext": long})["lead"].(string); len([]rune(got)) != 1000 {
+		t.Fatalf("lead is cut to 1000 characters, got %d", len([]rune(got)))
+	}
+	if got := DocEval.Fill(Vars{"wikitext": "짧은 본문"})["body"]; got != "짧은 본문" {
+		t.Fatalf("a short body is kept whole, got %q", got)
+	}
+	bad := Chain{Name: "t", Spec: Spec{Inputs: []Input{{Name: "lead", From: "missing"}}, Steps: []Step{{Name: "s", Prompt: Prompt{Messages: []Message{{Role: "user", Content: "{lead}"}}}}}}}
+	if err := bad.Validate(); err == nil {
+		t.Error("from must name a variable")
+	}
+	cut := Chain{Name: "t", Spec: Spec{Inputs: []Input{{Name: "text"}, {Name: "lead", From: "text", MaxChars: 3}}, Steps: []Step{{Name: "s", Prompt: Prompt{Messages: []Message{{Role: "user", Content: "{lead}"}}}}}}}
+	if err := cut.Validate(); err != nil {
+		t.Errorf("a source used only through its cut counts as used: %v", err)
 	}
 }

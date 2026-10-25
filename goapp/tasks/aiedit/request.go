@@ -66,6 +66,9 @@ func Render(ctx context.Context, cfg *config.Config, req Request) (Rendered, err
 		return Rendered{}, InputError{err.Error()}
 	}
 	for _, in := range chain.Spec.Inputs {
+		if in.From != "" {
+			continue
+		}
 		switch in.Name {
 		case "title":
 			vars["title"] = req.Title
@@ -89,6 +92,7 @@ func Render(ctx context.Context, cfg *config.Config, req Request) (Rendered, err
 			return Rendered{}, fmt.Errorf("chain %s: no way to fill input %q", chain.Name, in.Name)
 		}
 	}
+	vars = chain.Fill(vars)
 	messages := chain.Spec.Steps[0].Render(vars)
 	if len(messages) == 0 {
 		return Rendered{}, InputError{"보낼 메시지가 없습니다. 조건(if, each)이 걸린 입력을 채워 주세요."}
