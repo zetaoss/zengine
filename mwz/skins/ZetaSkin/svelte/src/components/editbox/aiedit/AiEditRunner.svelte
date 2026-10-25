@@ -273,6 +273,7 @@
                 onchange={(e) => (values = { ...values, [input.name]: e.currentTarget.checked })}
               />
               {label}
+              {#if input.description}<span class="text-xs text-a-slate-500">{input.description}</span>{/if}
             </label>
           {:else if input.type === 'texts'}
             <div class="flex flex-col gap-2">
@@ -303,11 +304,15 @@
                   <ZIcon path={mdiPlus} />
                   {label}
                 </CButton>
+                {#if input.description}<span class="ml-1 text-xs text-a-slate-500">{input.description}</span>{/if}
               </div>
             </div>
           {:else}
             <div class="flex flex-col gap-1 text-xs">
-              <span class="font-semibold">{label}</span>
+              <div>
+                <span class="font-semibold">{label}</span>
+                {#if input.description}<span class="ml-1 text-a-slate-500">{input.description}</span>{/if}
+              </div>
               <ZTextarea
                 id={`ai-edit-input-${input.name}`}
                 modelValue={textValue(input.name)}
@@ -317,9 +322,6 @@
               />
             </div>
           {/if}
-            {#if input.description}
-              <div class="text-xs text-a-slate-500">{input.description}</div>
-            {/if}
           </div>
         {/each}
       </div>

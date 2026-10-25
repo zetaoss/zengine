@@ -401,17 +401,18 @@
             <label class="flex items-center gap-2 pt-1">
               <input type="checkbox" disabled />
               {label}
+              {#if input.description}<span class="text-muted-foreground">{input.description}</span>{/if}
             </label>
           {:else}
-            <div class="font-medium">{label}</div>
+            <div>
+              <span class="font-medium">{label}</span>
+              {#if input.description}<span class="ml-1 text-muted-foreground">{input.description}</span>{/if}
+            </div>
             {#if input.type === 'texts'}
               <div class="inline-flex rounded border px-2 py-1 text-muted-foreground">+ {label}</div>
             {:else}
               <div class="h-8 rounded border bg-muted/30"></div>
             {/if}
-          {/if}
-          {#if input.description}
-            <div class="text-muted-foreground">{input.description}</div>
           {/if}
         </div>
       {:else}
