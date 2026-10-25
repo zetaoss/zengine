@@ -10,6 +10,7 @@
   import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'
   import ZIcon from '$shared/ui/ZIcon.svelte'
+  import ZModal from '$shared/ui/ZModal.svelte'
   import ZTextarea from '$shared/ui/ZTextarea.svelte'
   import httpy from '$shared/utils/httpy'
   import { getAge } from '$shared/utils/time'
@@ -326,10 +327,12 @@
           </select>
         </label>
       {/if}
-      <CButton variant="default" size="small" disabled={!d.title.trim() || savingDraft} onclick={() => void saveDraft()}>
-        {savingDraft ? '저장 중...' : '저장'}
-      </CButton>
-      <CButton variant="outline" size="small" disabled={savingDraft} onclick={closeDraft}>취소</CButton>
+      {#if d.id > 0}
+        <CButton variant="default" size="small" disabled={!d.title.trim() || savingDraft} onclick={() => void saveDraft()}>
+          {savingDraft ? '저장 중...' : '저장'}
+        </CButton>
+        <CButton variant="outline" size="small" disabled={savingDraft} onclick={closeDraft}>취소</CButton>
+      {/if}
     </div>
     <label class="flex items-center gap-2">
       <span class="font-medium">설명</span>
@@ -457,13 +460,6 @@
               </tr>
             {/if}
           {/each}
-          {#if draft && draft.id === 0 && chainOf(draft.request_type)}
-            <tr class="bg-muted/10">
-              <td colspan="7" class="p-4">
-                {@render templateEditor(chainOf(draft.request_type)!, draft)}
-              </td>
-            </tr>
-          {/if}
           {#each prompts as item (item.id)}
             {@const chain = chainOf(item.request_type)}
             {#if chain}
@@ -543,3 +539,20 @@
     </div>
   </div>
 </div>
+
+<ZModal
+  show={draft !== null && draft.id === 0}
+  title="프롬프트 틀 복제"
+  okText={savingDraft ? '저장 중...' : '저장'}
+  okVariant="default"
+  okDisabled={!draft?.title.trim() || savingDraft}
+  closable={!savingDraft}
+  backdropClosable={!savingDraft}
+  panelClass="max-w-[calc(100vw-2rem)] md:max-w-4xl"
+  onOk={saveDraft}
+  onCancel={closeDraft}
+>
+  {#if draft && draft.id === 0 && chainOf(draft.request_type)}
+    {@render templateEditor(chainOf(draft.request_type)!, draft)}
+  {/if}
+</ZModal>
