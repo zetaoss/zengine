@@ -178,3 +178,19 @@ func TestTemplateYAML(t *testing.T) {
 		t.Error("unknown fields must be rejected")
 	}
 }
+
+func TestWikiBraces(t *testing.T) {
+	p := Prompt{Inputs: []string{"title"}, Messages: []Message{{Role: "user", Content: "{title} {{title}} {{Infobox}} {{{1}}} {{틀|{title}}}"}}}
+	got := p.Render(Vars{"title": "Apple"})[0].Content
+	if got != "Apple {{title}} {{Infobox}} {{{1}}} {{틀|Apple}}" {
+		t.Fatalf("wiki braces must stay: %q", got)
+	}
+	c := testChain(
+		Message{Role: "user", Content: "{title} {{Infobox}} {{{1}}} {{other}}"},
+		Message{Role: "user", If: "hint", Content: "{hint}"},
+		Message{Role: "user", Each: "notes", Content: "{notes}"},
+	)
+	if err := c.Validate(); err != nil {
+		t.Fatalf("wiki markup is not a placeholder: %v", err)
+	}
+}

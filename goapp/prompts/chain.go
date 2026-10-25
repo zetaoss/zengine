@@ -241,18 +241,40 @@ func (p Prompt) Render(vars Vars) []Message {
 }
 
 func (p Prompt) replace(content string, vars Vars, own map[string]string) string {
-	pairs := make([]string, 0, 2*(len(p.Inputs)+1))
-	for _, in := range p.Inputs {
-		v, ok := own[in]
-		if !ok {
-			v = text(vars[in])
+	var b strings.Builder
+	last := 0
+	for _, ph := range placeholders(content) {
+		v, ok := own[ph.name]
+		if !ok && slices.Contains(p.Inputs, ph.name) {
+			v, ok = text(vars[ph.name]), true
 		}
-		pairs = append(pairs, "{"+in+"}", v)
+		if !ok {
+			continue
+		}
+		b.WriteString(content[last:ph.start])
+		b.WriteString(v)
+		last = ph.end
 	}
-	if idx, ok := own["index"]; ok {
-		pairs = append(pairs, "{index}", idx)
+	b.WriteString(content[last:])
+	return b.String()
+}
+
+type placeholder struct {
+	name       string
+	start, end int
+}
+
+// placeholders finds the {name} placeholders of content. One right after another brace is wiki markup
+// ({{Infobox}}, {{title}}, {{{1}}}) and is left out; one inside a template's parameter ({{틀|{title}}}) is not.
+func placeholders(content string) []placeholder {
+	var out []placeholder
+	for _, m := range placeholderRe.FindAllStringSubmatchIndex(content, -1) {
+		if m[0] > 0 && content[m[0]-1] == '{' {
+			continue
+		}
+		out = append(out, placeholder{name: content[m[2]:m[3]], start: m[0], end: m[1]})
 	}
-	return strings.NewReplacer(pairs...).Replace(content)
+	return out
 }
 
 // Parse reads a model response, with a code fence around the whole of it stripped: for FormatJSON a JSON value
@@ -482,8 +504,8 @@ func (st Step) validate(types map[string]InputType, used map[string]bool, strict
 		if m.Each != "" && types[m.Each] != TypeTexts {
 			return fmt.Errorf("each %q is not a texts variable", m.Each)
 		}
-		for _, sub := range placeholderRe.FindAllStringSubmatch(m.Content, -1) {
-			name := sub[1]
+		for _, ph := range placeholders(m.Content) {
+			name := ph.name
 			if name == "index" && m.Each != "" {
 				continue
 			}

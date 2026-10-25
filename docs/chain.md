@@ -80,7 +80,7 @@ A chain says what to ask a model: its prompts, formats, outputs and version, and
 - A step's inputs are variables or earlier outputs, and each is used by its messages as a placeholder, `if` or `each`. Every task input is used; a user input need not be (`readBacklinks` only tells the task to read).
 - Placeholders, `if` and `each` name the step's inputs. `each` names a `texts` variable, and inside its message `{name}` is the item and `{index}` its number from 1; a `texts` variable is a placeholder only there.
 - Variable names start with a letter (`backlinkTexts`, `wikitext`). System messages are fixed; changing values go into user messages.
-- `Prompt.Render` skips a message whose `if` variable is not given (a blank string, false, an empty list), sends an `each` message per item, and inserts values as they are (a `{title}` inside a wikitext is not expanded); braces that are not variables (`{{틀}}`, `{|`, JSON) stay.
+- `Prompt.Render` skips a message whose `if` variable is not given (a blank string, false, an empty list), sends an `each` message per item, and inserts values as they are (a `{title}` inside a wikitext is not expanded); braces that are not variables stay: `{|`, JSON, and wiki templates, since a `{name}` right after another brace (`{{title}}`, `{{Infobox}}`, `{{{1}}}`) is not a placeholder, while one inside a template's parameter (`{{틀|{title}}}`) is.
 - `Format.Parse` strips a code fence around the whole response; `json` decodes into a struct, `text` trims. It checks the format only; the service checks what values mean.
 
 ## Running
