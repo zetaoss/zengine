@@ -9,7 +9,7 @@ spec:
   userInputs:
     - name: hint
       label: 힌트
-      description: 예시 눈 → eye 또는 snow, 밤 → night 또는 chestnut
+      description: (예시) 눈 → eye/snow, 밤 → night/chestnut
     - name: readBacklinks
       label: 역링크 읽기
       type: bool
