@@ -69,62 +69,20 @@
     previewValues = { ...previewValues, [name]: v }
   }
 
-  // given is prompts' present: a non-blank string, true, or a non-empty list.
-  function given(v: PreviewValue | undefined) {
-    return typeof v === 'string' ? v.trim() !== '' : Array.isArray(v) ? v.length > 0 : v === true
-  }
-
-  interface Part {
-    text?: string
-    name?: string
-    value?: string
-  }
-
-  interface PreviewMessage {
-    header: string
-    parts: Part[]
-    skipped: boolean
-  }
-
+  // A message's content split at its {name} placeholders, as prompts' placeholders finds them (one right after
+  // another brace is wiki markup), to show the variables.
   const placeholderRe = /\{([A-Za-z][A-Za-z0-9_]*)\}/g
 
-  // The content split at its {name} placeholders, as prompts' placeholders finds them (one right after another
-  // brace is wiki markup), each with the value it gets here, if any.
-  function parts(content: string, own: Record<string, string>): Part[] {
-    const out: Part[] = []
+  function parts(content: string): Array<{ text?: string; name?: string }> {
+    const out: Array<{ text?: string; name?: string }> = []
     let last = 0
     for (const m of content.matchAll(placeholderRe)) {
       const at = m.index ?? 0
       if (at > 0 && content[at - 1] === '{') continue
-      out.push({ text: content.slice(last, at) })
-      const name = m[1]
-      const v = own[name] ?? previewValues[name]
-      const value = typeof v === 'string' && v !== '' ? v : typeof v === 'boolean' ? String(v) : undefined
-      out.push({ name, value })
+      out.push({ text: content.slice(last, at) }, { name: m[1] })
       last = at + m[0].length
     }
     out.push({ text: content.slice(last) })
-    return out
-  }
-
-  // The messages as they would be sent with the values typed in (prompts' Render): a message whose if is not given,
-  // or an each with no items, shows once, marked skipped; an each sends one per item.
-  function previewMessages(messages: ChainMessage[]): PreviewMessage[] {
-    const out: PreviewMessage[] = []
-    for (const m of messages) {
-      const header = messageHeader(m)
-      if (m.if && !given(previewValues[m.if])) {
-        out.push({ header, parts: parts(m.content, {}), skipped: true })
-        continue
-      }
-      if (!m.each) {
-        out.push({ header, parts: parts(m.content, {}), skipped: false })
-        continue
-      }
-      const items = previewTexts(m.each).filter((x) => x.trim() !== '')
-      if (items.length === 0) out.push({ header, parts: parts(m.content, {}), skipped: true })
-      items.forEach((item, i) => out.push({ header, parts: parts(m.content, { [m.each!]: item, index: String(i + 1) }), skipped: false }))
-    }
     return out
   }
 
@@ -525,14 +483,12 @@
 {/snippet}
 
 {#snippet messagesView(messages: ChainMessage[])}
-  {#each previewMessages(messages) as pm, i (i)}
-    <div class={['rounded border', pm.skipped && 'opacity-50']}>
-      <div class="border-b bg-muted/50 px-3 py-1 font-mono text-muted-foreground">
-        {pm.header}{#if pm.skipped}<span class="ml-2 font-sans">· 보내지 않음</span>{/if}
-      </div>
-      <pre class="max-h-80 overflow-auto whitespace-pre-wrap bg-muted/30 p-3 text-[11px]">{#each pm.parts as part, k (k)}{#if part.name !== undefined}{#if part.value !== undefined}<mark
-              class="rounded bg-blue-100 px-0.5 dark:bg-blue-900/50">{part.value}</mark
-            >{:else}<code class="var">{part.name}</code>{/if}{:else}{part.text}{/if}{/each}</pre>
+  {#each messages as m, i (i)}
+    <div class="rounded border">
+      <div class="border-b bg-muted/50 px-3 py-1 font-mono text-muted-foreground">{messageHeader(m)}</div>
+      <pre class="max-h-80 overflow-auto whitespace-pre-wrap bg-muted/30 p-3 text-[11px]">{#each parts(m.content) as part, k (k)}{#if part.name !== undefined}<code
+              class="var">{part.name}</code
+            >{:else}{part.text}{/if}{/each}</pre>
     </div>
   {/each}
 {/snippet}
