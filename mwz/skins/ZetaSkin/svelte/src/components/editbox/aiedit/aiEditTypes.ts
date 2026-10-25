@@ -16,7 +16,7 @@ export interface AIEditPromptForRunner {
 export interface AIEditUserInput {
   name: string
   label?: string
-  description?: string
+  placeholder?: string
   type?: 'string' | 'bool' | 'texts'
 }
 

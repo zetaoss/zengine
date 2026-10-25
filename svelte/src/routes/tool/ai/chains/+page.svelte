@@ -36,7 +36,7 @@
   interface ChainInput {
     name: string
     label?: string
-    description?: string
+    placeholder?: string
     type?: string
   }
 
@@ -392,31 +392,22 @@
 {#snippet runForm(inputs: ChainInput[])}
   <div class="rounded border bg-background p-3 text-xs text-foreground">
     <div class="mb-2 text-muted-foreground">사용자 입력</div>
-    <div class="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-4 gap-y-2">
+    <div class="grid grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-x-4 gap-y-2">
       {#each inputs as input (input.name)}
         {@const label = input.label || input.name}
-        <div class="pt-1 font-mono text-muted-foreground">{`{${input.name}}`}</div>
-        <div class="space-y-1">
+        <div class="font-mono text-muted-foreground">{`{${input.name}}`}</div>
+        <div class="font-medium">{label}</div>
+        <div class="min-w-0">
           {#if input.type === 'bool'}
-            <label class="flex items-center gap-2 pt-1">
-              <input type="checkbox" disabled />
-              {label}
-              {#if input.description}<span class="text-muted-foreground">{input.description}</span>{/if}
-            </label>
+            <input type="checkbox" disabled aria-label={label} />
+          {:else if input.type === 'texts'}
+            <span class="inline-flex rounded border px-2 py-1 text-muted-foreground">+ {label}</span>
           {:else}
-            <div>
-              <span class="font-medium">{label}</span>
-              {#if input.description}<span class="ml-1 text-muted-foreground">{input.description}</span>{/if}
-            </div>
-            {#if input.type === 'texts'}
-              <div class="inline-flex rounded border px-2 py-1 text-muted-foreground">+ {label}</div>
-            {:else}
-              <div class="h-8 rounded border bg-muted/30"></div>
-            {/if}
+            <div class="h-8 truncate rounded border bg-muted/30 px-2.5 py-1.5 text-muted-foreground">{input.placeholder ?? ''}</div>
           {/if}
         </div>
       {:else}
-        <div class="col-span-2 text-muted-foreground">없음</div>
+        <div class="col-span-3 text-muted-foreground">없음</div>
       {/each}
     </div>
   </div>

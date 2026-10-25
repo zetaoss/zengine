@@ -13,7 +13,7 @@ import (
 var specVersions = map[string]string{
 	"doc-define": "v2.0 95600152bd0d",
 	"doc-eval":   "v2.0 3e49e3826803",
-	"doc-create": "v2.0 93fa618e39bf",
+	"doc-create": "v2.0 527661793dac",
 	"doc-update": "v2.0 9fb3d325d755",
 }
 

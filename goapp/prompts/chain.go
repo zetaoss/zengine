@@ -39,11 +39,12 @@ type Spec struct {
 	Steps      []Step  `json:"steps" yaml:"steps"`
 }
 
-// Input is a variable of a chain. Label names a user input in the run form, and Description guides it there.
+// Input is a variable of a chain. Label names a user input in the run form, and Placeholder shows in its empty
+// field.
 type Input struct {
 	Name        string    `json:"name" yaml:"name"`
 	Label       string    `json:"label,omitempty" yaml:"label,omitempty"`
-	Description string    `json:"description,omitempty" yaml:"description,omitempty"`
+	Placeholder string    `json:"placeholder,omitempty" yaml:"placeholder,omitempty"`
 	Type        InputType `json:"type,omitempty" yaml:"type,omitempty"`
 }
 

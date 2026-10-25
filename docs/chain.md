@@ -36,6 +36,7 @@ spec:
   userInputs:                 # the run form
     - name: hint
       label: 힌트
+      placeholder: (예시) 눈 → eye/snow, 밤 → night/chestnut
     - name: readBacklinks
       label: 역링크 읽기
       type: bool
@@ -65,7 +66,7 @@ spec:
             {materials}
 ```
 
-`metadata` describes the chain; `spec` is what decides its results. A variable's `type` is `string` (the default), `bool` or `texts` (a list of strings); an input may be written as its name alone (`inputs: [title, lead]`). A step names its `output` only when a later step reads it (doc-eval's `rubrics`), and writes `format: json` only when it takes JSON. The files are read at start with unknown fields rejected, and a missing file or step (`Chain.Step`) panics there. Go keeps what the services need beyond the file: the structs a response is parsed into, values that check results (`DocEvalSafetyPolicies`), and the code between steps.
+`metadata` describes the chain; `spec` is what decides its results. A variable's `type` is `string` (the default), `bool` or `texts` (a list of strings); a user input may have a `label` and a `placeholder` for its empty field; an input may be written as its name alone (`inputs: [title, lead]`). A step names its `output` only when a later step reads it (doc-eval's `rubrics`), and writes `format: json` only when it takes JSON. The files are read at start with unknown fields rejected, and a missing file or step (`Chain.Step`) panics there. Go keeps what the services need beyond the file: the structs a response is parsed into, values that check results (`DocEvalSafetyPolicies`), and the code between steps.
 
 ## Chains and tasks
 
