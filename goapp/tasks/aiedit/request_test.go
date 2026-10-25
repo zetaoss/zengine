@@ -118,3 +118,25 @@ func TestValidateTemplateMessages(t *testing.T) {
 		}
 	}
 }
+
+func TestRenderOwnUserInputs(t *testing.T) {
+	cfg := fakeWiki(t)
+	prompt := &models.AIEditPrompt{ID: 5, RequestType: models.AIEditRequestCreate,
+		UserInputs: `[{"name":"tone","label":"문체"},{"name":"table","type":"bool"}]`,
+		Messages:   `[{"role":"user","content":"{title} / {tone}"},{"role":"user","if":"table","content":"표로"}]`}
+	r, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestCreate, Title: "사과", Prompt: prompt, UserInputs: map[string]any{"tone": "존댓말", "table": true}})
+	if err != nil {
+		t.Fatalf("a template without hint does not ask for one, and its own inputs reach the messages: %v", err)
+	}
+	if got := contents(r); got != "사과 / 존댓말\n\n표로" {
+		t.Fatalf("unexpected %q", got)
+	}
+	if _, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestCreate, Title: "사과", Prompt: prompt, UserInputs: map[string]any{"hint": "x"}}); !IsInputError(err) {
+		t.Errorf("an input the template does not declare is rejected, got %v", err)
+	}
+	bad := *prompt
+	bad.UserInputs = `[{"name":"title"}]`
+	if _, err := TemplateChain(bad); err == nil {
+		t.Error("a user input named like a task input must be rejected")
+	}
+}

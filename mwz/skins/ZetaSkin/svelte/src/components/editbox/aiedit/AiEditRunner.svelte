@@ -160,6 +160,7 @@
         request_type: prompt.requestType,
         content: prompt.content,
         messages: prompt.messages,
+        user_inputs: userInputs,
         model: prompt.model,
       })
       if (err) {

@@ -65,6 +65,12 @@ func NeedsHint(title string) bool {
 // the excerpts of the pages that link here) and renders its step.
 func Render(ctx context.Context, cfg *config.Config, req Request) (Rendered, error) {
 	chain := ChainOf(req.RequestType)
+	if req.Prompt != nil {
+		var err error
+		if chain, err = TemplateChain(*req.Prompt); err != nil {
+			return Rendered{}, fmt.Errorf("template %d: %w", req.Prompt.ID, err)
+		}
+	}
 	vars, err := chain.UserVars(req.UserInputs)
 	if err != nil {
 		return Rendered{}, InputError{err.Error()}
@@ -96,11 +102,28 @@ func Render(ctx context.Context, cfg *config.Config, req Request) (Rendered, err
 			return Rendered{}, fmt.Errorf("chain %s: no way to fill input %q", chain.Name, in.Name)
 		}
 	}
-	step := chain.Spec.Steps[0]
-	if req.Prompt != nil {
-		step.Messages = TemplateMessages(*req.Prompt)
+	return Rendered{Chain: chain, Vars: vars, Messages: chain.Spec.Steps[0].Render(vars)}, nil
+}
+
+// TemplateUserInputs are a template's run form: its own (aiedit_prompts.user_inputs) or its chain's. Values of a
+// user input reach the messages as they are; hint and readBacklinks also keep what the task does with them.
+func TemplateUserInputs(p models.AIEditPrompt) []prompts.Input {
+	var own []prompts.Input
+	if strings.TrimSpace(p.UserInputs) != "" && json.Unmarshal([]byte(p.UserInputs), &own) == nil {
+		return own
 	}
-	return Rendered{Chain: chain, Vars: vars, Messages: step.Render(vars)}, nil
+	return ChainOf(p.RequestType).Spec.UserInputs
+}
+
+// TemplateChain is the chain a template runs as: its request type's chain with the template's user inputs and,
+// for the first step, its messages.
+func TemplateChain(p models.AIEditPrompt) (prompts.Chain, error) {
+	chain, err := ChainOf(p.RequestType).WithUserInputs(TemplateUserInputs(p))
+	if err != nil {
+		return chain, err
+	}
+	chain.Spec.Steps[0].Messages = TemplateMessages(p)
+	return chain, nil
 }
 
 // TemplateMessages are the messages a template runs with: its own (aiedit_prompts.messages) or, for a template

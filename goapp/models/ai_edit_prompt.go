@@ -12,6 +12,7 @@ type AIEditPrompt struct {
 	Version     string     `json:"version" gorm:"column:version"`
 	Content     string     `json:"content" gorm:"column:content"`
 	Messages    string     `json:"-" gorm:"column:messages"`
+	UserInputs  string     `json:"-" gorm:"column:user_inputs"`
 	Model       string     `json:"model" gorm:"column:model"`
 	UseCount    int        `json:"use_count" gorm:"column:use_count"`
 	UsedAt      *time.Time `json:"used_at" gorm:"column:used_at"`

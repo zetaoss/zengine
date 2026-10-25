@@ -372,6 +372,42 @@ func (c Chain) ValidateMessages(messages []Message) error {
 	return st.validate(types, map[string]bool{}, false)
 }
 
+// WithUserInputs returns the chain with inputs as its user inputs (a custom template's run form), checked like
+// Validate checks them and not clashing with the task's inputs. The first step may then read every user input,
+// besides the task inputs it read.
+func (c Chain) WithUserInputs(inputs []Input) (Chain, error) {
+	seen := map[string]bool{}
+	for _, in := range c.Spec.Inputs {
+		seen[in.Name] = true
+	}
+	for _, in := range inputs {
+		if !nameRe.MatchString(in.Name) || in.Name == "index" {
+			return c, fmt.Errorf("invalid user input name %q", in.Name)
+		}
+		if seen[in.Name] {
+			return c, fmt.Errorf("user input %q is already a variable", in.Name)
+		}
+		seen[in.Name] = true
+		if t := in.Type.orString(); t != TypeString && t != TypeBool && t != TypeTexts {
+			return c, fmt.Errorf("user input %s: unknown type %q", in.Name, in.Type)
+		}
+	}
+	steps := slices.Clone(c.Spec.Steps)
+	var stepInputs []string
+	for _, name := range steps[0].Inputs {
+		if slices.ContainsFunc(c.Spec.Inputs, func(in Input) bool { return in.Name == name }) {
+			stepInputs = append(stepInputs, name)
+		}
+	}
+	for _, in := range inputs {
+		stepInputs = append(stepInputs, in.Name)
+	}
+	steps[0].Inputs = stepInputs
+	c.Spec.UserInputs = slices.Clone(inputs)
+	c.Spec.Steps = steps
+	return c, nil
+}
+
 func (c Chain) variableTypes() map[string]InputType {
 	types := map[string]InputType{}
 	for _, in := range slices.Concat(c.Spec.UserInputs, c.Spec.Inputs) {

@@ -17,14 +17,15 @@ import (
 	"gorm.io/gorm"
 )
 
-// promptView is a template with the messages it runs with (aiedit.TemplateMessages).
+// promptView is a template with the run form and messages it runs with (aiedit.TemplateUserInputs, Messages).
 type promptView struct {
 	models.AIEditPrompt
-	Messages []prompts.Message `json:"messages"`
+	UserInputs []prompts.Input   `json:"user_inputs"`
+	Messages   []prompts.Message `json:"messages"`
 }
 
 func newPromptView(p models.AIEditPrompt) promptView {
-	return promptView{AIEditPrompt: p, Messages: aiedit.TemplateMessages(p)}
+	return promptView{AIEditPrompt: p, UserInputs: aiedit.TemplateUserInputs(p), Messages: aiedit.TemplateMessages(p)}
 }
 
 func Index(c *serverctx.Context) {
@@ -92,6 +93,8 @@ func Store(c *serverctx.Context) {
 		// Messages, when given, are the template's own messages in place of the chain step's; they are checked
 		// against the chain (prompts.Chain.ValidateMessages) and content becomes their text.
 		Messages *[]prompts.Message `json:"messages"`
+		// UserInputs, when given, are the template's own run form (aiedit.TemplateUserInputs).
+		UserInputs *[]prompts.Input `json:"user_inputs"`
 		// Bump is how an edit that changes the messages moves the version: "minor" (the default) or "major".
 		Bump string `json:"bump"`
 	}
@@ -120,16 +123,32 @@ func Store(c *serverctx.Context) {
 		return
 	}
 	body.RequestType = requestType
-	var messagesJSON string
-	if body.Messages != nil {
-		messages := *body.Messages
-		if err := aiedit.ChainOf(requestType).ValidateMessages(messages); err != nil {
-			c.JSONError(http.StatusUnprocessableEntity, "메시지: "+err.Error())
+	var messagesJSON, userInputsJSON string
+	if body.Messages != nil || body.UserInputs != nil {
+		draft := models.AIEditPrompt{RequestType: requestType, Content: body.Content}
+		if body.ID > 0 {
+			_ = c.DB.Where("id = ?", body.ID).Take(&draft).Error
+			draft.RequestType = requestType
+		}
+		if body.UserInputs != nil {
+			b, _ := json.Marshal(*body.UserInputs)
+			userInputsJSON = string(b)
+			draft.UserInputs = userInputsJSON
+		}
+		if body.Messages != nil {
+			b, _ := json.Marshal(*body.Messages)
+			messagesJSON = string(b)
+			draft.Messages = messagesJSON
+			body.Content = aiedit.MessagesText(*body.Messages)
+		}
+		chain, err := aiedit.ChainOf(requestType).WithUserInputs(aiedit.TemplateUserInputs(draft))
+		if err == nil {
+			err = chain.ValidateMessages(aiedit.TemplateMessages(draft))
+		}
+		if err != nil {
+			c.JSONError(http.StatusUnprocessableEntity, err.Error())
 			return
 		}
-		b, _ := json.Marshal(messages)
-		messagesJSON = string(b)
-		body.Content = aiedit.MessagesText(messages)
 	}
 
 	user, _ := c.User()
@@ -147,6 +166,10 @@ func Store(c *serverctx.Context) {
 	if body.Messages != nil {
 		row.Messages = messagesJSON
 		columns = append(columns, "messages")
+	}
+	if body.UserInputs != nil {
+		row.UserInputs = userInputsJSON
+		columns = append(columns, "user_inputs")
 	}
 	if body.Model != nil {
 		row.Model = *body.Model
@@ -168,6 +191,10 @@ func Store(c *serverctx.Context) {
 		if body.Messages != nil {
 			before, _ := json.Marshal(aiedit.TemplateMessages(existing))
 			changed = messagesJSON != string(before)
+		}
+		if body.UserInputs != nil {
+			before, _ := json.Marshal(aiedit.TemplateUserInputs(existing))
+			changed = changed || userInputsJSON != string(before)
 		}
 		if changed {
 			row.Version = prompts.NextVersion(existing.Version, body.Bump == "major")

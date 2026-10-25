@@ -66,6 +66,7 @@
     use_count: number
     content: string
     messages: ChainMessage[]
+    user_inputs: ChainInput[]
     description: string
     version: string
     model: string
@@ -169,10 +170,11 @@
     title: string
     description: string
     request_type: string
+    userInputs: ChainInput[]
     messages: ChainMessage[]
     model: string
     version: string
-    // The messages when editing began (JSON); changing them bumps the version on save.
+    // The run form and messages when editing began (JSON); changing them bumps the version on save.
     original: string
     bump: 'minor' | 'major'
   }
@@ -194,10 +196,11 @@
       title: item.title,
       description: item.description,
       request_type: item.request_type,
+      userInputs: copyInputs(item.user_inputs),
       messages: copyMessages(item.messages),
       model: item.model,
       version: item.version,
-      original: JSON.stringify(item.messages),
+      original: snapshot(item.user_inputs, item.messages),
       bump: 'minor',
     }
     expanded = `prompt:${item.id}`
@@ -211,10 +214,11 @@
       title: `${item.title} (복제본)`,
       description: item.description,
       request_type: item.request_type,
+      userInputs: copyInputs(item.user_inputs),
       messages: copyMessages(item.messages),
       model: item.model || chain.model,
       version: 'v1.0',
-      original: JSON.stringify(item.messages),
+      original: snapshot(item.user_inputs, item.messages),
       bump: 'minor',
     }
   }
@@ -224,15 +228,17 @@
   function openCloneChain(chain: Chain, requestType: string) {
     draftError = ''
     const messages = copyMessages(chain.spec.steps[0].messages)
+    const userInputs = copyInputs(chain.spec.userInputs ?? [])
     draft = {
       id: 0,
       title: `${chain.name} (복제본)`,
       description: chain.metadata.description,
       request_type: requestType,
+      userInputs,
       messages,
       model: chain.model,
       version: 'v1.0',
-      original: JSON.stringify(messages),
+      original: snapshot(userInputs, messages),
       bump: 'minor',
     }
   }
@@ -245,28 +251,50 @@
     return messages.map((m) => ({ ...m }))
   }
 
+  function copyInputs(inputs: ChainInput[]): ChainInput[] {
+    return inputs.map((i) => ({ ...i }))
+  }
+
+  function snapshot(userInputs: ChainInput[], messages: ChainMessage[]) {
+    return JSON.stringify({ userInputs, messages })
+  }
+
   function draftChanged(d: TemplateDraft) {
-    return JSON.stringify(d.messages) !== d.original
+    return snapshot(d.userInputs, d.messages) !== d.original
   }
 
-  // The conditions a message of the step can take: if a variable is given, or each item of a texts variable.
-  function conditionOptions(chain: Chain, st: ChainStep): Array<{ value: string; label: string }> {
-    const types = new Map([...(chain.spec.userInputs ?? []), ...chain.spec.inputs].map((i) => [i.name, i.type ?? 'string']))
-    return [
-      { value: '', label: '항상' },
-      ...st.inputs.map((name) => ({ value: `if:${name}`, label: `if ${name}` })),
-      ...st.inputs.filter((name) => types.get(name) === 'texts').map((name) => ({ value: `each:${name}`, label: `each ${name}` })),
-    ]
+  // User inputs whose name the AI edit task also acts on (goapp/tasks/aiedit/request.go).
+  const reservedInputs: Record<string, string> = {
+    hint: '제목이 짧으면 필수',
+    readBacklinks: '켜면 역링크를 읽음',
   }
 
-  function conditionOf(m: ChainMessage) {
-    return m.each ? `each:${m.each}` : m.if ? `if:${m.if}` : ''
+  // The variables of a template: its user inputs and the chain's task inputs. Which a message may use is checked
+  // when it is saved (prompts.Chain.ValidateMessages).
+  function draftVariables(d: TemplateDraft, chain: Chain): ChainInput[] {
+    return [...d.userInputs, ...chain.spec.inputs]
   }
 
-  function setCondition(m: ChainMessage, value: string) {
-    const [kind, name] = value.split(':')
+  type Condition = 'always' | 'if' | 'each'
+
+  // The variables a condition can name: any for if (sent when given), texts ones for each (once per item).
+  function conditionVariables(kind: Condition, vars: ChainInput[]) {
+    return vars.filter((v) => v.name && (kind === 'if' || v.type === 'texts')).map((v) => v.name)
+  }
+
+  function conditionOf(m: ChainMessage): Condition {
+    return m.each ? 'each' : m.if ? 'if' : 'always'
+  }
+
+  function setCondition(m: ChainMessage, kind: Condition, vars: ChainInput[]) {
+    const name = conditionVariables(kind, vars)[0]
     m.if = kind === 'if' ? name : undefined
     m.each = kind === 'each' ? name : undefined
+  }
+
+  function setConditionVariable(m: ChainMessage, name: string) {
+    if (m.each) m.each = name
+    else m.if = name
   }
 
   function moveMessage(d: TemplateDraft, i: number, by: number) {
@@ -286,6 +314,9 @@
       description: draft.description,
       request_type: draft.request_type,
       messages: draft.messages.map((m) => ({ role: m.role, content: m.content, ...(m.if ? { if: m.if } : {}), ...(m.each ? { each: m.each } : {}) })),
+      user_inputs: draft.userInputs
+        .filter((i) => i.name.trim())
+        .map((i) => ({ name: i.name.trim(), ...(i.label ? { label: i.label } : {}), ...(i.type && i.type !== 'string' ? { type: i.type } : {}) })),
       bump: draft.bump,
     }
     if (draft.id === 0) body.model = draft.model
@@ -319,10 +350,6 @@
   >
     <ZIcon path={mdiChevronDown} size={18} class={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
   </button>
-{/snippet}
-
-{#snippet templateNote(chain: Chain)}
-  <p class="text-xs text-muted-foreground">변수: {'{title}'}{promptTypeOf[chain.name] === 'update' ? `, {wikitext}` : ''}</p>
 {/snippet}
 
 {#snippet templateEditor(chain: Chain, d: TemplateDraft)}
@@ -362,27 +389,67 @@
       <span class="font-medium">설명</span>
       <input class="h-8 w-full rounded border bg-background px-2.5" bind:value={d.description} />
     </label>
+    <div class="space-y-1.5">
+      <div class="font-medium">실행 입력</div>
+      {#each d.userInputs as input, i (i)}
+        <div class="flex flex-wrap items-center gap-2">
+          <input class="h-8 w-40 rounded border bg-background px-2.5 font-mono" placeholder="이름" bind:value={input.name} />
+          <input class="h-8 w-40 rounded border bg-background px-2.5" placeholder="라벨" bind:value={input.label} />
+          <select class="h-8 rounded border bg-background px-1.5 font-mono" value={input.type ?? 'string'} onchange={(e) => (input.type = e.currentTarget.value)}>
+            <option value="string">string</option>
+            <option value="bool">bool</option>
+            <option value="texts">texts</option>
+          </select>
+          {#if reservedInputs[input.name]}
+            <span class="text-muted-foreground">{reservedInputs[input.name]}</span>
+          {/if}
+          <CButton variant="ghost" size="icon-sm" aria-label="입력 삭제" onclick={() => (d.userInputs = d.userInputs.filter((_, j) => j !== i))}>
+            <ZIcon path={mdiClose} />
+          </CButton>
+        </div>
+      {/each}
+      <CButton variant="outline" size="small" onclick={() => (d.userInputs = [...d.userInputs, { name: '', label: '' }])}>
+        <ZIcon path={mdiPlus} class="mr-1" />
+        입력
+      </CButton>
+      <div class="text-muted-foreground">
+        값이 그대로 메시지 변수가 됩니다. 변수: <span class="font-mono">{draftVariables(d, chain).filter((v) => v.name).map((v) => `{${v.name}}`).join(' ')}</span>, each 안의
+        <span class="font-mono">{'{index}'}</span>. 맞게 썼는지는 저장할 때 확인합니다.
+      </div>
+    </div>
     {#if d.id > 0 && draftChanged(d) && d.bump === 'major'}
       <div class="text-muted-foreground">메이저 범프: 이 틀로 돈 이전 결과와 다른 것으로 구분합니다(AI 편집은 다시 돌리는 대상이 없습니다).</div>
     {/if}
     {#if draftError}
       <div class="text-destructive">{draftError}</div>
     {/if}
-    {@render templateNote(chain)}
     {#each chain.spec.steps.slice(0, 1) as st (st.name)}
+      {@const vars = draftVariables(d, chain)}
       <div class="space-y-2 min-w-0">
         {#each d.messages as m, i (i)}
+          {@const kind = conditionOf(m)}
           <div class="rounded border">
             <div class="flex flex-wrap items-center gap-2 border-b bg-muted/50 px-2 py-1">
               <select class="h-7 rounded border bg-background px-1.5 font-mono" bind:value={m.role}>
                 <option value="system">system</option>
                 <option value="user">user</option>
               </select>
-              <select class="h-7 rounded border bg-background px-1.5 font-mono" value={conditionOf(m)} onchange={(e) => setCondition(m, e.currentTarget.value)}>
-                {#each conditionOptions(chain, st) as o (o.value)}
-                  <option value={o.value}>{o.label}</option>
-                {/each}
+              <select
+                class="h-7 rounded border bg-background px-1.5 font-mono"
+                value={kind}
+                onchange={(e) => setCondition(m, e.currentTarget.value as Condition, vars)}
+              >
+                <option value="always">always</option>
+                <option value="if">if</option>
+                <option value="each" disabled={conditionVariables('each', vars).length === 0}>each</option>
               </select>
+              {#if kind !== 'always'}
+                <select class="h-7 rounded border bg-background px-1.5 font-mono" value={m.each ?? m.if} onchange={(e) => setConditionVariable(m, e.currentTarget.value)}>
+                  {#each conditionVariables(kind, vars) as name (name)}
+                    <option value={name}>{name}</option>
+                  {/each}
+                </select>
+              {/if}
               <div class="ml-auto flex items-center">
                 <CButton variant="ghost" size="icon-sm" aria-label="위로" disabled={i === 0} onclick={() => moveMessage(d, i, -1)}>
                   <ZIcon path={mdiArrowUp} />
@@ -562,7 +629,12 @@
                               </CButton>
                             {/if}
                           </div>
-                          <div class="text-xs text-muted-foreground">버전: <span class="font-mono">{item.version}</span> · 원본: <span class="font-mono">{chain.name}</span></div>
+                          <div class="space-y-1 text-xs text-muted-foreground">
+                            <div>버전: <span class="font-mono">{item.version}</span> · 원본: <span class="font-mono">{chain.name}</span></div>
+                            {#if item.user_inputs.length}
+                              <div>실행 입력: <span class="font-mono">{item.user_inputs.map(inputLabel).join(', ')}</span></div>
+                            {/if}
+                          </div>
                           {#each chain.spec.steps as st, n (st.name)}
                             {@render stepView(st, n, item.messages)}
                           {/each}

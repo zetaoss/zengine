@@ -24,6 +24,7 @@
     title: string
     content: string
     messages?: AIEditRenderedMessage[]
+    user_inputs?: AIEditUserInput[]
     model: string
     request_type: string
     use_count: number
@@ -250,7 +251,7 @@
     {title}
     {pageId}
     editorContent={mwEditorContent}
-    userInputs={userInputsByChain[chainOfType[currentRunnerPrompt.requestType]] ?? []}
+    userInputs={currentPromptItem?.user_inputs ?? userInputsByChain[chainOfType[currentRunnerPrompt.requestType]] ?? []}
     submit={submitRunner}
     preview={previewRunner}
     {promptHeader}
