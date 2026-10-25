@@ -5,12 +5,12 @@
 
   import { mdiChevronDown, mdiContentCopy, mdiDelete, mdiPencil } from '@mdi/js'
 
-  import { resolve } from '$app/paths'
   import useAuthStore from '$lib/stores/auth'
   import CButton from '$shared/ui/CButton.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'
   import ZIcon from '$shared/ui/ZIcon.svelte'
+  import ZTextarea from '$shared/ui/ZTextarea.svelte'
   import httpy from '$shared/utils/httpy'
 
   import { fetchModelIds, formatModelLabel } from '../loop'
@@ -76,8 +76,6 @@
   let savingChain = $state('')
   let expanded = $state<string | null>(null)
   let deletingPromptId = $state<number | null>(null)
-  let cloningPromptId = $state<number | null>(null)
-  let cloningChain = $state('')
   let savingPromptId = $state<number | null>(null)
   const userInfo = useAuthStore().userInfo
 
@@ -132,8 +130,8 @@
 
   // The messages a template runs with until templates become chains of their own: the template in place of the
   // step's unconditional messages, then the run form's (if, each). goapp/tasks/aiedit/request.go withTemplate.
-  function templateMessages(item: PromptItem, st: ChainStep): ChainMessage[] {
-    return [{ role: 'user', content: item.content }, ...st.messages.filter((m) => m.if || m.each)]
+  function templateMessages(content: string, st: ChainStep): ChainMessage[] {
+    return [{ role: 'user', content }, ...st.messages.filter((m) => m.if || m.each)]
   }
 
   async function setPromptModel(item: PromptItem, model: string) {
@@ -154,44 +152,62 @@
     showToast('저장했습니다')
   }
 
+  interface TemplateDraft {
+    id: number
+    title: string
+    request_type: string
+    content: string
+    model: string
+  }
+
+  let draft = $state<TemplateDraft | null>(null)
+  let draftError = $state('')
+  let savingDraft = $state(false)
+
+  function openEdit(item: PromptItem) {
+    draftError = ''
+    draft = { id: item.id, title: item.title, request_type: item.request_type, content: item.content, model: item.model }
+    expanded = `prompt:${item.id}`
+  }
+
+  // A clone takes the model its source runs on as a value, so later changes to the source do not follow.
+  function openClone(item: PromptItem, chain: Chain) {
+    draftError = ''
+    draft = { id: 0, title: `${item.title} 복사본`, request_type: item.request_type, content: item.content, model: item.model || chain.model }
+  }
+
   // A template cloned from a built-in chain holds the step's unconditional messages (the ones a template takes the
   // place of), so it starts out asking what the chain asks; its model is the chain's, as a value.
-  async function cloneChain(chain: Chain, requestType: string) {
-    cloningChain = chain.name
+  function openCloneChain(chain: Chain, requestType: string) {
+    draftError = ''
     const content = chain.spec.steps[0].messages
       .filter((m) => !m.if && !m.each)
       .map((m) => m.content)
       .join('\n\n')
-    const [, err] = await httpy.post('/api/ai-prompts', {
-      title: `${chain.name} 복사본`,
-      request_type: requestType,
-      content,
-      model: chain.model,
-    })
-    cloningChain = ''
-    if (err) {
-      showToast(err.message || '복제 실패')
-      return
-    }
-    showToast('복제했습니다')
-    await fetchPrompts()
+    draft = { id: 0, title: `${chain.name} 복사본`, request_type: requestType, content, model: chain.model }
   }
 
-  // A clone takes the model its source runs on as a value, so later changes to the source do not follow.
-  async function clonePrompt(item: PromptItem, chain: Chain) {
-    cloningPromptId = item.id
-    const [, err] = await httpy.post('/api/ai-prompts', {
-      title: `${item.title} 복사본`,
-      request_type: item.request_type,
-      content: item.content,
-      model: item.model || chain.model,
-    })
-    cloningPromptId = null
+  function closeDraft() {
+    if (!savingDraft) draft = null
+  }
+
+  function setDraftContent(value: string) {
+    if (draft) draft.content = value
+  }
+
+  async function saveDraft() {
+    if (!draft || !draft.title.trim()) return
+    savingDraft = true
+    const body: Record<string, unknown> = { id: draft.id, title: draft.title.trim(), request_type: draft.request_type, content: draft.content }
+    if (draft.id === 0) body.model = draft.model
+    const [, err] = await httpy.post('/api/ai-prompts', body)
+    savingDraft = false
     if (err) {
-      showToast(err.message || '복제 실패')
+      draftError = err.message || '저장 실패'
       return
     }
-    showToast('복제했습니다')
+    showToast(draft.id === 0 ? '복제했습니다' : '저장했습니다')
+    draft = null
     await fetchPrompts()
   }
 
@@ -214,6 +230,62 @@
   >
     <ZIcon path={mdiChevronDown} size={18} class={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
   </button>
+{/snippet}
+
+{#snippet templateNote(chain: Chain)}
+  <p class="text-xs text-muted-foreground">
+    틀이 {chain.name}의 조건 없는 메시지(system과 제목·기존 문서)를 대신하고, 실행 입력 메시지(if·each)는 그대로 붙습니다. 틀의 변수:
+    {'{title}'}, {'{wikitext}'}(편집).
+  </p>
+{/snippet}
+
+{#snippet templateEditor(chain: Chain, d: TemplateDraft)}
+  <div class="space-y-4 text-xs">
+    <div class="flex flex-wrap items-center gap-2">
+      <label class="flex min-w-0 flex-1 items-center gap-2">
+        <span class="font-medium">제목</span>
+        <input class="h-8 w-full max-w-72 rounded border bg-background px-2.5" bind:value={d.title} />
+      </label>
+      {#if d.id === 0}
+        <label class="flex items-center gap-2">
+          <span class="font-medium">모델</span>
+          <select class="h-8 max-w-72 rounded border bg-background px-2.5" bind:value={d.model}>
+            {#each modelOptions(chain) as id (id)}
+              <option value={id}>{formatModelLabel(id)}</option>
+            {/each}
+          </select>
+        </label>
+      {/if}
+      <CButton variant="default" size="small" disabled={!d.title.trim() || savingDraft} onclick={() => void saveDraft()}>
+        {savingDraft ? '저장 중...' : '저장'}
+      </CButton>
+      <CButton variant="outline" size="small" disabled={savingDraft} onclick={closeDraft}>취소</CButton>
+    </div>
+    {#if draftError}
+      <div class="text-destructive">{draftError}</div>
+    {/if}
+    {@render templateNote(chain)}
+    {#each chain.spec.steps as st, n (st.name)}
+      <div class="space-y-1.5 min-w-0">
+        <div>
+          <span class="text-muted-foreground">{n + 1}.</span>
+          <span class="font-mono font-medium">{st.name}</span>
+        </div>
+        <div class="rounded border">
+          <div class="border-b bg-muted/50 px-3 py-1 font-mono text-muted-foreground">user · 프롬프트 틀</div>
+          <div class="font-mono text-[11px]">
+            <ZTextarea id={`ai-template-${d.id}`} modelValue={d.content} placeholder={undefined} maxHeight={480} onUpdateModelValue={setDraftContent} />
+          </div>
+        </div>
+        {#each templateMessages(d.content, st).slice(1) as m, i (i)}
+          <div class="rounded border">
+            <div class="border-b bg-muted/50 px-3 py-1 font-mono text-muted-foreground">{messageHeader(m)}</div>
+            <pre class="max-h-80 overflow-auto whitespace-pre-wrap bg-muted/30 p-3 text-[11px]">{m.content}</pre>
+          </div>
+        {/each}
+      </div>
+    {/each}
+  </div>
 {/snippet}
 
 {#snippet stepView(st: ChainStep, n: number, messages: ChainMessage[])}
@@ -259,7 +331,6 @@
               <td class="p-3 whitespace-nowrap">
                 <span class="text-muted-foreground">System |</span>
                 <span class="font-mono font-medium">{chain.name}</span>
-                <span class="ml-1 font-mono text-xs text-muted-foreground">{chain.metadata.version}</span>
               </td>
               <td class="p-3 text-muted-foreground">{chain.metadata.description}</td>
               <td class="p-3 text-xs">{formatModelLabel(chain.model)}</td>
@@ -287,13 +358,14 @@
                         </select>
                       </label>
                       {#if promptType}
-                        <CButton variant="outline" size="small" disabled={cloningChain === chain.name} onclick={() => void cloneChain(chain, promptType)}>
+                        <CButton variant="outline" size="small" onclick={() => openCloneChain(chain, promptType)}>
                           <ZIcon path={mdiContentCopy} class="mr-1" />
                           복제
                         </CButton>
                       {/if}
                     </div>
                     <div class="space-y-1 text-xs text-muted-foreground">
+                      <div>버전: <span class="font-mono">{chain.metadata.version}</span></div>
                       {#if chain.spec.userInputs?.length}
                         <div>실행 입력: <span class="font-mono">{chain.spec.userInputs.map(inputLabel).join(', ')}</span></div>
                       {/if}
@@ -307,17 +379,24 @@
               </tr>
             {/if}
             {#if promptType}
+              {#if draft && draft.id === 0 && draft.request_type === promptType}
+                <tr class="bg-muted/10">
+                  <td colspan="5" class="p-4">
+                    {@render templateEditor(chain, draft)}
+                  </td>
+                </tr>
+              {/if}
               {#each prompts.filter((p) => p.request_type === promptType) as item (item.id)}
                 {@const key = `prompt:${item.id}`}
                 {@const itemExpanded = expanded === key}
+                {@const editing = draft?.id === item.id}
+                {@const own = item.user_id === $userInfo?.id}
                 <tr class="hover:bg-muted/30 transition cursor-pointer" onclick={() => toggle(key)}>
                   <td class="p-3 whitespace-nowrap">
                     <span class="text-muted-foreground">{item.user_name} |</span>
                     <span class="font-medium">{item.title}</span>
                   </td>
-                  <td class="p-3 text-muted-foreground">
-                    {chain.name}의 프롬프트 틀
-                  </td>
+                  <td class="p-3 text-muted-foreground">{chain.name}의 프롬프트 틀</td>
                   <td class="p-3 text-xs">{formatModelLabel(item.model || chain.model)}</td>
                   <td class="p-3 text-center text-muted-foreground tabular-nums">{item.use_count || '-'}</td>
                   <td class="p-3 text-center">
@@ -327,47 +406,48 @@
                 {#if itemExpanded}
                   <tr class="bg-muted/10">
                     <td colspan="5" class="p-4">
-                      <div class="space-y-4">
-                        <div class="flex flex-wrap items-center gap-2 text-xs">
-                        <label class="flex min-w-0 flex-1 items-center gap-2">
-                          <span class="font-medium">모델</span>
-                          <select
-                            class="h-8 w-full max-w-72 rounded border bg-background px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-                            value={item.model || chain.model}
-                            disabled={item.user_id !== $userInfo?.id || savingPromptId === item.id}
-                            title={item.user_id === $userInfo?.id ? '' : '만든 사람만 바꿀 수 있습니다'}
-                            onchange={(e) => setPromptModel(item, e.currentTarget.value)}
-                          >
-                            {#each modelOptions(chain) as id (id)}
-                              <option value={id}>{formatModelLabel(id)}</option>
-                            {/each}
-                          </select>
-                        </label>
-                          {#if item.user_id === $userInfo?.id}
-                            <CButton variant="outline" size="small" href={resolve(`/tool/ai/prompts/${item.id}` as '/tool/ai/prompts/[id]')}>
-                              <ZIcon path={mdiPencil} class="mr-1" />
-                              편집
+                      {#if editing && draft}
+                        {@render templateEditor(chain, draft)}
+                      {:else}
+                        <div class="space-y-4">
+                          <div class="flex flex-wrap items-center gap-2 text-xs">
+                            <label class="flex min-w-0 flex-1 items-center gap-2">
+                              <span class="font-medium">모델</span>
+                              <select
+                                class="h-8 w-full max-w-72 rounded border bg-background px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                                value={item.model || chain.model}
+                                disabled={!own || savingPromptId === item.id}
+                                title={own ? '' : '만든 사람만 바꿀 수 있습니다'}
+                                onchange={(e) => setPromptModel(item, e.currentTarget.value)}
+                              >
+                                {#each modelOptions(chain) as id (id)}
+                                  <option value={id}>{formatModelLabel(id)}</option>
+                                {/each}
+                              </select>
+                            </label>
+                            {#if own}
+                              <CButton variant="outline" size="small" onclick={() => openEdit(item)}>
+                                <ZIcon path={mdiPencil} class="mr-1" />
+                                편집
+                              </CButton>
+                            {/if}
+                            <CButton variant="outline" size="small" onclick={() => openClone(item, chain)}>
+                              <ZIcon path={mdiContentCopy} class="mr-1" />
+                              복제
                             </CButton>
-                          {/if}
-                          <CButton variant="outline" size="small" disabled={cloningPromptId === item.id} onclick={() => void clonePrompt(item, chain)}>
-                            <ZIcon path={mdiContentCopy} class="mr-1" />
-                            복제
-                          </CButton>
-                          {#if item.user_id === $userInfo?.id}
-                            <CButton variant="outline" size="small" disabled={deletingPromptId === item.id} onclick={() => void delPrompt(item)}>
-                              <ZIcon path={mdiDelete} class="mr-1" />
-                              삭제
-                            </CButton>
-                          {/if}
+                            {#if own}
+                              <CButton variant="outline" size="small" disabled={deletingPromptId === item.id} onclick={() => void delPrompt(item)}>
+                                <ZIcon path={mdiDelete} class="mr-1" />
+                                삭제
+                              </CButton>
+                            {/if}
+                          </div>
+                          {@render templateNote(chain)}
+                          {#each chain.spec.steps as st, n (st.name)}
+                            {@render stepView(st, n, templateMessages(item.content, st))}
+                          {/each}
                         </div>
-                        <p class="text-xs text-muted-foreground">
-                          틀이 {chain.name}의 조건 없는 메시지(system과 제목·기존 문서)를 대신하고, 실행 입력 메시지(if·each)는 그대로 붙습니다. 틀의
-                          변수: {'{title}'}, {'{wikitext}'}(편집).
-                        </p>
-                        {#each chain.spec.steps as st, n (st.name)}
-                          {@render stepView(st, n, templateMessages(item, st))}
-                        {/each}
-                      </div>
+                      {/if}
                     </td>
                   </tr>
                 {/if}
