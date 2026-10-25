@@ -463,7 +463,7 @@
     <div class="grid grid-cols-[auto_auto_minmax(0,1fr)] items-start gap-x-4 gap-y-2">
       {#each inputs as input (input.name)}
         {@const label = input.label || input.name}
-        <div class="pt-1.5"><code>{input.name}</code></div>
+        <div class="pt-1.5"><code class="var">{input.name}</code></div>
         <div class="pt-1.5 font-medium">{label}</div>
         <div class="min-w-0">
           {#if input.type === 'bool'}
@@ -532,7 +532,7 @@
       </div>
       <pre class="max-h-80 overflow-auto whitespace-pre-wrap bg-muted/30 p-3 text-[11px]">{#each pm.parts as part, k (k)}{#if part.name !== undefined}{#if part.value !== undefined}<mark
               class="rounded bg-blue-100 px-0.5 dark:bg-blue-900/50">{part.value}</mark
-            >{:else}<code>{part.name}</code>{/if}{:else}{part.text}{/if}{/each}</pre>
+            >{:else}<code class="var">{part.name}</code>{/if}{:else}{part.text}{/if}{/each}</pre>
     </div>
   {/each}
 {/snippet}
@@ -723,3 +723,13 @@
     {@render templateEditor(chainOf(draft.request_type)!, draft)}
   {/if}
 </ZModal>
+
+<style>
+  /* A variable name, the same in the user inputs and inside a message's <pre>. */
+  .var {
+    border-radius: 0.25rem;
+    background: var(--color-muted);
+    padding: 0 0.3em;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+</style>
