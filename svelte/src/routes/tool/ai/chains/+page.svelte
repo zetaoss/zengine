@@ -726,6 +726,10 @@
 
 <style>
   .var {
+    padding: 0.125em 0.25em;
     border: 1px solid var(--color-border);
+    border-radius: 0.25rem;
+    background: var(--color-code);
+    color: var(--color-code-foreground);
   }
 </style>
