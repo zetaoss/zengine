@@ -463,7 +463,7 @@
     <div class="grid grid-cols-[auto_auto_minmax(0,1fr)] items-start gap-x-4 gap-y-2">
       {#each inputs as input (input.name)}
         {@const label = input.label || input.name}
-        <div class="pt-1.5"><code class="rounded bg-muted px-1.5 py-0.5 font-mono">{input.name}</code></div>
+        <div class="pt-1.5"><code>{input.name}</code></div>
         <div class="pt-1.5 font-medium">{label}</div>
         <div class="min-w-0">
           {#if input.type === 'bool'}
@@ -532,7 +532,7 @@
       </div>
       <pre class="max-h-80 overflow-auto whitespace-pre-wrap bg-muted/30 p-3 text-[11px]">{#each pm.parts as part, k (k)}{#if part.name !== undefined}{#if part.value !== undefined}<mark
               class="rounded bg-blue-100 px-0.5 dark:bg-blue-900/50">{part.value}</mark
-            >{:else}<code class="rounded bg-muted px-1 font-mono">{part.name}</code>{/if}{:else}{part.text}{/if}{/each}</pre>
+            >{:else}<code>{part.name}</code>{/if}{:else}{part.text}{/if}{/each}</pre>
     </div>
   {/each}
 {/snippet}
