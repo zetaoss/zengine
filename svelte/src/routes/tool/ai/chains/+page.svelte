@@ -725,11 +725,7 @@
 </ZModal>
 
 <style>
-  /* A variable name, the same in the user inputs and inside a message's <pre>. */
   .var {
-    border-radius: 0.25rem;
-    background: var(--color-muted);
-    padding: 0 0.3em;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    border: 1px solid var(--color-border);
   }
 </style>
