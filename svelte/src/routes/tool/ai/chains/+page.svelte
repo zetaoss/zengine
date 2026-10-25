@@ -328,7 +328,7 @@
           {#each chains as chain (chain.name)}
             {@const isExpanded = expanded === chain.name}
             {@const promptType = promptTypeOf[chain.name]}
-            <tr class="hover:bg-muted/30 transition cursor-pointer" onclick={() => toggle(chain.name)}>
+            <tr class="bg-muted/50 hover:bg-muted transition cursor-pointer" onclick={() => toggle(chain.name)}>
               <td class="p-3 text-muted-foreground">-</td>
               <td class="p-3 whitespace-nowrap font-mono font-medium">{chain.name}</td>
               <td class="p-3 text-muted-foreground">{chain.metadata.description}</td>
@@ -377,6 +377,9 @@
                 </td>
               </tr>
             {/if}
+          {/each}
+          {#each chains as chain (chain.name)}
+            {@const promptType = promptTypeOf[chain.name]}
             {#if promptType}
               {#if draft && draft.id === 0 && draft.request_type === promptType}
                 <tr class="bg-muted/10">
@@ -390,7 +393,7 @@
                 {@const itemExpanded = expanded === key}
                 {@const editing = draft?.id === item.id}
                 {@const own = item.user_id === $userInfo?.id}
-                <tr class="hover:bg-muted/30 transition cursor-pointer" onclick={() => toggle(key)}>
+                <tr class={['hover:bg-muted/30 transition cursor-pointer', own && 'border-l-2 border-l-primary']} onclick={() => toggle(key)}>
                   <td class="p-3 whitespace-nowrap text-muted-foreground">{item.user_name}</td>
                   <td class="p-3 whitespace-nowrap font-medium">{item.title}</td>
                   <td class="p-3 text-muted-foreground">{chain.name}의 프롬프트 틀</td>
