@@ -440,11 +440,8 @@
                       </label>
                       <CButton variant="outline" size="small" disabled={!promptType} onclick={() => promptType && openCloneChain(chain, promptType)}>
                         <ZIcon path={mdiContentCopy} class="mr-1" />
-                        복제
+                        {promptType ? '복제' : '복제 불가'}
                       </CButton>
-                      {#if !promptType}
-                        <span class="text-muted-foreground">복제할 수 없는 체인입니다.</span>
-                      {/if}
                     </div>
                     <div class="space-y-1 text-xs text-muted-foreground">
                       <div>버전: <span class="font-mono">{chain.metadata.version}</span></div>
