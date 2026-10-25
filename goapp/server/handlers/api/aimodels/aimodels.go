@@ -101,11 +101,12 @@ func modelHistory(db *gorm.DB) ([]ModelHistory, error) {
 	return history, nil
 }
 
-// chainView is a built-in chain with the model it runs on and how many times it has run.
+// chainView is a built-in chain with the model it runs on, how many times it has run and when it last did.
 type chainView struct {
 	prompts.Chain
-	Model string `json:"model"`
-	Uses  int    `json:"uses"`
+	Model  string     `json:"model"`
+	Uses   int        `json:"uses"`
+	UsedAt *time.Time `json:"used_at"`
 }
 
 // Chains lists the built-in chains (goapp/prompts), each with its model and its runs: the successful calls of its
@@ -125,24 +126,31 @@ func Chains(c *serverctx.Context) {
 	views := []chainView{}
 	for _, chain := range prompts.BuiltinChains() {
 		model, _ := chainsvc.Resolve(saved, c.Cfg, chain.Name)
-		last := chain.Spec.Steps[len(chain.Spec.Steps)-1].Name
-		views = append(views, chainView{Chain: chain, Model: model, Uses: uses[chain.Name+"/"+last]})
+		u := uses[chain.Name+"/"+chain.Spec.Steps[len(chain.Spec.Steps)-1].Name]
+		views = append(views, chainView{Chain: chain, Model: model, Uses: u.n, UsedAt: u.last})
 	}
 	c.JSON(views)
 }
 
-func chainUses(db *gorm.DB) (map[string]int, error) {
+type stepUses struct {
+	n    int
+	last *time.Time
+}
+
+// chainUses counts the successful calls of each chain step and keeps the time of the latest, keyed chain/step.
+func chainUses(db *gorm.DB) (map[string]stepUses, error) {
 	var rows []struct {
-		Chain string `gorm:"column:chain"`
-		Step  string `gorm:"column:step"`
-		N     int    `gorm:"column:n"`
+		Chain string     `gorm:"column:chain"`
+		Step  string     `gorm:"column:step"`
+		N     int        `gorm:"column:n"`
+		Last  *time.Time `gorm:"column:last"`
 	}
-	if err := db.Raw("SELECT chain, step, COUNT(*) AS n FROM llm_calls WHERE ok = 1 GROUP BY chain, step").Scan(&rows).Error; err != nil {
+	if err := db.Raw("SELECT chain, step, COUNT(*) AS n, MAX(created_at) AS last FROM llm_calls WHERE ok = 1 GROUP BY chain, step").Scan(&rows).Error; err != nil {
 		return nil, err
 	}
-	uses := map[string]int{}
+	uses := map[string]stepUses{}
 	for _, r := range rows {
-		uses[r.Chain+"/"+r.Step] = r.N
+		uses[r.Chain+"/"+r.Step] = stepUses{n: r.N, last: r.Last}
 	}
 	return uses, nil
 }

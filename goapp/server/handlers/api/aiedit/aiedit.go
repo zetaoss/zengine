@@ -174,9 +174,9 @@ func Store(c *serverctx.Context) {
 	if insert.ID > 0 {
 		switch promptTitle := strings.TrimSpace(body.PromptTitle); {
 		case prompt != nil:
-			c.DB.Model(&models.AIEditPrompt{}).Where("id = ?", prompt.ID).UpdateColumn("use_count", gorm.Expr("use_count + 1"))
+			c.DB.Model(&models.AIEditPrompt{}).Where("id = ?", prompt.ID).UpdateColumns(map[string]any{"use_count": gorm.Expr("use_count + 1"), "used_at": time.Now()})
 		case promptTitle != "":
-			c.DB.Model(&models.AIEditPrompt{}).Where("title = ?", promptTitle).UpdateColumn("use_count", gorm.Expr("use_count + 1"))
+			c.DB.Model(&models.AIEditPrompt{}).Where("title = ?", promptTitle).UpdateColumns(map[string]any{"use_count": gorm.Expr("use_count + 1"), "used_at": time.Now()})
 		}
 		if _, err := aiedit.Enqueue(c.R.Context(), c.AppContext, insert.ID); err != nil {
 			c.InternalError()

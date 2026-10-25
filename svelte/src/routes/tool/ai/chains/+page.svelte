@@ -12,6 +12,7 @@
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZTextarea from '$shared/ui/ZTextarea.svelte'
   import httpy from '$shared/utils/httpy'
+  import { getAge } from '$shared/utils/time'
 
   import { fetchModelIds, formatModelLabel } from '../loop'
 
@@ -43,6 +44,7 @@
     spec: { userInputs?: ChainInput[]; inputs: ChainInput[]; steps: ChainStep[] }
     model: string
     uses: number
+    used_at?: string | null
   }
 
   function inputLabel(input: ChainInput) {
@@ -63,6 +65,7 @@
     use_count: number
     content: string
     model: string
+    used_at?: string | null
     updated_at?: string
   }
 
@@ -77,6 +80,7 @@
   let expanded = $state<string | null>(null)
   let deletingPromptId = $state<number | null>(null)
   let savingPromptId = $state<number | null>(null)
+  const now = Date.now()
   const userInfo = useAuthStore().userInfo
 
   async function fetchChains() {
@@ -318,12 +322,13 @@
             <th class="p-3">설명</th>
             <th class="p-3">모델</th>
             <th class="p-3 text-center whitespace-nowrap">사용</th>
+            <th class="p-3 whitespace-nowrap">최근</th>
             <th class="p-3 w-14 text-center">상세</th>
           </tr>
         </thead>
         <tbody class="divide-y">
           {#if loading}
-            <tr><td colspan="6" class="p-8 text-center text-muted-foreground">불러오는 중...</td></tr>
+            <tr><td colspan="7" class="p-8 text-center text-muted-foreground">불러오는 중...</td></tr>
           {/if}
           {#each chains as chain (chain.name)}
             {@const isExpanded = expanded === chain.name}
@@ -334,13 +339,14 @@
               <td class="p-3 text-muted-foreground">{chain.metadata.description}</td>
               <td class="p-3 text-xs">{formatModelLabel(chain.model)}</td>
               <td class="p-3 text-center text-muted-foreground tabular-nums" title="이 체인이 끝까지 돈 횟수(프롬프트 틀로 돈 것 포함)">{chain.uses || '-'}</td>
+              <td class="p-3 whitespace-nowrap text-xs text-muted-foreground">{chain.used_at ? getAge(chain.used_at, now) : '-'}</td>
               <td class="p-3 text-center">
                 {@render expandButton(chain.name, isExpanded)}
               </td>
             </tr>
             {#if isExpanded}
               <tr class="bg-muted/10">
-                <td colspan="6" class="p-4">
+                <td colspan="7" class="p-4">
                   <div class="space-y-4">
                     <div class="flex flex-wrap items-center gap-2 text-xs">
                       <label class="flex min-w-0 flex-1 items-center gap-2">
@@ -383,7 +389,7 @@
             {#if promptType}
               {#if draft && draft.id === 0 && draft.request_type === promptType}
                 <tr class="bg-muted/10">
-                  <td colspan="6" class="p-4">
+                  <td colspan="7" class="p-4">
                     {@render templateEditor(chain, draft)}
                   </td>
                 </tr>
@@ -405,13 +411,14 @@
                   <td class="p-3 text-muted-foreground">{chain.name}의 프롬프트 틀</td>
                   <td class="p-3 text-xs">{formatModelLabel(item.model || chain.model)}</td>
                   <td class="p-3 text-center text-muted-foreground tabular-nums">{item.use_count || '-'}</td>
+                  <td class="p-3 whitespace-nowrap text-xs text-muted-foreground">{item.used_at ? getAge(item.used_at, now) : '-'}</td>
                   <td class="p-3 text-center">
                     {@render expandButton(key, itemExpanded)}
                   </td>
                 </tr>
                 {#if itemExpanded}
                   <tr class="bg-muted/10">
-                    <td colspan="6" class="p-4">
+                    <td colspan="7" class="p-4">
                       {#if editing && draft}
                         {@render templateEditor(chain, draft)}
                       {:else}

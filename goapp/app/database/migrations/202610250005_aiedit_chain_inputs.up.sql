@@ -7,9 +7,11 @@ ALTER TABLE aiedit_tasks
   ADD COLUMN IF NOT EXISTS inputs LONGTEXT NULL AFTER phase,
   ADD COLUMN IF NOT EXISTS llm_messages LONGTEXT NULL AFTER inputs;
 
--- A template picks its own model; '' runs it on its chain's model.
+-- A template picks its own model; '' runs it on its chain's model. used_at is when it was last run (unknown for
+-- runs before this, which did not record their template).
 ALTER TABLE aiedit_prompts
-  ADD COLUMN IF NOT EXISTS model VARCHAR(128) NOT NULL DEFAULT '' AFTER content;
+  ADD COLUMN IF NOT EXISTS model VARCHAR(128) NOT NULL DEFAULT '' AFTER content,
+  ADD COLUMN IF NOT EXISTS used_at TIMESTAMP NULL AFTER use_count;
 
 -- Template variables follow the chains' names: {제목} is {title}, {기존 문서 내용} (and {기존문서}) is {wikitext}.
 UPDATE aiedit_prompts
