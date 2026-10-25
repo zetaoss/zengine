@@ -289,11 +289,7 @@
                 <tr class="hover:bg-muted/30 transition cursor-pointer" onclick={() => toggle(key)}>
                   <td class="p-3 whitespace-nowrap">
                     <span class="text-muted-foreground">{item.user_name} |</span>
-                    <a
-                      class="font-medium hover:underline"
-                      href={resolve(`/tool/ai/prompts/${item.id}` as '/tool/ai/prompts/[id]')}
-                      onclick={(e) => e.stopPropagation()}>{item.title}</a
-                    >
+                    <span class="font-medium">{item.title}</span>
                   </td>
                   <td class="p-3 text-muted-foreground">
                     {chain.name}의 프롬프트 틀
