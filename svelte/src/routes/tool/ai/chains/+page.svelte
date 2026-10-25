@@ -93,10 +93,17 @@
     chains = data ?? []
   }
 
+  // Templates, most recently used first; those not run since used_at was recorded follow by use count.
   async function fetchPrompts() {
     const [data, err] = await httpy.get<PromptItem[]>('/api/ai-prompts')
     if (err) return
-    prompts = (data ?? []).sort((a, b) => b.use_count - a.use_count || b.id - a.id)
+    const usedAt = (p: PromptItem) => (p.used_at ? new Date(p.used_at).getTime() : 0)
+    prompts = (data ?? []).sort((a, b) => usedAt(b) - usedAt(a) || b.use_count - a.use_count || b.id - a.id)
+  }
+
+  // The built-in chain a template runs on: doc-create or doc-update by its request type.
+  function chainOf(requestType: string): Chain | undefined {
+    return chains.find((c) => promptTypeOf[c.name] === requestType)
   }
 
   async function setModel(chain: Chain, model: string) {
@@ -384,17 +391,16 @@
               </tr>
             {/if}
           {/each}
-          {#each chains as chain (chain.name)}
-            {@const promptType = promptTypeOf[chain.name]}
-            {#if promptType}
-              {#if draft && draft.id === 0 && draft.request_type === promptType}
-                <tr class="bg-muted/10">
-                  <td colspan="7" class="p-4">
-                    {@render templateEditor(chain, draft)}
-                  </td>
-                </tr>
-              {/if}
-              {#each prompts.filter((p) => p.request_type === promptType) as item (item.id)}
+          {#if draft && draft.id === 0 && chainOf(draft.request_type)}
+            <tr class="bg-muted/10">
+              <td colspan="7" class="p-4">
+                {@render templateEditor(chainOf(draft.request_type)!, draft)}
+              </td>
+            </tr>
+          {/if}
+          {#each prompts as item (item.id)}
+            {@const chain = chainOf(item.request_type)}
+            {#if chain}
                 {@const key = `prompt:${item.id}`}
                 {@const itemExpanded = expanded === key}
                 {@const editing = draft?.id === item.id}
@@ -464,7 +470,6 @@
                     </td>
                   </tr>
                 {/if}
-              {/each}
             {/if}
           {/each}
         </tbody>
