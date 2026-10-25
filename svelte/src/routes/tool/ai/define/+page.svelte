@@ -12,7 +12,7 @@
   import { getWikiViewHref } from '$shared/utils/wikiLink'
 
   import LoopPanel from '../LoopPanel.svelte'
-  import { fetchModelIds, fetchRevisionSource, type LastRun, type LoopSettings, type QueuedTask, splitAtBytes } from '../loop'
+  import { fetchRevisionSource, formatDateTime, type LastRun, type LoopSettings, type QueuedTask, splitAtBytes } from '../loop'
   import ModelId from '../ModelId.svelte'
   import RunModal from '../RunModal.svelte'
 
@@ -47,7 +47,6 @@
   const pageSize = 20
 
   let settings = $state<LoopSettings>({ interval: '30m', model: 'groq/openai/gpt-oss-120b', strategy: 'random' })
-  let modelIds = $state<string[]>([])
   let savingSettings = $state(false)
   let settingsError = $state('')
   let lastRun = $state<LastRun | null>(null)
@@ -83,7 +82,7 @@
     settingsLoaded = true
   }
 
-  async function handleSaveSettings(change: Partial<LoopSettings>) {
+  async function handleSaveSettings(change: Partial<Omit<LoopSettings, 'model'>>) {
     savingSettings = true
     settingsError = ''
     const body = Object.fromEntries(Object.entries(change).map(([k, v]) => [`define_${k}`, v]))
@@ -150,7 +149,6 @@
 
   onMount(() => {
     fetchSettings()
-    fetchModelIds().then((ids) => (modelIds = ids))
     fetchDefinitions()
     let tick = 0
     const timer = setInterval(() => {
@@ -166,10 +164,10 @@
 
 <div class="container mx-auto p-4 md:p-6 max-w-6xl space-y-6">
   <LoopPanel
+    chain="doc-define"
     heading="문서 정의"
     instantTitle="정의 즉시 실행 대화상자 열기"
     {settings}
-    {modelIds}
     saving={savingSettings}
     {lastRun}
     {tasks}
@@ -213,7 +211,9 @@
           {:else}
             {#each items as item (item.page_id)}
               <tr class="hover:bg-muted/30 transition cursor-pointer align-top" onclick={() => toggleExpand(item)}>
-                <td class="p-3 text-xs text-muted-foreground whitespace-nowrap" title={item.updated_at}>{getAge(item.updated_at, now)}</td>
+                <td class="p-3 text-xs text-muted-foreground whitespace-nowrap" title={formatDateTime(item.updated_at)}
+                  >{getAge(item.updated_at, now)}</td
+                >
                 <td class="p-3 whitespace-nowrap">
                   <a
                     href={item.page_id > 0 ? `/w/index.php?curid=${item.page_id}` : getWikiViewHref(item.page_title)}

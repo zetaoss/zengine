@@ -92,7 +92,7 @@ Use the `Router` middleware factory to keep `routes.go` declarative.
 - Active phases include `Generating` and `Retrying`.
 - A single page-level timer refreshes the list and stops when the user leaves the list tab.
 
-The `ai-edit` task runs the request's rendered prompt (`llm_input`) on the `doc-create` or `doc-update` chain with the model of `chains.docCreate` or `docUpdate` ([chain.md](chain.md#built-in-chains)), so bob does not fall back to another model; a failed call goes to the task's retries and is recorded in `llm_calls`. Request types are `create` (a page that does not exist yet) and `update` (rewrite an existing one), in `aiedit_tasks` and `aiedit_prompts` (`models.AIEditRequestCreate`, `AIEditRequestUpdate`). `update` was called `edit` until v0.9.60; the API still accepts `edit` from skins loaded before the rename. AIEdit prompts (`/api/ai-prompts*`) are sysop-only (`r.Sysop()`). The Activity tab calls the MediaWiki API directly through `mwapi` in Svelte. Contribution flags can be array values such as `"new"` and `"top"`.
+The `ai-edit` task runs the request's rendered prompt (`llm_input`) on the `doc-create` or `doc-update` chain with the chain's model (chains tab, else `chains.docCreate` or `docUpdate`; [chain.md](chain.md#screen-and-api)), so bob does not fall back to another model; a failed call goes to the task's retries and is recorded in `llm_calls`. Request types are `create` (a page that does not exist yet) and `update` (rewrite an existing one), in `aiedit_tasks` and `aiedit_prompts` (`models.AIEditRequestCreate`, `AIEditRequestUpdate`). `update` was called `edit` until v0.9.60; the API still accepts `edit` from skins loaded before the rename. AIEdit prompts (`/api/ai-prompts*`) are sysop-only (`r.Sysop()`). The Activity tab calls the MediaWiki API directly through `mwapi` in Svelte. Contribution flags can be array values such as `"new"` and `"top"`.
 
 ### Write Request
 
@@ -122,13 +122,13 @@ The `ai-edit` task runs the request's rendered prompt (`llm_input`) on the `doc-
 - Client: `goapp/services/llmsvc/client/client.go`
 - Configuration: `API.BobEndpoint` in `goapp/app/config/config.go`; the client calls `BOB_ENDPOINT/aigate/v1/chat/completions`
 - Rate limits: a `429` from aigate is retried once after its `Retry-After` (5 seconds when absent); a delay over 30 seconds, such as a daily quota, fails at once. Errors carry aigate's `error` text.
-- Call history: `llmsvc.RunStep` passes each model call to the service's recorder; `llmsvc.DBRecorder` stores it in `llm_calls` (`goapp/app/database/migrations/202610250002_llm_calls.up.sql`: chain and version, step, requested and answering model, ok, error, tokens, elapsed time). A response that does not parse is a failed call. It is zengine's empirical record of which models work, kept across bob restarts; the model tab shows it in the same row as bob's usage: Daily (bob's count for the quota day: calls, limit, remaining, `≈` when bob estimates it) and Total (calls with the success rate and per-chain counts on hover, latency, first and last success, last failure with its error on hover). Models with recorded calls that bob no longer lists come last. Rows are not pruned yet.
+- Call history: `llmsvc.RunStep` passes each model call to the service's recorder; `llmsvc.DBRecorder` stores it in `llm_calls` (`goapp/app/database/migrations/202610250002_llm_calls.up.sql`: chain and version, step, requested and answering model, ok, error, tokens, elapsed time). A response that does not parse is a failed call. It is zengine's empirical record of which models work, kept across bob restarts; the model tab shows it in the same row as bob's usage, after the chains that run on the model: Daily (bob's count for the quota day: calls, limit, remaining, `≈` when bob estimates it, or the time a cooled-down model is back) and Total (calls with the success rate and per-chain counts on hover, latency, first and last success and last failure as ages with the date and time, and the error, on hover). Models with recorded calls that bob no longer lists come last. Rows are not pruned yet.
 - Models: `GET /api/ai/models` (`r.Sysop()`, `goapp/server/handlers/api/aimodels/aimodels.go`) returns bob's `/aigate/v1/models?all` and `/aigate/v1/usage` (null when bob lacks it); the AI tool menu's model tab (`svelte/src/routes/tool/ai/models/**`) shows them per provider
 
 ### Chains
 
 - Definitions: `goapp/prompts/**`; runner: `llmsvc.RunStep`
-- Route: `GET /api/ai/builtin-chains` (`r.Sysop()`)
+- Routes: `GET /api/ai/chains`, `PUT /api/ai/chains/{name}/model` (`r.Sysop()`, [chain.md](chain.md#screen-and-api))
 - Frontend: `svelte/src/routes/tool/ai/prompts/**`
 - Guide: [chain.md](chain.md)
 

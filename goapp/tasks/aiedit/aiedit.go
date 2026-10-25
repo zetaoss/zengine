@@ -17,6 +17,7 @@ import (
 
 	"github.com/zetaoss/zengine/goapp/models"
 	"github.com/zetaoss/zengine/goapp/prompts"
+	"github.com/zetaoss/zengine/goapp/services/chainsvc"
 	"github.com/zetaoss/zengine/goapp/services/llmsvc"
 
 	"gorm.io/gorm"
@@ -138,7 +139,7 @@ func (j *AIEditTask) generateContent(ctx context.Context, taskCtx taskctx.Contex
 	if llmInput == "" {
 		return "", "", "", fmt.Errorf("llm_input is required")
 	}
-	chain, model := chainFor(taskCtx.Config(), task.RequestType)
+	chain, model := chainFor(db, taskCtx.Config(), task.RequestType)
 	svc := llmsvc.New(taskCtx.Config()).WithRecorder(llmsvc.DBRecorder(db))
 	var content string
 	res, err := svc.RunStep(ctx, model, chain, chain.Steps[0], map[string]string{"prompt": llmInput}, &content)
@@ -148,17 +149,14 @@ func (j *AIEditTask) generateContent(ctx context.Context, taskCtx taskctx.Contex
 	return content, res.Model, llmInput, err
 }
 
-// chainFor returns the chain of a request type, doc-update for update and doc-create otherwise, and its model
-// from the GOAPP_CONFIG chains (chains.docCreate or docUpdate, then common, then the default).
-func chainFor(cfg *config.Config, requestType string) (prompts.Chain, string) {
-	var chains config.ChainsConfig
-	if cfg != nil {
-		chains = cfg.Chains
-	}
+// chainFor returns the chain of a request type, doc-update for update and doc-create otherwise, and the model it
+// runs on (chainsvc).
+func chainFor(db *gorm.DB, cfg *config.Config, requestType string) (prompts.Chain, string) {
+	chain := prompts.DocCreate
 	if requestType == models.AIEditRequestUpdate {
-		return prompts.DocUpdate, chains.ModelFor(chains.DocUpdate)
+		chain = prompts.DocUpdate
 	}
-	return prompts.DocCreate, chains.ModelFor(chains.DocCreate)
+	return chain, chainsvc.ModelFor(db, cfg, chain)
 }
 
 // CalculateRetryAt returns the next retry time for a task based on its error count.

@@ -7,6 +7,9 @@
 
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import httpy from '$shared/utils/httpy'
+  import { getAge } from '$shared/utils/time'
+
+  import { formatDateTime } from '../loop'
 
   interface ModelInfo {
     id: string
@@ -107,13 +110,7 @@
   }
 
   // yyyy-MM-dd HH:mm rounded to the nearest minute (a reset at 15:59:59.9 shows as 16:00); HH:mm alone for today.
-  // yyyy-MM-dd in local time.
-  function formatDate(iso: string): string {
-    const d = new Date(iso)
-    if (isNaN(d.getTime())) return iso
-    const pad = (n: number) => String(n).padStart(2, '0')
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-  }
+  let now = $state(Date.now())
 
   function formatTime(iso?: string): string {
     if (!iso) return ''
@@ -160,6 +157,17 @@
     return `${from} - ${end.date} ${end.time}`
   }
 
+  // The chains each model runs, from the chains tab's settings.
+  let chainsByModel = $state<Record<string, string[]>>({})
+
+  async function fetchChainModels() {
+    const [data, err] = await httpy.get<Array<{ name: string; model: string }>>('/api/ai/chains')
+    if (err || !data) return
+    const byModel: Record<string, string[]> = {}
+    for (const c of data) (byModel[c.model] ??= []).push(c.name)
+    chainsByModel = byModel
+  }
+
   async function fetchModels() {
     loading = true
     const [data, err] = await httpy.get<ModelsResp>('/api/ai/models')
@@ -174,6 +182,9 @@
 
   onMount(() => {
     fetchModels()
+    fetchChainModels()
+    const timer = setInterval(() => (now = Date.now()), 30000)
+    return () => clearInterval(timer)
   })
 </script>
 
@@ -184,23 +195,19 @@
     <td class="p-2 text-center text-muted-foreground">{n}</td>
     <td class="p-2">{row.provider}</td>
     <td class="p-2">{row.model}</td>
-    <td class="p-2 text-xs">
-      {#if !u}
-        {#if row.order}<span class="text-muted-foreground">-</span>{:else}<span aria-label="불가">●</span>{/if}
-      {:else if u.available}
-        <span class="text-emerald-600 dark:text-emerald-400" aria-label="가능">●</span>
-      {:else}
-        <span class="text-rose-600 dark:text-rose-400"
-          >소진 · <ZIcon path={mdiFlash} size={14} class="inline-block align-text-bottom" />{formatTime(u.cooldown_until)}</span
-        >
-      {/if}
-    </td>
+    <td class="p-2 text-xs text-muted-foreground"
+      >{#each chainsByModel[row.id] ?? [] as name (name)}<div class="whitespace-nowrap">{name}</div>{/each}</td
+    >
     <td class="p-2 text-right border-l">
       {#if u?.requests}{u.successes} <span class="text-xs text-muted-foreground">({u.requests})</span>{:else}-{/if}
     </td>
     <td class="p-2 text-right">{u ? (u.daily_limit ?? '-') : '-'}</td>
     <td class="p-2 text-right">
-      {#if u?.remaining == null}
+      {#if u && !u.available}
+        <span class="text-rose-600 dark:text-rose-400 whitespace-nowrap" title="소진, 이때 다시 사용 가능"
+          ><ZIcon path={mdiFlash} size={14} class="inline-block align-text-bottom" />{formatTime(u.cooldown_until)}</span
+        >
+      {:else if u?.remaining == null}
         -
       {:else if u.quota_source === 'estimate'}
         <span title="bob 추정: 공급자가 남은 한도를 알려 주지 않아 bob이 센 값">≈{u.remaining}</span>
@@ -212,10 +219,17 @@
       {#if h}{successRate(h)} <span class="text-xs text-muted-foreground">({h.oks}/{h.calls})</span>{:else}-{/if}
     </td>
     <td class="p-2 text-right whitespace-nowrap">{h ? `${(h.avg_elapsed_ms / 1000).toFixed(1)}s` : '-'}</td>
-    <td class="p-2 text-xs whitespace-nowrap">{h?.first_ok_at ? formatDate(h.first_ok_at) : '-'}</td>
-    <td class="p-2 text-xs whitespace-nowrap">{h?.last_ok_at ? formatTime(h.last_ok_at) : '-'}</td>
-    <td class="p-2 text-xs whitespace-nowrap" title={h?.last_error || undefined}>
-      {#if h?.last_failure_at}<span class="text-rose-600 dark:text-rose-400">{formatTime(h.last_failure_at)}</span>{:else}-{/if}
+    <td class="p-2 text-xs whitespace-nowrap" title={h?.first_ok_at ? formatDateTime(h.first_ok_at) : undefined}
+      >{h?.first_ok_at ? getAge(h.first_ok_at, now) : '-'}</td
+    >
+    <td class="p-2 text-xs whitespace-nowrap" title={h?.last_ok_at ? formatDateTime(h.last_ok_at) : undefined}
+      >{h?.last_ok_at ? getAge(h.last_ok_at, now) : '-'}</td
+    >
+    <td
+      class="p-2 text-xs whitespace-nowrap"
+      title={h?.last_failure_at ? `${formatDateTime(h.last_failure_at)} ${h.last_error}`.trim() : undefined}
+    >
+      {#if h?.last_failure_at}<span class="text-rose-600 dark:text-rose-400">{getAge(h.last_failure_at, now)}</span>{:else}-{/if}
     </td>
   </tr>
 {/snippet}
@@ -245,7 +259,7 @@
             <th class="p-2 w-12 text-center" rowspan="2">#</th>
             <th class="p-2" rowspan="2">Provider</th>
             <th class="p-2" rowspan="2">Model</th>
-            <th class="p-2" rowspan="2">Status</th>
+            <th class="p-2" rowspan="2" title="이 모델로 도는 체인">Chains</th>
             <th class="p-2 pb-0 text-center border-l" colspan="3">Daily</th>
             <th class="p-2 pb-0 text-center border-l" colspan="5">Total</th>
           </tr>

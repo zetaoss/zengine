@@ -29,16 +29,13 @@ const (
 // DefaultStrategy is the fallback candidate selection strategy (random, non-duplicate).
 const DefaultStrategy = StrategyRandom
 
+// Settings are the run settings of the two loops. Their models are the chains' (services/chainsvc).
 type Settings struct {
 	Interval string `json:"interval"`
-	// Model is the bob aigate model (provider/model) used for rubric generation and judging.
-	Model string `json:"model"`
 	// Strategy is the candidate page selection strategy: "random", "oldest", or "newest".
 	Strategy string `json:"strategy"`
-	// DefineInterval, DefineModel and DefineStrategy run doc-define-loop, which writes the definitions
-	// evaluations need.
+	// DefineInterval and DefineStrategy run doc-define-loop, which writes the definitions evaluations need.
 	DefineInterval string `json:"define_interval"`
-	DefineModel    string `json:"define_model"`
 	DefineStrategy string `json:"define_strategy"`
 }
 
@@ -55,20 +52,18 @@ func NormalizeStrategy(s string) string {
 }
 
 // builtinSettings are the defaults when the deployment sets none: evaluation every hour and a definition
-// every 30 minutes, both with DefaultModel and the random strategy.
+// every 30 minutes, both with the random strategy.
 func builtinSettings() Settings {
 	return Settings{
 		Interval:       "1h",
-		Model:          DefaultModel,
 		Strategy:       DefaultStrategy,
 		DefineInterval: "30m",
-		DefineModel:    DefaultModel,
 		DefineStrategy: DefaultStrategy,
 	}
 }
 
-// DefaultSettings returns the defaults: chains.docEval and chains.docDefine of the GOAPP_CONFIG file, each
-// field falling back to chains.common and then to builtinSettings when unset or invalid. A nil cfg gives
+// DefaultSettings returns the defaults: chains.docEval and chains.docDefine of the GOAPP_CONFIG file, the
+// strategy falling back to chains.common, and each field then to builtinSettings when unset or invalid. A nil cfg gives
 // builtinSettings.
 func DefaultSettings(cfg *config.Config) Settings {
 	s := builtinSettings()
@@ -77,20 +72,17 @@ func DefaultSettings(cfg *config.Config) Settings {
 	}
 	eval := cfg.Chains.DocEval.Resolve(cfg.Chains.Common)
 	define := cfg.Chains.DocDefine.Resolve(cfg.Chains.Common)
-	s.Interval, s.Model, s.Strategy = resolved(eval, s.Interval, s.Model, s.Strategy)
-	s.DefineInterval, s.DefineModel, s.DefineStrategy = resolved(define, s.DefineInterval, s.DefineModel, s.DefineStrategy)
+	s.Interval, s.Strategy = resolved(eval, s.Interval, s.Strategy)
+	s.DefineInterval, s.DefineStrategy = resolved(define, s.DefineInterval, s.DefineStrategy)
 	return s
 }
 
-func resolved(c config.ChainConfig, interval, model, strategy string) (string, string, string) {
+func resolved(c config.ChainConfig, interval, strategy string) (string, string) {
 	interval = normalizedInterval(c.Interval, interval)
-	if m, err := validateModel(c.Model); err == nil {
-		model = m
-	}
 	if c.Strategy != "" {
 		strategy = NormalizeStrategy(c.Strategy)
 	}
-	return interval, model, strategy
+	return interval, strategy
 }
 
 // ParseInterval parses a loop interval; see config.ParseInterval.
@@ -133,16 +125,6 @@ func GetSettings(db *gorm.DB, cfg *config.Config) (Settings, error) {
 	}
 	s.Interval = normalizedInterval(s.Interval, defaults.Interval)
 	s.DefineInterval = normalizedInterval(s.DefineInterval, defaults.DefineInterval)
-	if m, err := validateModel(s.Model); err == nil {
-		s.Model = m
-	} else {
-		s.Model = defaults.Model
-	}
-	if m, err := validateModel(s.DefineModel); err == nil {
-		s.DefineModel = m
-	} else {
-		s.DefineModel = defaults.DefineModel
-	}
 	s.Strategy = NormalizeStrategy(s.Strategy)
 	s.DefineStrategy = NormalizeStrategy(s.DefineStrategy)
 	return s, nil
@@ -158,10 +140,6 @@ func normalizedInterval(interval, fallback string) string {
 	return fallback
 }
 
-func validateModel(model string) (string, error) {
-	return config.ValidateModel(model)
-}
-
 func SaveSettings(db *gorm.DB, s Settings) error {
 	var err error
 	if _, s.Interval, err = ParseInterval(s.Interval); err != nil {
@@ -172,12 +150,6 @@ func SaveSettings(db *gorm.DB, s Settings) error {
 	}
 	s.Strategy = NormalizeStrategy(s.Strategy)
 	s.DefineStrategy = NormalizeStrategy(s.DefineStrategy)
-	if s.Model, err = validateModel(s.Model); err != nil {
-		return err
-	}
-	if s.DefineModel, err = validateModel(s.DefineModel); err != nil {
-		return fmt.Errorf("define model: %w", err)
-	}
 
 	raw, err := json.Marshal(s)
 	if err != nil {

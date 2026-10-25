@@ -29,7 +29,7 @@ Two chains ([chain.md](chain.md)) run in `goapp/services/doceval`. `doc-define` 
 
 ## Model and reuse
 
-- Each chain has its model, picked in the evaluation tab (see [Settings](#settings)); bob does not fall back, so a quota-exhausted run fails and the next run retries.
+- Each chain has its model, picked in the chains tab ([chain.md](chain.md#screen-and-api)); the definition and evaluation tabs show it. bob does not fall back, so a quota-exhausted run fails and the next run retries.
 - Each chain's metadata `version` is stored as `chain_version`. Rubrics are reused for the same title, definition and version; bump a version when its steps change, since results across versions are not comparable. A new version makes every article a candidate again.
 - Redirect pages are skipped.
 
@@ -46,7 +46,7 @@ All routes are sysop-only:
 - `GET /api/evaluations/summary`: counts per grade, contradicted count, average pass rates
 - `GET /api/evaluations/candidate`: picks a candidate article title by `strategy` (default: the setting)
 - `GET /api/evaluations/{id}`: one evaluation, including revision status
-- `GET`/`PUT /api/evaluations/settings`: `interval`, `model`, `strategy` (evaluation) and `define_interval`, `define_model`, `define_strategy` (definition); GET also returns `last_run`, `tasks`, `define_last_run`, `define_tasks`, and the number of `definitions`
+- `GET`/`PUT /api/evaluations/settings`: `interval`, `strategy` (evaluation) and `define_interval`, `define_strategy` (definition); GET also returns the chains' `model` and `define_model` (set in the chains tab), `last_run`, `tasks`, `define_last_run`, `define_tasks`, and the number of `definitions`
 - `POST /api/evaluations/run`: enqueues one evaluation run immediately (forces execution even when the interval is off)
 
 ## Loops
@@ -64,12 +64,11 @@ The loops share their own `doc-eval` queue, and each keeps at most one waiting t
 
 ## Settings
 
-Each field resolves in this order: the value a sysop saved in the evaluation tab (`app_settings` `doc_eval_settings`), `chains.docEval` or `chains.docDefine` of the `GOAPP_CONFIG` file, `chains.common` (`model` and `strategy` only), then the built-in default. A value that does not parse falls back to the next.
+The interval and strategy resolve in this order: the value a sysop saved in the definition or evaluation tab (`app_settings` `doc_eval_settings`), `chains.docEval` or `chains.docDefine` of the `GOAPP_CONFIG` file, `chains.common` (strategy only), then the built-in default. A value that does not parse falls back to the next. The model is the chain's ([chain.md](chain.md#screen-and-api)).
 
 | Field | Built-in default | Values |
 | --- | --- | --- |
 | `interval` | `1h` (docEval), `30m` (docDefine) | Go duration below 100h; `0s` turns the loop off |
-| `model` | `groq/openai/gpt-oss-120b` | A bob aigate model, `provider/model` |
 | `strategy` | `random` | `random`, `oldest`, `newest` |
 
 ```yaml
