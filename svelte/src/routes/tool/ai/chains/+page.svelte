@@ -6,7 +6,6 @@
   import { mdiChevronDown, mdiContentCopy, mdiDelete, mdiPencil, mdiPlus } from '@mdi/js'
 
   import { resolve } from '$app/paths'
-  import AvatarUser from '$lib/components/avatar/AvatarUser.svelte'
   import useAuthStore from '$lib/stores/auth'
   import CButton from '$shared/ui/CButton.svelte'
   import { showConfirm } from '$shared/ui/confirm/confirm'
@@ -43,6 +42,7 @@
     metadata: { version: string; description: string }
     spec: { userInputs?: ChainInput[]; inputs: ChainInput[]; steps: ChainStep[] }
     model: string
+    uses: number
   }
 
   function inputLabel(input: ChainInput) {
@@ -62,6 +62,7 @@
     request_type: string
     use_count: number
     content: string
+    model: string
     updated_at?: string
   }
 
@@ -76,6 +77,7 @@
   let expanded = $state<string | null>(null)
   let deletingPromptId = $state<number | null>(null)
   let cloningPromptId = $state<number | null>(null)
+  let savingPromptId = $state<number | null>(null)
   const userInfo = useAuthStore().userInfo
 
   async function fetchChains() {
@@ -133,9 +135,33 @@
     return [{ role: 'user', content: item.content }, ...st.messages.filter((m) => m.if || m.each)]
   }
 
-  async function clonePrompt(item: PromptItem) {
+  async function setPromptModel(item: PromptItem, model: string) {
+    savingPromptId = item.id
+    const [, err] = await httpy.post('/api/ai-prompts', {
+      id: item.id,
+      title: item.title,
+      request_type: item.request_type,
+      content: item.content,
+      model,
+    })
+    savingPromptId = null
+    if (err) {
+      showToast(err.message || '모델 저장에 실패했습니다.')
+      return
+    }
+    item.model = model
+    showToast('저장했습니다')
+  }
+
+  // A clone takes the model its source runs on as a value, so later changes to the source do not follow.
+  async function clonePrompt(item: PromptItem, chain: Chain) {
     cloningPromptId = item.id
-    const [, err] = await httpy.post('/api/ai-prompts', { title: `${item.title} 복사본`, request_type: item.request_type, content: item.content })
+    const [, err] = await httpy.post('/api/ai-prompts', {
+      title: `${item.title} 복사본`,
+      request_type: item.request_type,
+      content: item.content,
+      model: item.model || chain.model,
+    })
     cloningPromptId = null
     if (err) {
       showToast(err.message || '복제 실패')
@@ -193,7 +219,7 @@
           <tr class="border-b bg-muted/50 text-muted-foreground text-xs font-medium">
             <th class="p-3">체인</th>
             <th class="p-3">설명</th>
-            <th class="p-3 text-center whitespace-nowrap">Steps</th>
+            <th class="p-3 text-center whitespace-nowrap">Use</th>
             <th class="p-3">모델</th>
             <th class="p-3 w-14 text-center">상세</th>
           </tr>
@@ -207,25 +233,13 @@
             {@const promptType = promptTypeOf[chain.name]}
             <tr class="hover:bg-muted/30 transition cursor-pointer" onclick={() => toggle(chain.name)}>
               <td class="p-3 whitespace-nowrap">
+                <span class="text-muted-foreground">System |</span>
                 <span class="font-mono font-medium">{chain.name}</span>
                 <span class="ml-1 font-mono text-xs text-muted-foreground">{chain.metadata.version}</span>
-                <div class="text-xs text-muted-foreground">System</div>
               </td>
               <td class="p-3 text-muted-foreground">{chain.metadata.description}</td>
-              <td class="p-3 text-center text-muted-foreground">{chain.spec.steps.length}</td>
-              <td class="p-3" onclick={(e) => e.stopPropagation()}>
-                <select
-                  class="h-8 w-full max-w-72 rounded border bg-background px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-                  value={chain.model}
-                  disabled={savingChain === chain.name}
-                  aria-label={`${chain.name} 모델`}
-                  onchange={(e) => setModel(chain, e.currentTarget.value)}
-                >
-                  {#each modelOptions(chain) as id (id)}
-                    <option value={id}>{formatModelLabel(id)}</option>
-                  {/each}
-                </select>
-              </td>
+              <td class="p-3 text-center text-muted-foreground tabular-nums" title="이 체인이 끝까지 돈 횟수(프롬프트 틀로 돈 것 포함)">{chain.uses || '-'}</td>
+              <td class="p-3 text-xs">{formatModelLabel(chain.model)}</td>
               <td class="p-3 text-center">
                 {@render expandButton(chain.name, isExpanded)}
               </td>
@@ -234,6 +248,19 @@
               <tr class="bg-muted/10">
                 <td colspan="5" class="p-4">
                   <div class="space-y-4">
+                    <label class="flex items-center gap-2 text-xs">
+                      <span class="font-medium">모델</span>
+                      <select
+                        class="h-8 w-full max-w-72 rounded border bg-background px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                        value={chain.model}
+                        disabled={savingChain === chain.name}
+                        onchange={(e) => setModel(chain, e.currentTarget.value)}
+                      >
+                        {#each modelOptions(chain) as id (id)}
+                          <option value={id}>{formatModelLabel(id)}</option>
+                        {/each}
+                      </select>
+                    </label>
                     <div class="space-y-1 text-xs text-muted-foreground">
                       {#if chain.spec.userInputs?.length}
                         <div>실행 입력: <span class="font-mono">{chain.spec.userInputs.map(inputLabel).join(', ')}</span></div>
@@ -260,22 +287,19 @@
                 {@const key = `prompt:${item.id}`}
                 {@const itemExpanded = expanded === key}
                 <tr class="hover:bg-muted/30 transition cursor-pointer" onclick={() => toggle(key)}>
-                  <td class="p-3 pl-6 whitespace-nowrap">
-                    <span class="text-muted-foreground">↳</span>
+                  <td class="p-3 whitespace-nowrap">
+                    <span class="text-muted-foreground">{item.user_name} |</span>
                     <a
                       class="font-medium hover:underline"
                       href={resolve(`/tool/ai/prompts/${item.id}` as '/tool/ai/prompts/[id]')}
                       onclick={(e) => e.stopPropagation()}>{item.title}</a
                     >
-                    <div class="pl-4 text-xs"><AvatarUser user={{ id: item.user_id, name: item.user_name }} /></div>
                   </td>
                   <td class="p-3 text-muted-foreground">
-                    {chain.name}의 프롬프트 틀 · 사용 {item.use_count || 0}회
+                    {chain.name}의 프롬프트 틀
                   </td>
-                  <td class="p-3 text-center text-muted-foreground">{chain.spec.steps.length}</td>
-                  <td class="p-3 text-xs text-muted-foreground" title="커스텀별 모델은 아직 없어 원본 체인의 모델로 돕니다">
-                    {formatModelLabel(chain.model)} ({chain.name})
-                  </td>
+                  <td class="p-3 text-center text-muted-foreground tabular-nums">{item.use_count || '-'}</td>
+                  <td class="p-3 text-xs">{formatModelLabel(item.model || chain.model)}</td>
                   <td class="p-3 text-center">
                     {@render expandButton(key, itemExpanded)}
                   </td>
@@ -284,6 +308,20 @@
                   <tr class="bg-muted/10">
                     <td colspan="5" class="p-4">
                       <div class="space-y-4">
+                        <label class="flex items-center gap-2 text-xs">
+                          <span class="font-medium">모델</span>
+                          <select
+                            class="h-8 w-full max-w-72 rounded border bg-background px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                            value={item.model || chain.model}
+                            disabled={item.user_id !== $userInfo?.id || savingPromptId === item.id}
+                            title={item.user_id === $userInfo?.id ? '' : '만든 사람만 바꿀 수 있습니다'}
+                            onchange={(e) => setPromptModel(item, e.currentTarget.value)}
+                          >
+                            {#each modelOptions(chain) as id (id)}
+                              <option value={id}>{formatModelLabel(id)}</option>
+                            {/each}
+                          </select>
+                        </label>
                         <p class="text-xs text-muted-foreground">
                           틀이 {chain.name}의 조건 없는 메시지(system과 제목·기존 문서)를 대신하고, 실행 입력 메시지(if·each)는 그대로 붙습니다. 틀의
                           변수: {'{title}'}, {'{wikitext}'}(편집).
@@ -298,7 +336,7 @@
                               편집
                             </CButton>
                           {/if}
-                          <CButton variant="outline" size="small" disabled={cloningPromptId === item.id} onclick={() => void clonePrompt(item)}>
+                          <CButton variant="outline" size="small" disabled={cloningPromptId === item.id} onclick={() => void clonePrompt(item, chain)}>
                             <ZIcon path={mdiContentCopy} class="mr-1" />
                             복제
                           </CButton>

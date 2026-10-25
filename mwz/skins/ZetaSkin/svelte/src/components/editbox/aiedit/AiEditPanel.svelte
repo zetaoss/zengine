@@ -23,6 +23,7 @@
     user_id: number
     title: string
     content: string
+    model: string
     request_type: string
     use_count: number
     user_name: string
@@ -92,6 +93,7 @@
           title: currentPromptItem.title,
           requestType: currentPromptItem.request_type,
           content: currentPromptItem.content,
+          model: currentPromptItem.model ?? '',
         }
       : null,
   )

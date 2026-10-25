@@ -8,6 +8,7 @@ export interface AIEditPromptForRunner {
   title: string
   requestType: AIEditRequestType
   content: string
+  model: string
 }
 
 // A user input of the chain a request type runs (doc-create, doc-update): a field of the run form.

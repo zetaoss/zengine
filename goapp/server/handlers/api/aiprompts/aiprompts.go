@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/zetaoss/zengine/goapp/app"
+	"github.com/zetaoss/zengine/goapp/app/config"
 	"github.com/zetaoss/zengine/goapp/models"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
 	"gorm.io/gorm"
@@ -68,9 +69,22 @@ func Store(c *serverctx.Context) {
 		Title       string `json:"title"`
 		RequestType string `json:"request_type"`
 		Content     string `json:"content"`
+		// Model is left as it is when omitted; "" runs the template on its chain's model.
+		Model *string `json:"model"`
 	}
 	if !c.Decode(&body) {
 		return
+	}
+	if body.Model != nil {
+		m := strings.TrimSpace(*body.Model)
+		if m != "" {
+			var err error
+			if m, err = config.ValidateModel(m); err != nil {
+				c.JSONError(http.StatusUnprocessableEntity, err.Error())
+				return
+			}
+		}
+		body.Model = &m
 	}
 	body.Title = strings.TrimSpace(body.Title)
 	if body.Title == "" {
@@ -94,6 +108,11 @@ func Store(c *serverctx.Context) {
 		Content:     body.Content,
 		UpdatedAt:   now,
 	}
+	columns := []string{"title", "request_type", "content", "updated_at"}
+	if body.Model != nil {
+		row.Model = *body.Model
+		columns = append(columns, "model")
+	}
 
 	if row.ID > 0 {
 		var existing models.AIEditPrompt
@@ -113,7 +132,7 @@ func Store(c *serverctx.Context) {
 			return
 		}
 
-		if err := c.DB.Model(&models.AIEditPrompt{}).Where("id = ?", row.ID).Select("title", "request_type", "content", "updated_at").Updates(&row).Error; err != nil {
+		if err := c.DB.Model(&models.AIEditPrompt{}).Where("id = ?", row.ID).Select(columns).Updates(&row).Error; err != nil {
 			c.InternalError()
 			return
 		}

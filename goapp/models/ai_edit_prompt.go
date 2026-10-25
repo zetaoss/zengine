@@ -7,6 +7,7 @@ type AIEditPrompt struct {
 	Title       string `json:"title" gorm:"column:title"`
 	RequestType string `json:"request_type" gorm:"column:request_type"`
 	Content     string `json:"content" gorm:"column:content"`
+	Model       string `json:"model" gorm:"column:model"`
 	UseCount    int    `json:"use_count" gorm:"column:use_count"`
 	CreatedAt   string `json:"created_at" gorm:"column:created_at"`
 	UpdatedAt   string `json:"updated_at" gorm:"column:updated_at"`

@@ -101,15 +101,23 @@ func modelHistory(db *gorm.DB) ([]ModelHistory, error) {
 	return history, nil
 }
 
-// chainView is a built-in chain with the model it runs on.
+// chainView is a built-in chain with the model it runs on and how many times it has run.
 type chainView struct {
 	prompts.Chain
 	Model string `json:"model"`
+	Uses  int    `json:"uses"`
 }
 
-// Chains lists the built-in chains (goapp/prompts), each with its model.
+// Chains lists the built-in chains (goapp/prompts), each with its model and its runs: the successful calls of its
+// last step in llm_calls, which every finished run makes (an earlier step may be skipped, as doc-eval's rubric is
+// when stored rubrics are reused).
 func Chains(c *serverctx.Context) {
 	saved, err := chainsvc.Saved(c.DB)
+	if err != nil {
+		c.InternalError()
+		return
+	}
+	uses, err := chainUses(c.DB)
 	if err != nil {
 		c.InternalError()
 		return
@@ -117,9 +125,26 @@ func Chains(c *serverctx.Context) {
 	views := []chainView{}
 	for _, chain := range prompts.BuiltinChains() {
 		model, _ := chainsvc.Resolve(saved, c.Cfg, chain.Name)
-		views = append(views, chainView{Chain: chain, Model: model})
+		last := chain.Spec.Steps[len(chain.Spec.Steps)-1].Name
+		views = append(views, chainView{Chain: chain, Model: model, Uses: uses[chain.Name+"/"+last]})
 	}
 	c.JSON(views)
+}
+
+func chainUses(db *gorm.DB) (map[string]int, error) {
+	var rows []struct {
+		Chain string `gorm:"column:chain"`
+		Step  string `gorm:"column:step"`
+		N     int    `gorm:"column:n"`
+	}
+	if err := db.Raw("SELECT chain, step, COUNT(*) AS n FROM llm_calls WHERE ok = 1 GROUP BY chain, step").Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	uses := map[string]int{}
+	for _, r := range rows {
+		uses[r.Chain+"/"+r.Step] = r.N
+	}
+	return uses, nil
 }
 
 // SetChainModel sets the model of a built-in chain from {"model": "provider/model"}.

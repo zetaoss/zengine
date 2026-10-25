@@ -149,6 +149,9 @@ func (j *AIEditTask) generateContent(ctx context.Context, taskCtx taskctx.Contex
 		return "", "", "", fmt.Errorf("llm_messages or llm_input is required")
 	}
 	chain, model := chainFor(db, taskCtx.Config(), task.RequestType)
+	if m := promptModel(db, task.PromptID); m != "" {
+		model = m
+	}
 	svc := llmsvc.New(taskCtx.Config()).WithRecorder(llmsvc.DBRecorder(db))
 	var content string
 	res, err := svc.RunMessages(ctx, model, chain, chain.Spec.Steps[0], messages, &content)
@@ -156,6 +159,18 @@ func (j *AIEditTask) generateContent(ctx context.Context, taskCtx taskctx.Contex
 		res.Model = model
 	}
 	return content, res.Model, task.LLMInput, err
+}
+
+// promptModel is the model a template picked, "" when it picked none (or there is no template).
+func promptModel(db *gorm.DB, promptID int) string {
+	if promptID < 1 {
+		return ""
+	}
+	var p models.AIEditPrompt
+	if err := db.Select("model").Where("id = ?", promptID).Take(&p).Error; err != nil {
+		return ""
+	}
+	return strings.TrimSpace(p.Model)
 }
 
 // chainFor returns the chain of a request type (ChainOf) and the model it runs on (chainsvc).

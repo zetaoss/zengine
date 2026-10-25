@@ -159,6 +159,7 @@
         title: newTitle,
         request_type: prompt.requestType,
         content: prompt.content,
+        model: prompt.model,
       })
       if (err) {
         showToast(err.message || '새 프롬프트 저장에 실패했습니다.')

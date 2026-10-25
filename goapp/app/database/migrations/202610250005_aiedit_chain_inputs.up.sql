@@ -7,6 +7,10 @@ ALTER TABLE aiedit_tasks
   ADD COLUMN IF NOT EXISTS inputs LONGTEXT NULL AFTER phase,
   ADD COLUMN IF NOT EXISTS llm_messages LONGTEXT NULL AFTER inputs;
 
+-- A template picks its own model; '' runs it on its chain's model.
+ALTER TABLE aiedit_prompts
+  ADD COLUMN IF NOT EXISTS model VARCHAR(128) NOT NULL DEFAULT '' AFTER content;
+
 -- Template variables follow the chains' names: {제목} is {title}, {기존 문서 내용} (and {기존문서}) is {wikitext}.
 UPDATE aiedit_prompts
 SET content = REPLACE(REPLACE(REPLACE(content, '{제목}', '{title}'), '{기존 문서 내용}', '{wikitext}'), '{기존문서}', '{wikitext}')
