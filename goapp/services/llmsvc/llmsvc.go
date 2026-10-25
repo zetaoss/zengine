@@ -96,14 +96,14 @@ func (s *LLMService) RunStep(ctx context.Context, model string, chain prompts.Ch
 		return res, fmt.Errorf("step %s: out must be a non-nil pointer, got %T", st.Name, out)
 	}
 	var messages []client.Message
-	for _, m := range st.Prompt.Render(vars) {
+	for _, m := range st.Render(vars) {
 		messages = append(messages, client.Message{Role: m.Role, Content: m.Content})
 	}
 	var err error
 	record := func(start time.Time, resp client.ChatResponse, callErr error) {
 		if s.record != nil {
 			s.record(ctx, Call{
-				Chain: chain.Name, ChainVersion: chain.Metadata["version"], Step: st.Name,
+				Chain: chain.Name, ChainVersion: chain.Metadata.Version, Step: st.Name,
 				Model: model, ResolvedModel: resp.Model, OK: callErr == nil, Err: callErr,
 				Usage: resp.Usage, Elapsed: time.Since(start),
 			})

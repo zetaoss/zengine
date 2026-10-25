@@ -139,7 +139,7 @@ func (e *Evaluator) Evaluate(ctx context.Context, page Page, definition, wikitex
 		AccuracyContradicted: contradicted,
 		Summary:              truncateRunes(judgment.Summary, 500),
 		Rubrics:              string(rubricsJSON),
-		ChainVersion:         prompts.DocEval.Metadata["version"],
+		ChainVersion:         prompts.DocEval.Metadata.Version,
 		RawJSON:              string(judgmentJSON),
 		Model:                resp.Model,
 		PromptTokens:         uint(promptTokens),

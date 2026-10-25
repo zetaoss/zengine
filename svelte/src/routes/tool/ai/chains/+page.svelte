@@ -18,16 +18,16 @@
   interface ChainStep {
     name: string
     description: string
-    prompt: { inputs: string[]; messages: Array<{ role: string; content: string }> }
+    inputs: string[]
+    messages: Array<{ role: string; content: string }>
     parser: string
     output: string
   }
 
   interface Chain {
     name: string
-    description: string
-    metadata?: Record<string, string>
-    steps: ChainStep[]
+    metadata: { version: string; description: string }
+    spec: { inputs: string[]; steps: ChainStep[] }
     model: string
   }
 
@@ -133,10 +133,10 @@
             <tr class="hover:bg-muted/30 transition cursor-pointer" onclick={() => toggle(chain)}>
               <td class="p-3 whitespace-nowrap">
                 <span class="font-mono font-medium">{chain.name}</span>
-                <span class="ml-1 font-mono text-xs text-muted-foreground">{chain.metadata?.version ?? ''}</span>
+                <span class="ml-1 font-mono text-xs text-muted-foreground">{chain.metadata.version}</span>
               </td>
-              <td class="p-3 text-muted-foreground">{chain.description}</td>
-              <td class="p-3 text-center text-muted-foreground">{chain.steps.length}</td>
+              <td class="p-3 text-muted-foreground">{chain.metadata.description}</td>
+              <td class="p-3 text-center text-muted-foreground">{chain.spec.steps.length}</td>
               <td class="p-3" onclick={(e) => e.stopPropagation()}>
                 <select
                   class="h-8 w-full max-w-72 rounded border bg-background px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
@@ -169,18 +169,18 @@
                 <td colspan="5" class="p-4">
                   <div class="space-y-4">
                     <div class="space-y-3 min-w-0">
-                      {#each chain.steps as st, n (st.name)}
+                      {#each chain.spec.steps as st, n (st.name)}
                         <div class="space-y-1.5 text-xs">
                           <div>
                             <span class="text-muted-foreground">{n + 1}.</span>
                             <span class="font-mono font-medium">{st.name}</span>
                             <span class="ml-1 font-mono text-muted-foreground"
-                              >{st.prompt.inputs.join(', ')} → {st.parser} → {st.output}</span
+                              >{st.inputs.join(', ')} → {st.parser} → {st.output}</span
                             >
                             <span class="ml-2 text-muted-foreground">{st.description}</span>
                           </div>
                           {#if !promptType}
-                            {#each st.prompt.messages as m (m.role)}
+                            {#each st.messages as m (m.role)}
                               <div class="rounded border">
                                 <div class="border-b bg-muted/50 px-3 py-1 font-mono text-muted-foreground">{m.role}</div>
                                 <pre class="max-h-80 overflow-auto whitespace-pre-wrap bg-muted/30 p-3 text-[11px]">{m.content}</pre>

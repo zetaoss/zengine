@@ -30,7 +30,7 @@ func newServer(t *testing.T, contents ...string) (*httptest.Server, *atomic.Int3
 	return ts, &calls
 }
 
-var testChain = prompts.Chain{Name: "test-chain", Metadata: map[string]string{"version": "v9"}}
+var testChain = prompts.Chain{Name: "test-chain", Metadata: prompts.Metadata{Version: "v9"}}
 
 var testStep = prompts.Step{
 	Name:   "test",

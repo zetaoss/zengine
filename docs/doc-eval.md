@@ -2,7 +2,7 @@
 
 An LLM evaluates ZetaWiki articles, treating an article as the response to its title. The structure follows Google's managed rubric-based metrics ([metrics](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/eval-python-sdk/determine-eval), [rubric details](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/rubric-metric-details), [templates](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/metrics-templates)); the Google service is not called.
 
-Two chains ([chain.md](chain.md)) run in `goapp/services/doceval`. `doc-define` (`goapp/prompts/docdefine.go`) states what an article is about, so rubrics follow the article's subject rather than the title alone (a homonym or an abbreviation); `doc-eval` (`goapp/prompts/doceval.go`) grades it:
+Two chains ([chain.md](chain.md)) run in `goapp/services/doceval`. `doc-define` (`goapp/prompts/chains/doc-define.yaml`) states what an article is about, so rubrics follow the article's subject rather than the title alone (a homonym or an abbreviation); `doc-eval` (`goapp/prompts/chains/doc-eval.yaml`) grades it:
 
 | Chain | Step | Inputs | Output |
 | :--- | :--- | :--- | :--- |
@@ -30,7 +30,7 @@ Two chains ([chain.md](chain.md)) run in `goapp/services/doceval`. `doc-define` 
 ## Model and reuse
 
 - Each chain has its model, picked in the chains tab ([chain.md](chain.md#screen-and-api)); the definition and evaluation tabs show it. bob does not fall back, so a quota-exhausted run fails and the next run retries.
-- Each chain's metadata `version` is stored as `chain_version`. Rubrics are reused for the same title, definition and version; bump a version when its steps change, since results across versions are not comparable. A new version makes every article a candidate again.
+- Each chain's `metadata.version` is stored as `chain_version`. Rubrics are reused for the same title, definition and version; bump a version when its steps change, since results across versions are not comparable. A new version makes every article a candidate again.
 - Redirect pages are skipped.
 
 ## Storage and API

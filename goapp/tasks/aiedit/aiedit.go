@@ -142,7 +142,7 @@ func (j *AIEditTask) generateContent(ctx context.Context, taskCtx taskctx.Contex
 	chain, model := chainFor(db, taskCtx.Config(), task.RequestType)
 	svc := llmsvc.New(taskCtx.Config()).WithRecorder(llmsvc.DBRecorder(db))
 	var content string
-	res, err := svc.RunStep(ctx, model, chain, chain.Steps[0], map[string]string{"prompt": llmInput}, &content)
+	res, err := svc.RunStep(ctx, model, chain, chain.Spec.Steps[0], map[string]string{"prompt": llmInput}, &content)
 	if res.Model == "" {
 		res.Model = model
 	}

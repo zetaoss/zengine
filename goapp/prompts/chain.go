@@ -1,43 +1,67 @@
 package prompts
 
 import (
+	"bytes"
+	"embed"
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 // Chain is a pipeline of steps, following LangChain. Each step's output is saved under its Output name and
-// can be an input of later steps. Metadata holds free key-value pairs, like LangChain's RunnableConfig
-// metadata; a chain uses them as it needs (doc-eval keeps a "version"). Chains are defined in code and listed
-// read-only in the AI tool's chains tab (the aiedit prompts are stored in the database and editable).
+// can be an input of later steps. Built-in chains are YAML files in chains/, embedded and loaded at start, and
+// listed read-only in the AI tool's chains tab (the aiedit prompts are stored in the database and editable).
+// Metadata describes the chain; Spec is what decides its results.
 type Chain struct {
-	Name        string            `json:"name"`
-	Description string            `json:"description"`
-	Metadata    map[string]string `json:"metadata,omitempty"`
-	Inputs      []string          `json:"inputs"`
-	Steps       []Step            `json:"steps"`
+	Name     string   `json:"name" yaml:"name"`
+	Metadata Metadata `json:"metadata" yaml:"metadata"`
+	Spec     Spec     `json:"spec" yaml:"spec"`
+}
+
+// Metadata.Version is recorded with each call and result of the chain; the services decide from it whether a
+// stored result is still current.
+type Metadata struct {
+	Version     string `json:"version" yaml:"version"`
+	Description string `json:"description" yaml:"description"`
+}
+
+type Spec struct {
+	Inputs []string `json:"inputs" yaml:"inputs"`
+	Steps  []Step   `json:"steps" yaml:"steps"`
 }
 
 // Step is one LLM call of a chain, LangChain's prompt | model | parser: the prompt is rendered, sent to the
 // model, and the response is parsed into the value named by Output.
 type Step struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Prompt      Prompt `json:"prompt"`
-	Parser      Parser `json:"parser"`
-	Output      string `json:"output"`
+	Name        string `json:"name" yaml:"name"`
+	Description string `json:"description" yaml:"description"`
+	Prompt      `yaml:",inline"`
+	Parser      Parser `json:"parser" yaml:"parser"`
+	Output      string `json:"output" yaml:"output"`
+}
+
+// Step returns the step named name and panics when there is none, so a wrong name fails at start.
+func (c Chain) Step(name string) Step {
+	for _, st := range c.Spec.Steps {
+		if st.Name == name {
+			return st
+		}
+	}
+	panic(fmt.Sprintf("chain %s has no step %q", c.Name, name))
 }
 
 // Prompt is a chat prompt template. Message contents may hold {name} placeholders for the variables listed in
 // Inputs, which are chain inputs or outputs of earlier steps.
 type Prompt struct {
-	Inputs   []string  `json:"inputs"`
-	Messages []Message `json:"messages"`
+	Inputs   []string  `json:"inputs" yaml:"inputs"`
+	Messages []Message `json:"messages" yaml:"messages"`
 }
 
 type Message struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
+	Role    string `json:"role" yaml:"role"`
+	Content string `json:"content" yaml:"content"`
 }
 
 // Parser turns a model response into a value.
@@ -92,6 +116,34 @@ func stripCodeFence(raw string) string {
 	}
 	return strings.TrimSpace(strings.Join(lines, "\n"))
 }
+
+//go:embed chains/*.yaml
+var chainFiles embed.FS
+
+// mustLoad reads chains/<name>.yaml and panics when it is missing or invalid, so a broken file fails at start.
+func mustLoad(name string) Chain {
+	b, err := chainFiles.ReadFile("chains/" + name + ".yaml")
+	if err != nil {
+		panic(err)
+	}
+	var c Chain
+	dec := yaml.NewDecoder(bytes.NewReader(b))
+	dec.KnownFields(true)
+	if err := dec.Decode(&c); err != nil {
+		panic(fmt.Sprintf("chains/%s.yaml: %v", name, err))
+	}
+	if c.Name != name {
+		panic(fmt.Sprintf("chains/%s.yaml: name is %q", name, c.Name))
+	}
+	return c
+}
+
+var (
+	DocDefine = mustLoad("doc-define")
+	DocEval   = mustLoad("doc-eval")
+	DocCreate = mustLoad("doc-create")
+	DocUpdate = mustLoad("doc-update")
+)
 
 func BuiltinChains() []Chain {
 	return []Chain{DocDefine, DocEval, DocCreate, DocUpdate}

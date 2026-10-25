@@ -21,7 +21,7 @@ const currentDefinitionSQL = `d.page_id = p.page_id AND d.revid = p.page_latest 
 
 // defineVersionArg binds @defineVersion in currentDefinitionSQL.
 func defineVersionArg() sql.NamedArg {
-	return sql.Named("defineVersion", prompts.DocDefine.Metadata["version"])
+	return sql.Named("defineVersion", prompts.DocDefine.Metadata.Version)
 }
 
 // PickCandidate selects an article to evaluate by strategy: one with a current definition and no evaluation of
@@ -35,7 +35,7 @@ func PickCandidate(ctx context.Context, db *gorm.DB, strategy string) (*Candidat
 		  WHERE e.page_id = p.page_id AND e.revid = p.page_latest AND e.chain_version = @evalVersion
 		)`,
 		defineVersionArg(),
-		sql.Named("evalVersion", prompts.DocEval.Metadata["version"]))
+		sql.Named("evalVersion", prompts.DocEval.Metadata.Version))
 }
 
 // PickUndefined selects an article to define by strategy: one without a current definition (none, or one of
