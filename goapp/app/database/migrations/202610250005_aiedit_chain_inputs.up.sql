@@ -21,7 +21,11 @@ ALTER TABLE aiedit_prompts
   ADD COLUMN IF NOT EXISTS model VARCHAR(128) NOT NULL DEFAULT '' AFTER user_inputs,
   ADD COLUMN IF NOT EXISTS used_at TIMESTAMP NULL AFTER use_count;
 
--- Template variables follow the chains' names: {제목} is {title}, {기존 문서 내용} (and {기존문서}) is {wikitext}.
+-- Template variables follow the chains' names: {제목} is {title}, {기존 문서 내용} (and {기존문서}) is {wikitext}, with
+-- spaces inside the braces as the old client renderer allowed. One right after another brace is a wiki template
+-- call ({{제목}}) and stays, as the server renderer leaves it.
 UPDATE aiedit_prompts
-SET content = REPLACE(REPLACE(REPLACE(content, '{제목}', '{title}'), '{기존 문서 내용}', '{wikitext}'), '{기존문서}', '{wikitext}')
-WHERE content LIKE '%{제목}%' OR content LIKE '%{기존 문서 내용}%' OR content LIKE '%{기존문서}%';
+SET content = REGEXP_REPLACE(
+  REGEXP_REPLACE(content, '(?<!\\{)\\{\\s*제목\\s*\\}', '{title}'),
+  '(?<!\\{)\\{\\s*(기존 문서 내용|기존문서)\\s*\\}', '{wikitext}')
+WHERE content REGEXP '(?<!\\{)\\{\\s*(제목|기존 문서 내용|기존문서)\\s*\\}';
