@@ -329,7 +329,7 @@
             {@const isExpanded = expanded === chain.name}
             {@const promptType = promptTypeOf[chain.name]}
             <tr class="hover:bg-muted/30 transition cursor-pointer" onclick={() => toggle(chain.name)}>
-              <td class="p-3 whitespace-nowrap text-muted-foreground">System</td>
+              <td class="p-3"></td>
               <td class="p-3 whitespace-nowrap font-mono font-medium">{chain.name}</td>
               <td class="p-3 text-muted-foreground">{chain.metadata.description}</td>
               <td class="p-3 text-xs">{formatModelLabel(chain.model)}</td>
