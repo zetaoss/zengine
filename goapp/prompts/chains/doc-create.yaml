@@ -2,7 +2,7 @@
 # (aiedit_prompts), so its single step passes it through.
 name: doc-create
 metadata:
-  version: v1
+  version: v1.0
   description: 새 문서의 위키텍스트를 작성한다.
 spec:
   inputs: [prompt]

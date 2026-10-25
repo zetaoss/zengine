@@ -8,7 +8,7 @@ goapp defines LLM work as chains, following LangChain. Types: `goapp/prompts/cha
 | Step | `doc-eval/rubric` | One LLM call: prompt, model, parser, named output | `prompt \| model \| parser` (three `steps` there, one here) |
 | Prompt | | Messages (`system`, `user`) with `{input}` placeholders | `ChatPromptTemplate` |
 | Parser | `json`, `text` | Response text → value | output parser |
-| Version | `v2` | Recorded with each call and result; the services decide from it whether a stored result is current | |
+| Version | `v2.0` | `v<major>.<minor>`, recorded with each call and result; a stored result of the same major is current | |
 
 "System prompt" here is the system message; "user prompt" is not used.
 
@@ -28,7 +28,7 @@ The model picked in the chains tab comes first; see [Screen and API](#screen-and
 ```yaml
 name: doc-eval
 metadata:
-  version: v2
+  version: v2.0
   description: 제목과 대상 정의로 루브릭을 만들고, 그 루브릭과 본문으로 판정한다.
 spec:
   inputs: [title, definition, wikitext]
@@ -67,7 +67,12 @@ A chain says what to ask a model: its prompts, parsers, outputs and version. It 
 
 ## Version
 
-`metadata.version` is the chain's version, recorded in `llm_calls` and with each stored result. doc-define and doc-eval bump it when a step's prompt, parser, or output changes (not the model); see [doc-eval.md](doc-eval.md).
+`metadata.version` is `v<major>.<minor>`, recorded in full in `llm_calls` and with each stored result, so calls and results can be told apart by minor. A stored result is current when its major matches (`prompts.SameMajor`; a version written before minors, such as `v2`, counts as `v2.x`):
+
+- Minor (`v2.0 → v2.1`): most edits. Stored definitions, evaluations and rubrics stay current.
+- Major (`v2.1 → v3.0`): a change to the spec's shape (inputs, parser, output), or an edit whose earlier results should all be redone. Every stored result of the chain becomes stale.
+
+The model is outside the spec and does not change the version. Any spec change needs a bump: `TestSpecVersions` (`goapp/prompts/builtin_test.go`) pins each chain's version to a hash of its spec and fails until the version and its entry there are updated. It cannot tell a minor change from a major one; that is the author's call, and review's. See [doc-eval.md](doc-eval.md) for what doc-define and doc-eval reuse.
 
 ## Screen and API
 

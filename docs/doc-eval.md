@@ -30,12 +30,12 @@ Two chains ([chain.md](chain.md)) run in `goapp/services/doceval`. `doc-define` 
 ## Model and reuse
 
 - Each chain has its model, picked in the chains tab ([chain.md](chain.md#screen-and-api)); the definition and evaluation tabs show it. bob does not fall back, so a quota-exhausted run fails and the next run retries.
-- Each chain's `metadata.version` is stored as `chain_version`. Rubrics are reused for the same title, definition and version; bump a version when its steps change, since results across versions are not comparable. A new version makes every article a candidate again.
+- Each chain's `metadata.version` is stored as `chain_version`; a stored result is current when its major version matches ([chain.md](chain.md#version)). Rubrics are reused for the same title, definition and major. A minor bump keeps definitions, evaluations and rubrics; a major bump makes every article a candidate again.
 - Redirect pages are skipped.
 
 ## Storage and API
 
-- `doc_definitions` (`goapp/app/database/migrations/202610250001_doc_definitions.up.sql`): one row per article, `page_title`, `revid`, `definition`, model, `chain_version`. A definition is a property of the article, kept apart from evaluations so other features can use it; `doceval.EnsureDefinition` is its only writer, and it rewrites the row when the revision, title or chain version changes.
+- `doc_definitions` (`goapp/app/database/migrations/202610250001_doc_definitions.up.sql`): one row per article, `page_title`, `revid`, `definition`, model, `chain_version`. A definition is a property of the article, kept apart from evaluations so other features can use it; `doceval.EnsureDefinition` is its only writer, and it rewrites the row when the revision, title or major version changes.
 - `doc_evaluations` (`goapp/app/database/migrations/202610210001_doc_evaluations.up.sql`): grade, pass rates, safety, contradicted count, summary, the `definition` the rubrics were built from, `rubrics` and `raw_json` (judge output), `chain_version`, model, tokens, elapsed time.
 
 All routes are sysop-only:
@@ -52,8 +52,8 @@ All routes are sysop-only:
 ## Loops
 
 Both loops pick one article per run by their strategy (`random` by `page_random`, `oldest`/`newest` by `page_id`) and do nothing when no article is left:
-- `doc-define-loop` defines an article without a current definition (none, or one of another revision, title or chain version).
-- `doc-eval-loop` evaluates an article with a current definition and no evaluation of its latest revision by the current chain version. An edit makes the article a candidate again once it is redefined. A run for a given title or page ID (`POST /api/evaluations/run`) writes the definition first when it is missing.
+- `doc-define-loop` defines an article without a current definition (none, or one of another revision, title or major version).
+- `doc-eval-loop` evaluates an article with a current definition and no evaluation of its latest revision by the current major version. An edit makes the article a candidate again once it is redefined. A run for a given title or page ID (`POST /api/evaluations/run`) writes the definition first when it is missing.
 
 Each run fetches the wikitext, runs its chain, saves the result and the run (`last_run`, `define_last_run`), and schedules the next one after its interval. The AI tool shows them in two tabs, `/tool/ai/define` (definitions, with the lead each one was written from) and `/tool/ai/eval`, which share the settings, status and Instant dialog (`svelte/src/routes/tool/ai/LoopPanel.svelte`, `RunModal.svelte`). Runs are never retried: a failed run is archived, recorded, and the loop goes on.
 

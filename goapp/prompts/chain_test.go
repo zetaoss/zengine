@@ -8,6 +8,8 @@ import (
 
 var placeholderRe = regexp.MustCompile(`\{([a-z_]+)\}`)
 
+var versionRe = regexp.MustCompile(`^v[0-9]+\.[0-9]+$`)
+
 func TestBuiltinChains(t *testing.T) {
 	seen := map[string]bool{}
 	for _, c := range BuiltinChains() {
@@ -15,6 +17,9 @@ func TestBuiltinChains(t *testing.T) {
 			t.Fatalf("invalid or duplicate chain (name, version and steps are required): %q", c.Name)
 		}
 		seen[c.Name] = true
+		if !versionRe.MatchString(c.Metadata.Version) {
+			t.Errorf("%s: version %q is not v<major>.<minor>", c.Name, c.Metadata.Version)
+		}
 		available := slices.Clone(c.Spec.Inputs)
 		for _, st := range c.Spec.Steps {
 			if st.Name == "" || st.Output == "" || len(st.Messages) == 0 {
@@ -84,5 +89,16 @@ func TestParse(t *testing.T) {
 	}
 	if err := Parser("").Parse("x", &s); err == nil {
 		t.Fatal("missing parser accepted")
+	}
+}
+
+func TestMajor(t *testing.T) {
+	for v, want := range map[string]string{"v2.3": "v2", "v2": "v2", "v10.0": "v10"} {
+		if got := Major(v); got != want {
+			t.Errorf("Major(%q) = %q, want %q", v, got, want)
+		}
+	}
+	if !SameMajor("v2", "v2.1") || !SameMajor("v2.0", "v2.9") || SameMajor("v2.1", "v3.0") || SameMajor("v1.0", "v10.0") {
+		t.Error("SameMajor must compare majors only")
 	}
 }

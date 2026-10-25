@@ -39,13 +39,13 @@ func GetDefinition(ctx context.Context, db *gorm.DB, pageID uint) (*models.DocDe
 	return &d, nil
 }
 
-// definitionCurrent reports whether d was written for this revision and title by the current doc-define chain.
+// definitionCurrent reports whether d was written for this revision and title by the current doc-define major.
 func definitionCurrent(d *models.DocDefinition, page Page) bool {
-	return d != nil && d.Revid == page.Revid && d.PageTitle == page.Title && d.ChainVersion == prompts.DocDefine.Metadata.Version
+	return d != nil && d.Revid == page.Revid && d.PageTitle == page.Title && prompts.SameMajor(d.ChainVersion, prompts.DocDefine.Metadata.Version)
 }
 
 // EnsureDefinition returns the page's definition, writing a new one with model (Define) when there is none or
-// it is out of date (another revision, title, or chain version).
+// it is out of date (another revision, title, or major version).
 func (e *Evaluator) EnsureDefinition(ctx context.Context, db *gorm.DB, page Page, wikitext, model string) (*models.DocDefinition, error) {
 	d, err := GetDefinition(ctx, db, page.ID)
 	if err != nil {

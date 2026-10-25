@@ -3,7 +3,7 @@
 # reused only when it and the definition match, and it is bumped when either step changes.
 name: doc-eval
 metadata:
-  version: v2
+  version: v2.0
   description: 제목과 대상 정의로 루브릭을 만들고, 그 루브릭과 본문으로 판정한다.
 spec:
   inputs: [title, definition, wikitext]
