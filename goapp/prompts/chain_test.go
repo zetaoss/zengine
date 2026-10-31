@@ -1,6 +1,7 @@
 package prompts
 
 import (
+	"context"
 	"reflect"
 	"regexp"
 	"strings"
@@ -220,5 +221,60 @@ func TestFill(t *testing.T) {
 	cut := Chain{Name: "t", Spec: Spec{Inputs: []Input{{Name: "text"}, {Name: "lead", From: "text", MaxChars: 3}}, Steps: []Step{{Name: "s", Prompt: Prompt{Messages: []Message{{Role: "user", Content: "{lead}"}}}}}}}
 	if err := cut.Validate(); err != nil {
 		t.Errorf("a source used only through its cut counts as used: %v", err)
+	}
+}
+
+func functionChain(fn Step) Chain {
+	return Chain{Name: "t", Spec: Spec{
+		UserInputs: []Input{{Name: "flag", Type: TypeBool}},
+		Inputs:     []Input{{Name: "title"}},
+		Steps: []Step{fn, {Name: "s", Prompt: Prompt{Messages: []Message{
+			{Role: "user", Content: "{title}"},
+			{Role: "user", Each: "links", Content: "{index}: {links}"},
+		}}}},
+	}}
+}
+
+func TestFunctionSteps(t *testing.T) {
+	ok := functionChain(Step{Name: "f", Uses: "wiki/backlinkTexts", If: "flag", Output: "links"})
+	if err := ok.Validate(); err != nil {
+		t.Fatalf("valid chain rejected: %v", err)
+	}
+	if ok.PromptIndex() != 1 || ok.PromptStep().Name != "s" {
+		t.Fatalf("prompt step: %d %q", ok.PromptIndex(), ok.PromptStep().Name)
+	}
+	for name, st := range map[string]Step{
+		"unknown function": {Name: "f", Uses: "wiki/nothing", Output: "links"},
+		"no output":        {Name: "f", Uses: "wiki/backlinkTexts"},
+		"messages":         {Name: "f", Uses: "wiki/backlinkTexts", Output: "links", Prompt: Prompt{Messages: []Message{{Role: "user", Content: "x"}}}},
+		"undeclared if":    {Name: "f", Uses: "wiki/backlinkTexts", If: "other", Output: "links"},
+		"output clash":     {Name: "f", Uses: "wiki/backlinkTexts", Output: "title"},
+	} {
+		if err := functionChain(st).Validate(); err == nil {
+			t.Errorf("%s: expected an error", name)
+		}
+	}
+	if err := (Chain{Name: "t", Spec: Spec{Inputs: []Input{{Name: "title"}}, Steps: []Step{{Name: "f", Uses: "wiki/backlinkTexts", Output: "links"}}}}).Validate(); err == nil {
+		t.Error("a chain without an LLM step must be rejected")
+	}
+	if err := ok.ValidateMessages([]Message{{Role: "user", Each: "links", Content: "{links}"}}); err != nil {
+		t.Errorf("a template may read an earlier function step's output: %v", err)
+	}
+
+	calls := 0
+	funcs := map[string]Func{"wiki/backlinkTexts": func(_ context.Context, vars Vars) (any, error) {
+		calls++
+		return []string{"from " + vars["title"].(string)}, nil
+	}}
+	got, err := ok.RunFunctions(context.Background(), Vars{"title": "A", "flag": true}, funcs)
+	if err != nil || calls != 1 || !reflect.DeepEqual(got["links"], []string{"from A"}) {
+		t.Fatalf("run: %v %d %v", err, calls, got)
+	}
+	got, err = ok.RunFunctions(context.Background(), Vars{"title": "A"}, funcs)
+	if err != nil || calls != 1 || !reflect.DeepEqual(got["links"], []string{}) {
+		t.Fatalf("skipped run: %v %d %v", err, calls, got)
+	}
+	if _, err := ok.RunFunctions(context.Background(), Vars{"title": "A", "flag": true}, nil); err == nil {
+		t.Error("a function without code must fail")
 	}
 }

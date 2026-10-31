@@ -154,7 +154,7 @@ func (j *AIEditTask) generateContent(ctx context.Context, taskCtx taskctx.Contex
 	}
 	svc := llmsvc.New(taskCtx.Config()).WithRecorder(llmsvc.DBRecorder(db))
 	var content string
-	res, err := svc.RunMessages(ctx, model, chain, chain.Spec.Steps[0], messages, &content)
+	res, err := svc.RunMessages(ctx, model, chain, chain.PromptStep(), messages, &content)
 	if res.Model == "" {
 		res.Model = model
 	}
