@@ -51,7 +51,7 @@
     template: string
   }
 
-  // A user input's name as the run form shows it: copiedTexts as "Copied texts" (as in the skin's AiEditRunner).
+  // A user input's name as the run form shows it: readBacklinks as "Read backlinks" (as in the skin's AiEditRunner).
   function humanize(name: string) {
     const words = name.replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase()
     return words.charAt(0).toUpperCase() + words.slice(1)

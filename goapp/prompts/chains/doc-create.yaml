@@ -11,7 +11,7 @@ spec:
       placeholder: (예시) 눈 → eye/snow, 밤 → night/chestnut
     - name: readBacklinks
       type: bool
-    - name: copiedTexts
+    - name: texts
       type: textList
     - name: request
       type: text
@@ -77,10 +77,10 @@ spec:
             ### 요청사항:
             {request}
         - role: user
-          each: copiedTexts
+          each: texts
           content: |-
             ### 자료 {index}:
-            {copiedTexts}
+            {texts}
         - role: user
           each: backlinkTexts
           content: |-

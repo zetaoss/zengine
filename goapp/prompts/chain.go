@@ -39,8 +39,8 @@ type Spec struct {
 	Steps      []Step  `json:"steps" yaml:"steps"`
 }
 
-// Input is a variable of a chain. A user input shows in the run form under its name (copiedTexts as "Copied
-// texts"), with Placeholder in its empty field. An input with From is derived from that variable before a step
+// Input is a variable of a chain. A user input shows in the run form under its name (readBacklinks as "Read
+// backlinks"), with Placeholder in its empty field. An input with From is derived from that variable before a step
 // renders (Fill), cut to MaxChars characters when set: the task fills the source, the messages read the cut.
 type Input struct {
 	Name        string    `json:"name" yaml:"name"`

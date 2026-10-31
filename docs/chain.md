@@ -7,7 +7,7 @@ goapp defines LLM work as chains, following LangChain. Types: `goapp/prompts/cha
 | Chain | `doc-eval` | Steps run in order; a step's output feeds later steps | `RunnableSequence` |
 | Step | `doc-eval/rubric` | One LLM call: prompt, model, format, and an output name when a later step reads it | `prompt \| model \| parser` (three `steps` there, one here); output name like ADK `output_key` |
 | Prompt | | Messages (`system`, `user`) with `{name}` placeholders, each optionally sent only `if` a variable is given or once for `each` item of a list | `ChatPromptTemplate` (f-string); `if`/`each` like `MessagesPlaceholder` |
-| User inputs | `hint`, `copiedTexts` | What the requester gives in the run form; they reach the messages as they are | graph input schema (LangGraph) |
+| User inputs | `hint`, `texts` | What the requester gives in the run form; they reach the messages as they are | graph input schema (LangGraph) |
 | Inputs | `title`, `wikitext` | What the task running the chain fills | |
 | Format | `json` (`text` when omitted) | What the step asks the model to return; the response is read in it | `response_format` (OpenAI), output parser |
 | Version | `v2.0` | `v<major>.<minor>`, recorded with each call and result; a stored result of the same major is current | |
@@ -38,7 +38,7 @@ spec:
       placeholder: (예시) 눈 → eye/snow, 밤 → night/chestnut
     - name: readBacklinks
       type: bool
-    - name: copiedTexts
+    - name: texts
       type: textList
   inputs:                     # filled by the task
     - name: title
@@ -56,13 +56,13 @@ spec:
           if: hint
           content: "### 힌트: {hint}"
         - role: user
-          each: copiedTexts
+          each: texts
           content: |-
             ### 자료 {index}:
-            {copiedTexts}
+            {texts}
 ```
 
-`metadata` describes the chain; `spec` is what decides its results. A variable's `type` is `string` (the default; one line), `text` (several lines), `textList` (a list of texts) or `bool`; a user input shows in the run form under its name (`copiedTexts` as Copied texts), with an optional `placeholder` for its empty field; an input may be written as its name alone. A task input with `from` is derived from another variable before a step renders (`Chain.Fill`), cut to `maxChars` characters: doc-define reads `lead` (`from: wikitext`, `maxChars: 1000`) and doc-eval's judge `body` (2000), so the limits stand in the file rather than in service code. A step does not list its inputs: the variables its messages use (placeholders, `if`, `each`) are found when the chain loads, as LangChain finds a template's `input_variables`. A step names its `output` only when a later step reads it (doc-eval's `rubrics`), and writes `format: json` only when it takes JSON. The files are read at start with unknown fields rejected, and a missing file or step (`Chain.Step`) panics there. Go keeps what the services need beyond the file: the structs a response is parsed into, values that check results (`DocEvalSafetyPolicies`), and the code between steps.
+`metadata` describes the chain; `spec` is what decides its results. A variable's `type` is `string` (the default; one line), `text` (several lines), `textList` (a list of texts) or `bool`; a user input shows in the run form under its name (`readBacklinks` as Read backlinks), with an optional `placeholder` for its empty field; an input may be written as its name alone. A task input with `from` is derived from another variable before a step renders (`Chain.Fill`), cut to `maxChars` characters: doc-define reads `lead` (`from: wikitext`, `maxChars: 1000`) and doc-eval's judge `body` (2000), so the limits stand in the file rather than in service code. A step does not list its inputs: the variables its messages use (placeholders, `if`, `each`) are found when the chain loads, as LangChain finds a template's `input_variables`. A step names its `output` only when a later step reads it (doc-eval's `rubrics`), and writes `format: json` only when it takes JSON. The files are read at start with unknown fields rejected, and a missing file or step (`Chain.Step`) panics there. Go keeps what the services need beyond the file: the structs a response is parsed into, values that check results (`DocEvalSafetyPolicies`), and the code between steps.
 
 ## Chains and tasks
 
