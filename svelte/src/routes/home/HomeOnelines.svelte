@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { mdiDelete } from '@mdi/js'
+  import { mdiTrashCanOutline } from '@mdi/js'
   import { onMount } from 'svelte'
 
   import { useOnelineDelete } from '$lib/composables/useOnelineDelete'
@@ -113,7 +113,7 @@
     <span class="z-muted2 ml-1 text-xs">{r.created.substring(0, 10)}</span>
     {#if $canDelete(r.user_id)}
       <CButton variant="ghost" class="z-muted3 py-1 align-middle leading-none" onclick={() => del(r)}>
-        <ZIcon path={mdiDelete} />
+        <ZIcon path={mdiTrashCanOutline} />
       </CButton>
     {/if}
   </div>

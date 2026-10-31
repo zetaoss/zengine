@@ -1,7 +1,7 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-  import { mdiDelete } from '@mdi/js'
+  import { mdiTrashCanOutline } from '@mdi/js'
   import { SvelteURL } from 'svelte/reactivity'
   import { get } from 'svelte/store'
 
@@ -280,7 +280,7 @@
                 <a href={getTitleHref(row)} rel="external" class={mode === 'done' ? '' : 'new'}>{row.title}</a>
                 {#if $canDelete(row.user_id)}
                   <CButton variant="ghost" size="small" title="삭제" onclick={() => del(row)}>
-                    <ZIcon path={mdiDelete} />
+                    <ZIcon path={mdiTrashCanOutline} />
                   </CButton>
                 {/if}
               </div>
