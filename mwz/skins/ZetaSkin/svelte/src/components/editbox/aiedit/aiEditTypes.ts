@@ -13,10 +13,15 @@ export interface AIEditPromptForRunner {
 }
 
 // A user input of the chain a request type runs (doc-create, doc-update): a field of the run form.
+// A run form field (prompts.Input): required ones must be filled to run, default is the starting value, and a
+// choice is picked from options.
 export interface AIEditUserInput {
   name: string
   placeholder?: string
-  type?: 'string' | 'text' | 'textList' | 'bool'
+  type?: 'string' | 'text' | 'textList' | 'bool' | 'choice'
+  required?: boolean
+  default?: string | boolean
+  options?: string[]
 }
 
 export type AIEditUserInputValue = string | boolean | string[]

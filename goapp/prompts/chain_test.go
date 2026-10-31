@@ -278,3 +278,62 @@ func TestFunctionSteps(t *testing.T) {
 		t.Error("a function without code must fail")
 	}
 }
+
+func TestUserInputAttributes(t *testing.T) {
+	tone := Input{Name: "tone", Type: TypeChoice, Options: []string{"존댓말", "반말"}, Default: "존댓말"}
+	topic := Input{Name: "topic", Required: true}
+	c := testChain(Message{Role: "user", Content: "{title} {hint} {tone} {topic}"}, Message{Role: "user", Each: "notes", Content: "{notes}"})
+	c.Spec.UserInputs = append(c.Spec.UserInputs, tone, topic)
+	if err := c.Validate(); err != nil {
+		t.Fatalf("valid chain rejected: %v", err)
+	}
+
+	got, err := c.UserVars(map[string]any{"topic": "사과"})
+	if err != nil || got["tone"] != "존댓말" || got["topic"] != "사과" {
+		t.Fatalf("default and required: %v %v", err, got)
+	}
+	if got, err := c.UserVars(map[string]any{"topic": "사과", "tone": "반말"}); err != nil || got["tone"] != "반말" {
+		t.Fatalf("a picked option: %v %v", err, got)
+	}
+	for name, raw := range map[string]map[string]any{
+		"required missing": {},
+		"required blank":   {"topic": "  "},
+		"not an option":    {"topic": "사과", "tone": "평어"},
+	} {
+		if _, err := c.UserVars(raw); err == nil {
+			t.Errorf("%s: expected an error", name)
+		}
+	}
+
+	for name, in := range map[string]Input{
+		"choice without options": {Name: "x", Type: TypeChoice},
+		"choice with one option": {Name: "x", Type: TypeChoice, Options: []string{"a"}},
+		"duplicate options":      {Name: "x", Type: TypeChoice, Options: []string{"a", "a"}},
+		"options on a string":    {Name: "x", Options: []string{"a", "b"}},
+		"default not an option":  {Name: "x", Type: TypeChoice, Options: []string{"a", "b"}, Default: "c"},
+		"string default on bool": {Name: "x", Type: TypeBool, Default: "true"},
+		"default on a textList":  {Name: "x", Type: TypeTextList, Default: "a"},
+		"required bool":          {Name: "x", Type: TypeBool, Required: true},
+		"from on a user input":   {Name: "x", From: "title"},
+	} {
+		if _, err := c.WithUserInputs([]Input{in}); err == nil {
+			t.Errorf("%s: expected an error", name)
+		}
+	}
+	if _, err := c.WithUserInputs([]Input{{Name: "x", Type: TypeBool, Default: true}, tone}); err != nil {
+		t.Errorf("a bool default and a choice are valid: %v", err)
+	}
+	task := c
+	task.Spec.Inputs = []Input{{Name: "title", Required: true}}
+	if err := task.Validate(); err == nil {
+		t.Error("required is for user inputs")
+	}
+
+	var parsed Template
+	if parsed, err = ParseTemplate("userInputs:\n  - name: tone\n    type: choice\n    options: [존댓말, 반말]\n    default: 반말\n  - name: short\n    type: bool\n    default: true\nmessages: []\n"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.WithUserInputs(parsed.UserInputs); err != nil || parsed.UserInputs[0].Default != "반말" || parsed.UserInputs[1].Default != true {
+		t.Errorf("YAML attributes: %v %+v", err, parsed.UserInputs)
+	}
+}

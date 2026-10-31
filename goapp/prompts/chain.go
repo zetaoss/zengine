@@ -43,12 +43,66 @@ type Spec struct {
 // Input is a variable of a chain. A user input shows in the run form under its name (readBacklinks as "Read
 // backlinks"), with Placeholder in its empty field. An input with From is derived from that variable before a step
 // renders (Fill), cut to MaxChars characters when set: the task fills the source, the messages read the cut.
+//
+// A user input may also be Required (a run without it, or with it blank, is refused; not for a bool), have a
+// Default (its value when the run form leaves it out: a string, or true or false for a bool; not for a textList),
+// and, as a choice, list its Options (the run form shows them to pick one; the default, if any, is one of them),
+// like a GitHub Actions workflow_dispatch input.
 type Input struct {
 	Name        string    `json:"name" yaml:"name"`
 	Placeholder string    `json:"placeholder,omitempty" yaml:"placeholder,omitempty"`
 	Type        InputType `json:"type,omitempty" yaml:"type,omitempty"`
+	Required    bool      `json:"required,omitempty" yaml:"required,omitempty"`
+	Default     any       `json:"default,omitempty" yaml:"default,omitempty"`
+	Options     []string  `json:"options,omitempty" yaml:"options,omitempty"`
 	From        string    `json:"from,omitempty" yaml:"from,omitempty"`
 	MaxChars    int       `json:"maxChars,omitempty" yaml:"maxChars,omitempty"`
+}
+
+// validateUser checks a user input's name, type and attributes (Required, Default, Options).
+func (in Input) validateUser() error {
+	if !nameRe.MatchString(in.Name) || in.Name == "index" {
+		return fmt.Errorf("invalid user input name %q", in.Name)
+	}
+	t := in.Type.orString()
+	if !in.Type.valid() {
+		return fmt.Errorf("user input %s: unknown type %q", in.Name, in.Type)
+	}
+	if in.From != "" || in.MaxChars != 0 {
+		return fmt.Errorf("user input %s: from and maxChars are for task inputs", in.Name)
+	}
+	if in.Required && t == TypeBool {
+		return fmt.Errorf("user input %s: a bool cannot be required", in.Name)
+	}
+	if (t == TypeChoice) != (in.Options != nil) {
+		return fmt.Errorf("user input %s: options are for a choice, and a choice needs them", in.Name)
+	}
+	if t == TypeChoice {
+		if len(in.Options) < 2 {
+			return fmt.Errorf("user input %s: a choice needs two or more options", in.Name)
+		}
+		seen := map[string]bool{}
+		for _, o := range in.Options {
+			if strings.TrimSpace(o) == "" || seen[o] {
+				return fmt.Errorf("user input %s: options must be distinct and not blank", in.Name)
+			}
+			seen[o] = true
+		}
+	}
+	if in.Default == nil {
+		return nil
+	}
+	switch d := in.Default.(type) {
+	case bool:
+		if t == TypeBool {
+			return nil
+		}
+	case string:
+		if t == TypeString || t == TypeText || (t == TypeChoice && slices.Contains(in.Options, d)) {
+			return nil
+		}
+	}
+	return fmt.Errorf("user input %s: default %v does not fit a %s", in.Name, in.Default, t)
 }
 
 // Fill returns vars with every declared variable that has no value set empty (an empty string or list, false),
@@ -89,7 +143,8 @@ func (in *Input) UnmarshalYAML(n *yaml.Node) error {
 }
 
 // InputType is the type of a variable's value and, for a user input, its field in the run form: string (the
-// default, "" in a file; one line), text (a string over lines), textList ([]string, a text per item), or bool.
+// default, "" in a file; one line), text (a string over lines), textList ([]string, a text per item), bool, or
+// choice (a string picked from the input's Options; user inputs only).
 type InputType string
 
 const (
@@ -97,11 +152,12 @@ const (
 	TypeText     InputType = "text"
 	TypeTextList InputType = "textList"
 	TypeBool     InputType = "bool"
+	TypeChoice   InputType = "choice"
 )
 
 func (t InputType) valid() bool {
 	switch t.orString() {
-	case TypeString, TypeText, TypeTextList, TypeBool:
+	case TypeString, TypeText, TypeTextList, TypeBool, TypeChoice:
 		return true
 	}
 	return false
@@ -153,8 +209,9 @@ func text(v any) string {
 	return ""
 }
 
-// UserVars turns the run form's values into Vars, checking each against its user input's type: a string, a
-// bool, or a list of strings whose blank items are dropped. Missing user inputs are left out.
+// UserVars turns the run form's values into Vars, checking each against its user input's type: a string (for a
+// choice, one of its options), a bool, or a list of strings whose blank items are dropped. A missing user input
+// takes its Default or is left out; a Required one that is missing or blank is refused.
 func (c Chain) UserVars(raw map[string]any) (Vars, error) {
 	vars := Vars{}
 	for name := range raw {
@@ -165,13 +222,22 @@ func (c Chain) UserVars(raw map[string]any) (Vars, error) {
 	for _, in := range c.Spec.UserInputs {
 		v, ok := raw[in.Name]
 		if !ok || v == nil {
+			v = in.Default
+		}
+		if v == nil {
+			if in.Required {
+				return nil, fmt.Errorf("user input %s is required", in.Name)
+			}
 			continue
 		}
 		switch in.Type.orString() {
-		case TypeString, TypeText:
+		case TypeString, TypeText, TypeChoice:
 			s, ok := v.(string)
 			if !ok {
 				return nil, fmt.Errorf("user input %s must be a string", in.Name)
+			}
+			if in.Type == TypeChoice && !slices.Contains(in.Options, s) {
+				return nil, fmt.Errorf("user input %s must be one of %s", in.Name, strings.Join(in.Options, ", "))
 			}
 			vars[in.Name] = s
 		case TypeBool:
@@ -196,6 +262,9 @@ func (c Chain) UserVars(raw map[string]any) (Vars, error) {
 				}
 			}
 			vars[in.Name] = texts
+		}
+		if in.Required && !present(vars[in.Name]) {
+			return nil, fmt.Errorf("user input %s is required", in.Name)
 		}
 	}
 	return vars, nil
@@ -493,6 +562,16 @@ var (
 // or earlier outputs and each is used by its messages; placeholders, If and Each name the step's inputs, Each a
 // textList variable, and a textList variable appears as a placeholder only in its own Each message; every task input is used.
 func (c Chain) Validate() error {
+	for _, in := range c.Spec.UserInputs {
+		if err := in.validateUser(); err != nil {
+			return err
+		}
+	}
+	for _, in := range c.Spec.Inputs {
+		if in.Required || in.Default != nil || in.Options != nil || in.Type == TypeChoice {
+			return fmt.Errorf("input %s: required, default and choice are for user inputs", in.Name)
+		}
+	}
 	types := map[string]InputType{}
 	for _, in := range slices.Concat(c.Spec.UserInputs, c.Spec.Inputs) {
 		if !nameRe.MatchString(in.Name) || in.Name == "index" {
@@ -578,16 +657,13 @@ func (c Chain) WithUserInputs(inputs []Input) (Chain, error) {
 		}
 	}
 	for _, in := range inputs {
-		if !nameRe.MatchString(in.Name) || in.Name == "index" {
-			return c, fmt.Errorf("invalid user input name %q", in.Name)
+		if err := in.validateUser(); err != nil {
+			return c, err
 		}
 		if seen[in.Name] {
 			return c, fmt.Errorf("user input %q is already a variable", in.Name)
 		}
 		seen[in.Name] = true
-		if !in.Type.valid() {
-			return c, fmt.Errorf("user input %s: unknown type %q", in.Name, in.Type)
-		}
 	}
 	c.Spec.UserInputs = slices.Clone(inputs)
 	c.Spec.Steps = slices.Clone(c.Spec.Steps)
