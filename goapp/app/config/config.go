@@ -33,7 +33,6 @@ type AppConfig struct {
 
 type DBConfig struct {
 	Host     string
-	Database string
 	Username string
 	Password string
 }
@@ -98,7 +97,6 @@ func Load() (*Config, error) {
 	cfg.App.LogLevel = lookupString("LOG_LEVEL", "info")
 
 	cfg.DB.Host = lookup("DB_HOST")
-	cfg.DB.Database = lookup("DB_DATABASE")
 	cfg.DB.Username = lookup("DB_USERNAME")
 	cfg.DB.Password = lookup("DB_PASSWORD")
 

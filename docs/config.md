@@ -25,7 +25,7 @@ The zengine image receives configuration in three forms:
 | `DEV_MODE` | `false` | Development mode, including the Vite dev-server proxy. |
 | `INTERNAL_SECRET_KEY` | | Authentication key for internal APIs (`/api/internal/*`), shared with the avatar service. |
 | `LOG_LEVEL` | `info` | Log level. |
-| `DB_HOST`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` | | MariaDB connection settings. The port is fixed at `3306`. |
+| `DB_HOST`, `DB_USERNAME`, `DB_PASSWORD` | | MariaDB connection settings. The port is fixed at `3306` and goapp's database at `ldb` (MediaWiki's tables are named with their database, `zetawiki.`). |
 | `REDIS_PERSIST_HOST` | goapp defaults to `127.0.0.1`; MediaWiki requires a host to be configured (port `6379` is fixed) | Redis for data that must not be evicted: task queues (Asynq), authentication tokens, and rate limits. See [redis.md](redis.md). |
 | `REDIS_VOLATILE_HOST` | goapp defaults to `127.0.0.1`; MediaWiki requires a host to be configured (port `6379` is fixed) | Redis for data that may be evicted: caches. See [redis.md](redis.md). |
 | `AD_CLIENT`, `AD_SLOTS` | | Advertising. `AD_SLOTS` is comma-separated. |

@@ -30,10 +30,12 @@ func Open(cfg *config.Config) (*gorm.DB, error) {
 	return db, nil
 }
 
+// dbName is goapp's own database, fixed like the port; MediaWiki's tables are named with their database (zetawiki.page).
+const dbName = "ldb"
+
 func buildMySQLDSN(cfg *config.Config) string {
 	user := cfg.DB.Username
 	pass := cfg.DB.Password
-	dbName := cfg.DB.Database
 	host := cfg.DB.Host
 
 	addr := fmt.Sprintf("tcp(%s:3306)", host)
