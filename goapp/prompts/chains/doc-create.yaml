@@ -3,7 +3,7 @@
 # page in the pages that link here. A custom chain cloned from this one rewrites the messages.
 name: doc-create
 metadata:
-  version: v2.0
+  version: v2.1
   description: 새 문서의 위키텍스트를 작성한다.
 spec:
   userInputs:
@@ -11,7 +11,7 @@ spec:
       placeholder: (예시) 눈 → eye/snow, 밤 → night/chestnut
     - name: readBacklinks
       type: bool
-    - name: copiedTexts
+    - name: texts
       type: textList
     - name: request
       type: text
@@ -22,7 +22,6 @@ spec:
   steps:
     - name: generate
       description: 제목과 힌트·요청사항·자료·역링크로 새 문서의 위키텍스트를 쓴다.
-      inputs: [title, hint, request, copiedTexts, backlinkTexts]
       messages:
         - role: system
           content: |-
@@ -78,10 +77,10 @@ spec:
             ### 요청사항:
             {request}
         - role: user
-          each: copiedTexts
+          each: texts
           content: |-
             ### 자료 {index}:
-            {copiedTexts}
+            {texts}
         - role: user
           each: backlinkTexts
           content: |-

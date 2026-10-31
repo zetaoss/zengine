@@ -11,10 +11,10 @@ import (
 // specVersions pins each built-in chain's version to a hash of its spec, so a spec change fails here until the
 // version is bumped and the entry updated: a minor bump keeps stored results, a major bump makes them stale.
 var specVersions = map[string]string{
-	"doc-define": "v2.0 95600152bd0d",
-	"doc-eval":   "v2.0 3e49e3826803",
-	"doc-create": "v2.0 2bed2e99cdb4",
-	"doc-update": "v2.0 6c79862cd737",
+	"doc-define": "v2.1 902255c3a27b",
+	"doc-eval":   "v2.1 86fd90a800b7",
+	"doc-create": "v2.1 0cd576b9c493",
+	"doc-update": "v2.1 7bd61981fbd0",
 }
 
 func specHash(c Chain) string {
@@ -67,11 +67,11 @@ func TestDocEvalPrompts(t *testing.T) {
 		t.Errorf("rubric user message rendered incorrectly: %s", got[1].Content)
 	}
 
-	got := DocEvalJudge.Render(Vars{
+	got := DocEvalJudge.Render(DocEval.Fill(Vars{
 		"title":    "테스트 문서",
 		"rubrics":  `{"general_quality":[]}`,
 		"wikitext": "== 개요 ==\n테스트 내용",
-	})
+	}))
 	user := got[1].Content
 	if !strings.Contains(user, "문서 제목: 테스트 문서") || !strings.Contains(user, `{"general_quality":[]}`) || !strings.Contains(user, "테스트 내용") {
 		t.Errorf("judge user message rendered incorrectly: %s", user)
@@ -82,7 +82,7 @@ func TestDocDefinePrompt(t *testing.T) {
 	if DocDefine.Metadata.Version == "" {
 		t.Fatal("doc-define needs a version: each definition records it")
 	}
-	got := DocDefineStep.Render(Vars{"title": "자바", "lead": "'''자바'''는 인도네시아의 섬이다."})
+	got := DocDefineStep.Render(DocDefine.Fill(Vars{"title": "자바", "wikitext": "'''자바'''는 인도네시아의 섬이다."}))
 	if !strings.Contains(got[1].Content, "문서 제목: 자바") || !strings.Contains(got[1].Content, "인도네시아의 섬") {
 		t.Errorf("define user message rendered incorrectly: %s", got[1].Content)
 	}

@@ -12,12 +12,17 @@
   import { getWikiViewHref } from '$shared/utils/wikiLink'
 
   import LoopPanel from '../LoopPanel.svelte'
-  import { fetchRevisionSource, formatDateTime, type LastRun, type LoopSettings, type QueuedTask, splitAtBytes } from '../loop'
+  import { fetchRevisionSource, formatDateTime, type LastRun, type LoopSettings, type QueuedTask, splitAtBytes, splitAtChars } from '../loop'
   import ModelId from '../ModelId.svelte'
   import RunModal from '../RunModal.svelte'
 
-  // The define step reads this much of the wikitext (services/doceval maxLeadLen).
-  const leadBytes = 1500
+  // How much of the wikitext the define step read for a definition: up to v2.0, 1500 bytes; since v2.1, the
+  // 1000 characters of doc-define's lead input (goapp/prompts/chains/doc-define.yaml).
+  function leadOf(version: string): { label: string; split: (text: string) => { read: string; remaining: string } } {
+    const [major, minor] = version.replace(/^v/, '').split('.').map((x) => Number(x) || 0)
+    if (major < 2 || (major === 2 && minor === 0)) return { label: '1500바이트', split: (t) => splitAtBytes(t, 1500) }
+    return { label: '1000자', split: (t) => splitAtChars(t, 1000) }
+  }
 
   interface Definition {
     page_id: number
@@ -231,14 +236,14 @@
                 <tr class="bg-muted/10">
                   <td colspan="4" class="p-4 text-xs">
                     <div class="mb-2 text-muted-foreground">
-                      r{item.revid} · {item.chain_version} · 정의 단계가 읽은 앞부분 {leadBytes}바이트
+                      r{item.revid} · {item.chain_version} · 정의 단계가 읽은 앞부분 {leadOf(item.chain_version).label}
                     </div>
                     {#if !src || src.loading}
                       <div class="text-muted-foreground">불러오는 중...</div>
                     {:else if src.error}
                       <div class="text-a-rose-500">{src.error}</div>
                     {:else if src.text !== undefined}
-                      {@const split = splitAtBytes(src.text, leadBytes)}
+                      {@const split = leadOf(item.chain_version).split(src.text)}
                       <pre class="whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed max-h-96 overflow-y-auto"><span
                           >{split.read}</span
                         >{#if split.remaining}<span class="text-muted-foreground/50">{split.remaining}</span>{/if}</pre>

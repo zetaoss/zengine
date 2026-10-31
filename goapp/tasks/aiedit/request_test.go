@@ -41,7 +41,7 @@ func contents(r Rendered) string {
 func TestRenderCreate(t *testing.T) {
 	cfg := fakeWiki(t)
 	r, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestCreate, Title: "사과", UserInputs: map[string]any{
-		"hint": "apple", "readBacklinks": true, "copiedTexts": []any{"자료 하나", ""}, "request": "",
+		"hint": "apple", "readBacklinks": true, "texts": []any{"자료 하나", ""}, "request": "",
 	}})
 	if err != nil {
 		t.Fatal(err)
@@ -80,9 +80,9 @@ func TestRenderUpdateTemplate(t *testing.T) {
 
 func TestRenderOwnMessages(t *testing.T) {
 	cfg := fakeWiki(t)
-	own := `[{"role":"system","content":"규칙"},{"role":"user","content":"{title}"},{"role":"user","if":"request","content":"요청: {request}"},{"role":"user","each":"copiedTexts","content":"{index}) {copiedTexts}"}]`
+	own := `[{"role":"system","content":"규칙"},{"role":"user","content":"{title}"},{"role":"user","if":"request","content":"요청: {request}"},{"role":"user","each":"texts","content":"{index}) {texts}"}]`
 	prompt := &models.AIEditPrompt{ID: 4, RequestType: models.AIEditRequestCreate, Content: "unused", Messages: own}
-	r, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestCreate, Title: "자바 (섬)", Prompt: prompt, UserInputs: map[string]any{"request": "짧게", "copiedTexts": []any{"a", "b"}}})
+	r, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestCreate, Title: "자바 (섬)", Prompt: prompt, UserInputs: map[string]any{"request": "짧게", "texts": []any{"a", "b"}}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,7 +99,7 @@ func TestValidateTemplateMessages(t *testing.T) {
 	for name, msgs := range map[string][]prompts.Message{
 		"unknown placeholder": {{Role: "user", Content: "{other}"}},
 		"each on a string":    {{Role: "user", Each: "request", Content: "{request}"}},
-		"texts outside each":  {{Role: "user", Content: "{copiedTexts}"}},
+		"texts outside each":  {{Role: "user", Content: "{texts}"}},
 		"no messages":         {},
 	} {
 		if err := chain.ValidateMessages(msgs); err == nil {
@@ -181,5 +181,19 @@ func TestRenderNoMessages(t *testing.T) {
 	prompt.UserInputs = `[{"name":"title2"}]`
 	if _, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestCreate, Title: "x", Prompt: prompt}); !IsInputError(err) {
 		t.Fatalf("a request that sends no message must be the requester's to fix, got %v", err)
+	}
+}
+
+func TestRenderUnsetInputIsEmpty(t *testing.T) {
+	cfg := fakeWiki(t)
+	prompt := &models.AIEditPrompt{ID: 7, RequestType: models.AIEditRequestCreate,
+		UserInputs: `[{"name":"tone"}]`,
+		Messages:   `[{"role":"user","content":"{title} / {tone} / {example}"}]`}
+	r, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestCreate, Title: "Apple", Prompt: prompt})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := contents(r); got != "Apple /  / {example}" {
+		t.Fatalf("a declared input left unset renders as nothing, an undeclared name stays: %q", got)
 	}
 }

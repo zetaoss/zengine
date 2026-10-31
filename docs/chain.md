@@ -7,7 +7,7 @@ goapp defines LLM work as chains, following LangChain. Types: `goapp/prompts/cha
 | Chain | `doc-eval` | Steps run in order; a step's output feeds later steps | `RunnableSequence` |
 | Step | `doc-eval/rubric` | One LLM call: prompt, model, format, and an output name when a later step reads it | `prompt \| model \| parser` (three `steps` there, one here); output name like ADK `output_key` |
 | Prompt | | Messages (`system`, `user`) with `{name}` placeholders, each optionally sent only `if` a variable is given or once for `each` item of a list | `ChatPromptTemplate` (f-string); `if`/`each` like `MessagesPlaceholder` |
-| User inputs | `hint`, `copiedTexts` | What the requester gives in the run form; they reach the messages as they are | graph input schema (LangGraph) |
+| User inputs | `hint`, `texts` | What the requester gives in the run form; they reach the messages as they are | graph input schema (LangGraph) |
 | Inputs | `title`, `wikitext` | What the task running the chain fills | |
 | Format | `json` (`text` when omitted) | What the step asks the model to return; the response is read in it | `response_format` (OpenAI), output parser |
 | Version | `v2.0` | `v<major>.<minor>`, recorded with each call and result; a stored result of the same major is current | |
@@ -23,7 +23,7 @@ goapp defines LLM work as chains, following LangChain. Types: `goapp/prompts/cha
 | `doc-create` | `doc-create.yaml` | `ai-edit`, request type `create` | `chains.docCreate` |
 | `doc-update` | `doc-update.yaml` | `ai-edit`, request type `update` | `chains.docUpdate` |
 
-The model picked in the chains tab comes first; see [Screen and API](#screen-and-api) and [config.md](config.md#goapp-config-file). For `doc-create` and `doc-update` the requester may pick an AI edit prompt template (`aiedit_prompts`), which runs with its own run form and messages: `user_inputs` in place of the chain's user inputs (`Chain.WithUserInputs`: any names but the task's inputs and `index`; values reach the messages as they are; `readBacklinks` also has the task read the pages that link here) and `messages` in place of the step's (`Chain.ValidateMessages`: the rules of `Validate`, except that it need not use every input). A template saved before it had messages runs its content in place of the step's unconditional messages, followed by the step's `if` and `each` messages (`aiedit.TemplateMessages`).
+The model picked in the chains tab comes first; see [Screen and API](#screen-and-api) and [config.md](config.md#goapp-config-file). For `doc-create` and `doc-update` the requester may pick an AI edit prompt template (`aiedit_prompts`), which runs with its own run form and messages: `user_inputs` in place of the chain's user inputs (`Chain.WithUserInputs`: any names but the task's inputs and `index`; values reach the messages as they are; `readBacklinks` also has the task read the pages that link here) and `messages` in place of the step's (`Chain.ValidateMessages`, the rules of `Validate`). A template saved before it had messages runs its content in place of the step's unconditional messages, followed by the step's `if` and `each` messages (`aiedit.TemplateMessages`).
 
 ## Chain file
 
@@ -38,7 +38,7 @@ spec:
       placeholder: (예시) 눈 → eye/snow, 밤 → night/chestnut
     - name: readBacklinks
       type: bool
-    - name: copiedTexts
+    - name: texts
       type: textList
   inputs:                     # filled by the task
     - name: title
@@ -46,7 +46,6 @@ spec:
       type: textList
   steps:
     - name: generate
-      inputs: [title, hint, copiedTexts, backlinkTexts]
       messages:
         - role: system
           content: |-
@@ -57,13 +56,13 @@ spec:
           if: hint
           content: "### 힌트: {hint}"
         - role: user
-          each: copiedTexts
+          each: texts
           content: |-
             ### 자료 {index}:
-            {copiedTexts}
+            {texts}
 ```
 
-`metadata` describes the chain; `spec` is what decides its results. A variable's `type` is `string` (the default; one line), `text` (several lines), `textList` (a list of texts) or `bool`; a user input shows in the run form under its name (`copiedTexts` as Copied texts), with an optional `placeholder` for its empty field; an input may be written as its name alone (`inputs: [title, lead]`). A step names its `output` only when a later step reads it (doc-eval's `rubrics`), and writes `format: json` only when it takes JSON. The files are read at start with unknown fields rejected, and a missing file or step (`Chain.Step`) panics there. Go keeps what the services need beyond the file: the structs a response is parsed into, values that check results (`DocEvalSafetyPolicies`), and the code between steps.
+`metadata` describes the chain; `spec` is what decides its results. A variable's `type` is `string` (the default; one line), `text` (several lines), `textList` (a list of texts) or `bool`; a user input shows in the run form under its name (`readBacklinks` as Read backlinks), with an optional `placeholder` for its empty field; an input may be written as its name alone. A task input with `from` is derived from another variable before a step renders (`Chain.Fill`), cut to `maxChars` characters: doc-define reads `lead` (`from: wikitext`, `maxChars: 1000`) and doc-eval's judge `body` (2000), so the limits stand in the file rather than in service code. A step does not list its inputs: the variables its messages use (placeholders, `if`, `each`) are found when the chain loads, as LangChain finds a template's `input_variables`. A step names its `output` only when a later step reads it (doc-eval's `rubrics`), and writes `format: json` only when it takes JSON. The files are read at start with unknown fields rejected, and a missing file or step (`Chain.Step`) panics there. Go keeps what the services need beyond the file: the structs a response is parsed into, values that check results (`DocEvalSafetyPolicies`), and the code between steps.
 
 ## Chains and tasks
 
@@ -75,8 +74,8 @@ A chain says what to ask a model: its prompts, formats, outputs and version, and
 
 `Chain.Validate` checks these at start (`mustLoad`), and in `chain_test.go`:
 
-- A step's inputs are variables or earlier outputs, and each is used by its messages as a placeholder, `if` or `each`. Every task input is used; a user input need not be (`readBacklinks` only tells the task to read).
-- Placeholders, `if` and `each` name the step's inputs. `each` names a `textList` variable, and inside its message `{name}` is the item and `{index}` its number from 1; a `textList` variable is a placeholder only there.
+- The variables a step's messages use are chain variables or earlier outputs. Every task input is used by some step, a source counting through what is derived from it; a user input need not be (`readBacklinks` only tells the task to read).
+- `each` names a `textList` variable, and inside its message `{name}` is the item and `{index}` its number from 1; a `textList` variable is a placeholder only there.
 - Variable names start with a letter (`backlinkTexts`, `wikitext`). System messages are fixed; changing values go into user messages.
 - `Prompt.Render` skips a message whose `if` variable is not given (a blank string, false, an empty list), sends an `each` message per item, and inserts values as they are (a `{title}` inside a wikitext is not expanded); braces that are not variables stay: `{|`, JSON, and wiki templates, since a `{name}` right after another brace (`{{title}}`, `{{Infobox}}`, `{{{1}}}`) is not a placeholder, while one inside a template's parameter (`{{틀|{title}}}`) is.
 - `Format.Parse` strips a code fence around the whole response; `json` decodes into a struct, `text` trims. It checks the format only; the service checks what values mean.

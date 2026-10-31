@@ -126,6 +126,14 @@ export async function fetchRevisionSource(revid: number): Promise<string | Error
 }
 
 // text split at maxBytes of UTF-8: the part a step read and the rest.
+export function splitAtChars(text: string, maxChars: number): { read: string; remaining: string } {
+  const chars = Array.from(text)
+  if (chars.length <= maxChars) {
+    return { read: text, remaining: '' }
+  }
+  return { read: chars.slice(0, maxChars).join(''), remaining: chars.slice(maxChars).join('') }
+}
+
 export function splitAtBytes(text: string, maxBytes: number): { read: string; remaining: string } {
   const bytes = new TextEncoder().encode(text)
   if (bytes.length <= maxBytes) {

@@ -37,6 +37,8 @@
     name: string
     placeholder?: string
     type?: string
+    from?: string
+    maxChars?: number
   }
 
   interface Chain {
@@ -49,7 +51,7 @@
     template: string
   }
 
-  // A user input's name as the run form shows it: copiedTexts as "Copied texts" (as in the skin's AiEditRunner).
+  // A user input's name as the run form shows it: readBacklinks as "Read backlinks" (as in the skin's AiEditRunner).
   function humanize(name: string) {
     const words = name.replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase()
     return words.charAt(0).toUpperCase() + words.slice(1)
@@ -57,7 +59,8 @@
 
   function inputLabel(input: ChainInput) {
     const type = input.type && input.type !== 'string' ? `: ${input.type}` : ''
-    return `${input.name}${type}`
+    const from = input.from ? ` ← ${input.from}${input.maxChars ? `, ${input.maxChars}자까지` : ''}` : ''
+    return `${input.name}${type}${from}`
   }
 
   type PreviewValue = string | boolean | string[]

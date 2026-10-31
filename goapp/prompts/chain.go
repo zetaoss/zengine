@@ -39,12 +39,49 @@ type Spec struct {
 	Steps      []Step  `json:"steps" yaml:"steps"`
 }
 
-// Input is a variable of a chain. A user input shows in the run form under its name (copiedTexts as "Copied
-// texts"), with Placeholder in its empty field.
+// Input is a variable of a chain. A user input shows in the run form under its name (readBacklinks as "Read
+// backlinks"), with Placeholder in its empty field. An input with From is derived from that variable before a step
+// renders (Fill), cut to MaxChars characters when set: the task fills the source, the messages read the cut.
 type Input struct {
 	Name        string    `json:"name" yaml:"name"`
 	Placeholder string    `json:"placeholder,omitempty" yaml:"placeholder,omitempty"`
 	Type        InputType `json:"type,omitempty" yaml:"type,omitempty"`
+	From        string    `json:"from,omitempty" yaml:"from,omitempty"`
+	MaxChars    int       `json:"maxChars,omitempty" yaml:"maxChars,omitempty"`
+}
+
+// Fill returns vars with every declared variable that has no value set empty (an empty string or list, false),
+// so its placeholders render as nothing, and each derived input set from its source (From), cut to MaxChars
+// characters. A {name} that is not a declared variable stays as written.
+func (c Chain) Fill(vars Vars) Vars {
+	out := Vars{}
+	for k, v := range vars {
+		out[k] = v
+	}
+	for _, in := range slices.Concat(c.Spec.UserInputs, c.Spec.Inputs) {
+		if _, ok := out[in.Name]; ok || in.From != "" {
+			continue
+		}
+		switch in.Type.orString() {
+		case TypeTextList:
+			out[in.Name] = []string{}
+		case TypeBool:
+			out[in.Name] = false
+		default:
+			out[in.Name] = ""
+		}
+	}
+	for _, in := range c.Spec.Inputs {
+		if in.From == "" {
+			continue
+		}
+		s := text(vars[in.From])
+		if r := []rune(s); in.MaxChars > 0 && len(r) > in.MaxChars {
+			s = string(r[:in.MaxChars])
+		}
+		out[in.Name] = s
+	}
+	return out
 }
 
 // UnmarshalYAML also reads an input written as its name alone.
@@ -203,11 +240,33 @@ func (c Chain) Step(name string) Step {
 	panic(fmt.Sprintf("chain %s has no step %q", c.Name, name))
 }
 
-// Prompt is a chat prompt template. Message contents may hold {name} placeholders for the variables listed in
-// Inputs, which are the chain's variables or outputs of earlier steps.
+// Prompt is a chat prompt template. Message contents may hold {name} placeholders for the chain's variables or
+// outputs of earlier steps. Inputs are the variables its messages use (placeholders, If, Each), found when the
+// chain loads, like LangChain's input_variables.
 type Prompt struct {
-	Inputs   []string  `json:"inputs" yaml:"inputs"`
+	Inputs   []string  `json:"inputs" yaml:"-"`
 	Messages []Message `json:"messages" yaml:"messages"`
+}
+
+// messageVariables are the variables messages use, in the order they first appear: placeholders ({index} inside
+// an Each aside), If and Each.
+func messageVariables(messages []Message) []string {
+	var out []string
+	add := func(name string) {
+		if name != "" && !slices.Contains(out, name) {
+			out = append(out, name)
+		}
+	}
+	for _, m := range messages {
+		add(m.If)
+		add(m.Each)
+		for _, ph := range placeholders(m.Content) {
+			if ph.name != "index" || m.Each == "" {
+				add(ph.name)
+			}
+		}
+	}
+	return out
 }
 
 // Message is one message of a prompt. If sends it only when that variable is given (present). Each sends it once
@@ -255,8 +314,11 @@ func (p Prompt) replace(content string, vars Vars, own map[string]string) string
 	last := 0
 	for _, ph := range placeholders(content) {
 		v, ok := own[ph.name]
-		if !ok && slices.Contains(p.Inputs, ph.name) {
-			v, ok = text(vars[ph.name]), true
+		if !ok {
+			var given any
+			if given, ok = vars[ph.name]; ok {
+				v = text(given)
+			}
 		}
 		if !ok {
 			continue
@@ -343,6 +405,9 @@ func mustLoad(name string) Chain {
 	if c.Name != name {
 		panic(fmt.Sprintf("chains/%s.yaml: name is %q", name, c.Name))
 	}
+	for i := range c.Spec.Steps {
+		c.Spec.Steps[i].Inputs = messageVariables(c.Spec.Steps[i].Messages)
+	}
 	if err := c.Validate(); err != nil {
 		panic(fmt.Sprintf("chains/%s.yaml: %v", name, err))
 	}
@@ -372,12 +437,26 @@ func (c Chain) Validate() error {
 		}
 		types[in.Name] = t
 	}
+	for _, in := range c.Spec.Inputs {
+		if in.From == "" {
+			if in.MaxChars != 0 {
+				return fmt.Errorf("input %s: maxChars needs from", in.Name)
+			}
+			continue
+		}
+		if t, ok := types[in.From]; !ok || (t != TypeString && t != TypeText) || in.From == in.Name {
+			return fmt.Errorf("input %s: from %q is not a string variable", in.Name, in.From)
+		}
+		if in.MaxChars < 0 || types[in.Name] != TypeString {
+			return fmt.Errorf("input %s: a derived input is a string with maxChars of 0 or more", in.Name)
+		}
+	}
 	if len(c.Spec.Steps) == 0 {
 		return fmt.Errorf("no steps")
 	}
 	used := map[string]bool{}
 	for _, st := range c.Spec.Steps {
-		if err := st.validate(types, used, true); err != nil {
+		if err := st.validate(types, used); err != nil {
 			return fmt.Errorf("step %s: %w", st.Name, err)
 		}
 		if st.Output == "" {
@@ -389,6 +468,11 @@ func (c Chain) Validate() error {
 		types[st.Output] = TypeString
 	}
 	for _, in := range c.Spec.Inputs {
+		if in.From != "" && used[in.Name] {
+			used[in.From] = true
+		}
+	}
+	for _, in := range c.Spec.Inputs {
 		if !used[in.Name] {
 			return fmt.Errorf("input %q is not used", in.Name)
 		}
@@ -396,18 +480,17 @@ func (c Chain) Validate() error {
 	return nil
 }
 
-// ValidateMessages checks messages written to replace those of the chain's first step (a custom template): the
-// same rules as Validate, except that they need not use every input of the step.
+// ValidateMessages checks messages written to replace those of the chain's first step (a custom template) by the
+// rules of Validate.
 func (c Chain) ValidateMessages(messages []Message) error {
-	types := c.variableTypes()
 	st := c.Spec.Steps[0]
 	st.Messages = messages
-	return st.validate(types, map[string]bool{}, false)
+	st.Inputs = messageVariables(messages)
+	return st.validate(c.variableTypes(), map[string]bool{})
 }
 
 // WithUserInputs returns the chain with inputs as its user inputs (a custom template's run form), checked like
-// Validate checks them and not clashing with the task's inputs. The first step may then read every user input,
-// besides the task inputs it read.
+// Validate checks them and not clashing with the task's inputs.
 func (c Chain) WithUserInputs(inputs []Input) (Chain, error) {
 	seen := map[string]bool{}
 	for _, in := range c.Spec.Inputs {
@@ -425,19 +508,8 @@ func (c Chain) WithUserInputs(inputs []Input) (Chain, error) {
 			return c, fmt.Errorf("user input %s: unknown type %q", in.Name, in.Type)
 		}
 	}
-	steps := slices.Clone(c.Spec.Steps)
-	var stepInputs []string
-	for _, name := range steps[0].Inputs {
-		if slices.ContainsFunc(c.Spec.Inputs, func(in Input) bool { return in.Name == name }) {
-			stepInputs = append(stepInputs, name)
-		}
-	}
-	for _, in := range inputs {
-		stepInputs = append(stepInputs, in.Name)
-	}
-	steps[0].Inputs = stepInputs
 	c.Spec.UserInputs = slices.Clone(inputs)
-	c.Spec.Steps = steps
+	c.Spec.Steps = slices.Clone(c.Spec.Steps)
 	return c, nil
 }
 
@@ -487,52 +559,33 @@ func (c Chain) variableTypes() map[string]InputType {
 	return types
 }
 
-// validate checks a step; strict also requires every input of the step to be used by its messages.
-func (st Step) validate(types map[string]InputType, used map[string]bool, strict bool) error {
+// validate checks a step: the variables its messages use are chain variables or earlier outputs, If and Each name them,
+// Each a textList one, and a textList variable is a placeholder only in its own Each message.
+func (st Step) validate(types map[string]InputType, used map[string]bool) error {
 	if st.Name == "" || len(st.Messages) == 0 {
 		return fmt.Errorf("name and messages are required")
 	}
 	if f := st.Format.OrText(); f != FormatJSON && f != FormatText {
 		return fmt.Errorf("unknown format %q", st.Format)
 	}
-	for _, in := range st.Inputs {
-		if _, ok := types[in]; !ok {
-			return fmt.Errorf("input %q is neither a variable nor an earlier output", in)
+	for _, name := range messageVariables(st.Messages) {
+		if _, ok := types[name]; !ok {
+			return fmt.Errorf("{%s} is neither a variable nor an earlier output", name)
 		}
+		used[name] = true
 	}
-	stepUsed := map[string]bool{}
 	for _, m := range st.Messages {
 		if m.Content == "" || (m.Role != "system" && m.Role != "user") {
 			return fmt.Errorf("invalid %q message", m.Role)
-		}
-		for _, name := range []string{m.If, m.Each} {
-			if name != "" && !slices.Contains(st.Inputs, name) {
-				return fmt.Errorf("%q is not an input of the step", name)
-			}
-			stepUsed[name] = true
 		}
 		if m.Each != "" && types[m.Each] != TypeTextList {
 			return fmt.Errorf("each %q is not a textList variable", m.Each)
 		}
 		for _, ph := range placeholders(m.Content) {
-			name := ph.name
-			if name == "index" && m.Each != "" {
-				continue
+			if types[ph.name] == TypeTextList && ph.name != m.Each {
+				return fmt.Errorf("textList variable {%s} is used outside its each message", ph.name)
 			}
-			if !slices.Contains(st.Inputs, name) {
-				return fmt.Errorf("placeholder {%s} is not an input of the step", name)
-			}
-			if types[name] == TypeTextList && name != m.Each {
-				return fmt.Errorf("textList variable {%s} is used outside its each message", name)
-			}
-			stepUsed[name] = true
 		}
-	}
-	for _, in := range st.Inputs {
-		if strict && !stepUsed[in] {
-			return fmt.Errorf("input %q is not used by its messages", in)
-		}
-		used[in] = true
 	}
 	return nil
 }

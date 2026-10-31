@@ -3,14 +3,18 @@
 # Its version is stored with each definition; bump it when the spec changes.
 name: doc-define
 metadata:
-  version: v2.0
+  version: v2.1
   description: 제목과 본문 앞부분으로 문서가 다루는 대상을 한 줄로 정의한다.
 spec:
-  inputs: [title, lead]
+  inputs:
+    - name: title
+    - name: wikitext
+    - name: lead
+      from: wikitext
+      maxChars: 1000
   steps:
     - name: define
-      description: 제목과 본문 앞부분(1500바이트까지)을 보고 문서의 대상을 제목 없는 명사구로 정의한다.
-      inputs: [title, lead]
+      description: 제목과 본문 앞부분(1000자까지)을 보고 문서의 대상을 제목 없는 명사구로 정의한다.
       messages:
         - role: system
           content: |-

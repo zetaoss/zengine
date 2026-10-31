@@ -15,8 +15,6 @@ import (
 	"gorm.io/gorm"
 )
 
-const maxWikitextLen = 6000
-
 type Criterion struct {
 	ID        string `json:"id"`
 	Criterion string `json:"criterion"`
@@ -98,17 +96,12 @@ func (e *Evaluator) Evaluate(ctx context.Context, page Page, definition, wikitex
 	}
 	rubricsJSON, _ := json.Marshal(rubrics)
 
-	trimmedWikitext := wikitext
-	if len(trimmedWikitext) > maxWikitextLen {
-		trimmedWikitext = strings.ToValidUTF8(trimmedWikitext[:maxWikitextLen], "")
-	}
+	// The judge reads the wikitext cut as doc-eval's body input says; errors are quoted from that same text.
+	vars := prompts.Vars{"title": displayTitle, "rubrics": string(rubricsJSON), "wikitext": wikitext}
+	body, _ := prompts.DocEval.Fill(vars)["body"].(string)
 
 	var judgment Judgment
-	resp, err := run(prompts.DocEvalJudge, prompts.Vars{
-		"title":    displayTitle,
-		"rubrics":  string(rubricsJSON),
-		"wikitext": trimmedWikitext,
-	}, &judgment)
+	resp, err := run(prompts.DocEvalJudge, vars, &judgment)
 	if err != nil {
 		return nil, fmt.Errorf("llm evaluation failed: %w", err)
 	}
@@ -116,7 +109,7 @@ func (e *Evaluator) Evaluate(ctx context.Context, page Page, definition, wikitex
 
 	policies := validPolicies(judgment.Safety.Policies)
 	safetyViolated := judgment.Safety.Violated || len(policies) > 0
-	judgment.Accuracy.Errors = quotedErrors(judgment.Accuracy.Errors, trimmedWikitext)
+	judgment.Accuracy.Errors = quotedErrors(judgment.Accuracy.Errors, body)
 	contradicted := uint(len(judgment.Accuracy.Errors))
 	judgment.Accuracy.Contradictory = contradicted
 	judgmentJSON, _ := json.Marshal(judgment)
