@@ -16,11 +16,11 @@ const bobBody = `{"status":"ok","time":"2026-08-15T12:00:00Z","result":{
 "node_cpu_allocatable":[{"labels":{"node":"n1"},"value":1.93}],
 "node_memory_usage":[{"labels":{"node":"n1"},"value":8217997312}],
 "node_memory_allocatable":[{"labels":{"node":"n1"},"value":13918449664}],
-"pod_cpu_usage":[{"labels":{"namespace":"prod3","pod":"web-1"},"value":0.45},{"labels":{"namespace":"prod3","pod":"web-2"},"value":0.05}],
-"pod_memory_usage":[{"labels":{"namespace":"prod3","pod":"web-1"},"value":524288000}],
+"pod_cpu_usage":[{"labels":{"namespace":"ns1","pod":"web-1"},"value":0.45},{"labels":{"namespace":"ns1","pod":"web-2"},"value":0.05}],
+"pod_memory_usage":[{"labels":{"namespace":"ns1","pod":"web-1"},"value":524288000}],
 "pod_count":[{"labels":{},"value":2}],
-"pvc_storage_usage":[{"labels":{"namespace":"prod3","persistentvolumeclaim":"db"},"value":11811160064}],
-"pvc_storage_capacity":[{"labels":{"namespace":"prod3","persistentvolumeclaim":"db"},"value":106300440576}],
+"pvc_storage_usage":[{"labels":{"namespace":"ns1","persistentvolumeclaim":"db"},"value":11811160064}],
+"pvc_storage_capacity":[{"labels":{"namespace":"ns1","persistentvolumeclaim":"db"},"value":106300440576}],
 "defender_fighting_ratio":[{"labels":{},"value":0.25}],
 "defender_max_level":[{"labels":{},"value":7}]}}`
 
@@ -56,11 +56,11 @@ func TestFetchMetrics(t *testing.T) {
 		t.Errorf("nodes=%+v", nodes)
 	}
 	pods := m.Pods()
-	if len(pods) != 2 || pods[0] != (PodMetric{Name: "web-1", Namespace: "prod3", CPUUsage: 0.45, MemoryUsage: 524288000}) || pods[1].MemoryUsage != 0 {
+	if len(pods) != 2 || pods[0] != (PodMetric{Name: "web-1", Namespace: "ns1", CPUUsage: 0.45, MemoryUsage: 524288000}) || pods[1].MemoryUsage != 0 {
 		t.Errorf("pods=%+v", pods)
 	}
 	pvcs := m.PVCs()
-	if len(pvcs) != 1 || pvcs[0].Name != "db" || pvcs[0].Namespace != "prod3" || math.Abs(pvcs[0].UsagePercent-11.11111111111111) > 1e-12 {
+	if len(pvcs) != 1 || pvcs[0].Name != "db" || pvcs[0].Namespace != "ns1" || math.Abs(pvcs[0].UsagePercent-11.11111111111111) > 1e-12 {
 		t.Errorf("pvcs=%+v", pvcs)
 	}
 }
