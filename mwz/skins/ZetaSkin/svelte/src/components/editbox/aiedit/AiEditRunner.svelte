@@ -65,7 +65,14 @@
 
   let hasPromptContent = $derived(prompt.content.trim().length > 0)
   let trimmedTitle = $derived(title.trim())
-  let canSubmit = $derived(hasPromptContent && trimmedTitle.length > 0 && !submitting)
+  let requiredFilled = $derived(userInputs.every((input) => !input.required || filled(values[input.name])))
+  let canSubmit = $derived(hasPromptContent && trimmedTitle.length > 0 && requiredFilled && !submitting)
+
+  // An input starts at its default; a value kept from another template that fits it stays.
+  $effect(() => {
+    const missing = userInputs.filter((input) => input.default !== undefined && !fits(input, values[input.name]))
+    if (missing.length) values = { ...values, ...Object.fromEntries(missing.map((input) => [input.name, input.default as AIEditUserInputValue])) }
+  })
   let displayedTaskStatus = $derived(submitting ? 'Creating' : submittedTaskPhase === 'Completed' ? undefined : submittedTaskPhase)
 
   function textValue(name: string) {
@@ -92,12 +99,20 @@
     return words.charAt(0).toUpperCase() + words.slice(1)
   }
 
-  // A value fits an input of its type: a value kept from another template with the same name but another type is
-  // not sent.
+  // A value fits an input of its type: a value kept from another template with the same name but another type (or,
+  // for a choice, not one of its options) is not sent.
   function fits(input: AIEditUserInput, v: AIEditUserInputValue | undefined) {
     if (input.type === 'bool') return typeof v === 'boolean'
     if (input.type === 'textList') return Array.isArray(v)
+    if (input.type === 'choice') return typeof v === 'string' && (input.options ?? []).includes(v)
     return typeof v === 'string'
+  }
+
+  // A required input is filled with a non-blank text or a list with a non-blank item.
+  function filled(v: AIEditUserInputValue | undefined) {
+    if (typeof v === 'string') return v.trim() !== ''
+    if (Array.isArray(v)) return v.some((x) => x.trim() !== '')
+    return v !== undefined
   }
 
   function payload(): AIEditRequestPayload {
@@ -269,7 +284,7 @@
     {#if userInputs.length > 0}
       <div class="flex min-h-0 flex-col gap-3 overflow-auto text-sm">
         {#each userInputs as input (input.name)}
-          {@const label = inputLabel(input.name)}
+          {@const label = inputLabel(input.name) + (input.required ? ' *' : '')}
           <div class="flex flex-col gap-1">
           {#if input.type === 'bool'}
             <label class="flex items-center gap-2">
@@ -316,7 +331,21 @@
               <div>
                 <span class="font-semibold">{label}</span>
               </div>
-              {#if input.type === 'text'}
+              {#if input.type === 'choice'}
+                <select
+                  id={`ai-edit-input-${input.name}`}
+                  class="border-border h-8 rounded border bg-background px-2"
+                  value={textValue(input.name)}
+                  onchange={(e) => setText(input.name, e.currentTarget.value)}
+                >
+                  {#if input.default === undefined}
+                    <option value="">{input.placeholder ?? '선택'}</option>
+                  {/if}
+                  {#each input.options ?? [] as option (option)}
+                    <option value={option}>{option}</option>
+                  {/each}
+                </select>
+              {:else if input.type === 'text'}
                 <ZTextarea
                   id={`ai-edit-input-${input.name}`}
                   modelValue={textValue(input.name)}

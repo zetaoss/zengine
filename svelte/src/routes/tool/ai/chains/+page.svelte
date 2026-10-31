@@ -36,10 +36,14 @@
     output?: string
   }
 
+  // A variable (prompts.Input). A user input may be required, have a default, and as a choice list its options.
   interface ChainInput {
     name: string
     placeholder?: string
     type?: string
+    required?: boolean
+    default?: string | boolean
+    options?: string[]
     from?: string
     maxChars?: number
   }
@@ -432,15 +436,16 @@
     <div class="grid grid-cols-[auto_auto_minmax(0,1fr)] items-start gap-x-4 gap-y-2">
       {#each inputs as input (input.name)}
         {@const label = humanize(input.name)}
+        {@const given = previewValues[input.name] ?? input.default}
         <div class="pt-1.5"><code class="var">{input.name}</code></div>
-        <div class="pt-1.5 font-medium">{label}</div>
+        <div class="pt-1.5 font-medium">{label}{input.required ? ' *' : ''}</div>
         <div class="min-w-0">
           {#if input.type === 'bool'}
             <input
               class="mt-2"
               type="checkbox"
               aria-label={label}
-              checked={previewValues[input.name] === true}
+              checked={given === true}
               onchange={(e) => setPreview(input.name, e.currentTarget.checked)}
             />
           {:else if input.type === 'textList'}
@@ -468,8 +473,17 @@
               >
             </div>
           {:else}
-            {@const value = typeof previewValues[input.name] === 'string' ? (previewValues[input.name] as string) : ''}
-            {#if input.type === 'text'}
+            {@const value = typeof given === 'string' ? given : ''}
+            {#if input.type === 'choice'}
+              <select class="h-8 w-full rounded border bg-background px-2.5" {value} onchange={(e) => setPreview(input.name, e.currentTarget.value)}>
+                {#if input.default === undefined}
+                  <option value="">{input.placeholder ?? '선택'}</option>
+                {/if}
+                {#each input.options ?? [] as option (option)}
+                  <option value={option}>{option}</option>
+                {/each}
+              </select>
+            {:else if input.type === 'text'}
               <textarea
                 class="min-h-16 w-full rounded border bg-background px-2.5 py-1.5"
                 placeholder={input.placeholder ?? ''}
