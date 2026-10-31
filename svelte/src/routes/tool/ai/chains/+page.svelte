@@ -3,7 +3,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
 
-  import { mdiChevronDown, mdiContentCopy, mdiDelete, mdiPencil } from '@mdi/js'
+  import { mdiChevronDown, mdiContentCopy, mdiPencil, mdiTrashCanOutline } from '@mdi/js'
 
   import useAuthStore from '$lib/stores/auth'
   import CButton from '$shared/ui/CButton.svelte'
@@ -644,7 +644,7 @@
                             </CButton>
                             {#if own}
                               <CButton variant="outline" size="small" disabled={deletingPromptId === item.id} onclick={() => void delPrompt(item)}>
-                                <ZIcon path={mdiDelete} class="mr-1" />
+                                <ZIcon path={mdiTrashCanOutline} class="mr-1" />
                                 삭제
                               </CButton>
                             {/if}
