@@ -24,9 +24,12 @@
     each?: string
   }
 
+  // A step with uses is a function step (no model, no messages); if runs it only when that variable is given.
   interface ChainStep {
     name: string
     description: string
+    uses?: string
+    if?: string
     inputs: string[]
     messages: ChainMessage[]
     format?: string
@@ -506,7 +509,11 @@
     <div>
       <span class="text-muted-foreground">{n + 1}.</span>
       <span class="font-mono font-medium">{st.name}</span>
-      <span class="ml-1 font-mono text-muted-foreground">{st.inputs.join(', ')} → {st.format ?? 'text'}{st.output ? ` → ${st.output}` : ''}</span>
+      {#if st.uses}
+        <span class="ml-1 font-mono text-muted-foreground">{st.if ? `if ${st.if}: ` : ''}{st.inputs.filter((i) => i !== st.if).join(', ')} → {st.uses} → {st.output}</span>
+      {:else}
+        <span class="ml-1 font-mono text-muted-foreground">{st.inputs.join(', ')} → {st.format ?? 'text'}{st.output ? ` → ${st.output}` : ''}</span>
+      {/if}
       <span class="ml-2 text-muted-foreground">{st.description}</span>
     </div>
     {@render messagesView(messages)}
@@ -656,7 +663,7 @@
                             {/if}
                           </div>
                           {#each chain.spec.steps as st, n (st.name)}
-                            {@render stepView(st, n, item.messages)}
+                            {@render stepView(st, n, st.uses ? [] : item.messages)}
                           {/each}
                         </div>
                       {/if}

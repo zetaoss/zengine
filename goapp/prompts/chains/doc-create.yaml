@@ -1,9 +1,10 @@
 # Writes a new page's wikitext for AI edit. userInputs come from the requester and reach the messages as they
-# are; inputs are filled by the ai-edit task: the title and, with readBacklinks, the text around each link to this
-# page in the pages that link here. A custom chain cloned from this one rewrites the messages.
+# are; inputs are filled by the ai-edit task (the title). With readBacklinks, the backlinks step reads the text
+# around each link to this page in the pages that link here. A custom chain cloned from this one rewrites the
+# messages of the generate step.
 name: doc-create
 metadata:
-  version: v2.1
+  version: v2.2
   description: 새 문서의 위키텍스트를 작성한다.
 spec:
   userInputs:
@@ -17,9 +18,12 @@ spec:
       type: text
   inputs:
     - name: title
-    - name: backlinkTexts
-      type: textList
   steps:
+    - name: backlinks
+      description: 역링크 읽기를 고르면 이 문서를 가리키는 문서들에서 링크 주변 글을 읽는다.
+      uses: wiki/backlinkTexts
+      if: readBacklinks
+      output: backlinkTexts
     - name: generate
       description: 제목과 힌트·요청사항·자료·역링크로 새 문서의 위키텍스트를 쓴다.
       messages:

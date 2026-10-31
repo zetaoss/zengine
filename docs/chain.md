@@ -30,7 +30,7 @@ The model picked in the chains tab comes first; see [Screen and API](#screen-and
 ```yaml
 name: doc-create
 metadata:
-  version: v2.0
+  version: v2.2
   description: 새 문서의 위키텍스트를 작성한다.
 spec:
   userInputs:                 # the run form
@@ -42,9 +42,11 @@ spec:
       type: textList
   inputs:                     # filled by the task
     - name: title
-    - name: backlinkTexts
-      type: textList
   steps:
+    - name: backlinks           # a function step: Go code, no model
+      uses: wiki/backlinkTexts
+      if: readBacklinks
+      output: backlinkTexts
     - name: generate
       messages:
         - role: system
@@ -62,13 +64,13 @@ spec:
             {texts}
 ```
 
-`metadata` describes the chain; `spec` is what decides its results. A variable's `type` is `string` (the default; one line), `text` (several lines), `textList` (a list of texts) or `bool`; a user input shows in the run form under its name (`readBacklinks` as Read backlinks), with an optional `placeholder` for its empty field; an input may be written as its name alone. A task input with `from` is derived from another variable before a step renders (`Chain.Fill`), cut to `maxChars` characters: doc-define reads `lead` (`from: wikitext`, `maxChars: 1000`) and doc-eval's judge `body` (2000), so the limits stand in the file rather than in service code. A step does not list its inputs: the variables its messages use (placeholders, `if`, `each`) are found when the chain loads, as LangChain finds a template's `input_variables`. A step names its `output` only when a later step reads it (doc-eval's `rubrics`), and writes `format: json` only when it takes JSON. The files are read at start with unknown fields rejected, and a missing file or step (`Chain.Step`) panics there. Go keeps what the services need beyond the file: the structs a response is parsed into, values that check results (`DocEvalSafetyPolicies`), and the code between steps.
+`metadata` describes the chain; `spec` is what decides its results. A variable's `type` is `string` (the default; one line), `text` (several lines), `textList` (a list of texts) or `bool`; a user input shows in the run form under its name (`readBacklinks` as Read backlinks), with an optional `placeholder` for its empty field; an input may be written as its name alone. A task input with `from` is derived from another variable before a step renders (`Chain.Fill`), cut to `maxChars` characters: doc-define reads `lead` (`from: wikitext`, `maxChars: 1000`) and doc-eval's judge `body` (2000), so the limits stand in the file rather than in service code. A step does not list its inputs: the variables its messages use (placeholders, `if`, `each`) are found when the chain loads, as LangChain finds a template's `input_variables`. A step names its `output` only when a later step reads it (doc-eval's `rubrics`), and writes `format: json` only when it takes JSON. A step with `uses` is a function step, like LangChain's `RunnableLambda` or a GitHub Actions step's `uses`: it calls a Go function with no model and no messages and saves its value under `output`; `if` runs it only when that variable is given, and otherwise its output is empty. The functions and their forms (the variables they read, the type of their value) are listed in `prompts.Functions` and checked when the chain loads; their code is given by the task that runs the chain (`Chain.RunFunctions`), so `prompts` does not depend on the services they call. `wiki/backlinkTexts` reads `title`. A custom template rewrites the messages of the first LLM step (`Chain.PromptStep`). The files are read at start with unknown fields rejected, and a missing file or step (`Chain.Step`) panics there. Go keeps what the services need beyond the file: the structs a response is parsed into, values that check results (`DocEvalSafetyPolicies`), and the code between steps.
 
 ## Chains and tasks
 
 A chain says what to ask a model: its prompts, formats, outputs and version, and which values the requester gives (user inputs) and the task fills (inputs). It does not pick targets, read the wiki, or store results; its model is picked per chain (`services/chainsvc`). A goapp task decides when to run a chain and on what: it picks the target, fills the inputs, runs the steps through its service, stores the result, handles failures, and decides from the chain version whether a stored result can be reused. See the table above for which task runs which chain.
 
-`ai-edit` fills `title`, `wikitext` (the page as it stands in the editor, else the saved page) and `backlinkTexts`: with `readBacklinks` on, up to 10 main-namespace articles linking to the page (the page may not exist yet), each as its title and the text around its first link to the page, references and comments removed, or its beginning when the link comes from a template (`services/wikisvc`).
+`ai-edit` fills `title` and `wikitext` (the page as it stands in the editor, else the saved page), and runs the `backlinks` step: with `readBacklinks` on, `wiki/backlinkTexts` reads up to 10 main-namespace articles linking to the page (the page may not exist yet), each as its title and the text around its first link to the page, references and comments removed, or its beginning when the link comes from a template (`services/wikisvc`).
 
 ## Rules
 

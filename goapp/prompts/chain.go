@@ -2,6 +2,7 @@ package prompts
 
 import (
 	"bytes"
+	"context"
 	"embed"
 	"encoding/json"
 	"fmt"
@@ -62,14 +63,7 @@ func (c Chain) Fill(vars Vars) Vars {
 		if _, ok := out[in.Name]; ok || in.From != "" {
 			continue
 		}
-		switch in.Type.orString() {
-		case TypeTextList:
-			out[in.Name] = []string{}
-		case TypeBool:
-			out[in.Name] = false
-		default:
-			out[in.Name] = ""
-		}
+		out[in.Name] = empty(in.Type)
 	}
 	for _, in := range c.Spec.Inputs {
 		if in.From == "" {
@@ -118,6 +112,17 @@ func (t InputType) orString() InputType {
 		return TypeString
 	}
 	return t
+}
+
+// empty is the value of a variable of type t that is not given: an empty string or list, or false.
+func empty(t InputType) any {
+	switch t.orString() {
+	case TypeTextList:
+		return []string{}
+	case TypeBool:
+		return false
+	}
+	return ""
 }
 
 // Vars are the values of a chain's variables for one run: a string, a bool, or a []string per name.
@@ -199,12 +204,77 @@ func (c Chain) UserVars(raw map[string]any) (Vars, error) {
 // Step is one LLM call of a chain, LangChain's prompt | model | parser: the prompt is rendered, sent to the
 // model, and the response is read in the step's Format. Output names the parsed value when a later step reads it (like ADK's
 // output_key); a step whose value only goes back to the service needs none.
+//
+// A step with Uses is a function step instead, like LangChain's RunnableLambda or a GitHub Actions step's uses: it
+// calls the Go function named there (Functions) with no model and no messages, and saves its value under Output.
+// If runs it only when that variable is given (present); otherwise its output is empty.
 type Step struct {
 	Name        string `json:"name" yaml:"name"`
 	Description string `json:"description" yaml:"description"`
+	Uses        string `json:"uses,omitempty" yaml:"uses,omitempty"`
+	If          string `json:"if,omitempty" yaml:"if,omitempty"`
 	Prompt      `yaml:",inline"`
 	Format      Format `json:"format,omitempty" yaml:"format,omitempty"`
 	Output      string `json:"output,omitempty" yaml:"output,omitempty"`
+}
+
+// Function is the form of a function step's Go function: the variables it reads and the type of its value.
+type Function struct {
+	Inputs []string
+	Output InputType
+}
+
+// Functions are the functions a function step may use. Their code is given to RunFunctions by the task that runs
+// the chain, so this package does not depend on the services they call.
+var Functions = map[string]Function{
+	// wiki/backlinkTexts reads, in the pages that link to the page titled title, the text around each link.
+	"wiki/backlinkTexts": {Inputs: []string{"title"}, Output: TypeTextList},
+}
+
+// Func is the code of a function step: it reads the run's variables and returns the step's value.
+type Func func(ctx context.Context, vars Vars) (any, error)
+
+// RunFunctions runs the chain's function steps in order with funcs and returns vars with their outputs set. A step
+// whose If is not given is skipped and its output set empty, as Fill sets unset variables.
+func (c Chain) RunFunctions(ctx context.Context, vars Vars, funcs map[string]Func) (Vars, error) {
+	out := Vars{}
+	for k, v := range vars {
+		out[k] = v
+	}
+	for _, st := range c.Spec.Steps {
+		if st.Uses == "" {
+			continue
+		}
+		if st.If != "" && !present(out[st.If]) {
+			out[st.Output] = empty(Functions[st.Uses].Output)
+			continue
+		}
+		fn, ok := funcs[st.Uses]
+		if !ok {
+			return nil, fmt.Errorf("step %s: no code for %s", st.Name, st.Uses)
+		}
+		v, err := fn(ctx, out)
+		if err != nil {
+			return nil, fmt.Errorf("step %s: %w", st.Name, err)
+		}
+		out[st.Output] = v
+	}
+	return out, nil
+}
+
+// PromptIndex is the index of the chain's first LLM step: the one AI edit sends and a custom template rewrites.
+func (c Chain) PromptIndex() int {
+	for i, st := range c.Spec.Steps {
+		if st.Uses == "" {
+			return i
+		}
+	}
+	panic(fmt.Sprintf("chain %s has no LLM step", c.Name))
+}
+
+// PromptStep returns the chain's first LLM step (PromptIndex).
+func (c Chain) PromptStep() Step {
+	return c.Spec.Steps[c.PromptIndex()]
 }
 
 // Major returns the major part of a version: "v2" for "v2.3", and for "v2" (written before minors).
@@ -406,7 +476,7 @@ func mustLoad(name string) Chain {
 		panic(fmt.Sprintf("chains/%s.yaml: name is %q", name, c.Name))
 	}
 	for i := range c.Spec.Steps {
-		c.Spec.Steps[i].Inputs = messageVariables(c.Spec.Steps[i].Messages)
+		c.Spec.Steps[i].Inputs = c.Spec.Steps[i].variables()
 	}
 	if err := c.Validate(); err != nil {
 		panic(fmt.Sprintf("chains/%s.yaml: %v", name, err))
@@ -455,17 +525,22 @@ func (c Chain) Validate() error {
 		return fmt.Errorf("no steps")
 	}
 	used := map[string]bool{}
+	prompt := false
 	for _, st := range c.Spec.Steps {
 		if err := st.validate(types, used); err != nil {
 			return fmt.Errorf("step %s: %w", st.Name, err)
 		}
+		prompt = prompt || st.Uses == ""
 		if st.Output == "" {
 			continue
 		}
-		if _, dup := types[st.Output]; dup || !nameRe.MatchString(st.Output) {
+		if _, dup := types[st.Output]; dup || !nameRe.MatchString(st.Output) || st.Output == "index" {
 			return fmt.Errorf("step %s: invalid or duplicate output %q", st.Name, st.Output)
 		}
-		types[st.Output] = TypeString
+		types[st.Output] = st.outputType()
+	}
+	if !prompt {
+		return fmt.Errorf("no LLM step")
 	}
 	for _, in := range c.Spec.Inputs {
 		if in.From != "" && used[in.Name] {
@@ -480,13 +555,14 @@ func (c Chain) Validate() error {
 	return nil
 }
 
-// ValidateMessages checks messages written to replace those of the chain's first step (a custom template) by the
-// rules of Validate.
+// ValidateMessages checks messages written to replace those of the chain's first LLM step (a custom template) by
+// the rules of Validate.
 func (c Chain) ValidateMessages(messages []Message) error {
-	st := c.Spec.Steps[0]
+	i := c.PromptIndex()
+	st := c.Spec.Steps[i]
 	st.Messages = messages
 	st.Inputs = messageVariables(messages)
-	return st.validate(c.variableTypes(), map[string]bool{})
+	return st.validate(c.typesBefore(i), map[string]bool{})
 }
 
 // WithUserInputs returns the chain with inputs as its user inputs (a custom template's run form), checked like
@@ -495,6 +571,11 @@ func (c Chain) WithUserInputs(inputs []Input) (Chain, error) {
 	seen := map[string]bool{}
 	for _, in := range c.Spec.Inputs {
 		seen[in.Name] = true
+	}
+	for _, st := range c.Spec.Steps {
+		if st.Output != "" {
+			seen[st.Output] = true
+		}
 	}
 	for _, in := range inputs {
 		if !nameRe.MatchString(in.Name) || in.Name == "index" {
@@ -513,16 +594,16 @@ func (c Chain) WithUserInputs(inputs []Input) (Chain, error) {
 	return c, nil
 }
 
-// Template is the part of a chain a custom template rewrites, as written in YAML: the run form and the first step's
-// messages.
+// Template is the part of a chain a custom template rewrites, as written in YAML: the run form and the first LLM
+// step's messages.
 type Template struct {
 	UserInputs []Input   `json:"userInputs" yaml:"userInputs"`
 	Messages   []Message `json:"messages" yaml:"messages"`
 }
 
-// Template returns the chain's own run form and first step's messages.
+// Template returns the chain's own run form and first LLM step's messages.
 func (c Chain) Template() Template {
-	return Template{UserInputs: c.Spec.UserInputs, Messages: c.Spec.Steps[0].Messages}
+	return Template{UserInputs: c.Spec.UserInputs, Messages: c.PromptStep().Messages}
 }
 
 // YAML writes the template as the chain files do (multi-line contents as blocks).
@@ -551,17 +632,49 @@ func ParseTemplate(text string) (Template, error) {
 	return t, nil
 }
 
-func (c Chain) variableTypes() map[string]InputType {
+// typesBefore are the types of the chain's variables and of the outputs of its steps before step i.
+func (c Chain) typesBefore(i int) map[string]InputType {
 	types := map[string]InputType{}
 	for _, in := range slices.Concat(c.Spec.UserInputs, c.Spec.Inputs) {
 		types[in.Name] = in.Type.orString()
 	}
+	for _, st := range c.Spec.Steps[:i] {
+		if st.Output != "" {
+			types[st.Output] = st.outputType()
+		}
+	}
 	return types
+}
+
+// outputType is the type of the step's output: its function's for a function step, a string for an LLM step.
+func (st Step) outputType() InputType {
+	if st.Uses != "" {
+		return Functions[st.Uses].Output
+	}
+	return TypeString
+}
+
+// variables are the variables a step reads: its function's inputs and If, or what its messages use.
+func (st Step) variables() []string {
+	if st.Uses == "" {
+		return messageVariables(st.Messages)
+	}
+	vars := slices.Clone(Functions[st.Uses].Inputs)
+	if st.If != "" && !slices.Contains(vars, st.If) {
+		vars = append(vars, st.If)
+	}
+	return vars
 }
 
 // validate checks a step: the variables its messages use are chain variables or earlier outputs, If and Each name them,
 // Each a textList one, and a textList variable is a placeholder only in its own Each message.
 func (st Step) validate(types map[string]InputType, used map[string]bool) error {
+	if st.Uses != "" {
+		return st.validateFunction(types, used)
+	}
+	if st.If != "" {
+		return fmt.Errorf("if is for function steps; a message has its own if")
+	}
 	if st.Name == "" || len(st.Messages) == 0 {
 		return fmt.Errorf("name and messages are required")
 	}
@@ -585,6 +698,30 @@ func (st Step) validate(types map[string]InputType, used map[string]bool) error 
 			if types[ph.name] == TypeTextList && ph.name != m.Each {
 				return fmt.Errorf("textList variable {%s} is used outside its each message", ph.name)
 			}
+		}
+	}
+	return nil
+}
+
+// validateFunction checks a function step: its function exists, its inputs and If are variables or earlier outputs
+// (If of any type, inputs of the type they are read as), it names an output, and it has no messages or format.
+func (st Step) validateFunction(types map[string]InputType, used map[string]bool) error {
+	fn, ok := Functions[st.Uses]
+	if !ok {
+		return fmt.Errorf("unknown function %q", st.Uses)
+	}
+	if st.Name == "" || st.Output == "" || len(st.Messages) > 0 || st.Format != "" {
+		return fmt.Errorf("a function step has a name and an output, and no messages or format")
+	}
+	for _, name := range st.variables() {
+		if _, ok := types[name]; !ok {
+			return fmt.Errorf("%s reads %q, which is neither a variable nor an earlier output", st.Uses, name)
+		}
+		used[name] = true
+	}
+	for _, name := range fn.Inputs {
+		if t := types[name]; t != TypeString && t != TypeText {
+			return fmt.Errorf("%s reads %q as a string, but it is %s", st.Uses, name, t)
 		}
 	}
 	return nil

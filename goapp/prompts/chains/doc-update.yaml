@@ -1,9 +1,10 @@
 # Rewrites an existing page's wikitext for AI edit. userInputs come from the requester and reach the messages as
-# they are; inputs are filled by the ai-edit task: the title, the wikitext and, with readBacklinks, the text around
-# each link to this page in the pages that link here. A custom chain cloned from this one rewrites the messages.
+# they are; inputs are filled by the ai-edit task (the title and the wikitext). With readBacklinks, the backlinks
+# step reads the text around each link to this page in the pages that link here. A custom chain cloned from this
+# one rewrites the messages of the generate step.
 name: doc-update
 metadata:
-  version: v2.1
+  version: v2.2
   description: 기존 문서의 위키텍스트를 고쳐 쓴다.
 spec:
   userInputs:
@@ -16,9 +17,12 @@ spec:
   inputs:
     - name: title
     - name: wikitext
-    - name: backlinkTexts
-      type: textList
   steps:
+    - name: backlinks
+      description: 역링크 읽기를 고르면 이 문서를 가리키는 문서들에서 링크 주변 글을 읽는다.
+      uses: wiki/backlinkTexts
+      if: readBacklinks
+      output: backlinkTexts
     - name: generate
       description: 기존 위키텍스트를 요청사항·자료·역링크를 참고해 고쳐 쓴다.
       messages:

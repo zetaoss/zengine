@@ -51,8 +51,8 @@ func ChainOf(requestType string) prompts.Chain {
 	return prompts.DocCreate
 }
 
-// Render fills the chain's variables (the user inputs as given; the title, the wikitext and, with readBacklinks,
-// the excerpts of the pages that link here) and renders its step.
+// Render fills the chain's variables (the user inputs as given; the title and the wikitext), runs its function
+// steps (with readBacklinks, the excerpts of the pages that link here) and renders its LLM step.
 func Render(ctx context.Context, cfg *config.Config, req Request) (Rendered, error) {
 	chain := ChainOf(req.RequestType)
 	if req.Prompt != nil {
@@ -80,24 +80,33 @@ func Render(ctx context.Context, cfg *config.Config, req Request) (Rendered, err
 				return Rendered{}, fmt.Errorf("read page: %w", err)
 			}
 			vars["wikitext"] = text
-		case "backlinkTexts":
-			texts := []string{}
-			if read, _ := vars["readBacklinks"].(bool); read {
-				if texts, err = wikisvc.BacklinkTexts(ctx, cfg, req.Title); err != nil {
-					return Rendered{}, fmt.Errorf("read backlinks: %w", err)
-				}
-			}
-			vars["backlinkTexts"] = texts
 		default:
 			return Rendered{}, fmt.Errorf("chain %s: no way to fill input %q", chain.Name, in.Name)
 		}
 	}
+	if vars, err = chain.RunFunctions(ctx, vars, functions(cfg)); err != nil {
+		return Rendered{}, err
+	}
 	vars = chain.Fill(vars)
-	messages := chain.Spec.Steps[0].Render(vars)
+	messages := chain.PromptStep().Render(vars)
 	if len(messages) == 0 {
 		return Rendered{}, InputError{"보낼 메시지가 없습니다. 조건(if, each)이 걸린 입력을 채워 주세요."}
 	}
 	return Rendered{Chain: chain, Vars: vars, Messages: messages}, nil
+}
+
+// functions are the code of the function steps AI edit's chains use (prompts.Functions).
+func functions(cfg *config.Config) map[string]prompts.Func {
+	return map[string]prompts.Func{
+		"wiki/backlinkTexts": func(ctx context.Context, vars prompts.Vars) (any, error) {
+			title, _ := vars["title"].(string)
+			texts, err := wikisvc.BacklinkTexts(ctx, cfg, title)
+			if err != nil {
+				return nil, fmt.Errorf("read backlinks: %w", err)
+			}
+			return texts, nil
+		},
+	}
 }
 
 // TemplateUserInputs are a template's run form: its own (aiedit_prompts.user_inputs) or its chain's. Values of a
@@ -114,13 +123,13 @@ func TemplateUserInputs(p models.AIEditPrompt) []prompts.Input {
 }
 
 // TemplateChain is the chain a template runs as: its request type's chain with the template's user inputs and,
-// for the first step, its messages.
+// for the LLM step, its messages.
 func TemplateChain(p models.AIEditPrompt) (prompts.Chain, error) {
 	chain, err := ChainOf(p.RequestType).WithUserInputs(TemplateUserInputs(p))
 	if err != nil {
 		return chain, err
 	}
-	chain.Spec.Steps[0].Messages = TemplateMessages(p)
+	chain.Spec.Steps[chain.PromptIndex()].Messages = TemplateMessages(p)
 	return chain, nil
 }
 
@@ -133,7 +142,7 @@ func TemplateMessages(p models.AIEditPrompt) []prompts.Message {
 		return own
 	}
 	messages := []prompts.Message{{Role: "user", Content: p.Content}}
-	for _, m := range ChainOf(p.RequestType).Spec.Steps[0].Messages {
+	for _, m := range ChainOf(p.RequestType).PromptStep().Messages {
 		if m.If != "" || m.Each != "" {
 			messages = append(messages, m)
 		}
