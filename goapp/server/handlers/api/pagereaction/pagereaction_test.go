@@ -138,4 +138,25 @@ func TestStoreValidation(t *testing.T) {
 			t.Fatalf("Store() invalid emoji status = %d, want 422", w.Code)
 		}
 	})
+
+	t.Run("accepts page_id snake_case alias during validation", func(t *testing.T) {
+		payload, _ := json.Marshal(map[string]any{
+			"page_id": 100,
+			"emoji":   "invalid",
+			"enable":  true,
+		})
+		w := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodPost, "/api/reactions/page", bytes.NewBuffer(payload))
+
+		c := &serverctx.Context{W: w, R: req}
+		c.SetUser(models.MWUser{ID: 42})
+		Store(c)
+
+		if w.Code != http.StatusUnprocessableEntity {
+			t.Fatalf("Store() status = %d, want 422", w.Code)
+		}
+		if !bytes.Contains(w.Body.Bytes(), []byte("Invalid emoji")) {
+			t.Fatalf("Store() body = %s, want Invalid emoji", w.Body.String())
+		}
+	})
 }

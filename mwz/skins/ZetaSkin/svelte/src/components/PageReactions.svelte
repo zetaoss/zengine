@@ -82,7 +82,7 @@
     }
 
     const [, err] = await httpy.post('/api/reactions/page', {
-      page_id: pageId,
+      pageid: pageId,
       emoji,
       enable: nextEnable,
     })
