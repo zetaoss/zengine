@@ -108,7 +108,7 @@
   function hasUnrecoveredFailure(h?: ModelHistory | null): boolean {
     if (!h?.last_failure_at) return false
     if (!h.last_ok_at) return true
-    return new Date(h.last_failure_at).getTime() > new Date(h.last_ok_at).getTime()
+    return new Date(h.last_failure_at).getTime() >= new Date(h.last_ok_at).getTime()
   }
 
   function chainBreakdown(h: ModelHistory): string {
