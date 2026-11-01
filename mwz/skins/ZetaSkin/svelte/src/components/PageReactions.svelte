@@ -22,6 +22,7 @@
   let emojiCounts = $state<Record<string, number>>({})
   let userEmojis = $state<string[]>([])
   let pendingEmoji = $state<string | null>(null)
+  let initialLoaded = $state(false)
   let fetchToken = 0
 
   async function fetchReactions() {
@@ -34,12 +35,14 @@
 
     if (err) {
       console.warn('Failed to load reactions', err)
+      initialLoaded = true
       return
     }
 
     if (token !== fetchToken || !data) return
     emojiCounts = data.emojiCount ?? {}
     userEmojis = data.userEmojis ?? []
+    initialLoaded = true
   }
 
   async function toggleReaction(emoji: Emoji) {
@@ -53,7 +56,7 @@
       return
     }
 
-    if (pendingEmoji) return
+    if (!initialLoaded || pendingEmoji) return
 
     const currentlyActive = userEmojis.includes(emoji)
     const nextEnable = !currentlyActive
@@ -80,6 +83,9 @@
         emojiCounts = copy
       }
     }
+
+    // Invalidate any in-flight GET so it doesn't overwrite optimistic mutation
+    fetchToken++
 
     const [, err] = await httpy.post('/api/reactions/page', {
       pageid: pageId,
@@ -108,7 +114,9 @@
     {@const active = userEmojis.includes(emoji)}
     <button
       type="button"
+      disabled={!initialLoaded}
       class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition-colors cursor-pointer select-none
+        {!initialLoaded ? 'opacity-60 cursor-not-allowed' : ''}
         {active
         ? 'bg-primary/10 border-primary text-primary font-medium hover:bg-primary/15'
         : 'border-border/60 hover:bg-muted/60 text-foreground/80 hover:border-border'}"
