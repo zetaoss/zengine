@@ -105,6 +105,12 @@
     return `${Math.round((h.oks / h.calls) * 100)}%`
   }
 
+  function hasUnrecoveredFailure(h?: ModelHistory | null): boolean {
+    if (!h?.last_failure_at) return false
+    if (!h.last_ok_at) return true
+    return new Date(h.last_failure_at).getTime() >= new Date(h.last_ok_at).getTime()
+  }
+
   function chainBreakdown(h: ModelHistory): string {
     return h.chains.map((c) => `${c.chain} ${c.oks}/${c.calls}`).join(', ')
   }
@@ -191,6 +197,7 @@
 {#snippet modelRow(row: Row, n: number)}
   {@const u = row.usage}
   {@const h = row.history}
+  {@const failing = hasUnrecoveredFailure(h)}
   <tr class={row.order && !row.retired ? '' : 'text-muted-foreground'}>
     <td class="p-2 text-center text-muted-foreground">{n}</td>
     <td class="p-2">{row.provider}</td>
@@ -227,9 +234,9 @@
     >
     <td
       class="p-2 text-xs whitespace-nowrap"
-      title={h?.last_failure_at ? `${formatDateTime(h.last_failure_at)} ${h.last_error}`.trim() : undefined}
+      title={failing && h?.last_failure_at ? `${formatDateTime(h.last_failure_at)} ${h.last_error}`.trim() : undefined}
     >
-      {#if h?.last_failure_at}<span class="text-rose-600 dark:text-rose-400">{getAge(h.last_failure_at, now)}</span>{:else}-{/if}
+      {#if failing && h?.last_failure_at}<span class="text-rose-600 dark:text-rose-400">{getAge(h.last_failure_at, now)}</span>{:else}-{/if}
     </td>
   </tr>
 {/snippet}
