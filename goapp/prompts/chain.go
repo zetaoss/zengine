@@ -536,9 +536,13 @@ func stripCodeFence(raw string) string {
 	return strings.TrimSpace(strings.Join(lines, "\n"))
 }
 
+var reasoningRe = regexp.MustCompile(`(?s)<think>.*?</think>|<\|thought\|>.*?<\|end_of_thought\|>|<\|channel\|>thought.*?<\|channel\|>`)
+
 // extractJSON extracts a JSON object or array from raw text, stripping commentary, markdown fences,
 // reasoning blocks, normalizing bare backticks around values, and escaping unescaped newlines in strings.
 func extractJSON(raw string) string {
+	raw = reasoningRe.ReplaceAllString(raw, "")
+
 	start := -1
 	var openChar, closeChar rune
 

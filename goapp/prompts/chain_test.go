@@ -405,6 +405,14 @@ func TestFormatParseJSON(t *testing.T) {
 			wantReason:  "사유",
 			wantSummary: "완료",
 		},
+		{
+			name: "reasoning tags with draft json strips reasoning and selects final json",
+			raw: `<think>Consider draft {"general_quality":[{"id":"g1","reason":"draft","verdict":"fail"}],"summary":"draft"}; revise it.</think>` + "\n" +
+				`{"general_quality":[{"id":"g1","reason":"final","verdict":"pass"}],"summary":"final"}`,
+			wantVerdict: "pass",
+			wantReason:  "final",
+			wantSummary: "final",
+		},
 	}
 
 	for _, c := range cases {
