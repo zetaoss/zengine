@@ -337,3 +337,95 @@ func TestUserInputAttributes(t *testing.T) {
 		t.Errorf("YAML attributes: %v %+v", err, parsed.UserInputs)
 	}
 }
+
+func TestFormatParseJSON(t *testing.T) {
+	type evalResult struct {
+		GeneralQuality []struct {
+			ID      string `json:"id"`
+			Reason  string `json:"reason"`
+			Verdict string `json:"verdict"`
+		} `json:"general_quality"`
+		Summary string `json:"summary"`
+	}
+
+	cases := []struct {
+		name        string
+		raw         string
+		wantVerdict string
+		wantReason  string
+		wantSummary string
+	}{
+		{
+			name:        "plain json",
+			raw:         `{"general_quality":[{"id":"g1","reason":"정상적인 설명","verdict":"pass"}],"summary":"요약"}`,
+			wantVerdict: "pass",
+			wantReason:  "정상적인 설명",
+			wantSummary: "요약",
+		},
+		{
+			name: "markdown fence with outer commentary",
+			raw: "Here is the evaluation result:\n```json\n" +
+				`{"general_quality":[{"id":"g1","reason":"코드블록 안의 설명","verdict":"pass"}],"summary":"요약"}` +
+				"\n```\nHope this helps!",
+			wantVerdict: "pass",
+			wantReason:  "코드블록 안의 설명",
+			wantSummary: "요약",
+		},
+		{
+			name: "backticks around value and inner backticks in string",
+			raw: "{\n" +
+				`  "general_quality": [` + "\n" +
+				"    {\n" +
+				`      "id": "g1",` + "\n" +
+				`      "reason": "문서에 딕셔너리 병합 설명이 없으며, ` + "`update()`" + `와 차이가 없다.",` + "\n" +
+				`      "verdict": ` + "`fail`" + "\n" +
+				"    }\n" +
+				"  ],\n" +
+				`  "summary": "품질 부족"` + "\n" +
+				"}\n```",
+			wantVerdict: "fail",
+			wantReason:  "문서에 딕셔너리 병합 설명이 없으며, `update()`와 차이가 없다.",
+			wantSummary: "품질 부족",
+		},
+		{
+			name: "raw newlines in strings",
+			raw: "{\n" +
+				`  "general_quality": [{"id":"g1","reason":"첫째 줄\n둘째 줄","verdict":` + "`pass`" + `}],` + "\n" +
+				`  "summary": "개행 포함 요약"` + "\n" +
+				"}",
+			wantVerdict: "pass",
+			wantReason:  "첫째 줄\n둘째 줄",
+			wantSummary: "개행 포함 요약",
+		},
+		{
+			name: "reasoning tags before json",
+			raw: "<think>analyzing the dictionary merge page</think>\n" +
+				`{"general_quality":[{"id":"g1","reason":"사유","verdict":"fail"}],"summary":"완료"}`,
+			wantVerdict: "fail",
+			wantReason:  "사유",
+			wantSummary: "완료",
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var out evalResult
+			if err := FormatJSON.Parse(c.raw, &out); err != nil {
+				t.Fatalf("Parse failed: %v", err)
+			}
+			if len(out.GeneralQuality) != 1 {
+				t.Fatalf("expected 1 general_quality item, got %d", len(out.GeneralQuality))
+			}
+			got := out.GeneralQuality[0]
+			if got.Verdict != c.wantVerdict {
+				t.Errorf("verdict: got %q, want %q", got.Verdict, c.wantVerdict)
+			}
+			if got.Reason != c.wantReason {
+				t.Errorf("reason: got %q, want %q", got.Reason, c.wantReason)
+			}
+			if out.Summary != c.wantSummary {
+				t.Errorf("summary: got %q, want %q", out.Summary, c.wantSummary)
+			}
+		})
+	}
+}

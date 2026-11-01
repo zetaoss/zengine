@@ -493,7 +493,17 @@ func placeholders(content string) []placeholder {
 func (f Format) Parse(raw string, out any) error {
 	switch f {
 	case FormatJSON:
-		return json.Unmarshal([]byte(stripCodeFence(raw)), out)
+		stripped := stripCodeFence(raw)
+		if err := json.Unmarshal([]byte(stripped), out); err == nil {
+			return nil
+		}
+		extracted := extractJSON(raw)
+		if extracted != stripped {
+			if err := json.Unmarshal([]byte(extracted), out); err == nil {
+				return nil
+			}
+		}
+		return json.Unmarshal([]byte(extracted), out)
 	case FormatText, "":
 		s, ok := out.(*string)
 		if !ok {
@@ -524,6 +534,102 @@ func stripCodeFence(raw string) string {
 		lines = lines[:len(lines)-1]
 	}
 	return strings.TrimSpace(strings.Join(lines, "\n"))
+}
+
+// extractJSON extracts a JSON object or array from raw text, stripping commentary, markdown fences,
+// reasoning blocks, normalizing bare backticks around values, and escaping unescaped newlines in strings.
+func extractJSON(raw string) string {
+	start := -1
+	var openChar, closeChar rune
+
+	// Find the first top-level '{' or '['
+	for i, r := range raw {
+		if r == '{' || r == '[' {
+			start = i
+			openChar = r
+			if r == '{' {
+				closeChar = '}'
+			} else {
+				closeChar = ']'
+			}
+			break
+		}
+	}
+	if start == -1 {
+		return raw
+	}
+
+	var sb strings.Builder
+	depth := 0
+	inQuote := false
+	inBacktick := false
+	escape := false
+	runes := []rune(raw[start:])
+	matched := false
+
+	for i := 0; i < len(runes); i++ {
+		r := runes[i]
+		if escape {
+			sb.WriteRune(r)
+			escape = false
+			continue
+		}
+		if r == '\\' {
+			sb.WriteRune(r)
+			escape = true
+			continue
+		}
+		if !inBacktick && r == '"' {
+			inQuote = !inQuote
+			sb.WriteRune(r)
+			continue
+		}
+		if inQuote {
+			switch r {
+			case '\n':
+				sb.WriteString("\\n")
+			case '\r':
+				// omit bare carriage return
+			case '\t':
+				sb.WriteString("\\t")
+			default:
+				sb.WriteRune(r)
+			}
+			continue
+		}
+
+		// Outside of regular double quotes
+		if r == '`' {
+			// Check if it is a triple backtick (code fence inside or closing)
+			if i+2 < len(runes) && runes[i+1] == '`' && runes[i+2] == '`' {
+				i += 2
+				continue
+			}
+			// Single backtick outside quotes: normalize as double quote
+			inBacktick = !inBacktick
+			sb.WriteRune('"')
+			continue
+		}
+
+		if !inBacktick {
+			if r == openChar {
+				depth++
+			} else if r == closeChar {
+				depth--
+				if depth == 0 {
+					sb.WriteRune(r)
+					matched = true
+					break
+				}
+			}
+		}
+		sb.WriteRune(r)
+	}
+
+	if matched {
+		return sb.String()
+	}
+	return raw
 }
 
 //go:embed chains/*.yaml

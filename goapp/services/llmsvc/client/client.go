@@ -6,8 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -71,6 +73,11 @@ func New(cfg *config.Config) *LLMClient {
 
 func NewClientWithEndpoint(endpoint string) *LLMClient {
 	return &LLMClient{Endpoint: normalizeEndpoint(endpoint), Client: &http.Client{Timeout: 60 * time.Second}}
+}
+
+// SetWait replaces the rate limit wait function, for testing.
+func (s *LLMClient) SetWait(fn func(context.Context, time.Duration) error) {
+	s.wait = fn
 }
 
 func (s *LLMClient) ChatCompletion(ctx context.Context, model string, messages []Message) (string, string, error) {
@@ -137,8 +144,8 @@ func (s *LLMClient) chatCompletionOnce(ctx context.Context, model string, messag
 			Error string `json:"error"`
 		}
 		_ = json.Unmarshal(raw, &e)
-		secs, _ := strconv.Atoi(resp.Header.Get("Retry-After"))
-		return ChatResponse{}, &StatusError{StatusCode: resp.StatusCode, RetryAfter: time.Duration(secs) * time.Second, Message: truncate(e.Error, maxErrorMessage)}
+		retryAfter := parseRetryDelay(resp.Header.Get("Retry-After"), e.Error)
+		return ChatResponse{}, &StatusError{StatusCode: resp.StatusCode, RetryAfter: retryAfter, Message: truncate(e.Error, maxErrorMessage)}
 	}
 	var payload struct {
 		Model   string `json:"model"`
@@ -224,4 +231,32 @@ func normalizeEndpoint(raw string) string {
 	}
 	u.Path = strings.TrimRight(u.Path, "/")
 	return strings.TrimRight(u.String(), "/")
+}
+
+var tryAgainRe = regexp.MustCompile(`(?i)try again in\s+(\d+(?:\.\d+)?(?:m?s)?)`)
+
+// parseRetryDelay extracts the rate limit cooldown duration from HTTP Retry-After header
+// or provider error messages (e.g. Groq's "Please try again in 4.1925s.").
+func parseRetryDelay(headerVal, bodyMsg string) time.Duration {
+	if headerVal = strings.TrimSpace(headerVal); headerVal != "" {
+		if secs, err := strconv.Atoi(headerVal); err == nil && secs > 0 {
+			return time.Duration(secs) * time.Second
+		}
+		if f, err := strconv.ParseFloat(headerVal, 64); err == nil && f > 0 {
+			return time.Duration(math.Ceil(f)) * time.Second
+		}
+		if d, err := time.ParseDuration(headerVal); err == nil && d > 0 {
+			return time.Duration(math.Ceil(d.Seconds())) * time.Second
+		}
+	}
+	if m := tryAgainRe.FindStringSubmatch(bodyMsg); len(m) > 1 {
+		durStr := m[1]
+		if !strings.HasSuffix(durStr, "s") {
+			durStr += "s"
+		}
+		if d, err := time.ParseDuration(durStr); err == nil && d > 0 {
+			return time.Duration(math.Ceil(d.Seconds())) * time.Second
+		}
+	}
+	return 0
 }

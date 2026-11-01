@@ -78,6 +78,11 @@ func NewWithEndpoint(endpoint string) *LLMService {
 	return &LLMService{client: client.NewClientWithEndpoint(endpoint)}
 }
 
+// SetWait replaces the client's rate limit wait function, for testing.
+func (s *LLMService) SetWait(fn func(context.Context, time.Duration) error) {
+	s.client.SetWait(fn)
+}
+
 // StepResult is one step run: the model that answered and the token usage summed over its calls.
 type StepResult struct {
 	Model string

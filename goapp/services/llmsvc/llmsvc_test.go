@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/zetaoss/zengine/goapp/prompts"
 )
@@ -123,5 +124,82 @@ func TestRunStepRecordsEachCall(t *testing.T) {
 	if !second.OK || second.Err != nil || second.Chain != "test-chain" || second.ChainVersion != "v9" || second.Step != "test" ||
 		second.Model != "test/model" || second.ResolvedModel != "test/model" || second.Usage.PromptTokens != 10 {
 		t.Fatalf("unexpected recorded success: %+v", second)
+	}
+}
+
+func TestRunStepSucceedsOnFencedOrBacktickedJSONWithoutRetry(t *testing.T) {
+	// Response contains markdown fences, outer commentary, and bare backticks for values.
+	raw := "Evaluation:\n```json\n" +
+		"{\n" +
+		`  "count": 5,` + "\n" +
+		`  "summary": ` + "`pass`" + "\n" +
+		"}\n" +
+		"```\nDone."
+	ts, calls := newServer(t, raw)
+
+	var out testOutput
+	res, err := NewWithEndpoint(ts.URL).RunStep(context.Background(), "test/model", testChain, testStep, prompts.Vars{"title": "T"}, &out)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if calls.Load() != 1 {
+		t.Fatalf("expected 1 call without retry, got %d", calls.Load())
+	}
+	if out.Count != 5 || out.Summary != "pass" {
+		t.Fatalf("unexpected parsed output: %+v", out)
+	}
+	if res.Usage.TotalTokens != 15 {
+		t.Fatalf("unexpected token usage: %+v", res.Usage)
+	}
+}
+
+func TestRunStepRetryHandlesRateLimitWait(t *testing.T) {
+	calls := 0
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		switch calls {
+		case 1:
+			// First call returns non-json to trigger RunMessages retry
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]any{"choices": []map[string]any{{"message": map[string]any{"content": "not json at all"}}}})
+		case 2:
+			// Second call returns 429 with Groq TPM retry message
+			w.WriteHeader(http.StatusTooManyRequests)
+			_, _ = w.Write([]byte(`{"error":"provider groq returned status 429: Rate limit reached ... Please try again in 4.1925s."}`))
+		case 3:
+			// Third call (retry of 2nd after wait) succeeds
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"model":   "test/model",
+				"choices": []map[string]any{{"message": map[string]any{"content": `{"count": 7, "summary": "recovered"}`}}},
+				"usage":   map[string]any{"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
+			})
+		}
+	}))
+	defer ts.Close()
+
+	svc := NewWithEndpoint(ts.URL)
+	var waited time.Duration
+	svc.SetWait(func(_ context.Context, d time.Duration) error {
+		waited = d
+		return nil
+	})
+
+	var out testOutput
+	res, err := svc.RunStep(context.Background(), "test/model", testChain, testStep, prompts.Vars{"title": "T"}, &out)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if calls != 3 {
+		t.Fatalf("expected 3 total calls (1 fail, 1 429, 1 ok), got %d", calls)
+	}
+	if waited != 5*time.Second {
+		t.Fatalf("expected 5s wait for Groq TPM 429, got %v", waited)
+	}
+	if out.Count != 7 || out.Summary != "recovered" {
+		t.Fatalf("unexpected output: %+v", out)
+	}
+	if res.Usage.TotalTokens != 15 {
+		t.Fatalf("unexpected usage: %+v", res.Usage)
 	}
 }
