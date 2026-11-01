@@ -13,7 +13,28 @@ import (
 )
 
 var emojis = []string{"👍", "❤️", "❤", "🎉", "🚀", "👀", "😄", "😆"}
-var codes = []int{128077, 10084, 10084, 127881, 128640, 128064, 128516, 128516}
+var codes = []int{128077, 10084, 10084, 127881, 128640, 128064, 128516, 128518}
+
+type PageReactionUser struct {
+	ID        uint `gorm:"primaryKey;column:id;autoIncrement"`
+	PageID    int  `gorm:"column:page_id"`
+	UserID    int  `gorm:"column:user_id"`
+	EmojiCode int  `gorm:"column:emoji_code"`
+}
+
+func (PageReactionUser) TableName() string {
+	return "page_reaction_users"
+}
+
+type PageReaction struct {
+	PageID     int    `gorm:"primaryKey;column:page_id"`
+	Cnt        int    `gorm:"column:cnt"`
+	EmojiCount string `gorm:"column:emoji_count"`
+}
+
+func (PageReaction) TableName() string {
+	return "page_reactions"
+}
 
 func Show(c *serverctx.Context) {
 	pageID, err := strconv.Atoi(c.R.PathValue("page"))
@@ -23,10 +44,8 @@ func Show(c *serverctx.Context) {
 	}
 
 	emojiCount := map[string]int{}
-	var pr struct {
-		EmojiCount string `gorm:"column:emoji_count"`
-	}
-	if err := c.DB.Table("page_reactions").Select("emoji_count").Where("page_id = ?", pageID).Take(&pr).Error; err == nil {
+	var pr PageReaction
+	if err := c.DB.Select("emoji_count").Where("page_id = ?", pageID).Take(&pr).Error; err == nil {
 		_ = json.Unmarshal([]byte(pr.EmojiCount), &emojiCount)
 	}
 
@@ -77,12 +96,19 @@ func Store(c *serverctx.Context) {
 
 	err := c.DB.Transaction(func(tx *gorm.DB) error {
 		if *body.Enable {
-			row := app.H{"page_id": body.PageID, "user_id": user.ID, "emoji_code": emojiCode}
-			if err := tx.Table("page_reaction_users").Clauses(clause.OnConflict{DoNothing: true}).Create(row).Error; err != nil {
+			u := PageReactionUser{PageID: body.PageID, UserID: user.ID, EmojiCode: emojiCode}
+			if err := tx.Clauses(clause.OnConflict{
+				Columns:   []clause.Column{{Name: "page_id"}, {Name: "user_id"}, {Name: "emoji_code"}},
+				DoUpdates: clause.Assignments(map[string]any{"id": gorm.Expr("id")}),
+			}).Create(&u).Error; err != nil {
 				return err
 			}
 		} else {
-			if err := tx.Table("page_reaction_users").Where("page_id = ? AND user_id = ? AND emoji_code = ?", body.PageID, user.ID, emojiCode).Delete(nil).Error; err != nil {
+			codesToDelete := []int{emojiCode}
+			if emojiCode == 128516 || emojiCode == 128518 {
+				codesToDelete = []int{128516, 128518}
+			}
+			if err := tx.Where("page_id = ? AND user_id = ? AND emoji_code IN (?)", body.PageID, user.ID, codesToDelete).Delete(&PageReactionUser{}).Error; err != nil {
 				return err
 			}
 		}
@@ -104,7 +130,7 @@ func Store(c *serverctx.Context) {
 			if em == "" {
 				continue
 			}
-			ec[em] = r.Cnt
+			ec[em] += r.Cnt
 			total += r.Cnt
 		}
 		ecRaw, err := json.Marshal(ec)
@@ -112,11 +138,11 @@ func Store(c *serverctx.Context) {
 			return err
 		}
 
-		upsert := app.H{"page_id": body.PageID, "cnt": total, "emoji_count": string(ecRaw)}
-		return tx.Table("page_reactions").Clauses(clause.OnConflict{
+		upsert := PageReaction{PageID: body.PageID, Cnt: total, EmojiCount: string(ecRaw)}
+		return tx.Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "page_id"}},
 			DoUpdates: clause.AssignmentColumns([]string{"cnt", "emoji_count"}),
-		}).Create(upsert).Error
+		}).Create(&upsert).Error
 	})
 
 	if err != nil {
@@ -137,6 +163,9 @@ func emoji2code(emoji string) int {
 }
 
 func code2emoji(code int) string {
+	if code == 128518 {
+		return "😄"
+	}
 	for i, c := range codes {
 		if c == code {
 			return emojis[i]

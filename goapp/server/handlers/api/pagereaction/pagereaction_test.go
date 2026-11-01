@@ -26,7 +26,7 @@ func TestEmojiCodeConversion(t *testing.T) {
 		{"🚀", 128640, "🚀"},
 		{"👀", 128064, "👀"},
 		{"😄", 128516, "😄"},
-		{"😆", 128516, "😄"},
+		{"😆", 128518, "😄"},
 	}
 
 	for _, tc := range cases {
