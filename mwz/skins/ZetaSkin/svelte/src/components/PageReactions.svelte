@@ -23,10 +23,12 @@
   let userEmojis = $state<string[]>([])
   let pendingEmoji = $state<string | null>(null)
   let initialLoaded = $state(false)
+  let loadError = $state(false)
   let fetchToken = 0
 
   async function fetchReactions() {
     if (!pageId) return
+    loadError = false
     const token = ++fetchToken
     const [data, err] = await httpy.get<{
       emojiCount: Record<string, number>
@@ -35,7 +37,9 @@
 
     if (err) {
       console.warn('Failed to load reactions', err)
-      initialLoaded = true
+      if (token === fetchToken) {
+        loadError = true
+      }
       return
     }
 
@@ -132,4 +136,14 @@
       {/if}
     </button>
   {/each}
+
+  {#if loadError}
+    <button
+      type="button"
+      class="text-xs text-muted-foreground hover:text-foreground cursor-pointer underline ml-2"
+      onclick={fetchReactions}
+    >
+      반응 불러오기 재시도
+    </button>
+  {/if}
 </div>
