@@ -233,7 +233,10 @@ func normalizeEndpoint(raw string) string {
 	return strings.TrimRight(u.String(), "/")
 }
 
-var tryAgainRe = regexp.MustCompile(`(?i)try again in\s+(\d+(?:\.\d+)?(?:m?s)?)`)
+var (
+	tryAgainRe   = regexp.MustCompile(`(?i)try again in\s+((?:\d+(?:\.\d+)?(?:ms|[hms]))+|\d+(?:\.\d+)?)`)
+	hasTimeUnits = regexp.MustCompile(`[a-zA-Z]`)
+)
 
 // parseRetryDelay extracts the rate limit cooldown duration from HTTP Retry-After header
 // or provider error messages (e.g. Groq's "Please try again in 4.1925s.").
@@ -251,7 +254,7 @@ func parseRetryDelay(headerVal, bodyMsg string) time.Duration {
 	}
 	if m := tryAgainRe.FindStringSubmatch(bodyMsg); len(m) > 1 {
 		durStr := m[1]
-		if !strings.HasSuffix(durStr, "s") {
+		if !hasTimeUnits.MatchString(durStr) {
 			durStr += "s"
 		}
 		if d, err := time.ParseDuration(durStr); err == nil && d > 0 {

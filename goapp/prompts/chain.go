@@ -536,12 +536,62 @@ func stripCodeFence(raw string) string {
 	return strings.TrimSpace(strings.Join(lines, "\n"))
 }
 
-var reasoningRe = regexp.MustCompile(`(?s)<think>.*?</think>|<\|thought\|>.*?<\|end_of_thought\|>|<\|channel\|>thought.*?<\|channel\|>`)
+// stripOuterReasoning removes reasoning/thinking blocks only when they occur outside of JSON string literals.
+func stripOuterReasoning(raw string) string {
+	var sb strings.Builder
+	inQuote := false
+	escape := false
+	runes := []rune(raw)
+
+	for i := 0; i < len(runes); i++ {
+		r := runes[i]
+		if escape {
+			sb.WriteRune(r)
+			escape = false
+			continue
+		}
+		if r == '\\' {
+			sb.WriteRune(r)
+			escape = true
+			continue
+		}
+		if r == '"' {
+			inQuote = !inQuote
+			sb.WriteRune(r)
+			continue
+		}
+		if !inQuote {
+			rem := string(runes[i:])
+			if strings.HasPrefix(rem, "<think>") {
+				if endIdx := strings.Index(rem, "</think>"); endIdx != -1 {
+					i += len([]rune(rem[:endIdx+len("</think>")])) - 1
+					continue
+				}
+			}
+			if strings.HasPrefix(rem, "<|thought|>") {
+				if endIdx := strings.Index(rem, "<|end_of_thought|>"); endIdx != -1 {
+					i += len([]rune(rem[:endIdx+len("<|end_of_thought|>")])) - 1
+					continue
+				}
+			}
+			if strings.HasPrefix(rem, "<|channel|>thought") {
+				afterTag := rem[len("<|channel|>thought"):]
+				if endIdx := strings.Index(afterTag, "<|channel|>"); endIdx != -1 {
+					totalLen := len("<|channel|>thought") + endIdx + len("<|channel|>")
+					i += len([]rune(rem[:totalLen])) - 1
+					continue
+				}
+			}
+		}
+		sb.WriteRune(r)
+	}
+	return sb.String()
+}
 
 // extractJSON extracts a JSON object or array from raw text, stripping commentary, markdown fences,
 // reasoning blocks, normalizing bare backticks around values, and escaping unescaped newlines in strings.
 func extractJSON(raw string) string {
-	raw = reasoningRe.ReplaceAllString(raw, "")
+	raw = stripOuterReasoning(raw)
 
 	start := -1
 	var openChar, closeChar rune

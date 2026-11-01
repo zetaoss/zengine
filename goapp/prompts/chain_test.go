@@ -413,6 +413,14 @@ func TestFormatParseJSON(t *testing.T) {
 			wantReason:  "final",
 			wantSummary: "final",
 		},
+		{
+			name: "preserves reasoning-tag literals inside JSON strings",
+			raw: "Here is the result:\n" +
+				`{"general_quality":[{"id":"g1","reason":"The <think>example</think> tag is present.","verdict":"pass"}],"summary":"The <think>tag</think> remains."}`,
+			wantVerdict: "pass",
+			wantReason:  "The <think>example</think> tag is present.",
+			wantSummary: "The <think>tag</think> remains.",
+		},
 	}
 
 	for _, c := range cases {

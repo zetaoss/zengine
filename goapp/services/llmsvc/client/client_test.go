@@ -157,6 +157,10 @@ func TestParseRetryDelay(t *testing.T) {
 		{"duration string header", "3.2s", "", 4 * time.Second},
 		{"groq error message float seconds", "", "Rate limit reached on tokens per minute (TPM). Please try again in 4.1925s.", 5 * time.Second},
 		{"groq error message integer seconds", "", "provider groq returned status 429: try again in 7s.", 7 * time.Second},
+		{"groq error message compound duration", "", "Please try again in 1m30s.", 90 * time.Second},
+		{"groq error message compound float duration", "", "Please try again in 2m0.5s.", 121 * time.Second},
+		{"groq error message millisecond duration", "", "Please try again in 500ms.", 1 * time.Second},
+		{"groq error message bare number", "", "Please try again in 8.", 8 * time.Second},
 		{"header takes precedence", "3", "Please try again in 10s.", 3 * time.Second},
 	}
 
