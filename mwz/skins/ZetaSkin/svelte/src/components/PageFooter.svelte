@@ -12,6 +12,7 @@
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import httpy from '$shared/utils/httpy'
   import linkifyText from '$shared/utils/linkifyText'
+  import PageReactions from './PageReactions.svelte'
 
   interface Row {
     id: number
@@ -128,6 +129,10 @@
     </div>
   </div>
 {/if}
+
+<div class="pb-3">
+  <PageReactions />
+</div>
 
 <hr />
 

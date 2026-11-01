@@ -77,11 +77,19 @@ func Store(c *serverctx.Context) {
 	}
 
 	var body struct {
-		PageID int    `json:"pageid"`
-		Emoji  string `json:"emoji"`
-		Enable *bool  `json:"enable"`
+		PageID      int    `json:"pageid"`
+		PageIDSnake int    `json:"page_id"`
+		Emoji       string `json:"emoji"`
+		Enable      *bool  `json:"enable"`
 	}
-	if err := json.NewDecoder(c.R.Body).Decode(&body); err != nil || body.PageID < 1 || body.Enable == nil {
+	if err := json.NewDecoder(c.R.Body).Decode(&body); err != nil {
+		c.JSONError(http.StatusUnprocessableEntity, "Invalid payload")
+		return
+	}
+	if body.PageID < 1 && body.PageIDSnake >= 1 {
+		body.PageID = body.PageIDSnake
+	}
+	if body.PageID < 1 || body.Enable == nil {
 		c.JSONError(http.StatusUnprocessableEntity, "Invalid payload")
 		return
 	}

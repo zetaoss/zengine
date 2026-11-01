@@ -72,7 +72,7 @@ func RegisterRoutes(mux *http.ServeMux, serverCtx *serverctx.Context, components
 
 	r.GET("/api/internal/profiles/{id}", internalprofile.Show, r.Internal())
 
-	r.GET("/api/reactions/page/{page}", pagereaction.Show)
+	r.GET("/api/reactions/page/{page}", pagereaction.Show, r.WithUser())
 	r.POST("/api/reactions/page", pagereaction.Store, r.User())
 
 	r.GET("/api/ai/models", aimodels.Index, r.Sysop())
