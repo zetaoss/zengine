@@ -539,51 +539,54 @@ func stripCodeFence(raw string) string {
 // stripOuterReasoning removes reasoning/thinking blocks only when they occur outside of JSON string literals.
 func stripOuterReasoning(raw string) string {
 	var sb strings.Builder
+	sb.Grow(len(raw))
 	inQuote := false
 	escape := false
-	runes := []rune(raw)
 
-	for i := 0; i < len(runes); i++ {
-		r := runes[i]
+	for i := 0; i < len(raw); {
+		c := raw[i]
 		if escape {
-			sb.WriteRune(r)
+			sb.WriteByte(c)
 			escape = false
+			i++
 			continue
 		}
-		if r == '\\' {
-			sb.WriteRune(r)
+		if c == '\\' {
+			sb.WriteByte(c)
 			escape = true
+			i++
 			continue
 		}
-		if r == '"' {
+		if c == '"' {
 			inQuote = !inQuote
-			sb.WriteRune(r)
+			sb.WriteByte(c)
+			i++
 			continue
 		}
 		if !inQuote {
-			rem := string(runes[i:])
+			rem := raw[i:]
 			if strings.HasPrefix(rem, "<think>") {
 				if endIdx := strings.Index(rem, "</think>"); endIdx != -1 {
-					i += len([]rune(rem[:endIdx+len("</think>")])) - 1
+					i += endIdx + len("</think>")
 					continue
 				}
 			}
 			if strings.HasPrefix(rem, "<|thought|>") {
 				if endIdx := strings.Index(rem, "<|end_of_thought|>"); endIdx != -1 {
-					i += len([]rune(rem[:endIdx+len("<|end_of_thought|>")])) - 1
+					i += endIdx + len("<|end_of_thought|>")
 					continue
 				}
 			}
 			if strings.HasPrefix(rem, "<|channel|>thought") {
 				afterTag := rem[len("<|channel|>thought"):]
 				if endIdx := strings.Index(afterTag, "<|channel|>"); endIdx != -1 {
-					totalLen := len("<|channel|>thought") + endIdx + len("<|channel|>")
-					i += len([]rune(rem[:totalLen])) - 1
+					i += len("<|channel|>thought") + endIdx + len("<|channel|>")
 					continue
 				}
 			}
 		}
-		sb.WriteRune(r)
+		sb.WriteByte(c)
+		i++
 	}
 	return sb.String()
 }
