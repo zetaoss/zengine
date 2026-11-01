@@ -143,3 +143,57 @@ func TestChatCompletionRateLimitWaitCanceled(t *testing.T) {
 		t.Fatalf("expected a canceled wait to fail without retrying, got %v calls=%d", err, *calls)
 	}
 }
+
+func TestParseRetryDelay(t *testing.T) {
+	cases := []struct {
+		name      string
+		header    string
+		body      string
+		wantDelay time.Duration
+	}{
+		{"empty", "", "", 0},
+		{"integer seconds header", "5", "", 5 * time.Second},
+		{"float seconds header", "4.1925", "", 5 * time.Second},
+		{"duration string header", "3.2s", "", 4 * time.Second},
+		{"groq error message float seconds", "", "Rate limit reached on tokens per minute (TPM). Please try again in 4.1925s.", 5 * time.Second},
+		{"groq error message integer seconds", "", "provider groq returned status 429: try again in 7s.", 7 * time.Second},
+		{"groq error message compound duration", "", "Please try again in 1m30s.", 90 * time.Second},
+		{"groq error message compound float duration", "", "Please try again in 2m0.5s.", 121 * time.Second},
+		{"groq error message millisecond duration", "", "Please try again in 500ms.", 1 * time.Second},
+		{"groq error message bare number", "", "Please try again in 8.", 8 * time.Second},
+		{"header takes precedence", "3", "Please try again in 10s.", 3 * time.Second},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got := parseRetryDelay(c.header, c.body)
+			if got != c.wantDelay {
+				t.Errorf("parseRetryDelay(%q, %q) = %v, want %v", c.header, c.body, got, c.wantDelay)
+			}
+		})
+	}
+}
+
+func TestChatCompletionRateLimitFromErrorMessage(t *testing.T) {
+	calls := 0
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		if calls == 1 {
+			w.WriteHeader(http.StatusTooManyRequests)
+			_, _ = w.Write([]byte(`{"error":"Rate limit reached for model groq/openai/gpt-oss-120b on tokens per minute (TPM): Limit 8000, Used 4735, Requested 3824. Please try again in 4.1925s."}`))
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"model":"groq/openai/gpt-oss-120b","choices":[{"message":{"content":"ok"}}]}`))
+	}))
+	defer ts.Close()
+
+	svc := NewClientWithEndpoint(ts.URL)
+	var waited time.Duration
+	svc.wait = func(_ context.Context, d time.Duration) error { waited = d; return nil }
+
+	resp, err := svc.ChatCompletionFull(context.Background(), "groq/openai/gpt-oss-120b", nil)
+	if err != nil || resp.Content != "ok" || calls != 2 || waited != 5*time.Second {
+		t.Fatalf("expected retry after parsed body delay, got err=%v calls=%d waited=%v", err, calls, waited)
+	}
+}
