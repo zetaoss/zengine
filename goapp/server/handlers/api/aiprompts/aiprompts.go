@@ -251,7 +251,9 @@ func Store(c *serverctx.Context) {
 			messages = *body.Messages
 		}
 		chain, err := aiedit.ChainOf(requestType).WithUserInputs(aiedit.TemplateUserInputs(draft))
-		if err == nil && body.Messages != nil {
+		// The editor's system-then-user order holds for the messages it builds; messages given as they are (a
+		// skin's clone of a template saved before that order) run as they did.
+		if err == nil && body.AutoMessages {
 			err = validateEditorRoles(messages)
 		}
 		if err == nil {

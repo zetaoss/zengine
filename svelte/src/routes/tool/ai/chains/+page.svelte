@@ -341,7 +341,7 @@
   }
 
   async function toggle(key: string) {
-    if (!(await confirmDiscard())) return
+    if (savingDraft || !(await confirmDiscard())) return
     draftError = ''
     expanded = expanded === key ? null : key
     draft = expanded ? draftFor(expanded) : null
@@ -371,7 +371,7 @@
   // A clone opens as a new template being edited, at the top of the templates. It takes the model its source runs on
   // as a value, so later changes to the source do not follow.
   async function openClone(source: TemplateDraft) {
-    if (!(await confirmDiscard())) return
+    if (savingDraft || !(await confirmDiscard())) return
     draftError = ''
     draft = {
       ...source,
@@ -450,16 +450,21 @@
       bump: draft.bump,
     }
     body.model = draft.model
+    const submitted = draft
     const [data, err] = await httpy.post<PromptItem>('/api/ai-prompts', body)
-    savingDraft = false
     if (err || !data) {
+      savingDraft = false
       draftError = err?.message || '저장 실패'
       return
     }
-    showToast(draft.id === 0 ? '복제했습니다' : '저장했습니다')
+    showToast(submitted.id === 0 ? '복제했습니다' : '저장했습니다')
     await fetchPrompts()
-    expanded = `prompt:${data.id}`
-    draft = draftFor(expanded)
+    savingDraft = false
+    // Rows stay as they are while saving (toggle and clone wait), so the saved template opens as it now is.
+    if (draft === submitted) {
+      expanded = `prompt:${data.id}`
+      draft = draftFor(expanded)
+    }
   }
 
   // A rendered cell fills the height its row takes from the editor beside it (md and up) and scrolls within it, so a
