@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/zetaoss/zengine/goapp/app/config"
@@ -126,21 +127,24 @@ func TemplateUserInputs(p models.AIEditPrompt) []prompts.Input {
 }
 
 // PickUserInputs reads a template's user inputs as an editor writes them, names of its chain's user inputs alone
-// (- hint), and gives each as the chain defines it, in the chain's order (which the messages follow). A name the
-// chain does not have, a repeated name, or an input written with attributes is refused.
+// (- hint), and gives each as the chain defines it, in the chain's order (which the messages follow). An input may
+// also come as the chain defines it (a skin loaded before templates picked by name sends the whole definition). A
+// name the chain does not have, a repeated name, or attributes other than the chain's are refused.
 func PickUserInputs(requestType string, given []prompts.Input) ([]prompts.Input, error) {
 	defs := userInputDefs(requestType)
 	seen := map[string]bool{}
 	for _, in := range given {
 		name := renamedUserInput(in.Name)
-		if in.Type != "" || in.Placeholder != "" || in.Required || in.Default != nil || in.Options != nil || in.From != "" || in.MaxChars != 0 {
-			return nil, fmt.Errorf("사용자 입력은 이름만 씁니다: %s", in.Name)
-		}
-		if _, ok := defs[name]; !ok {
+		def, ok := defs[name]
+		if !ok {
 			return nil, fmt.Errorf("쓸 수 없는 사용자 입력입니다: %s (쓸 수 있는 입력: %s)", in.Name, strings.Join(userInputNames(ChainOf(requestType).Spec.UserInputs), ", "))
 		}
 		if seen[name] {
 			return nil, fmt.Errorf("사용자 입력이 두 번 있습니다: %s", name)
+		}
+		in.Name = name
+		if !reflect.DeepEqual(in, prompts.Input{Name: name}) && !sameInput(in, def) {
+			return nil, fmt.Errorf("사용자 입력은 이름만 씁니다: %s", in.Name)
 		}
 		seen[name] = true
 	}
@@ -156,6 +160,13 @@ func inChainOrder(requestType string, names map[string]bool) []prompts.Input {
 		}
 	}
 	return picked
+}
+
+// sameInput reports whether an input as given (decoded from JSON or YAML) is the chain's definition.
+func sameInput(given, def prompts.Input) bool {
+	a, _ := json.Marshal(given)
+	b, _ := json.Marshal(def)
+	return string(a) == string(b)
 }
 
 // UserInputNames are the inputs by name alone, as a template stores the ones it picks (aiedit_prompts.user_inputs).

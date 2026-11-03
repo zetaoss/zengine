@@ -190,7 +190,7 @@
         request_type: prompt.requestType,
         content: prompt.content,
         messages: prompt.messages,
-        user_inputs: userInputs,
+        user_inputs: userInputs.map((input) => ({ name: input.name })),
         model: prompt.model,
       })
       if (err) {

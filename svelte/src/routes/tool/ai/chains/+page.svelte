@@ -192,6 +192,7 @@
       return
     }
     chain.model = data.model
+    if (draft?.key === chain.name) draft.model = data.model
     showToast('저장했습니다')
   }
 
@@ -381,7 +382,8 @@
       source: chainOf(source.request_type)?.name ?? '',
       legacy: false,
       title: cloneTitle(source.title),
-      model: source.model || chainOf(source.request_type)?.model || '',
+      // A built-in chain's model is read live: it may have been changed since its row opened.
+      model: (source.id === -1 ? '' : source.model) || chainOf(source.request_type)?.model || '',
       version: 'v1.0',
       messages: source.messages.map((m) => ({ ...m })),
     }

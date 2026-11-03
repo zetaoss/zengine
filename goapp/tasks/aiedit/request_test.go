@@ -185,3 +185,11 @@ func TestRenamedVarsKeepsWikiMarkup(t *testing.T) {
 		t.Fatalf("only placeholders and headings are renamed: %q", got)
 	}
 }
+
+func TestPickUserInputsTakesTheChainsDefinition(t *testing.T) {
+	defs := ChainOf(models.AIEditRequestCreate).Spec.UserInputs
+	got, err := PickUserInputs(models.AIEditRequestCreate, defs)
+	if err != nil || len(got) != len(defs) {
+		t.Fatalf("inputs sent as the chain defines them are picked (an older skin's clone): %v %+v", err, got)
+	}
+}
