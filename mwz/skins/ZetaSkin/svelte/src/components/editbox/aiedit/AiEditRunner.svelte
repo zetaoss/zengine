@@ -93,7 +93,7 @@
     values = { ...values, [name]: items }
   }
 
-  // A user input's name as the run form shows it: readBacklinks as "Read backlinks".
+  // A user input's name as the run form shows it: useBacklinks as "Use backlinks".
   function inputLabel(name: string) {
     const words = name.replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase()
     return words.charAt(0).toUpperCase() + words.slice(1)
@@ -190,7 +190,7 @@
         request_type: prompt.requestType,
         content: prompt.content,
         messages: prompt.messages,
-        user_inputs: userInputs,
+        user_inputs: userInputs.map((input) => ({ name: input.name })),
         model: prompt.model,
       })
       if (err) {

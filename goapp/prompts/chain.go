@@ -40,7 +40,7 @@ type Spec struct {
 	Steps      []Step  `json:"steps" yaml:"steps"`
 }
 
-// Input is a variable of a chain. A user input shows in the run form under its name (readBacklinks as "Read
+// Input is a variable of a chain. A user input shows in the run form under its name (useBacklinks as "Use
 // backlinks"), with Placeholder in its empty field. An input with From is derived from that variable before a step
 // renders (Fill), cut to MaxChars characters when set: the task fills the source, the messages read the cut.
 //
@@ -204,7 +204,7 @@ func text(v any) string {
 	case bool:
 		return strconv.FormatBool(v)
 	case []string:
-		return strings.Join(v, "\n\n")
+		return strings.Join(v, "\n")
 	}
 	return ""
 }
@@ -296,8 +296,8 @@ type Function struct {
 // Functions are the functions a function step may use. Their code is given to RunFunctions by the task that runs
 // the chain, so this package does not depend on the services they call.
 var Functions = map[string]Function{
-	// wiki/backlinkTexts reads, in the pages that link to the page titled title, the text around each link.
-	"wiki/backlinkTexts": {Inputs: []string{"title"}, Output: TypeTextList},
+	// wiki/backlinkTitles lists titles of pages that link to the page titled title.
+	"wiki/backlinkTitles": {Inputs: []string{"title"}, Output: TypeTextList},
 }
 
 // Func is the code of a function step: it reads the run's variables and returns the step's value.
@@ -448,6 +448,19 @@ func (p Prompt) Render(vars Vars) []Message {
 	return out
 }
 
+// MergeUserMessages joins consecutive user messages while preserving role boundaries and order.
+func MergeUserMessages(messages []Message) []Message {
+	out := make([]Message, 0, len(messages))
+	for _, m := range messages {
+		if m.Role == "user" && len(out) > 0 && out[len(out)-1].Role == "user" {
+			out[len(out)-1].Content += "\n\n" + m.Content
+		} else {
+			out = append(out, m)
+		}
+	}
+	return out
+}
+
 func (p Prompt) replace(content string, vars Vars, own map[string]string) string {
 	var b strings.Builder
 	last := 0
@@ -464,6 +477,24 @@ func (p Prompt) replace(content string, vars Vars, own map[string]string) string
 		}
 		b.WriteString(content[last:ph.start])
 		b.WriteString(v)
+		last = ph.end
+	}
+	b.WriteString(content[last:])
+	return b.String()
+}
+
+// RenamePlaceholders gives the {name} placeholders of content named in renames their new names, leaving wiki markup
+// that looks like one ({{name}}, {{{name}}}) as it is.
+func RenamePlaceholders(content string, renames map[string]string) string {
+	var b strings.Builder
+	last := 0
+	for _, ph := range placeholders(content) {
+		name, ok := renames[ph.name]
+		if !ok {
+			continue
+		}
+		b.WriteString(content[last:ph.start])
+		b.WriteString("{" + name + "}")
 		last = ph.end
 	}
 	b.WriteString(content[last:])
@@ -723,7 +754,7 @@ var (
 
 // Validate checks a chain's structure: variable and output names and types; each step's inputs are variables
 // or earlier outputs and each is used by its messages; placeholders, If and Each name the step's inputs, Each a
-// textList variable, and a textList variable appears as a placeholder only in its own Each message; every task input is used.
+// textList variable, and a textList variable may be rendered as a newline-separated list; every task input is used.
 func (c Chain) Validate() error {
 	for _, in := range c.Spec.UserInputs {
 		if err := in.validateUser(); err != nil {
@@ -856,6 +887,30 @@ func (t Template) YAML() string {
 	return buf.String()
 }
 
+// UserInputsYAML writes the template's user inputs as a YAML list of their names without the root key, as a
+// template picks them from its chain (- hint).
+func (t Template) UserInputsYAML() string {
+	var buf strings.Builder
+	for _, in := range t.UserInputs {
+		buf.WriteString("- " + in.Name + "\n")
+	}
+	return buf.String()
+}
+
+// MessagesYAML writes the template's messages as a YAML list without the root key.
+func (t Template) MessagesYAML() string {
+	if len(t.Messages) == 0 {
+		return ""
+	}
+	var buf bytes.Buffer
+	enc := yaml.NewEncoder(&buf)
+	enc.SetIndent(2)
+	if err := enc.Encode(t.Messages); err != nil {
+		return ""
+	}
+	return buf.String()
+}
+
 // ParseTemplate reads a template written in YAML, rejecting unknown fields. It does not check it against a chain
 // (WithUserInputs, ValidateMessages).
 func ParseTemplate(text string) (Template, error) {
@@ -869,6 +924,42 @@ func ParseTemplate(text string) (Template, error) {
 		t.UserInputs = []Input{}
 	}
 	return t, nil
+}
+
+// ParseUserInputsYAML reads user inputs written as a YAML list without the root key.
+func ParseUserInputsYAML(text string) ([]Input, error) {
+	text = strings.TrimSpace(text)
+	if text == "" {
+		return []Input{}, nil
+	}
+	var inputs []Input
+	dec := yaml.NewDecoder(strings.NewReader(text))
+	dec.KnownFields(true)
+	if err := dec.Decode(&inputs); err != nil {
+		return nil, fmt.Errorf("userInputs: %w", err)
+	}
+	if inputs == nil {
+		inputs = []Input{}
+	}
+	return inputs, nil
+}
+
+// ParseMessagesYAML reads messages written as a YAML list without the root key.
+func ParseMessagesYAML(text string) ([]Message, error) {
+	text = strings.TrimSpace(text)
+	if text == "" {
+		return []Message{}, nil
+	}
+	var messages []Message
+	dec := yaml.NewDecoder(strings.NewReader(text))
+	dec.KnownFields(true)
+	if err := dec.Decode(&messages); err != nil {
+		return nil, fmt.Errorf("messages: %w", err)
+	}
+	if messages == nil {
+		messages = []Message{}
+	}
+	return messages, nil
 }
 
 // typesBefore are the types of the chain's variables and of the outputs of its steps before step i.
@@ -906,7 +997,7 @@ func (st Step) variables() []string {
 }
 
 // validate checks a step: the variables its messages use are chain variables or earlier outputs, If and Each name them,
-// Each a textList one, and a textList variable is a placeholder only in its own Each message.
+// Each a textList one.
 func (st Step) validate(types map[string]InputType, used map[string]bool) error {
 	if st.Uses != "" {
 		return st.validateFunction(types, used)
@@ -922,6 +1013,9 @@ func (st Step) validate(types map[string]InputType, used map[string]bool) error 
 	}
 	for _, name := range messageVariables(st.Messages) {
 		if _, ok := types[name]; !ok {
+			if name == "index" {
+				return fmt.Errorf("{index} can only be used in an each message")
+			}
 			return fmt.Errorf("{%s} is neither a variable nor an earlier output", name)
 		}
 		used[name] = true
@@ -932,11 +1026,6 @@ func (st Step) validate(types map[string]InputType, used map[string]bool) error 
 		}
 		if m.Each != "" && types[m.Each] != TypeTextList {
 			return fmt.Errorf("each %q is not a textList variable", m.Each)
-		}
-		for _, ph := range placeholders(m.Content) {
-			if types[ph.name] == TypeTextList && ph.name != m.Each {
-				return fmt.Errorf("textList variable {%s} is used outside its each message", ph.name)
-			}
 		}
 	}
 	return nil

@@ -20,7 +20,7 @@ func fakeWiki(t *testing.T) *config.Config {
 		var out any
 		switch {
 		case q.Get("list") == "backlinks":
-			out = map[string]any{"query": map[string]any{"backlinks": []map[string]any{{"pageid": 7}}}}
+			out = map[string]any{"query": map[string]any{"backlinks": []map[string]any{{"pageid": 7, "title": "과일"}, {"pageid": 8, "title": "과수"}}}}
 		case q.Get("pageids") == "7":
 			out = map[string]any{"query": map[string]any{"pages": []map[string]any{{"pageid": 7, "title": "과일", "revisions": []map[string]any{{"slots": map[string]any{"main": map[string]any{"content": "* [[사과]]는 빨갛다."}}}}}}}}
 		case q.Get("titles") != "":
@@ -41,21 +41,21 @@ func contents(r Rendered) string {
 func TestRenderCreate(t *testing.T) {
 	cfg := fakeWiki(t)
 	r, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestCreate, Title: "사과", UserInputs: map[string]any{
-		"hint": "apple", "readBacklinks": true, "texts": []any{"자료 하나", ""}, "request": "",
+		"hint": "apple", "useBacklinks": true, "texts": []any{"자료 하나", ""}, "request": "",
 	}})
 	if err != nil {
 		t.Fatal(err)
 	}
 	got := contents(r)
-	for _, want := range []string{"### 문서 제목: 사과", "### 힌트: apple", "### 자료 1:\n자료 하나", "### 역링크 1:\n문서: 과일\n* [[사과]]는 빨갛다."} {
+	for _, want := range []string{"-----title-----\n사과", "-----hint-----\napple", "-----texts 1-----\n자료 하나", "-----backlinks-----\n과일\n과수"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("missing %q in\n%s", want, got)
 		}
 	}
-	if strings.Contains(got, "### 요청사항") || strings.Contains(got, "### 자료 2") {
+	if strings.Contains(got, "-----request-----") || strings.Contains(got, "참고 텍스트 2") {
 		t.Errorf("an empty request and a blank material must send nothing:\n%s", got)
 	}
-	if r.Messages[0].Role != "system" || len(r.Messages) != 5 {
+	if r.Messages[0].Role != "system" || len(r.Messages) != 2 {
 		t.Errorf("unexpected messages %+v", r.Messages)
 	}
 }
@@ -67,11 +67,11 @@ func TestRenderUpdateTemplate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(r.Messages) != 2 || r.Messages[0].Content != "'자바 (섬)' 문서를 고쳐라.\n저장된 본문\n{{틀}}" || r.Messages[1].Content != "### 요청사항:\n표로 정리" {
-		t.Fatalf("a template replaces the unconditional messages and keeps the run form's: %+v", r.Messages)
+	if len(r.Messages) != 1 || r.Messages[0].Content != "'자바 (섬)' 문서를 고쳐라.\n저장된 본문\n{{틀}}" {
+		t.Fatalf("a template replaces the unconditional messages, and a request from an older run form is ignored: %+v", r.Messages)
 	}
-	if r.Vars["backlinkTexts"] == nil {
-		t.Error("backlinkTexts must be filled (empty) when readBacklinks is off")
+	if r.Vars["backlinks"] == nil {
+		t.Error("backlinks must be filled (empty) when useBacklinks is off")
 	}
 	if _, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestUpdate, Title: "자바", UserInputs: map[string]any{"hint": "x"}}); !IsInputError(err) {
 		t.Errorf("doc-update has no hint, got %v", err)
@@ -81,13 +81,14 @@ func TestRenderUpdateTemplate(t *testing.T) {
 func TestRenderOwnMessages(t *testing.T) {
 	cfg := fakeWiki(t)
 	own := `[{"role":"system","content":"규칙"},{"role":"user","content":"{title}"},{"role":"user","if":"request","content":"요청: {request}"},{"role":"user","each":"texts","content":"{index}) {texts}"}]`
-	prompt := &models.AIEditPrompt{ID: 4, RequestType: models.AIEditRequestCreate, Content: "unused", Messages: own}
+	inputs := `[{"name":"request","type":"text"},{"name":"texts","type":"textList"}]`
+	prompt := &models.AIEditPrompt{ID: 4, RequestType: models.AIEditRequestCreate, Content: "unused", Messages: own, UserInputs: inputs}
 	r, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestCreate, Title: "자바 (섬)", Prompt: prompt, UserInputs: map[string]any{"request": "짧게", "texts": []any{"a", "b"}}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := contents(r); got != "규칙\n\n자바 (섬)\n\n요청: 짧게\n\n1) a\n\n2) b" {
-		t.Fatalf("a template's own messages replace the step's: %q", got)
+	if got := contents(r); got != "규칙\n\n자바 (섬)\n\n1) a\n\n2) b" {
+		t.Fatalf("a template's own messages replace the step's; a stored request input is no longer one, and its value is ignored: %q", got)
 	}
 }
 
@@ -99,7 +100,6 @@ func TestValidateTemplateMessages(t *testing.T) {
 	for name, msgs := range map[string][]prompts.Message{
 		"unknown placeholder": {{Role: "user", Content: "{other}"}},
 		"each on a string":    {{Role: "user", Each: "request", Content: "{request}"}},
-		"texts outside each":  {{Role: "user", Content: "{texts}"}},
 		"no messages":         {},
 	} {
 		if err := chain.ValidateMessages(msgs); err == nil {
@@ -108,92 +108,88 @@ func TestValidateTemplateMessages(t *testing.T) {
 	}
 }
 
-func TestRenderOwnUserInputs(t *testing.T) {
+func TestRenderPickedUserInputs(t *testing.T) {
 	cfg := fakeWiki(t)
 	prompt := &models.AIEditPrompt{ID: 5, RequestType: models.AIEditRequestCreate,
-		UserInputs: `[{"name":"tone"},{"name":"table","type":"bool"}]`,
-		Messages:   `[{"role":"user","content":"{title} / {tone}"},{"role":"user","if":"table","content":"표로"}]`}
-	r, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestCreate, Title: "사과", Prompt: prompt, UserInputs: map[string]any{"tone": "존댓말", "table": true}})
-	if err != nil {
-		t.Fatalf("a template's own inputs reach the messages: %v", err)
+		UserInputs: `[{"name":"extraTexts"},{"name":"hint","placeholder":"old"},{"name":"tone"}]`,
+		Messages:   `[{"role":"user","content":"{title} / {hint}"},{"role":"user","each":"extraTexts","content":"{extraTexts}"}]`}
+	if got := TemplateUserInputs(*prompt); len(got) != 2 || got[0].Name != "hint" || got[0].Placeholder == "old" || got[1].Name != "texts" || got[1].Type != prompts.TypeTextList {
+		t.Fatalf("a template picks its chain's inputs by name, as the chain defines them and in its order: %+v", got)
 	}
-	if got := contents(r); got != "사과 / 존댓말\n\n표로" {
-		t.Fatalf("unexpected %q", got)
-	}
-	if _, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestCreate, Title: "사과", Prompt: prompt, UserInputs: map[string]any{"hint": "x"}}); !IsInputError(err) {
-		t.Errorf("an input the template does not declare is rejected, got %v", err)
-	}
-	bad := *prompt
-	bad.UserInputs = `[{"name":"title"}]`
-	if _, err := TemplateChain(bad); err == nil {
-		t.Error("a user input named like a task input must be rejected")
-	}
-}
-
-func TestBuiltinTemplatesValidate(t *testing.T) {
-	for _, rt := range []string{models.AIEditRequestCreate, models.AIEditRequestUpdate} {
-		chain := ChainOf(rt)
-		tpl, err := prompts.ParseTemplate(chain.Template().YAML())
-		if err != nil {
-			t.Fatal(err)
-		}
-		c, err := chain.WithUserInputs(tpl.UserInputs)
-		if err == nil {
-			err = c.ValidateMessages(tpl.Messages)
-		}
-		if err != nil {
-			t.Errorf("%s: a clone of the built-in chain must save as it is: %v", chain.Name, err)
-		}
-	}
-}
-
-func TestRenderEmptiedEditor(t *testing.T) {
-	cfg := fakeWiki(t)
-	empty := ""
-	r, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestUpdate, Title: "자바", Wikitext: &empty})
+	r, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestCreate, Title: "사과", Prompt: prompt, UserInputs: map[string]any{"hint": "과일", "texts": []any{"자료"}}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if r.Vars["wikitext"] != "" || strings.Contains(contents(r), "저장된 본문") {
-		t.Fatalf("an emptied editor must not bring the saved page back: %q", r.Vars["wikitext"])
+	if got := contents(r); got != "사과 / 과일\n\n자료" {
+		t.Fatalf("unexpected %q", got)
 	}
-	r, err = Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestUpdate, Title: "자바"})
-	if err != nil || r.Vars["wikitext"] != "저장된 본문" {
-		t.Fatalf("without the editor's text the saved page is read: %v %q", err, r.Vars["wikitext"])
-	}
-}
-
-func TestTemplateWithoutUserInputs(t *testing.T) {
-	tpl, err := prompts.ParseTemplate("messages:\n  - role: user\n    content: \"{title}\"\n")
-	if err != nil || tpl.UserInputs == nil || len(tpl.UserInputs) != 0 {
-		t.Fatalf("omitted userInputs read as an empty list: %v %#v", err, tpl.UserInputs)
-	}
-	p := models.AIEditPrompt{RequestType: models.AIEditRequestCreate, UserInputs: "null"}
-	if got := TemplateUserInputs(p); got == nil || len(got) != 0 {
-		t.Fatalf("a stored null is no inputs, not the chain's: %#v", got)
+	if _, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestCreate, Title: "사과", Prompt: prompt, UserInputs: map[string]any{"tone": "x"}}); !IsInputError(err) {
+		t.Errorf("an input the template does not pick is rejected, got %v", err)
 	}
 }
 
-func TestRenderNoMessages(t *testing.T) {
-	cfg := fakeWiki(t)
-	prompt := &models.AIEditPrompt{ID: 6, RequestType: models.AIEditRequestCreate, UserInputs: "[]",
-		Messages: `[{"role":"user","if":"title2","content":"x"}]`}
-	prompt.UserInputs = `[{"name":"title2"}]`
-	if _, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestCreate, Title: "x", Prompt: prompt}); !IsInputError(err) {
-		t.Fatalf("a request that sends no message must be the requester's to fix, got %v", err)
+func TestPickUserInputs(t *testing.T) {
+	got, err := PickUserInputs(models.AIEditRequestCreate, []prompts.Input{{Name: "texts"}, {Name: "readBacklinks"}})
+	if err != nil || len(got) != 2 || got[0].Name != "useBacklinks" || got[0].Type != prompts.TypeBool || got[1].Type != prompts.TypeTextList {
+		t.Fatalf("names take the chain's definitions and order, older names their names now: %+v %v", got, err)
+	}
+	for name, given := range map[string][]prompts.Input{
+		"unknown":    {{Name: "tone"}},
+		"request":    {{Name: "request"}},
+		"repeated":   {{Name: "hint"}, {Name: "hint"}},
+		"attributes": {{Name: "hint", Placeholder: "x"}},
+		"not update": nil,
+	} {
+		requestType := models.AIEditRequestCreate
+		if name == "not update" {
+			requestType, given = models.AIEditRequestUpdate, []prompts.Input{{Name: "hint"}}
+		}
+		if _, err := PickUserInputs(requestType, given); err == nil {
+			t.Errorf("%s: expected an error", name)
+		}
 	}
 }
 
 func TestRenderUnsetInputIsEmpty(t *testing.T) {
 	cfg := fakeWiki(t)
 	prompt := &models.AIEditPrompt{ID: 7, RequestType: models.AIEditRequestCreate,
-		UserInputs: `[{"name":"tone"}]`,
-		Messages:   `[{"role":"user","content":"{title} / {tone} / {example}"}]`}
+		UserInputs: `[{"name":"hint"}]`,
+		Messages:   `[{"role":"user","content":"{title} / {hint} / {example}"}]`}
 	r, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestCreate, Title: "Apple", Prompt: prompt})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if got := contents(r); got != "Apple /  / {example}" {
 		t.Fatalf("a declared input left unset renders as nothing, an undeclared name stays: %q", got)
+	}
+}
+
+func TestRenderLegacyBacklinkTemplate(t *testing.T) {
+	cfg := fakeWiki(t)
+	prompt := &models.AIEditPrompt{RequestType: models.AIEditRequestCreate, Messages: `[{"role":"user","each":"backlinkTexts","content":"{backlinkTexts}"}]`}
+	rendered, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestCreate, Title: "사과", Prompt: prompt, UserInputs: map[string]any{"readBacklinks": true}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := contents(rendered); got != "과일\n\n과수" {
+		t.Fatalf("legacy template: got %q", got)
+	}
+	if err := rendered.Chain.ValidateMessages(rendered.Chain.PromptStep().Messages); err != nil {
+		t.Fatalf("legacy template must remain valid: %v", err)
+	}
+}
+
+func TestRenamedVarsKeepsWikiMarkup(t *testing.T) {
+	got := renamedVars("-----wikitext-----\n{wikitext} {{wikitext}} {{{wikitext}}} {{틀|{backlinkTexts}}}")
+	if got != "-----body-----\n{body} {{wikitext}} {{{wikitext}}} {{틀|{backlinks}}}" {
+		t.Fatalf("only placeholders and headings are renamed: %q", got)
+	}
+}
+
+func TestPickUserInputsTakesTheChainsDefinition(t *testing.T) {
+	defs := ChainOf(models.AIEditRequestCreate).Spec.UserInputs
+	got, err := PickUserInputs(models.AIEditRequestCreate, defs)
+	if err != nil || len(got) != len(defs) {
+		t.Fatalf("inputs sent as the chain defines them are picked (an older skin's clone): %v %+v", err, got)
 	}
 }
