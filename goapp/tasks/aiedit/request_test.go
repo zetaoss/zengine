@@ -178,3 +178,10 @@ func TestRenderLegacyBacklinkTemplate(t *testing.T) {
 		t.Fatalf("legacy template must remain valid: %v", err)
 	}
 }
+
+func TestRenamedVarsKeepsWikiMarkup(t *testing.T) {
+	got := renamedVars("-----wikitext-----\n{wikitext} {{wikitext}} {{{wikitext}}} {{틀|{backlinkTexts}}}")
+	if got != "-----body-----\n{body} {{wikitext}} {{{wikitext}}} {{틀|{backlinks}}}" {
+		t.Fatalf("only placeholders and headings are renamed: %q", got)
+	}
+}

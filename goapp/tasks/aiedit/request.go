@@ -270,14 +270,15 @@ func runInputs(chain prompts.Chain, values map[string]any) map[string]any {
 // doc-update's wikitext is now body.
 var varRenames = map[string]string{"backlinkTexts": "backlinks", "backlinkTitles": "backlinks", "extraTexts": "texts", "copiedTexts": "texts", "wikitext": "body"}
 
-// renamedVars rewrites the older variable names (varRenames) in a stored template's content, as placeholders and
-// as the headings the editor writes above them.
+// renamedVars rewrites the older variable names (varRenames) in a stored template's content: its placeholders
+// (prompts.RenamePlaceholders, so wiki markup such as {{wikitext}} stays) and the headings the editor writes above
+// them (-----wikitext-----).
 func renamedVars(content string) string {
 	var pairs []string
 	for old, name := range varRenames {
-		pairs = append(pairs, "{"+old+"}", "{"+name+"}", "-----"+old+"-----", "-----"+name+"-----")
+		pairs = append(pairs, "-----"+old+"-----", "-----"+name+"-----")
 	}
-	return strings.NewReplacer(pairs...).Replace(content)
+	return strings.NewReplacer(pairs...).Replace(prompts.RenamePlaceholders(content, varRenames))
 }
 
 // MessagesText joins rendered messages for people to read (aiedit_tasks.llm_input).

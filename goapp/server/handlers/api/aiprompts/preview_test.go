@@ -119,3 +119,19 @@ func TestPreviewBacklinksEmptyOrDisabled(t *testing.T) {
 		}
 	}
 }
+
+func TestCheckPreviewsStoredMessages(t *testing.T) {
+	body := `{"request_type":"create","stored":true,"user_inputs_yaml":"- hint\n","messages":[{"role":"user","content":"{title}: {hint}"},{"role":"user","if":"request","content":"{request}"}],"preview_values":{"hint":"과일"},"preview_title":"사과"}`
+	w := httptest.NewRecorder()
+	Check(&serverctx.Context{W: w, R: httptest.NewRequest("POST", "/", strings.NewReader(body))})
+	var got struct {
+		OK       bool              `json:"ok"`
+		Messages []prompts.Message `json:"rendered_messages"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if !got.OK || len(got.Messages) != 1 || got.Messages[0].Content != "사과: 과일" {
+		t.Fatalf("stored messages render as a template runs them, without the editor's rules: %s", w.Body.String())
+	}
+}

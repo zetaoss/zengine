@@ -483,6 +483,24 @@ func (p Prompt) replace(content string, vars Vars, own map[string]string) string
 	return b.String()
 }
 
+// RenamePlaceholders gives the {name} placeholders of content named in renames their new names, leaving wiki markup
+// that looks like one ({{name}}, {{{name}}}) as it is.
+func RenamePlaceholders(content string, renames map[string]string) string {
+	var b strings.Builder
+	last := 0
+	for _, ph := range placeholders(content) {
+		name, ok := renames[ph.name]
+		if !ok {
+			continue
+		}
+		b.WriteString(content[last:ph.start])
+		b.WriteString("{" + name + "}")
+		last = ph.end
+	}
+	b.WriteString(content[last:])
+	return b.String()
+}
+
 type placeholder struct {
 	name       string
 	start, end int

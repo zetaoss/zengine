@@ -219,7 +219,8 @@
 
   // A template as the editor shows it: an open row (key) seen as it is, or being edited. id is the template's, 0
   // for a new one (a clone) and -1 for a built-in chain, which is only seen. legacy is a template saved before it
-  // had its own messages, whose content becomes its system instructions on save.
+  // had its own messages, whose content becomes its system instructions on save. stored are the messages it runs
+  // with, which a row seen previews; an edited one previews the messages a save makes.
   interface TemplateDraft {
     key: string
     editing: boolean
@@ -234,6 +235,7 @@
     messages: ChainMessage[]
     model: string
     version: string
+    stored: ChainMessage[]
     original: string
     bump: 'minor' | 'major'
   }
@@ -299,6 +301,7 @@
       request_type: item.request_type,
       user_inputs_yaml: item.user_inputs_yaml ?? '',
       messages: systemOf(raw),
+      stored: raw,
       model: item.model,
       version: item.version,
     })
@@ -317,6 +320,7 @@
       request_type: requestType,
       user_inputs_yaml: chain.user_inputs_template ?? '',
       messages: systemOf(chain.spec.steps.find((step) => !step.uses)?.messages ?? []),
+      stored: chain.spec.steps.find((step) => !step.uses)?.messages ?? [],
       model: chain.model,
       version: chain.metadata.version,
     })
@@ -403,6 +407,7 @@
     }
     const userInputsYaml = d.user_inputs_yaml
     const systemPrompt = d.messages[0]?.content ?? ''
+    const stored = d.editing ? null : $state.snapshot(d.stored)
     const requestType = d.request_type
     const values = $state.snapshot(previewValues)
     const title = previewTitle
@@ -413,8 +418,7 @@
       const [data] = await httpy.post<SpecCheck>('/api/ai-prompts/check', {
         request_type: requestType,
         user_inputs_yaml: userInputsYaml,
-        auto_messages: true,
-        system_prompt: systemPrompt,
+        ...(stored ? { stored: true, messages: stored } : { auto_messages: true, system_prompt: systemPrompt }),
         preview_values: values,
         preview_title: title,
         preview_body: body,

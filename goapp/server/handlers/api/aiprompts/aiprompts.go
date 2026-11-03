@@ -360,6 +360,9 @@ func Check(c *serverctx.Context) {
 		PreviewBacklinks *[]string          `json:"preview_backlinks"`
 		AutoMessages     bool               `json:"auto_messages"`
 		SystemPrompt     string             `json:"system_prompt"`
+		// Stored, with messages, previews them as a template runs them (aiedit.TemplateMessages): they are rendered
+		// as they are, not checked as an editor's would be (system first, every variable declared).
+		Stored bool `json:"stored"`
 	}
 	if !c.Decode(&body) {
 		return
@@ -400,11 +403,11 @@ func Check(c *serverctx.Context) {
 		messages = editorMessages(requestType, userInputs, body.SystemPrompt)
 	}
 	var chain prompts.Chain
-	if err == nil {
+	if err == nil && !body.Stored {
 		err = validateEditorRoles(messages)
 	}
 	if err == nil {
-		if chain, err = aiedit.ChainOf(requestType).WithUserInputs(userInputs); err == nil {
+		if chain, err = aiedit.ChainOf(requestType).WithUserInputs(userInputs); err == nil && !body.Stored {
 			err = chain.ValidateMessages(messages)
 		}
 	}
