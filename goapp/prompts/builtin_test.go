@@ -11,10 +11,10 @@ import (
 // specVersions pins each built-in chain's version to a hash of its spec, so a spec change fails here until the
 // version is bumped and the entry updated: a minor bump keeps stored results, a major bump makes them stale.
 var specVersions = map[string]string{
-	"doc-define": "v2.1 902255c3a27b",
-	"doc-eval":   "v2.1 86fd90a800b7",
-	"doc-create": "v2.2 c9aee103f674",
-	"doc-update": "v2.2 e9587fa2547f",
+	"doc-define": "v2.2 71f903e6bb4e",
+	"doc-eval":   "v2.2 ef85fab65048",
+	"doc-create": "v2.3 a11dc89d79a0",
+	"doc-update": "v2.3 ffa4d68c3ab6",
 }
 
 func specHash(c Chain) string {
@@ -63,7 +63,7 @@ func TestDocEvalPrompts(t *testing.T) {
 		}
 	}
 
-	if got := DocEvalRubric.Render(Vars{"title": "테스트 문서", "definition": "테스트 문서는 시험용 문서이다."}); got[1].Content != "### 문서 제목: 테스트 문서\n### 대상 정의: 테스트 문서는 시험용 문서이다." {
+	if got := DocEvalRubric.Render(Vars{"title": "테스트 문서", "definition": "테스트 문서는 시험용 문서이다."}); got[1].Content != "-----title-----\n테스트 문서\n\n-----definition-----\n테스트 문서는 시험용 문서이다." {
 		t.Errorf("rubric user message rendered incorrectly: %s", got[1].Content)
 	}
 
@@ -73,7 +73,7 @@ func TestDocEvalPrompts(t *testing.T) {
 		"wikitext": "== 개요 ==\n테스트 내용",
 	}))
 	user := got[1].Content
-	if !strings.Contains(user, "문서 제목: 테스트 문서") || !strings.Contains(user, `{"general_quality":[]}`) || !strings.Contains(user, "테스트 내용") {
+	if !strings.Contains(user, "-----title-----\n테스트 문서") || !strings.Contains(user, `{"general_quality":[]}`) || !strings.Contains(user, "테스트 내용") {
 		t.Errorf("judge user message rendered incorrectly: %s", user)
 	}
 }
@@ -83,7 +83,7 @@ func TestDocDefinePrompt(t *testing.T) {
 		t.Fatal("doc-define needs a version: each definition records it")
 	}
 	got := DocDefineStep.Render(DocDefine.Fill(Vars{"title": "자바", "wikitext": "'''자바'''는 인도네시아의 섬이다."}))
-	if !strings.Contains(got[1].Content, "문서 제목: 자바") || !strings.Contains(got[1].Content, "인도네시아의 섬") {
+	if !strings.Contains(got[1].Content, "-----title-----\n자바") || !strings.Contains(got[1].Content, "인도네시아의 섬") {
 		t.Errorf("define user message rendered incorrectly: %s", got[1].Content)
 	}
 	if !strings.Contains(system(DocDefineStep), `"definition"`) {

@@ -45,7 +45,6 @@ func TestValidate(t *testing.T) {
 	}
 	for name, c := range map[string]Chain{
 		"undeclared placeholder": testChain(Message{Role: "user", Content: "{title} {hint} {notes} {other}"}),
-		"textList outside each":  testChain(Message{Role: "user", Content: "{title} {hint} {notes}"}),
 		"each on a string":       testChain(Message{Role: "user", Each: "hint", Content: "{title} {notes}"}),
 		"index outside each":     testChain(Message{Role: "user", Content: "{title} {index}"}, Message{Role: "user", If: "hint", Each: "notes", Content: "{notes}"}),
 		"unknown role":           testChain(Message{Role: "assistant", Content: "{title} {hint}"}, Message{Role: "user", Each: "notes", Content: "{notes}"}),
@@ -177,6 +176,29 @@ func TestTemplateYAML(t *testing.T) {
 	if _, err := ParseTemplate("messages: []\nsteps: []\n"); err == nil {
 		t.Error("unknown fields must be rejected")
 	}
+
+	uiText := tpl.UserInputsYAML()
+	if strings.Contains(uiText, "userInputs:") {
+		t.Fatalf("UserInputsYAML must not include root key: %s", uiText)
+	}
+	uiBack, err := ParseUserInputsYAML(uiText)
+	if err != nil || len(uiBack) != len(tpl.UserInputs) {
+		t.Fatalf("userInputs names: %v\n%s", err, uiText)
+	}
+	for i, in := range uiBack {
+		if !reflect.DeepEqual(in, Input{Name: tpl.UserInputs[i].Name}) {
+			t.Fatalf("UserInputsYAML must list the names alone, in order: %s", uiText)
+		}
+	}
+
+	msgText := tpl.MessagesYAML()
+	if strings.Contains(msgText, "messages:") {
+		t.Fatalf("MessagesYAML must not include root key: %s", msgText)
+	}
+	msgBack, err := ParseMessagesYAML(msgText)
+	if err != nil || !reflect.DeepEqual(msgBack, tpl.Messages) {
+		t.Fatalf("messages round trip: %v\n%+v", err, msgBack)
+	}
 }
 
 func TestWikiBraces(t *testing.T) {
@@ -208,8 +230,8 @@ func TestMagicWords(t *testing.T) {
 
 func TestFill(t *testing.T) {
 	long := strings.Repeat("가", 1500)
-	if got := DocDefine.Fill(Vars{"wikitext": long})["lead"].(string); len([]rune(got)) != 1000 {
-		t.Fatalf("lead is cut to 1000 characters, got %d", len([]rune(got)))
+	if got := DocDefine.Fill(Vars{"wikitext": long})["bodyHead"].(string); len([]rune(got)) != 1000 {
+		t.Fatalf("bodyHead is cut to 1000 characters, got %d", len([]rune(got)))
 	}
 	if got := DocEval.Fill(Vars{"wikitext": "짧은 본문"})["body"]; got != "짧은 본문" {
 		t.Fatalf("a short body is kept whole, got %q", got)
@@ -236,7 +258,7 @@ func functionChain(fn Step) Chain {
 }
 
 func TestFunctionSteps(t *testing.T) {
-	ok := functionChain(Step{Name: "f", Uses: "wiki/backlinkTexts", If: "flag", Output: "links"})
+	ok := functionChain(Step{Name: "f", Uses: "wiki/backlinkTitles", If: "flag", Output: "links"})
 	if err := ok.Validate(); err != nil {
 		t.Fatalf("valid chain rejected: %v", err)
 	}
@@ -245,16 +267,16 @@ func TestFunctionSteps(t *testing.T) {
 	}
 	for name, st := range map[string]Step{
 		"unknown function": {Name: "f", Uses: "wiki/nothing", Output: "links"},
-		"no output":        {Name: "f", Uses: "wiki/backlinkTexts"},
-		"messages":         {Name: "f", Uses: "wiki/backlinkTexts", Output: "links", Prompt: Prompt{Messages: []Message{{Role: "user", Content: "x"}}}},
-		"undeclared if":    {Name: "f", Uses: "wiki/backlinkTexts", If: "other", Output: "links"},
-		"output clash":     {Name: "f", Uses: "wiki/backlinkTexts", Output: "title"},
+		"no output":        {Name: "f", Uses: "wiki/backlinkTitles"},
+		"messages":         {Name: "f", Uses: "wiki/backlinkTitles", Output: "links", Prompt: Prompt{Messages: []Message{{Role: "user", Content: "x"}}}},
+		"undeclared if":    {Name: "f", Uses: "wiki/backlinkTitles", If: "other", Output: "links"},
+		"output clash":     {Name: "f", Uses: "wiki/backlinkTitles", Output: "title"},
 	} {
 		if err := functionChain(st).Validate(); err == nil {
 			t.Errorf("%s: expected an error", name)
 		}
 	}
-	if err := (Chain{Name: "t", Spec: Spec{Inputs: []Input{{Name: "title"}}, Steps: []Step{{Name: "f", Uses: "wiki/backlinkTexts", Output: "links"}}}}).Validate(); err == nil {
+	if err := (Chain{Name: "t", Spec: Spec{Inputs: []Input{{Name: "title"}}, Steps: []Step{{Name: "f", Uses: "wiki/backlinkTitles", Output: "links"}}}}).Validate(); err == nil {
 		t.Error("a chain without an LLM step must be rejected")
 	}
 	if err := ok.ValidateMessages([]Message{{Role: "user", Each: "links", Content: "{links}"}}); err != nil {
@@ -262,7 +284,7 @@ func TestFunctionSteps(t *testing.T) {
 	}
 
 	calls := 0
-	funcs := map[string]Func{"wiki/backlinkTexts": func(_ context.Context, vars Vars) (any, error) {
+	funcs := map[string]Func{"wiki/backlinkTitles": func(_ context.Context, vars Vars) (any, error) {
 		calls++
 		return []string{"from " + vars["title"].(string)}, nil
 	}}
@@ -443,5 +465,17 @@ func TestFormatParseJSON(t *testing.T) {
 				t.Errorf("summary: got %q, want %q", out.Summary, c.wantSummary)
 			}
 		})
+	}
+}
+
+func TestMergeUserMessages(t *testing.T) {
+	input := []Message{{Role: "system", Content: "첫 지시"}, {Role: "user", Content: "하나"}, {Role: "user", Content: "둘"}, {Role: "system", Content: "다음 지시"}, {Role: "user", Content: "셋"}}
+	got := MergeUserMessages(input)
+	want := []Message{{Role: "system", Content: "첫 지시"}, {Role: "user", Content: "하나\n\n둘"}, {Role: "system", Content: "다음 지시"}, {Role: "user", Content: "셋"}}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %+v, want %+v", got, want)
+	}
+	if input[1].Content != "하나" {
+		t.Fatal("input was mutated")
 	}
 }

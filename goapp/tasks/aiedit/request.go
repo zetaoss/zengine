@@ -51,8 +51,8 @@ func ChainOf(requestType string) prompts.Chain {
 	return prompts.DocCreate
 }
 
-// Render fills the chain's variables (the user inputs as given; the title and the wikitext), runs its function
-// steps (with readBacklinks, the excerpts of the pages that link here) and renders its LLM step.
+// Render fills the chain's variables (the user inputs as given; the title and, as body, the wikitext), runs its function
+// steps (with useBacklinks, the titles of the pages that link here) and renders its LLM step.
 func Render(ctx context.Context, cfg *config.Config, req Request) (Rendered, error) {
 	chain := ChainOf(req.RequestType)
 	if req.Prompt != nil {
@@ -61,7 +61,7 @@ func Render(ctx context.Context, cfg *config.Config, req Request) (Rendered, err
 			return Rendered{}, fmt.Errorf("template %d: %w", req.Prompt.ID, err)
 		}
 	}
-	vars, err := chain.UserVars(req.UserInputs)
+	vars, err := chain.UserVars(runInputs(chain, req.UserInputs))
 	if err != nil {
 		return Rendered{}, InputError{err.Error()}
 	}
@@ -72,14 +72,14 @@ func Render(ctx context.Context, cfg *config.Config, req Request) (Rendered, err
 		switch in.Name {
 		case "title":
 			vars["title"] = req.Title
-		case "wikitext":
+		case "body":
 			var text string
 			if req.Wikitext != nil {
 				text = *req.Wikitext
 			} else if text, _, err = wikisvc.PageText(ctx, cfg, req.Title); err != nil {
 				return Rendered{}, fmt.Errorf("read page: %w", err)
 			}
-			vars["wikitext"] = text
+			vars["body"] = text
 		default:
 			return Rendered{}, fmt.Errorf("chain %s: no way to fill input %q", chain.Name, in.Name)
 		}
@@ -88,7 +88,7 @@ func Render(ctx context.Context, cfg *config.Config, req Request) (Rendered, err
 		return Rendered{}, err
 	}
 	vars = chain.Fill(vars)
-	messages := chain.PromptStep().Render(vars)
+	messages := prompts.MergeUserMessages(chain.PromptStep().Render(vars))
 	if len(messages) == 0 {
 		return Rendered{}, InputError{"보낼 메시지가 없습니다. 조건(if, each)이 걸린 입력을 채워 주세요."}
 	}
@@ -98,28 +98,96 @@ func Render(ctx context.Context, cfg *config.Config, req Request) (Rendered, err
 // functions are the code of the function steps AI edit's chains use (prompts.Functions).
 func functions(cfg *config.Config) map[string]prompts.Func {
 	return map[string]prompts.Func{
-		"wiki/backlinkTexts": func(ctx context.Context, vars prompts.Vars) (any, error) {
+		"wiki/backlinkTitles": func(ctx context.Context, vars prompts.Vars) (any, error) {
 			title, _ := vars["title"].(string)
-			texts, err := wikisvc.BacklinkTexts(ctx, cfg, title)
+			titles, err := wikisvc.BacklinkTitles(ctx, cfg, title)
 			if err != nil {
 				return nil, fmt.Errorf("read backlinks: %w", err)
 			}
-			return texts, nil
+			return titles, nil
 		},
 	}
 }
 
-// TemplateUserInputs are a template's run form: its own (aiedit_prompts.user_inputs) or its chain's. Values of a
-// user input reach the messages as they are; readBacklinks also has the task read the pages that link here.
+// TemplateUserInputs are a template's run form: the user inputs of its chain it picks by name
+// (aiedit_prompts.user_inputs), each as the chain defines it and in the chain's order, or all of the chain's. A stored name from before a
+// rename takes its name now; one the chain does not have (request, a template's own input) is left out. Values of a
+// user input reach the messages as they are; useBacklinks also has the task collect titles of pages that link here.
 func TemplateUserInputs(p models.AIEditPrompt) []prompts.Input {
 	var own []prompts.Input
-	if strings.TrimSpace(p.UserInputs) != "" && json.Unmarshal([]byte(p.UserInputs), &own) == nil {
-		if own == nil {
-			own = []prompts.Input{}
-		}
-		return own
+	if strings.TrimSpace(p.UserInputs) == "" || json.Unmarshal([]byte(p.UserInputs), &own) != nil {
+		return ChainOf(p.RequestType).Spec.UserInputs
 	}
-	return ChainOf(p.RequestType).Spec.UserInputs
+	names := map[string]bool{}
+	for _, in := range own {
+		names[renamedUserInput(in.Name)] = true
+	}
+	return inChainOrder(p.RequestType, names)
+}
+
+// PickUserInputs reads a template's user inputs as an editor writes them, names of its chain's user inputs alone
+// (- hint), and gives each as the chain defines it, in the chain's order (which the messages follow). A name the
+// chain does not have, a repeated name, or an input written with attributes is refused.
+func PickUserInputs(requestType string, given []prompts.Input) ([]prompts.Input, error) {
+	defs := userInputDefs(requestType)
+	seen := map[string]bool{}
+	for _, in := range given {
+		name := renamedUserInput(in.Name)
+		if in.Type != "" || in.Placeholder != "" || in.Required || in.Default != nil || in.Options != nil || in.From != "" || in.MaxChars != 0 {
+			return nil, fmt.Errorf("사용자 입력은 이름만 씁니다: %s", in.Name)
+		}
+		if _, ok := defs[name]; !ok {
+			return nil, fmt.Errorf("쓸 수 없는 사용자 입력입니다: %s (쓸 수 있는 입력: %s)", in.Name, strings.Join(userInputNames(ChainOf(requestType).Spec.UserInputs), ", "))
+		}
+		if seen[name] {
+			return nil, fmt.Errorf("사용자 입력이 두 번 있습니다: %s", name)
+		}
+		seen[name] = true
+	}
+	return inChainOrder(requestType, seen), nil
+}
+
+// inChainOrder are the chain's user inputs whose names are given, in the chain's order.
+func inChainOrder(requestType string, names map[string]bool) []prompts.Input {
+	picked := []prompts.Input{}
+	for _, in := range ChainOf(requestType).Spec.UserInputs {
+		if names[in.Name] {
+			picked = append(picked, in)
+		}
+	}
+	return picked
+}
+
+// UserInputNames are the inputs by name alone, as a template stores the ones it picks (aiedit_prompts.user_inputs).
+func UserInputNames(inputs []prompts.Input) []prompts.Input {
+	names := make([]prompts.Input, len(inputs))
+	for i, in := range inputs {
+		names[i] = prompts.Input{Name: in.Name}
+	}
+	return names
+}
+
+func userInputDefs(requestType string) map[string]prompts.Input {
+	defs := map[string]prompts.Input{}
+	for _, in := range ChainOf(requestType).Spec.UserInputs {
+		defs[in.Name] = in
+	}
+	return defs
+}
+
+func userInputNames(inputs []prompts.Input) []string {
+	names := make([]string, len(inputs))
+	for i, in := range inputs {
+		names[i] = in.Name
+	}
+	return names
+}
+
+func renamedUserInput(name string) string {
+	if now, ok := userInputRenames[name]; ok {
+		return now
+	}
+	return name
 }
 
 // TemplateChain is the chain a template runs as: its request type's chain with the template's user inputs and,
@@ -139,15 +207,77 @@ func TemplateChain(p models.AIEditPrompt) (prompts.Chain, error) {
 func TemplateMessages(p models.AIEditPrompt) []prompts.Message {
 	var own []prompts.Message
 	if strings.TrimSpace(p.Messages) != "" && json.Unmarshal([]byte(p.Messages), &own) == nil && len(own) > 0 {
+		for i := range own {
+			if name, ok := varRenames[own[i].Each]; ok {
+				own[i].Each = name
+			}
+			if name, ok := varRenames[own[i].If]; ok {
+				own[i].If = name
+			}
+			if name, ok := userInputRenames[own[i].If]; ok {
+				own[i].If = name
+			}
+			own[i].Content = renamedVars(own[i].Content)
+		}
 		return own
 	}
-	messages := []prompts.Message{{Role: "user", Content: p.Content}}
+	messages := []prompts.Message{{Role: "user", Content: renamedVars(p.Content)}}
 	for _, m := range ChainOf(p.RequestType).PromptStep().Messages {
 		if m.If != "" || m.Each != "" {
 			messages = append(messages, m)
 		}
 	}
 	return messages
+}
+
+// userInputRenames maps user inputs renamed since templates were saved, and since skins still running sent their
+// run forms, to their names now.
+var userInputRenames = map[string]string{"readBacklinks": "useBacklinks", "extraTexts": "texts", "copiedTexts": "texts"}
+
+// droppedUserInputs are user inputs the built-in chains no longer have (request). A run form loaded before they
+// went may still send them; a chain that does not declare one ignores it rather than refusing the run.
+var droppedUserInputs = []string{"request"}
+
+// runInputs are the run form values as the chain takes them: values sent under an older user input name get its
+// name now (userInputRenames), and dropped inputs the chain does not declare are left out.
+func runInputs(chain prompts.Chain, values map[string]any) map[string]any {
+	declared := map[string]bool{}
+	for _, in := range chain.Spec.UserInputs {
+		declared[in.Name] = true
+	}
+	out := make(map[string]any, len(values))
+	for k, v := range values {
+		out[k] = v
+	}
+	for old, name := range userInputRenames {
+		if v, ok := out[old]; ok {
+			delete(out, old)
+			if _, given := out[name]; !given {
+				out[name] = v
+			}
+		}
+	}
+	for _, name := range droppedUserInputs {
+		if !declared[name] {
+			delete(out, name)
+		}
+	}
+	return out
+}
+
+// varRenames maps variables a stored template may still use under an older name to their names now: the backlink
+// output was backlinkTexts and then backlinkTitles, the texts input was extraTexts and then copiedTexts, and
+// doc-update's wikitext is now body.
+var varRenames = map[string]string{"backlinkTexts": "backlinks", "backlinkTitles": "backlinks", "extraTexts": "texts", "copiedTexts": "texts", "wikitext": "body"}
+
+// renamedVars rewrites the older variable names (varRenames) in a stored template's content, as placeholders and
+// as the headings the editor writes above them.
+func renamedVars(content string) string {
+	var pairs []string
+	for old, name := range varRenames {
+		pairs = append(pairs, "{"+old+"}", "{"+name+"}", "-----"+old+"-----", "-----"+name+"-----")
+	}
+	return strings.NewReplacer(pairs...).Replace(content)
 }
 
 // MessagesText joins rendered messages for people to read (aiedit_tasks.llm_input).

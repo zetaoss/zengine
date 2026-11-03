@@ -28,6 +28,7 @@ export type LoopSettings = { interval: string; model: string; strategy: string }
 export const intervalOptions = [
   { value: '0s', label: '끔' },
   { value: '10m', label: '10분' },
+  { value: '20m', label: '20분' },
   { value: '30m', label: '30분' },
   { value: '1h', label: '1시간' },
   { value: '2h', label: '2시간' },

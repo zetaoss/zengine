@@ -202,7 +202,7 @@ func TestRubricPromptCarriesDefinition(t *testing.T) {
 	if _, err := newEvaluator(ts.URL).Evaluate(context.Background(), Page{ID: 1, Title: "자바_(섬)", Revid: 1}, "자바는 인도네시아의 섬이다.", "본문", "", ""); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(rubricUser, "문서 제목: 자바 (섬)") || !strings.Contains(rubricUser, "대상 정의: 자바는 인도네시아의 섬이다.") {
+	if !strings.Contains(rubricUser, "-----title-----\n자바 (섬)") || !strings.Contains(rubricUser, "-----definition-----\n자바는 인도네시아의 섬이다.") {
 		t.Fatalf("rubric prompt must carry the display title and the definition, got %q", rubricUser)
 	}
 }

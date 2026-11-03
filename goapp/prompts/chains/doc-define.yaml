@@ -3,13 +3,13 @@
 # Its version is stored with each definition; bump it when the spec changes.
 name: doc-define
 metadata:
-  version: v2.1
+  version: v2.2
   description: 제목과 본문 앞부분으로 문서가 다루는 대상을 한 줄로 정의한다.
 spec:
   inputs:
     - name: title
     - name: wikitext
-    - name: lead
+    - name: bodyHead
       from: wikitext
       maxChars: 1000
   steps:
@@ -35,8 +35,9 @@ spec:
             {"definition": "정의"}
         - role: user
           content: |-
-            ### 문서 제목: {title}
+            -----title-----
+            {title}
 
-            ### 문서 본문 앞부분(Wikitext):
-            {lead}
+            -----bodyHead-----
+            {bodyHead}
       format: json

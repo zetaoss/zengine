@@ -3,7 +3,7 @@
 # reused only when it and the definition match, and it is bumped when either step changes.
 name: doc-eval
 metadata:
-  version: v2.1
+  version: v2.2
   description: 제목과 대상 정의로 루브릭을 만들고, 그 루브릭과 본문으로 판정한다.
 spec:
   inputs:
@@ -54,8 +54,11 @@ spec:
             }
         - role: user
           content: |-
-            ### 문서 제목: {title}
-            ### 대상 정의: {definition}
+            -----title-----
+            {title}
+
+            -----definition-----
+            {definition}
       format: json
       output: rubrics
     - name: judge
@@ -124,11 +127,12 @@ spec:
             }
         - role: user
           content: |-
-            ### 문서 제목: {title}
+            -----title-----
+            {title}
 
-            ### 루브릭:
+            -----rubrics-----
             {rubrics}
 
-            ### 문서 본문(Wikitext):
+            -----body-----
             {body}
       format: json
