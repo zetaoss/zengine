@@ -26,7 +26,7 @@
   tag: REL1_43
 - name: OAuth
   repo: https://github.com/wikimedia/mediawiki-extensions-OAuth.git
-  tag: 8e68d2340e464d3b1a6f54107468bef988bd29ad
+  tag: REL1_43
 - name: Score
   repo: https://github.com/wikimedia/mediawiki-extensions-Score.git
   tag: REL1_43
