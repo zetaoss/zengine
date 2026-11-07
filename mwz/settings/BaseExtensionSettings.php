@@ -45,6 +45,17 @@ wfLoadExtension('SimpleMermaid');
 wfLoadExtension('TemplateStyles');
 wfLoadExtension('ZetaExtension');
 
+if (getenv('MW_OAUTH_ENABLED') === '1') {
+    wfLoadExtension('OAuth');
+    $wgOAuth2PrivateKey = getenv('MW_OAUTH2_PRIVATE_KEY') ?: '';
+    $wgOAuth2PublicKey = getenv('MW_OAUTH2_PUBLIC_KEY') ?: '';
+    if ($wgOAuth2PrivateKey === '' || $wgOAuth2PublicKey === '') {
+        throw new RuntimeException('OAuth requires MW_OAUTH2_PRIVATE_KEY and MW_OAUTH2_PUBLIC_KEY');
+    }
+    $wgGroupPermissions['user']['mwoauthproposeconsumer'] = true;
+    $wgGroupPermissions['user']['mwoauthupdateownconsumer'] = true;
+}
+
 $wgVisualEditorUseSingleEditTab            = true;
 $wgDefaultUserOptions['visualeditor-tabs'] = 'prefer-wt';
 $wgHiddenPrefs[]                           = 'visualeditor-tabs';
