@@ -46,8 +46,8 @@ wfLoadExtension('SimpleMermaid');
 wfLoadExtension('TemplateStyles');
 wfLoadExtension('ZetaExtension');
 
-$wgOAuth2PrivateKey = 'file:///run/secrets/mediawiki-oauth/private.pem';
-$wgOAuth2PublicKey = 'file:///run/secrets/mediawiki-oauth/public.pem';
+$wgOAuth2PrivateKey = getenv('MW_OAUTH2_PRIVATE_KEY') ?: '';
+$wgOAuth2PublicKey = getenv('MW_OAUTH2_PUBLIC_KEY') ?: '';
 $wgGroupPermissions['user']['mwoauthproposeconsumer'] = true;
 $wgGroupPermissions['user']['mwoauthupdateownconsumer'] = true;
 
