@@ -24,6 +24,9 @@
 - name: MsUpload
   repo: https://github.com/wikimedia/mediawiki-extensions-MsUpload.git
   tag: REL1_43
+- name: OAuth
+  repo: https://github.com/wikimedia/mediawiki-extensions-OAuth.git
+  tag: REL1_43
 - name: Score
   repo: https://github.com/wikimedia/mediawiki-extensions-Score.git
   tag: REL1_43
