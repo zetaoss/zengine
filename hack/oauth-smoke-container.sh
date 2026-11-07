@@ -2,13 +2,14 @@ set -eu
 cd /var/www/html
 mkdir -p /tmp/mwdb
 php maintenance/install.php --dbtype sqlite --dbpath /tmp/mwdb --server http://127.0.0.1:8080 --scriptpath /w --lang en --pass TemporaryPass123 'Test Wiki' TestAdmin >/tmp/install.log
-mkdir -p /run/secrets/mediawiki-oauth
-openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out /run/secrets/mediawiki-oauth/private.pem 2>/dev/null
-openssl rsa -in /run/secrets/mediawiki-oauth/private.pem -pubout -out /run/secrets/mediawiki-oauth/public.pem 2>/dev/null
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out /tmp/oauth-private.pem 2>/dev/null
+openssl rsa -in /tmp/oauth-private.pem -pubout -out /tmp/oauth-public.pem 2>/dev/null
+export MW_OAUTH2_PRIVATE_KEY="$(cat /tmp/oauth-private.pem)"
+export MW_OAUTH2_PUBLIC_KEY="$(cat /tmp/oauth-public.pem)"
 cat >> LocalSettings.php <<'PHP'
 wfLoadExtension('OAuth');
-$wgOAuth2PrivateKey = 'file:///run/secrets/mediawiki-oauth/private.pem';
-$wgOAuth2PublicKey = 'file:///run/secrets/mediawiki-oauth/public.pem';
+$wgOAuth2PrivateKey = getenv('MW_OAUTH2_PRIVATE_KEY');
+$wgOAuth2PublicKey = getenv('MW_OAUTH2_PUBLIC_KEY');
 $wgGroupPermissions['user']['mwoauthproposeconsumer'] = true;
 $wgGroupPermissions['user']['mwoauthupdateownconsumer'] = true;
 PHP
