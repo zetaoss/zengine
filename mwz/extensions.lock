@@ -26,7 +26,7 @@
   commit: 0bd00a3c4ec29ccf3d72d80ac02cf0ac41694d76
 - name: OAuth
   repo: https://github.com/wikimedia/mediawiki-extensions-OAuth.git
-  tag: 8e68d2340e464d3b1a6f54107468bef988bd29ad
+  tag: REL1_43
   commit: 8e68d2340e464d3b1a6f54107468bef988bd29ad
 - name: Score
   repo: https://github.com/wikimedia/mediawiki-extensions-Score.git
