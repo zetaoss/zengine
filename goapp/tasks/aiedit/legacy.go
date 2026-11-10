@@ -127,6 +127,7 @@ func LegacySpec(r legacyPrompt) (string, error) {
 	}
 
 	var systemParts, userParts []string
+	hasUnconditionalUserMessage := false
 	if r.Messages != nil && strings.TrimSpace(*r.Messages) != "" {
 		var messages []struct {
 			Role    string `json:"role"`
@@ -160,6 +161,9 @@ func LegacySpec(r legacyPrompt) (string, error) {
 				systemParts = append(systemParts, part)
 			} else {
 				userParts = append(userParts, part)
+				if m.If == "" && m.Each == "" && strings.TrimSpace(m.Content) != "" {
+					hasUnconditionalUserMessage = true
+				}
 			}
 		}
 	} else if r.Content != nil {
@@ -197,6 +201,9 @@ func LegacySpec(r legacyPrompt) (string, error) {
 			heading = "{% if " + strings.Join(conds, " or ") + " %}\n# 변수\n\n{% endif %}\n"
 		}
 		userParts = append(userParts, heading+strings.Join(blocks, "\n"))
+	}
+	if !hasUnconditionalUserMessage && (strings.TrimSpace(system) != "" || len(userParts) > 0) {
+		userParts = append(userParts, "# 대상 문서\n<title>\n{{ title }}\n</title>")
 	}
 	var tpl strings.Builder
 	if s := strings.TrimSpace(system); s != "" {

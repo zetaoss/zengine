@@ -136,7 +136,7 @@ func TestLegacySpecContent(t *testing.T) {
 	if want := "# 목표\n'자바' 문서를 고쳐라.\n저장된 본문\n\n{추가 정보}\n{{풀기:사전링크}} {{PAGENAME}} {% x"; r.Messages[0].Content != want {
 		t.Errorf("system:\n%s\nwant\n%s", r.Messages[0].Content, want)
 	}
-	if want := "# 변수\n\n<texts>\n자료\n</texts>"; r.Messages[1].Content != want {
+	if want := "# 변수\n\n<texts>\n자료\n</texts>\n# 대상 문서\n<title>\n자바\n</title>"; r.Messages[1].Content != want {
 		t.Errorf("the user message lists what the instructions do not read:\n%s\nwant\n%s", r.Messages[1].Content, want)
 	}
 }
@@ -222,5 +222,22 @@ func TestLegacySpecIfAndEach(t *testing.T) {
 	}
 	if got := render("yes"); !strings.Contains(got, "자료 1: A") || !strings.Contains(got, "자료 2: B") {
 		t.Errorf("each block must render when hint is present: %q", got)
+	}
+}
+
+func TestLegacySpecContentKeepsUserMessageWhenOptionalInputsAreEmpty(t *testing.T) {
+	content := "'{title}' 문서를 고쳐라.\n{wikitext}"
+	emptyInputs := `[]`
+	spec, err := LegacySpec(legacyPrompt{ID: 12, Title: "최소 요청", RequestType: models.AIEditRequestUpdate, Content: ptr(content), UserInputs: &emptyInputs})
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := models.AIEditPrompt{RequestType: models.AIEditRequestUpdate, Spec: spec}
+	r, err := Render(context.Background(), fakeWiki(t), Request{RequestType: models.AIEditRequestUpdate, Title: "자바", Prompt: &p})
+	if err != nil {
+		t.Fatalf("a converted content-only template keeps a runnable user message:\n%v\n%s", err, spec)
+	}
+	if len(r.Messages) != 2 || r.Messages[1].Role != "user" || !strings.Contains(r.Messages[1].Content, "<title>\n자바\n</title>") {
+		t.Errorf("converted template has a nonempty user message with the target title: %+v", r.Messages)
 	}
 }
