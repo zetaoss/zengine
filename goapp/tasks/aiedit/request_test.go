@@ -202,6 +202,22 @@ func TestLegacySpecTripleBraceWikiParameter(t *testing.T) {
 	}
 }
 
+func TestLegacySpecWikiTemplateKeepsFollowingNewline(t *testing.T) {
+	content := "Literal {{PAGENAME}}\nNext line {title}"
+	spec, err := LegacySpec(legacyPrompt{ID: 13, Title: "줄바꿈", RequestType: models.AIEditRequestUpdate, Content: ptr(content)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := models.AIEditPrompt{RequestType: models.AIEditRequestUpdate, Spec: spec}
+	r, err := Render(context.Background(), fakeWiki(t), Request{RequestType: models.AIEditRequestUpdate, Title: "사과", Prompt: &p})
+	if err != nil {
+		t.Fatalf("%v\n%s", err, spec)
+	}
+	if got, want := r.Messages[0].Content, "Literal {{PAGENAME}}\nNext line 사과"; got != want {
+		t.Errorf("a raw-wrapped wiki template keeps its following newline: %q, want %q", got, want)
+	}
+}
+
 func TestLegacySpecIfAndEach(t *testing.T) {
 	messages := `[{"role":"user","if":"hint","each":"extraTexts","content":"자료 {index}: {extraTexts}"}]`
 	spec, err := LegacySpec(legacyPrompt{ID: 11, Title: "조건 반복", RequestType: models.AIEditRequestCreate, Messages: ptr(messages)})
