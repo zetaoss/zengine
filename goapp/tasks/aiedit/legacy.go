@@ -58,6 +58,8 @@ var legacyRenames = map[string]string{
 var (
 	legacyPlaceholder = regexp.MustCompile(`\{([A-Za-z][A-Za-z0-9_]*)\}`)
 	legacyTripleWiki  = regexp.MustCompile(`\{\{\{[\s\S]*?\}\}\}`)
+	legacyWikiParser  = regexp.MustCompile(`\{\{#[\s\S]*?\}\}`)
+	legacyWikiComment = regexp.MustCompile(`\{#[^}\n]*\}`)
 	wikiBareName      = regexp.MustCompile(`\{\{\s*[A-Za-z][A-Za-z0-9_.]*\s*\}\}`)
 	rawEndNewline     = regexp.MustCompile(`\{% endraw %\}(\r?\n)`)
 	jinjaTagStart     = regexp.MustCompile(`\{%|\{#`)
@@ -105,11 +107,21 @@ func LegacySpec(r legacyPrompt) (string, error) {
 			tripleWiki = append(tripleWiki, m)
 			return marker
 		})
+		var wikiParserFunctions []string
+		s = legacyWikiParser.ReplaceAllStringFunc(s, func(m string) string {
+			marker := fmt.Sprintf("\x00wiki-parser-%d\x00", len(wikiParserFunctions))
+			wikiParserFunctions = append(wikiParserFunctions, m)
+			return marker
+		})
+		var wikiComments []string
+		s = legacyWikiComment.ReplaceAllStringFunc(s, func(m string) string {
+			marker := fmt.Sprintf("\x00wiki-comment-%d\x00", len(wikiComments))
+			wikiComments = append(wikiComments, m)
+			return marker
+		})
 		s = legacyHeading.ReplaceAllStringFunc(s, func(m string) string { return "-----" + legacyName(m[5:]) })
 		s = jinjaTagStart.ReplaceAllStringFunc(s, func(m string) string { return "{% raw %}" + m + "{% endraw %}" })
 		s = wikiBareName.ReplaceAllStringFunc(s, func(m string) string { return "{% raw %}" + m + "{% endraw %}" })
-		// trim_blocks consumes a newline right after endraw; leave an extra one so the source newline survives.
-		s = rawEndNewline.ReplaceAllString(s, "{% endraw %}\n$1")
 		s = legacyPlaceholder.ReplaceAllStringFunc(s, func(m string) string {
 			name := legacyName(m[1 : len(m)-1])
 			switch {
@@ -126,6 +138,14 @@ func LegacySpec(r legacyPrompt) (string, error) {
 		for i, original := range tripleWiki {
 			s = strings.ReplaceAll(s, fmt.Sprintf("\x00wiki-param-%d\x00", i), original)
 		}
+		for i, original := range wikiParserFunctions {
+			s = strings.ReplaceAll(s, fmt.Sprintf("\x00wiki-parser-%d\x00", i), original)
+		}
+		for i, original := range wikiComments {
+			s = strings.ReplaceAll(s, fmt.Sprintf("\x00wiki-comment-%d\x00", i), "{% raw %}"+original+"{% endraw %}")
+		}
+		// trim_blocks consumes a newline right after endraw; leave an extra one so the source newline survives.
+		s = rawEndNewline.ReplaceAllString(s, "{% endraw %}\n$1")
 		return s
 	}
 

@@ -123,17 +123,23 @@ func TestRenderTemplate(t *testing.T) {
 func ptr(s string) *string { return &s }
 
 func TestLegacySpecContent(t *testing.T) {
-	content := "# 목표\n'{title}' 문서를 고쳐라.\n{wikitext}\n\n{추가 정보}\n{{풀기:사전링크}} {{PAGENAME}} {% x"
+	content := "# 목표\n'{title}' 문서를 고쳐라.\n{wikitext}\n\n{추가 정보}\n{{풀기:사전링크}} {{PAGENAME}} {{#if:x}} {% x\n{# 추가 정보:code}"
 	spec, err := LegacySpec(legacyPrompt{ID: 2, Title: "개선", RequestType: models.AIEditRequestUpdate, Content: ptr(content)})
 	if err != nil {
 		t.Fatal(err)
+	}
+	if !strings.Contains(spec, "{% raw %}{# 추가 정보:code}{% endraw %}") {
+		t.Errorf("wiki comment-like markup should be protected as a whole raw block:\n%s", spec)
+	}
+	if !strings.Contains(spec, "{{#if:x}}") {
+		t.Errorf("a wiki parser function should stay unmodified:\n%s", spec)
 	}
 	p := models.AIEditPrompt{ID: 2, RequestType: models.AIEditRequestUpdate, Spec: spec}
 	r, err := Render(context.Background(), fakeWiki(t), Request{RequestType: models.AIEditRequestUpdate, Title: "자바", Prompt: &p, UserInputs: map[string]any{"texts": []any{"자료"}}})
 	if err != nil {
 		t.Fatalf("%v\n%s", err, spec)
 	}
-	if want := "# 목표\n'자바' 문서를 고쳐라.\n저장된 본문\n\n{추가 정보}\n{{풀기:사전링크}} {{PAGENAME}} {% x"; r.Messages[0].Content != want {
+	if want := "# 목표\n'자바' 문서를 고쳐라.\n저장된 본문\n\n{추가 정보}\n{{풀기:사전링크}} {{PAGENAME}} {{#if:x}} {% x\n{# 추가 정보:code}"; r.Messages[0].Content != want {
 		t.Errorf("system:\n%s\nwant\n%s", r.Messages[0].Content, want)
 	}
 	if want := "# 변수\n\n<texts>\n자료\n</texts>\n# 대상 문서\n<title>\n자바\n</title>"; r.Messages[1].Content != want {

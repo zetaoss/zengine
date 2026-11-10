@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/zetaoss/zengine/goapp/models"
 	"github.com/zetaoss/zengine/goapp/prompts"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
 )
@@ -103,5 +104,21 @@ func TestCheckErrors(t *testing.T) {
 		if got := check(t, map[string]any{"request_type": "update", "spec": spec}); got.OK || got.Error == "" {
 			t.Errorf("%s: expected an error, got %+v", name, got)
 		}
+	}
+}
+
+func TestPromptViewFormatsQuotedTemplateAsBlock(t *testing.T) {
+	quoted := `name: 고치기
+template_format: jinja2
+template: "<message role=\"system\">\n규칙 {{풀기:사전링크}}\n</message>\n<message role=\"user\">\n{{ title }}\n</message>"
+input_variables:
+  - name: title
+`
+	view := newPromptView(models.AIEditPrompt{RequestType: "update", Spec: quoted})
+	if !strings.Contains(view.Spec, "template: |-\n") {
+		t.Fatalf("template should be displayed as a YAML block scalar:\n%s", view.Spec)
+	}
+	if strings.Contains(view.Spec, `\n`) || !strings.Contains(view.Spec, "<message role=\"system\">\n  규칙") {
+		t.Errorf("template contents should be preserved as normal lines: %q", view.Spec)
 	}
 }
