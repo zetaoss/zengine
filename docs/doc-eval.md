@@ -30,7 +30,7 @@ Two chains ([chain.md](chain.md)) run in `goapp/services/doceval`. `doc-define` 
 ## Model and reuse
 
 - Each chain has its model, picked in the chains tab ([chain.md](chain.md#screen-and-api)); the definition and evaluation tabs show it. bob does not fall back, so a quota-exhausted run fails and the next run retries.
-- Each chain's `metadata.version` is stored as `chain_version`; a stored result is current when its major version matches ([chain.md](chain.md#version)). Rubrics are reused for the same title, definition and major. A minor bump keeps definitions, evaluations and rubrics; a major bump makes every article a candidate again.
+- Each chain's `version` is stored as `chain_version`; a stored result is current when its major version matches ([chain.md](chain.md#version)). Rubrics are reused for the same title, definition and major. A minor bump keeps definitions, evaluations and rubrics; a major bump makes every article a candidate again.
 - Redirect pages are skipped.
 
 ## Storage and API

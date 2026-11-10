@@ -1,86 +1,41 @@
 package aiprompts
 
 import (
-	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/zetaoss/zengine/goapp/app"
 	"github.com/zetaoss/zengine/goapp/app/config"
 	"github.com/zetaoss/zengine/goapp/models"
 	"github.com/zetaoss/zengine/goapp/prompts"
+	"github.com/zetaoss/zengine/goapp/prompts/jinja"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
 	"github.com/zetaoss/zengine/goapp/tasks/aiedit"
+	"gopkg.in/yaml.v3"
 	"gorm.io/gorm"
 )
 
-// promptView is a template with the run form and messages it runs with (aiedit.TemplateUserInputs, Messages),
-// and the two as the YAML its editor shows (spec, user_inputs_yaml, messages_yaml).
+// promptView is a template with the run form it runs with (the user inputs of its chain it picks), or the error
+// that stops it from running.
 type promptView struct {
 	models.AIEditPrompt
-	UserInputs     []prompts.Input   `json:"user_inputs"`
-	Messages       []prompts.Message `json:"messages"`
-	UserInputsYAML string            `json:"user_inputs_yaml"`
-	MessagesYAML   string            `json:"messages_yaml"`
-	Spec           string            `json:"spec"`
+	UserInputs []prompts.Input `json:"user_inputs"`
+	Error      string          `json:"error,omitempty"`
 }
 
 func newPromptView(p models.AIEditPrompt) promptView {
-	t := prompts.Template{UserInputs: aiedit.TemplateUserInputs(p), Messages: aiedit.TemplateMessages(p)}
-	return promptView{
-		AIEditPrompt:   p,
-		UserInputs:     t.UserInputs,
-		Messages:       t.Messages,
-		UserInputsYAML: t.UserInputsYAML(),
-		MessagesYAML:   t.MessagesYAML(),
-		Spec:           t.YAML(),
+	v := promptView{AIEditPrompt: p, UserInputs: []prompts.Input{}}
+	if chain, err := aiedit.TemplateChain(p); err != nil {
+		v.Error = err.Error()
+	} else {
+		v.UserInputs = chain.UserInputs
 	}
-}
-
-// validateEditorRoles keeps newly saved editor blocks in system-then-user order.
-func validateEditorRoles(messages []prompts.Message) error {
-	if len(messages) == 0 || messages[0].Role != "system" {
-		return errors.New("첫 번째 블록은 system이어야 합니다")
-	}
-	if messages[0].If != "" || messages[0].Each != "" {
-		return errors.New("system 블록에는 조건이나 반복을 설정할 수 없습니다")
-	}
-	for _, m := range messages[1:] {
-		if m.Role != "user" {
-			return errors.New("두 번째 블록부터는 user여야 합니다")
-		}
-	}
-	return nil
-}
-
-// editorMessages derives user messages from the chain inputs and the template's run form.
-func editorMessages(requestType string, inputs []prompts.Input, system string) []prompts.Message {
-	messages := []prompts.Message{{Role: "system", Content: system}, {Role: "user", Content: "-----title-----\n{title}"}}
-	if requestType == models.AIEditRequestUpdate {
-		messages = append(messages, prompts.Message{Role: "user", Content: "-----body-----\n{body}"})
-	}
-	for _, in := range inputs {
-		if in.Name == "useBacklinks" {
-			messages = append(messages, prompts.Message{Role: "user", If: "backlinks", Content: "-----backlinks-----\n{backlinks}"})
-			continue
-		}
-		heading := in.Name
-
-		m := prompts.Message{Role: "user"}
-		if in.Type == prompts.TypeTextList {
-			m.Each = in.Name
-			heading += " {index}"
-		} else {
-			m.If = in.Name
-		}
-		m.Content = "-----" + heading + "-----\n{" + in.Name + "}"
-		messages = append(messages, m)
-	}
-	return messages
+	return v
 }
 
 func Index(c *serverctx.Context) {
@@ -136,47 +91,34 @@ func Exists(c *serverctx.Context) {
 	c.JSON(app.H{"exists": count > 0})
 }
 
+// readSpec reads a template's spec for its request type: a prompts.PromptTemplate with a name that runs on the
+// chain (prompts.Chain.WithTemplate).
+func readSpec(requestType, spec string) (prompts.PromptTemplate, prompts.Chain, error) {
+	t, err := prompts.ParsePromptTemplate(spec)
+	if err != nil {
+		return t, prompts.Chain{}, err
+	}
+	t.Name = strings.TrimSpace(t.Name)
+	if t.Name == "" {
+		return t, prompts.Chain{}, errors.New("name은 필수입니다")
+	}
+	chain, err := aiedit.ChainOf(requestType).WithTemplate(t)
+	return t, chain, err
+}
+
+// Store creates a template, or updates the caller's own, from {"id", "request_type", "spec", "model", "bump"}. The
+// spec's name and description are kept as columns too; model, outside the spec, is the model the template runs on
+// ("" for its chain's). A change to its template or input_variables bumps the version: the minor, or with bump
+// "major" the major; a change of model does not.
 func Store(c *serverctx.Context) {
 	var body struct {
-		ID           int    `json:"id"`
-		Title        string `json:"title"`
-		Description  string `json:"description"`
-		RequestType  string `json:"request_type"`
-		Content      string `json:"content"`
-		AutoMessages bool   `json:"auto_messages"`
-		SystemPrompt string `json:"system_prompt"`
-		// Model is left as it is when omitted; "" runs the template on its chain's model.
-		Model *string `json:"model"`
-		// Messages, when given, are the template's own messages in place of the chain step's; they are checked
-		// against the chain (prompts.Chain.ValidateMessages) and content becomes their text.
-		Messages *[]prompts.Message `json:"messages"`
-		// UserInputs, when given, are the template's own run form (aiedit.TemplateUserInputs).
-		UserInputs *[]prompts.Input `json:"user_inputs"`
-		// UserInputsYAML and MessagesYAML, when given, are the run form and messages as separate YAML lists without root keys.
-		UserInputsYAML *string `json:"user_inputs_yaml"`
-		MessagesYAML   *string `json:"messages_yaml"`
-		// Spec, when given, is the run form and messages as YAML (prompts.Template), in place of both.
-		Spec *string `json:"spec"`
-		// Bump is how an edit that changes the messages moves the version: "minor" (the default) or "major".
-		Bump string `json:"bump"`
+		ID          int    `json:"id"`
+		RequestType string `json:"request_type"`
+		Spec        string `json:"spec"`
+		Model       string `json:"model"`
+		Bump        string `json:"bump"`
 	}
 	if !c.Decode(&body) {
-		return
-	}
-	if body.Model != nil {
-		m := strings.TrimSpace(*body.Model)
-		if m != "" {
-			var err error
-			if m, err = config.ValidateModel(m); err != nil {
-				c.JSONError(http.StatusUnprocessableEntity, err.Error())
-				return
-			}
-		}
-		body.Model = &m
-	}
-	body.Title = strings.TrimSpace(body.Title)
-	if body.Title == "" {
-		c.JSONError(http.StatusUnprocessableEntity, "제목은 필수입니다.")
 		return
 	}
 	requestType, ok := models.NormalizeAIEditRequestType(body.RequestType)
@@ -184,110 +126,36 @@ func Store(c *serverctx.Context) {
 		c.JSONError(http.StatusUnprocessableEntity, "유효하지 않은 요청 유형입니다.")
 		return
 	}
-	body.RequestType = requestType
-	if body.UserInputsYAML != nil || body.MessagesYAML != nil {
-		if body.UserInputsYAML != nil {
-			u, err := prompts.ParseUserInputsYAML(*body.UserInputsYAML)
-			if err != nil {
-				c.JSONError(http.StatusUnprocessableEntity, err.Error())
-				return
-			}
-			body.UserInputs = &u
-		}
-		if body.MessagesYAML != nil {
-			m, err := prompts.ParseMessagesYAML(*body.MessagesYAML)
-			if err != nil {
-				c.JSONError(http.StatusUnprocessableEntity, err.Error())
-				return
-			}
-			body.Messages = &m
-		}
-	} else if body.Spec != nil {
-		t, err := prompts.ParseTemplate(*body.Spec)
-		if err != nil {
-			c.JSONError(http.StatusUnprocessableEntity, err.Error())
-			return
-		}
-		body.UserInputs, body.Messages = &t.UserInputs, &t.Messages
+	spec, _, err := readSpec(requestType, body.Spec)
+	if err != nil {
+		c.JSONError(http.StatusUnprocessableEntity, err.Error())
+		return
 	}
-	if body.UserInputs != nil {
-		picked, err := aiedit.PickUserInputs(requestType, *body.UserInputs)
-		if err != nil {
-			c.JSONError(http.StatusUnprocessableEntity, err.Error())
-			return
-		}
-		body.UserInputs = &picked
-	}
-	if body.AutoMessages {
-		if body.UserInputs == nil {
-			c.JSONError(http.StatusUnprocessableEntity, "사용자 입력 스펙이 필요합니다.")
-			return
-		}
-		messages := editorMessages(requestType, *body.UserInputs, body.SystemPrompt)
-		body.Messages = &messages
-	}
-	var messagesJSON, userInputsJSON string
-	if body.Messages != nil || body.UserInputs != nil {
-		draft := models.AIEditPrompt{RequestType: requestType, Content: body.Content}
-		if body.ID > 0 {
-			_ = c.DB.Where("id = ?", body.ID).Take(&draft).Error
-			draft.RequestType = requestType
-		}
-		if body.UserInputs != nil {
-			b, _ := json.Marshal(aiedit.UserInputNames(*body.UserInputs))
-			userInputsJSON = string(b)
-			draft.UserInputs = userInputsJSON
-		}
-		if body.Messages != nil {
-			b, _ := json.Marshal(*body.Messages)
-			messagesJSON = string(b)
-			draft.Messages = messagesJSON
-			body.Content = aiedit.MessagesText(*body.Messages)
-		}
-		// Messages given are checked as they are: the fallback of a template without messages (its content) must
-		// not stand in for an empty list that would be saved.
-		messages := aiedit.TemplateMessages(draft)
-		if body.Messages != nil {
-			messages = *body.Messages
-		}
-		chain, err := aiedit.ChainOf(requestType).WithUserInputs(aiedit.TemplateUserInputs(draft))
-		// The editor's system-then-user order holds for the messages it builds; messages given as they are (a
-		// skin's clone of a template saved before that order) run as they did.
-		if err == nil && body.AutoMessages {
-			err = validateEditorRoles(messages)
-		}
-		if err == nil {
-			err = chain.ValidateMessages(messages)
-		}
-		if err != nil {
+	model := strings.TrimSpace(body.Model)
+	if model != "" {
+		if model, err = config.ValidateModel(model); err != nil {
 			c.JSONError(http.StatusUnprocessableEntity, err.Error())
 			return
 		}
 	}
 
 	user, _ := c.User()
-
 	now := time.Now().Format("2006-01-02 15:04:05")
 	row := models.AIEditPrompt{
 		ID:          body.ID,
-		Title:       body.Title,
-		Description: strings.TrimSpace(body.Description),
-		RequestType: body.RequestType,
-		Content:     body.Content,
+		Title:       spec.Name,
+		Description: strings.TrimSpace(spec.Description),
+		RequestType: requestType,
+		Spec:        body.Spec,
+		Model:       model,
 		UpdatedAt:   now,
 	}
-	columns := []string{"title", "description", "request_type", "content", "version", "updated_at"}
-	if body.Messages != nil {
-		row.Messages = messagesJSON
-		columns = append(columns, "messages")
-	}
-	if body.UserInputs != nil {
-		row.UserInputs = userInputsJSON
-		columns = append(columns, "user_inputs")
-	}
-	if body.Model != nil {
-		row.Model = *body.Model
-		columns = append(columns, "model")
+
+	var count int64
+	c.DB.Model(&models.AIEditPrompt{}).Where("title = ? AND id != ?", row.Title, row.ID).Count(&count)
+	if count > 0 {
+		c.JSONError(http.StatusConflict, "이미 사용 중인 이름입니다.")
+		return
 	}
 
 	if row.ID > 0 {
@@ -301,43 +169,21 @@ func Store(c *serverctx.Context) {
 			return
 		}
 		row.Version = existing.Version
-		changed := row.Content != existing.Content
-		if body.Messages != nil {
-			before, _ := json.Marshal(aiedit.TemplateMessages(existing))
-			changed = messagesJSON != string(before)
-		}
-		if body.UserInputs != nil {
-			before, _ := json.Marshal(aiedit.UserInputNames(aiedit.TemplateUserInputs(existing)))
-			changed = changed || userInputsJSON != string(before)
-		}
-		if changed {
+		before, err := aiedit.TemplatePrompt(existing)
+		if err != nil || before.Template != spec.Template || !slices.Equal(before.InputVariables, spec.InputVariables) || existing.RequestType != requestType {
 			row.Version = prompts.NextVersion(existing.Version, body.Bump == "major")
 		}
-
-		var count int64
-		c.DB.Model(&models.AIEditPrompt{}).Where("title = ? AND id != ?", row.Title, row.ID).Count(&count)
-		if count > 0 {
-			c.JSONError(http.StatusConflict, "이미 사용 중인 제목입니다.")
-			return
-		}
-
+		columns := []string{"title", "description", "request_type", "spec", "model", "version", "updated_at"}
 		if err := c.DB.Model(&models.AIEditPrompt{}).Where("id = ?", row.ID).Select(columns).Updates(&row).Error; err != nil {
 			c.InternalError()
 			return
 		}
+		row.UserID, row.UserName, row.CreatedAt, row.UseCount, row.UsedAt = existing.UserID, existing.UserName, existing.CreatedAt, existing.UseCount, existing.UsedAt
 	} else {
 		row.UserID = user.ID
 		row.UserName = user.Name
 		row.CreatedAt = now
 		row.Version = "v1.0"
-
-		var count int64
-		c.DB.Model(&models.AIEditPrompt{}).Where("title = ?", row.Title).Count(&count)
-		if count > 0 {
-			c.JSONError(http.StatusConflict, "이미 사용 중인 제목입니다.")
-			return
-		}
-
 		if err := c.DB.Create(&row).Error; err != nil {
 			c.InternalError()
 			return
@@ -346,25 +192,23 @@ func Store(c *serverctx.Context) {
 	c.JSON(newPromptView(row))
 }
 
-// Check reads {"request_type", "user_inputs_yaml", "messages_yaml"} or {"request_type", "spec"} as Store would
-// and returns the run form and messages it holds, or the error that would stop it from saving, without storing anything.
+// span is template syntax in the spec's YAML, for the editor to mark: a line from 1 and a column range from 1, in
+// characters.
+type span struct {
+	Line  int            `json:"line"`
+	Start int            `json:"start"`
+	End   int            `json:"end"`
+	Kind  jinja.SpanKind `json:"kind"`
+}
+
+// Check reads {"request_type", "spec", "preview_values"} as Store would and returns the template's run form, the
+// template syntax it reads (spans), and its messages rendered with preview_values (the run form's values, and
+// title and body; a value left out takes a sample), or the error that would stop it from saving. It stores nothing.
 func Check(c *serverctx.Context) {
 	var body struct {
-		RequestType      string             `json:"request_type"`
-		UserInputsYAML   *string            `json:"user_inputs_yaml"`
-		MessagesYAML     *string            `json:"messages_yaml"`
-		UserInputs       *[]prompts.Input   `json:"user_inputs"`
-		Messages         *[]prompts.Message `json:"messages"`
-		Spec             string             `json:"spec"`
-		PreviewValues    map[string]any     `json:"preview_values"`
-		PreviewTitle     *string            `json:"preview_title"`
-		PreviewBody      *string            `json:"preview_body"`
-		PreviewBacklinks *[]string          `json:"preview_backlinks"`
-		AutoMessages     bool               `json:"auto_messages"`
-		SystemPrompt     string             `json:"system_prompt"`
-		// Stored, with messages, previews them as a template runs them (aiedit.TemplateMessages): they are rendered
-		// as they are, not checked as an editor's would be (system first, every variable declared).
-		Stored bool `json:"stored"`
+		RequestType   string         `json:"request_type"`
+		Spec          string         `json:"spec"`
+		PreviewValues map[string]any `json:"preview_values"`
 	}
 	if !c.Decode(&body) {
 		return
@@ -374,92 +218,77 @@ func Check(c *serverctx.Context) {
 		c.JSONError(http.StatusUnprocessableEntity, "유효하지 않은 요청 유형입니다.")
 		return
 	}
-
-	var userInputs []prompts.Input
-	var messages []prompts.Message
-	var err error
-
-	if body.UserInputs != nil {
-		userInputs = *body.UserInputs
-	} else if body.UserInputsYAML != nil {
-		userInputs, err = prompts.ParseUserInputsYAML(*body.UserInputsYAML)
-	}
-
-	if err == nil {
-		if body.Messages != nil {
-			messages = *body.Messages
-		} else if body.MessagesYAML != nil {
-			messages, err = prompts.ParseMessagesYAML(*body.MessagesYAML)
-		} else if body.UserInputs == nil && body.UserInputsYAML == nil {
-			var t prompts.Template
-			t, err = prompts.ParseTemplate(body.Spec)
-			userInputs = t.UserInputs
-			messages = t.Messages
-		}
-	}
-
-	if err == nil {
-		userInputs, err = aiedit.PickUserInputs(requestType, userInputs)
-	}
-	if err == nil && body.AutoMessages {
-		messages = editorMessages(requestType, userInputs, body.SystemPrompt)
-	}
-	var chain prompts.Chain
-	if err == nil && !body.Stored {
-		err = validateEditorRoles(messages)
-	}
-	if err == nil {
-		if chain, err = aiedit.ChainOf(requestType).WithUserInputs(userInputs); err == nil && !body.Stored {
-			err = chain.ValidateMessages(messages)
-		}
-	}
+	spec, chain, err := readSpec(requestType, body.Spec)
 	if err != nil {
 		c.JSON(app.H{"ok": false, "error": err.Error()})
 		return
 	}
-	response := app.H{"ok": true, "user_inputs": userInputs, "messages": messages}
-	if body.PreviewValues != nil {
-		values := make(map[string]any)
-		for _, in := range userInputs {
-			if value, ok := body.PreviewValues[in.Name]; ok {
-				values[in.Name] = value
-			}
-		}
-		vars, previewErr := chain.UserVars(values)
-		if previewErr == nil {
-			vars["title"] = "Hello World"
-			vars["body"] = "문서 시작했다\n문서 끝났다"
-			if body.PreviewTitle != nil {
-				vars["title"] = *body.PreviewTitle
-			}
-			if body.PreviewBody != nil {
-				vars["body"] = *body.PreviewBody
-			}
-			backlinks := []string{"C language", "Programming language"}
-			if body.PreviewBacklinks != nil {
-				backlinks = nil
-				for _, title := range *body.PreviewBacklinks {
-					if title = strings.TrimSpace(title); title != "" {
-						backlinks = append(backlinks, title)
-					}
-					if len(backlinks) == 10 {
-						break
-					}
-				}
-			}
-			vars, previewErr = chain.RunFunctions(c.R.Context(), vars, map[string]prompts.Func{
-				"wiki/backlinkTitles": func(_ context.Context, _ prompts.Vars) (any, error) {
-					return backlinks, nil
-				},
-			})
-		}
-		if previewErr != nil {
-			response["preview_error"] = previewErr.Error()
-		} else {
-			response["rendered_messages"] = prompts.MergeUserMessages((prompts.Prompt{Messages: messages}).Render(chain.Fill(vars)))
+	response := app.H{"ok": true, "user_inputs": chain.UserInputs, "spans": templateSpans(body.Spec, spec, chain)}
+	values := map[string]any{}
+	for _, in := range chain.UserInputs {
+		if v, ok := body.PreviewValues[in.Name]; ok {
+			values[in.Name] = v
 		}
 	}
+	vars, err := chain.UserVars(values)
+	if err != nil {
+		response["preview_error"] = err.Error()
+		c.JSON(response)
+		return
+	}
+	samples := map[string]string{"title": "Hello World", "body": "문서 시작했다\n문서 끝났다"}
+	for _, in := range chain.Inputs {
+		vars[in.Name] = samples[in.Name]
+		if v, ok := body.PreviewValues[in.Name].(string); ok {
+			vars[in.Name] = v
+		}
+	}
+	response["rendered_messages"] = chain.PromptStep().Render(vars)
 	c.JSON(response)
+}
+
+// templateSpans places the template syntax of the spec's template on the lines of its YAML: the template is a
+// block whose lines follow its key, each indented alike.
+func templateSpans(text string, spec prompts.PromptTemplate, chain prompts.Chain) []span {
+	ct, err := prompts.ParseChat(spec.Template, chain.PromptStep().Inputs)
+	if err != nil {
+		return nil
+	}
+	var root yaml.Node
+	if yaml.Unmarshal([]byte(text), &root) != nil || len(root.Content) == 0 {
+		return nil
+	}
+	m := root.Content[0]
+	var node *yaml.Node
+	for i := 0; i+1 < len(m.Content); i += 2 {
+		if m.Content[i].Value == "template" {
+			node = m.Content[i+1]
+		}
+	}
+	if node == nil || (node.Style != yaml.LiteralStyle && node.Style != yaml.FoldedStyle) {
+		return nil
+	}
+	lines := strings.Split(text, "\n")
+	first := node.Line
+	for first < len(lines) && strings.TrimSpace(lines[first]) == "" {
+		first++
+	}
+	if first >= len(lines) {
+		return nil
+	}
+	indent := len(lines[first]) - len(strings.TrimLeft(lines[first], " "))
+	tpl := spec.Template
+	var out []span
+	for _, s := range ct.Spans() {
+		line := strings.Count(tpl[:s.Start], "\n")
+		lineStart := strings.LastIndex(tpl[:s.Start], "\n") + 1
+		if strings.Contains(tpl[s.Start:s.End], "\n") {
+			continue
+		}
+		start := utf8.RuneCountInString(tpl[lineStart:s.Start]) + indent + 1
+		out = append(out, span{Line: node.Line + 1 + line, Start: start, End: start + utf8.RuneCountInString(tpl[s.Start:s.End]), Kind: s.Kind})
+	}
+	return out
 }
 
 func Destroy(c *serverctx.Context) {

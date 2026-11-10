@@ -2,7 +2,6 @@ package prompts
 
 import (
 	"bytes"
-	"context"
 	"embed"
 	"encoding/json"
 	"fmt"
@@ -11,125 +10,105 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/zetaoss/zengine/goapp/prompts/jinja"
 	"gopkg.in/yaml.v3"
 )
 
-// Chain is a pipeline of steps, following LangChain. Each step's output is saved under its Output name and
-// can be an input of later steps. Built-in chains are YAML files in chains/, embedded and loaded at start, and
-// listed read-only in the AI tool's chains tab (the aiedit prompts are stored in the database and editable).
-// Metadata describes the chain; Spec is what decides its results.
-type Chain struct {
-	Name     string   `json:"name" yaml:"name"`
-	Metadata Metadata `json:"metadata" yaml:"metadata"`
-	Spec     Spec     `json:"spec" yaml:"spec"`
-}
-
-// Metadata.Version is v<major>.<minor>, recorded with each call and result of the chain. A stored result of the
-// same major is current (SameMajor): a minor bump keeps earlier results, a major bump makes them all stale.
-type Metadata struct {
-	Version     string `json:"version" yaml:"version"`
-	Description string `json:"description" yaml:"description"`
-}
-
-// Spec.UserInputs are what the requester of a run gives (the run form); they reach the messages as they are.
-// Spec.Inputs are what the task running the chain fills (a page's title, its wikitext). Together they are the
-// chain's variables.
-type Spec struct {
-	UserInputs []Input `json:"userInputs,omitempty" yaml:"userInputs,omitempty"`
-	Inputs     []Input `json:"inputs" yaml:"inputs"`
-	Steps      []Step  `json:"steps" yaml:"steps"`
-}
-
-// Input is a variable of a chain. A user input shows in the run form under its name (useBacklinks as "Use
-// backlinks"), with Placeholder in its empty field. An input with From is derived from that variable before a step
-// renders (Fill), cut to MaxChars characters when set: the task fills the source, the messages read the cut.
+// Chain is a pipeline of steps, following LangChain. Each step is a Semantic Kernel style prompt (a jinja2
+// template of messages); a step's output is saved under its output variable's name and can be read by later
+// steps. Built-in chains are YAML files in chains/, embedded and loaded at start, and listed read-only in the AI
+// tool's chains tab (the AI edit prompt templates are stored in the database and editable).
 //
-// A user input may also be Required (a run without it, or with it blank, is refused; not for a bool), have a
-// Default (its value when the run form leaves it out: a string, or true or false for a bool; not for a textList),
-// and, as a choice, list its Options (the run form shows them to pick one; the default, if any, is one of them),
-// like a GitHub Actions workflow_dispatch input.
-type Input struct {
-	Name        string    `json:"name" yaml:"name"`
-	Placeholder string    `json:"placeholder,omitempty" yaml:"placeholder,omitempty"`
-	Type        InputType `json:"type,omitempty" yaml:"type,omitempty"`
-	Required    bool      `json:"required,omitempty" yaml:"required,omitempty"`
-	Default     any       `json:"default,omitempty" yaml:"default,omitempty"`
-	Options     []string  `json:"options,omitempty" yaml:"options,omitempty"`
-	From        string    `json:"from,omitempty" yaml:"from,omitempty"`
-	MaxChars    int       `json:"maxChars,omitempty" yaml:"maxChars,omitempty"`
+// Version is v<major>.<minor>, recorded with each call and result of the chain. A stored result of the same
+// major is current (SameMajor): a minor bump keeps earlier results, a major bump makes them all stale. UserInputs
+// are what the requester of a run gives (the run form); Inputs are what the task running the chain fills (a
+// page's title, its wikitext). Together they are the chain's variables.
+type Chain struct {
+	Name        string  `json:"name" yaml:"name"`
+	Description string  `json:"description" yaml:"description"`
+	Version     string  `json:"version" yaml:"version"`
+	UserInputs  []Input `json:"user_inputs,omitempty" yaml:"user_inputs,omitempty"`
+	Inputs      []Input `json:"inputs" yaml:"inputs"`
+	Steps       []Step  `json:"steps" yaml:"steps"`
 }
 
-// validateUser checks a user input's name, type and attributes (Required, Default, Options).
-func (in Input) validateUser() error {
-	if !nameRe.MatchString(in.Name) || in.Name == "index" {
-		return fmt.Errorf("invalid user input name %q", in.Name)
-	}
-	t := in.Type.orString()
-	if !in.Type.valid() {
-		return fmt.Errorf("user input %s: unknown type %q", in.Name, in.Type)
-	}
-	if in.From != "" || in.MaxChars != 0 {
-		return fmt.Errorf("user input %s: from and maxChars are for task inputs", in.Name)
-	}
-	if in.Required && t == TypeBool {
-		return fmt.Errorf("user input %s: a bool cannot be required", in.Name)
-	}
-	if (t == TypeChoice) != (in.Options != nil) {
-		return fmt.Errorf("user input %s: options are for a choice, and a choice needs them", in.Name)
-	}
-	if t == TypeChoice {
-		if len(in.Options) < 2 {
-			return fmt.Errorf("user input %s: a choice needs two or more options", in.Name)
+// Input is a variable of a chain. Its value has the shape of JSONSchema, a closed subset of JSON Schema: a string
+// (the default), a string from Enum (a choice), a boolean, or an array of strings. UI tells the run form how to
+// show it, with the names of A2UI's TextField: Variant shortText (one line, the default) or longText (several
+// lines), and Placeholder in an empty field. A user input may be IsRequired (a run without it, or with it blank,
+// is refused; not for a boolean) and have a Default (its value when the run form leaves it out; not for an array).
+// A task input is a string, written as its name alone or with a description.
+type Input struct {
+	Name        string      `json:"name" yaml:"name"`
+	Description string      `json:"description,omitempty" yaml:"description,omitempty"`
+	JSONSchema  *JSONSchema `json:"json_schema,omitempty" yaml:"json_schema,omitempty"`
+	UI          *UI         `json:"ui,omitempty" yaml:"ui,omitempty"`
+	IsRequired  bool        `json:"is_required,omitempty" yaml:"is_required,omitempty"`
+	Default     any         `json:"default,omitempty" yaml:"default,omitempty"`
+}
+
+// JSONSchema is the subset of JSON Schema an input's value may take (see Input).
+type JSONSchema struct {
+	Type  string      `json:"type" yaml:"type"`
+	Items *JSONSchema `json:"items,omitempty" yaml:"items,omitempty"`
+	Enum  []string    `json:"enum,omitempty" yaml:"enum,omitempty"`
+}
+
+// UI is how the run form shows an input (see Input).
+type UI struct {
+	Variant     string `json:"variant,omitempty" yaml:"variant,omitempty"`
+	Placeholder string `json:"placeholder,omitempty" yaml:"placeholder,omitempty"`
+}
+
+// InputType is what an input is, read from its JSONSchema and UI: the field the run form shows and the Go type
+// of its value (string, bool or []string).
+type InputType string
+
+const (
+	TypeString   InputType = "string"
+	TypeText     InputType = "text"
+	TypeTextList InputType = "textList"
+	TypeBool     InputType = "bool"
+	TypeChoice   InputType = "choice"
+)
+
+const (
+	variantShort = "shortText"
+	variantLong  = "longText"
+)
+
+// Type is the input's InputType.
+func (in Input) Type() InputType {
+	s := in.JSONSchema
+	switch {
+	case s == nil || s.Type == "string" && s.Enum == nil:
+		if in.UI != nil && in.UI.Variant == variantLong {
+			return TypeText
 		}
-		seen := map[string]bool{}
-		for _, o := range in.Options {
-			if strings.TrimSpace(o) == "" || seen[o] {
-				return fmt.Errorf("user input %s: options must be distinct and not blank", in.Name)
-			}
-			seen[o] = true
-		}
+		return TypeString
+	case s.Type == "string":
+		return TypeChoice
+	case s.Type == "boolean":
+		return TypeBool
 	}
-	if in.Default == nil {
+	return TypeTextList
+}
+
+// Options are a choice's values.
+func (in Input) Options() []string {
+	if in.JSONSchema == nil {
 		return nil
 	}
-	switch d := in.Default.(type) {
-	case bool:
-		if t == TypeBool {
-			return nil
-		}
-	case string:
-		if t == TypeString || t == TypeText || (t == TypeChoice && slices.Contains(in.Options, d)) {
-			return nil
-		}
-	}
-	return fmt.Errorf("user input %s: default %v does not fit a %s", in.Name, in.Default, t)
+	return in.JSONSchema.Enum
 }
 
-// Fill returns vars with every declared variable that has no value set empty (an empty string or list, false),
-// so its placeholders render as nothing, and each derived input set from its source (From), cut to MaxChars
-// characters. A {name} that is not a declared variable stays as written.
-func (c Chain) Fill(vars Vars) Vars {
-	out := Vars{}
-	for k, v := range vars {
-		out[k] = v
-	}
-	for _, in := range slices.Concat(c.Spec.UserInputs, c.Spec.Inputs) {
-		if _, ok := out[in.Name]; ok || in.From != "" {
-			continue
-		}
-		out[in.Name] = empty(in.Type)
-	}
-	for _, in := range c.Spec.Inputs {
-		if in.From == "" {
-			continue
-		}
-		s := text(vars[in.From])
-		if r := []rune(s); in.MaxChars > 0 && len(r) > in.MaxChars {
-			s = string(r[:in.MaxChars])
-		}
-		out[in.Name] = s
-	}
-	return out
+// MarshalJSON adds the input's type, so the run form need not read its schema.
+func (in Input) MarshalJSON() ([]byte, error) {
+	type plain Input
+	return json.Marshal(struct {
+		plain
+		Type InputType `json:"type"`
+	}{plain(in), in.Type()})
 }
 
 // UnmarshalYAML also reads an input written as its name alone.
@@ -142,102 +121,102 @@ func (in *Input) UnmarshalYAML(n *yaml.Node) error {
 	return n.Decode((*plain)(in))
 }
 
-// InputType is the type of a variable's value and, for a user input, its field in the run form: string (the
-// default, "" in a file; one line), text (a string over lines), textList ([]string, a text per item), bool, or
-// choice (a string picked from the input's Options; user inputs only).
-type InputType string
-
-const (
-	TypeString   InputType = "string"
-	TypeText     InputType = "text"
-	TypeTextList InputType = "textList"
-	TypeBool     InputType = "bool"
-	TypeChoice   InputType = "choice"
-)
-
-func (t InputType) valid() bool {
-	switch t.orString() {
-	case TypeString, TypeText, TypeTextList, TypeBool, TypeChoice:
-		return true
+func (in Input) validateSchema() error {
+	if s := in.JSONSchema; s != nil {
+		switch {
+		case s.Type == "string" && s.Items == nil:
+			if s.Enum != nil {
+				if len(s.Enum) < 2 {
+					return fmt.Errorf("a choice needs two or more enum values")
+				}
+				seen := map[string]bool{}
+				for _, o := range s.Enum {
+					if strings.TrimSpace(o) == "" || seen[o] {
+						return fmt.Errorf("enum values must be distinct and not blank")
+					}
+					seen[o] = true
+				}
+			}
+		case s.Type == "boolean" && s.Items == nil && s.Enum == nil:
+		case s.Type == "array" && s.Enum == nil && s.Items != nil && s.Items.Type == "string" && s.Items.Items == nil && s.Items.Enum == nil:
+		default:
+			return fmt.Errorf("json_schema is a string, a string with enum, a boolean, or an array of strings")
+		}
 	}
-	return false
+	if in.UI != nil {
+		t := in.Type()
+		if in.UI.Variant != "" && in.UI.Variant != variantShort && in.UI.Variant != variantLong {
+			return fmt.Errorf("ui.variant is %s or %s", variantShort, variantLong)
+		}
+		if t == TypeBool || t == TypeChoice {
+			return fmt.Errorf("ui is for strings and arrays of strings")
+		}
+	}
+	return nil
 }
 
-func (t InputType) orString() InputType {
-	if t == "" {
-		return TypeString
+// validateUser checks a user input's name, schema and attributes.
+func (in Input) validateUser() error {
+	if !nameRe.MatchString(in.Name) || in.Name == "loop" {
+		return fmt.Errorf("invalid user input name %q", in.Name)
 	}
-	return t
-}
-
-// empty is the value of a variable of type t that is not given: an empty string or list, or false.
-func empty(t InputType) any {
-	switch t.orString() {
-	case TypeTextList:
-		return []string{}
-	case TypeBool:
-		return false
+	if err := in.validateSchema(); err != nil {
+		return fmt.Errorf("user input %s: %w", in.Name, err)
 	}
-	return ""
+	t := in.Type()
+	if in.IsRequired && t == TypeBool {
+		return fmt.Errorf("user input %s: a boolean cannot be required", in.Name)
+	}
+	if in.Default == nil {
+		return nil
+	}
+	switch d := in.Default.(type) {
+	case bool:
+		if t == TypeBool {
+			return nil
+		}
+	case string:
+		if t == TypeString || t == TypeText || (t == TypeChoice && slices.Contains(in.Options(), d)) {
+			return nil
+		}
+	}
+	return fmt.Errorf("user input %s: default %v does not fit a %s", in.Name, in.Default, t)
 }
 
 // Vars are the values of a chain's variables for one run: a string, a bool, or a []string per name.
 type Vars map[string]any
 
-// present reports whether v counts as given for a message's If: a non-blank string, true, or a non-empty list.
-func present(v any) bool {
-	switch v := v.(type) {
-	case string:
-		return strings.TrimSpace(v) != ""
-	case bool:
-		return v
-	case []string:
-		return len(v) > 0
-	}
-	return false
-}
-
-func text(v any) string {
-	switch v := v.(type) {
-	case string:
-		return v
-	case bool:
-		return strconv.FormatBool(v)
-	case []string:
-		return strings.Join(v, "\n")
-	}
-	return ""
-}
+func present(v any) bool { return jinja.Truthy(v) }
 
 // UserVars turns the run form's values into Vars, checking each against its user input's type: a string (for a
 // choice, one of its options), a bool, or a list of strings whose blank items are dropped. A missing user input
-// takes its Default or is left out; a Required one that is missing or blank is refused.
+// takes its Default or is left out; a required one that is missing or blank is refused.
 func (c Chain) UserVars(raw map[string]any) (Vars, error) {
 	vars := Vars{}
 	for name := range raw {
-		if !slices.ContainsFunc(c.Spec.UserInputs, func(in Input) bool { return in.Name == name }) {
+		if !slices.ContainsFunc(c.UserInputs, func(in Input) bool { return in.Name == name }) {
 			return nil, fmt.Errorf("unknown user input %q", name)
 		}
 	}
-	for _, in := range c.Spec.UserInputs {
+	for _, in := range c.UserInputs {
 		v, ok := raw[in.Name]
 		if !ok || v == nil {
 			v = in.Default
 		}
 		if v == nil {
-			if in.Required {
+			if in.IsRequired {
 				return nil, fmt.Errorf("user input %s is required", in.Name)
 			}
 			continue
 		}
-		switch in.Type.orString() {
+		switch t := in.Type(); t {
 		case TypeString, TypeText, TypeChoice:
 			s, ok := v.(string)
 			if !ok {
 				return nil, fmt.Errorf("user input %s must be a string", in.Name)
 			}
-			if in.Type == TypeChoice && !slices.Contains(in.Options, s) {
-				return nil, fmt.Errorf("user input %s must be one of %s", in.Name, strings.Join(in.Options, ", "))
+			if t == TypeChoice && !slices.Contains(in.Options(), s) {
+				return nil, fmt.Errorf("user input %s must be one of %s", in.Name, strings.Join(in.Options(), ", "))
 			}
 			vars[in.Name] = s
 		case TypeBool:
@@ -263,87 +242,56 @@ func (c Chain) UserVars(raw map[string]any) (Vars, error) {
 			}
 			vars[in.Name] = texts
 		}
-		if in.Required && !present(vars[in.Name]) {
+		if in.IsRequired && !present(vars[in.Name]) {
 			return nil, fmt.Errorf("user input %s is required", in.Name)
 		}
 	}
 	return vars, nil
 }
 
-// Step is one LLM call of a chain, LangChain's prompt | model | parser: the prompt is rendered, sent to the
-// model, and the response is read in the step's Format. Output names the parsed value when a later step reads it (like ADK's
-// output_key); a step whose value only goes back to the service needs none.
-//
-// A step with Uses is a function step instead, like LangChain's RunnableLambda or a GitHub Actions step's uses: it
-// calls the Go function named there (Functions) with no model and no messages, and saves its value under Output.
-// If runs it only when that variable is given (present); otherwise its output is empty.
+// Step is one LLM call of a chain, LangChain's prompt | model | parser: its Template, a jinja2 template of
+// messages (ParseChat), is rendered and sent to the model, and the response is read in its output variable's
+// Format. The output's Name is given only when a later step reads it (like ADK's output_key). Inputs are the
+// variables the template reads, found when the chain loads, like LangChain's input_variables.
 type Step struct {
-	Name        string `json:"name" yaml:"name"`
-	Description string `json:"description" yaml:"description"`
-	Uses        string `json:"uses,omitempty" yaml:"uses,omitempty"`
-	If          string `json:"if,omitempty" yaml:"if,omitempty"`
-	Prompt      `yaml:",inline"`
-	Format      Format `json:"format,omitempty" yaml:"format,omitempty"`
-	Output      string `json:"output,omitempty" yaml:"output,omitempty"`
+	Name           string          `json:"name" yaml:"name"`
+	Description    string          `json:"description,omitempty" yaml:"description,omitempty"`
+	TemplateFormat string          `json:"template_format" yaml:"template_format"`
+	Template       string          `json:"template" yaml:"template"`
+	OutputVariable *OutputVariable `json:"output_variable,omitempty" yaml:"output_variable,omitempty"`
+	Inputs         []string        `json:"inputs" yaml:"-"`
+	chat           ChatTemplate
 }
 
-// Function is the form of a function step's Go function: the variables it reads and the type of its value.
-type Function struct {
-	Inputs []string
-	Output InputType
+// OutputVariable is what a step returns: Format, and Name when a later step reads it.
+type OutputVariable struct {
+	Name   string `json:"name,omitempty" yaml:"name,omitempty"`
+	Format Format `json:"format,omitempty" yaml:"format,omitempty"`
 }
 
-// Functions are the functions a function step may use. Their code is given to RunFunctions by the task that runs
-// the chain, so this package does not depend on the services they call.
-var Functions = map[string]Function{
-	// wiki/backlinkTitles lists titles of pages that link to the page titled title.
-	"wiki/backlinkTitles": {Inputs: []string{"title"}, Output: TypeTextList},
-}
+// TemplateFormatJinja2 is the only template format: the dialect of package jinja.
+const TemplateFormatJinja2 = "jinja2"
 
-// Func is the code of a function step: it reads the run's variables and returns the step's value.
-type Func func(ctx context.Context, vars Vars) (any, error)
-
-// RunFunctions runs the chain's function steps in order with funcs and returns vars with their outputs set. A step
-// whose If is not given is skipped and its output set empty, as Fill sets unset variables.
-func (c Chain) RunFunctions(ctx context.Context, vars Vars, funcs map[string]Func) (Vars, error) {
-	out := Vars{}
-	for k, v := range vars {
-		out[k] = v
+// Output is the name the step's value is saved under, or "".
+func (st Step) Output() string {
+	if st.OutputVariable == nil {
+		return ""
 	}
-	for _, st := range c.Spec.Steps {
-		if st.Uses == "" {
-			continue
-		}
-		if st.If != "" && !present(out[st.If]) {
-			out[st.Output] = empty(Functions[st.Uses].Output)
-			continue
-		}
-		fn, ok := funcs[st.Uses]
-		if !ok {
-			return nil, fmt.Errorf("step %s: no code for %s", st.Name, st.Uses)
-		}
-		v, err := fn(ctx, out)
-		if err != nil {
-			return nil, fmt.Errorf("step %s: %w", st.Name, err)
-		}
-		out[st.Output] = v
-	}
-	return out, nil
+	return st.OutputVariable.Name
 }
 
-// PromptIndex is the index of the chain's first LLM step: the one AI edit sends and a custom template rewrites.
-func (c Chain) PromptIndex() int {
-	for i, st := range c.Spec.Steps {
-		if st.Uses == "" {
-			return i
-		}
+// Format is what the step asks the model to return.
+func (st Step) Format() Format {
+	if st.OutputVariable == nil {
+		return FormatText
 	}
-	panic(fmt.Sprintf("chain %s has no LLM step", c.Name))
+	return st.OutputVariable.Format.OrText()
 }
 
-// PromptStep returns the chain's first LLM step (PromptIndex).
-func (c Chain) PromptStep() Step {
-	return c.Spec.Steps[c.PromptIndex()]
+// Render returns the messages to send. A variable not in vars is empty. Values are inserted as they are.
+func (st Step) Render(vars Vars) []Message {
+	messages, _ := st.chat.Render(vars)
+	return messages
 }
 
 // Major returns the major part of a version: "v2" for "v2.3", and for "v2" (written before minors).
@@ -371,7 +319,7 @@ func SameMajor(a, b string) bool {
 
 // Step returns the step named name and panics when there is none, so a wrong name fails at start.
 func (c Chain) Step(name string) Step {
-	for _, st := range c.Spec.Steps {
+	for _, st := range c.Steps {
 		if st.Name == name {
 			return st
 		}
@@ -379,43 +327,15 @@ func (c Chain) Step(name string) Step {
 	panic(fmt.Sprintf("chain %s has no step %q", c.Name, name))
 }
 
-// Prompt is a chat prompt template. Message contents may hold {name} placeholders for the chain's variables or
-// outputs of earlier steps. Inputs are the variables its messages use (placeholders, If, Each), found when the
-// chain loads, like LangChain's input_variables.
-type Prompt struct {
-	Inputs   []string  `json:"inputs" yaml:"-"`
-	Messages []Message `json:"messages" yaml:"messages"`
+// PromptStep returns the chain's first step: the one AI edit sends and a custom template rewrites.
+func (c Chain) PromptStep() Step {
+	return c.Steps[0]
 }
 
-// messageVariables are the variables messages use, in the order they first appear: placeholders ({index} inside
-// an Each aside), If and Each.
-func messageVariables(messages []Message) []string {
-	var out []string
-	add := func(name string) {
-		if name != "" && !slices.Contains(out, name) {
-			out = append(out, name)
-		}
-	}
-	for _, m := range messages {
-		add(m.If)
-		add(m.Each)
-		for _, ph := range placeholders(m.Content) {
-			if ph.name != "index" || m.Each == "" {
-				add(ph.name)
-			}
-		}
-	}
-	return out
-}
-
-// Message is one message of a prompt. If sends it only when that variable is given (present). Each sends it once
-// per item of a textList variable, with {name} as the item and {index} as its number from 1; an empty list sends
-// none. Rendered messages carry neither.
+// Message is one rendered message.
 type Message struct {
 	Role    string `json:"role" yaml:"role"`
 	Content string `json:"content" yaml:"content"`
-	If      string `json:"if,omitempty" yaml:"if,omitempty"`
-	Each    string `json:"each,omitempty" yaml:"each,omitempty"`
 }
 
 // Format is what a step asks the model to return, like an API's response_format: text (the default, "" in a
@@ -426,98 +346,6 @@ const (
 	FormatText Format = "text"
 	FormatJSON Format = "json"
 )
-
-// Render returns the messages to send, following each message's If and Each, with each {input} placeholder
-// replaced by vars[input]. Values are inserted as they are, so placeholders inside a value are not expanded.
-func (p Prompt) Render(vars Vars) []Message {
-	var out []Message
-	for _, m := range p.Messages {
-		if m.If != "" && !present(vars[m.If]) {
-			continue
-		}
-		if m.Each == "" {
-			out = append(out, Message{Role: m.Role, Content: p.replace(m.Content, vars, nil)})
-			continue
-		}
-		items, _ := vars[m.Each].([]string)
-		for i, item := range items {
-			own := map[string]string{m.Each: item, "index": strconv.Itoa(i + 1)}
-			out = append(out, Message{Role: m.Role, Content: p.replace(m.Content, vars, own)})
-		}
-	}
-	return out
-}
-
-// MergeUserMessages joins consecutive user messages while preserving role boundaries and order.
-func MergeUserMessages(messages []Message) []Message {
-	out := make([]Message, 0, len(messages))
-	for _, m := range messages {
-		if m.Role == "user" && len(out) > 0 && out[len(out)-1].Role == "user" {
-			out[len(out)-1].Content += "\n\n" + m.Content
-		} else {
-			out = append(out, m)
-		}
-	}
-	return out
-}
-
-func (p Prompt) replace(content string, vars Vars, own map[string]string) string {
-	var b strings.Builder
-	last := 0
-	for _, ph := range placeholders(content) {
-		v, ok := own[ph.name]
-		if !ok {
-			var given any
-			if given, ok = vars[ph.name]; ok {
-				v = text(given)
-			}
-		}
-		if !ok {
-			continue
-		}
-		b.WriteString(content[last:ph.start])
-		b.WriteString(v)
-		last = ph.end
-	}
-	b.WriteString(content[last:])
-	return b.String()
-}
-
-// RenamePlaceholders gives the {name} placeholders of content named in renames their new names, leaving wiki markup
-// that looks like one ({{name}}, {{{name}}}) as it is.
-func RenamePlaceholders(content string, renames map[string]string) string {
-	var b strings.Builder
-	last := 0
-	for _, ph := range placeholders(content) {
-		name, ok := renames[ph.name]
-		if !ok {
-			continue
-		}
-		b.WriteString(content[last:ph.start])
-		b.WriteString("{" + name + "}")
-		last = ph.end
-	}
-	b.WriteString(content[last:])
-	return b.String()
-}
-
-type placeholder struct {
-	name       string
-	start, end int
-}
-
-// placeholders finds the {name} placeholders of content. One right after another brace is wiki markup
-// ({{Infobox}}, {{title}}, {{{1}}}) and is left out; one inside a template's parameter ({{틀|{title}}}) is not.
-func placeholders(content string) []placeholder {
-	var out []placeholder
-	for _, m := range placeholderRe.FindAllStringSubmatchIndex(content, -1) {
-		if m[0] > 0 && content[m[0]-1] == '{' {
-			continue
-		}
-		out = append(out, placeholder{name: content[m[2]:m[3]], start: m[0], end: m[1]})
-	}
-	return out
-}
 
 // Parse reads a model response, with a code fence around the whole of it stripped: for FormatJSON a JSON value
 // into what out points to, for FormatText the trimmed text into a *string.
@@ -738,89 +566,66 @@ func mustLoad(name string) Chain {
 	if c.Name != name {
 		panic(fmt.Sprintf("chains/%s.yaml: name is %q", name, c.Name))
 	}
-	for i := range c.Spec.Steps {
-		c.Spec.Steps[i].Inputs = c.Spec.Steps[i].variables()
-	}
-	if err := c.Validate(); err != nil {
+	if err := c.Compile(); err != nil {
 		panic(fmt.Sprintf("chains/%s.yaml: %v", name, err))
 	}
 	return c
 }
 
 var (
-	nameRe        = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*$`)
-	placeholderRe = regexp.MustCompile(`\{([A-Za-z][A-Za-z0-9_]*)\}`)
+	nameRe    = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*$`)
+	versionRe = regexp.MustCompile(`^v[0-9]+\.[0-9]+$`)
 )
 
-// Validate checks a chain's structure: variable and output names and types; each step's inputs are variables
-// or earlier outputs and each is used by its messages; placeholders, If and Each name the step's inputs, Each a
-// textList variable, and a textList variable may be rendered as a newline-separated list; every task input is used.
-func (c Chain) Validate() error {
-	for _, in := range c.Spec.UserInputs {
+// Compile checks the chain and parses its steps' templates. Variable names are distinct and start with a
+// letter; task inputs are plain strings; each step's template is jinja2, its messages are system or user
+// messages and read only the chain's variables and earlier outputs, a for loops over an array; every task input
+// is read by some step.
+func (c *Chain) Compile() error {
+	if !versionRe.MatchString(c.Version) {
+		return fmt.Errorf("version %q is not v<major>.<minor>", c.Version)
+	}
+	for _, in := range c.UserInputs {
 		if err := in.validateUser(); err != nil {
 			return err
 		}
 	}
-	for _, in := range c.Spec.Inputs {
-		if in.Required || in.Default != nil || in.Options != nil || in.Type == TypeChoice {
-			return fmt.Errorf("input %s: required, default and choice are for user inputs", in.Name)
+	for _, in := range c.Inputs {
+		if in.JSONSchema != nil || in.UI != nil || in.IsRequired || in.Default != nil {
+			return fmt.Errorf("input %s: a task input has a name and a description only", in.Name)
 		}
 	}
 	types := map[string]InputType{}
-	for _, in := range slices.Concat(c.Spec.UserInputs, c.Spec.Inputs) {
-		if !nameRe.MatchString(in.Name) || in.Name == "index" {
+	var names []string
+	for _, in := range slices.Concat(c.UserInputs, c.Inputs) {
+		if !nameRe.MatchString(in.Name) || in.Name == "loop" {
 			return fmt.Errorf("invalid variable name %q", in.Name)
 		}
 		if _, dup := types[in.Name]; dup {
 			return fmt.Errorf("duplicate variable %q", in.Name)
 		}
-		t := in.Type.orString()
-		if !in.Type.valid() {
-			return fmt.Errorf("variable %s: unknown type %q", in.Name, in.Type)
-		}
-		types[in.Name] = t
+		types[in.Name] = in.Type()
+		names = append(names, in.Name)
 	}
-	for _, in := range c.Spec.Inputs {
-		if in.From == "" {
-			if in.MaxChars != 0 {
-				return fmt.Errorf("input %s: maxChars needs from", in.Name)
-			}
-			continue
-		}
-		if t, ok := types[in.From]; !ok || (t != TypeString && t != TypeText) || in.From == in.Name {
-			return fmt.Errorf("input %s: from %q is not a string variable", in.Name, in.From)
-		}
-		if in.MaxChars < 0 || types[in.Name] != TypeString {
-			return fmt.Errorf("input %s: a derived input is a string with maxChars of 0 or more", in.Name)
-		}
-	}
-	if len(c.Spec.Steps) == 0 {
+	if len(c.Steps) == 0 {
 		return fmt.Errorf("no steps")
 	}
+	c.Steps = slices.Clone(c.Steps)
 	used := map[string]bool{}
-	prompt := false
-	for _, st := range c.Spec.Steps {
-		if err := st.validate(types, used); err != nil {
+	for i := range c.Steps {
+		st := &c.Steps[i]
+		if err := st.compile(types, names, used); err != nil {
 			return fmt.Errorf("step %s: %w", st.Name, err)
 		}
-		prompt = prompt || st.Uses == ""
-		if st.Output == "" {
-			continue
-		}
-		if _, dup := types[st.Output]; dup || !nameRe.MatchString(st.Output) || st.Output == "index" {
-			return fmt.Errorf("step %s: invalid or duplicate output %q", st.Name, st.Output)
-		}
-		types[st.Output] = st.outputType()
-	}
-	if !prompt {
-		return fmt.Errorf("no LLM step")
-	}
-	for _, in := range c.Spec.Inputs {
-		if in.From != "" && used[in.Name] {
-			used[in.From] = true
+		if out := st.Output(); out != "" {
+			if _, dup := types[out]; dup || !nameRe.MatchString(out) || out == "loop" {
+				return fmt.Errorf("step %s: invalid or duplicate output %q", st.Name, out)
+			}
+			types[out] = TypeString
+			names = append(names, out)
 		}
 	}
-	for _, in := range c.Spec.Inputs {
+	for _, in := range c.Inputs {
 		if !used[in.Name] {
 			return fmt.Errorf("input %q is not used", in.Name)
 		}
@@ -828,56 +633,77 @@ func (c Chain) Validate() error {
 	return nil
 }
 
-// ValidateMessages checks messages written to replace those of the chain's first LLM step (a custom template) by
-// the rules of Validate.
-func (c Chain) ValidateMessages(messages []Message) error {
-	i := c.PromptIndex()
-	st := c.Spec.Steps[i]
-	st.Messages = messages
-	st.Inputs = messageVariables(messages)
-	return st.validate(c.typesBefore(i), map[string]bool{})
-}
-
-// WithUserInputs returns the chain with inputs as its user inputs (a custom template's run form), checked like
-// Validate checks them and not clashing with the task's inputs.
-func (c Chain) WithUserInputs(inputs []Input) (Chain, error) {
-	seen := map[string]bool{}
-	for _, in := range c.Spec.Inputs {
-		seen[in.Name] = true
+func (st *Step) compile(types map[string]InputType, names []string, used map[string]bool) error {
+	if st.Name == "" {
+		return fmt.Errorf("a step needs a name")
 	}
-	for _, st := range c.Spec.Steps {
-		if st.Output != "" {
-			seen[st.Output] = true
+	if st.TemplateFormat != TemplateFormatJinja2 {
+		return fmt.Errorf("template_format is %s", TemplateFormatJinja2)
+	}
+	if st.OutputVariable != nil {
+		if f := st.OutputVariable.Format.OrText(); f != FormatJSON && f != FormatText {
+			return fmt.Errorf("unknown format %q", st.OutputVariable.Format)
 		}
 	}
-	for _, in := range inputs {
-		if err := in.validateUser(); err != nil {
-			return c, err
-		}
-		if seen[in.Name] {
-			return c, fmt.Errorf("user input %q is already a variable", in.Name)
-		}
-		seen[in.Name] = true
+	chat, err := ParseChat(st.Template, names)
+	if err != nil {
+		return err
 	}
-	c.Spec.UserInputs = slices.Clone(inputs)
-	c.Spec.Steps = slices.Clone(c.Spec.Steps)
-	return c, nil
+	for _, m := range chat.Messages {
+		if m.Role != "system" && m.Role != "user" {
+			return fmt.Errorf("a %s message; a step has system and user messages", m.Role)
+		}
+	}
+	for _, u := range chat.Uses() {
+		if u.Kind == jinja.UseLoop && types[u.Name] != TypeTextList {
+			return fmt.Errorf("for loops over %s, which is not an array", u.Name)
+		}
+		used[u.Name] = true
+	}
+	st.chat = chat
+	st.Inputs = []string{}
+	for _, u := range chat.Uses() {
+		if !slices.Contains(st.Inputs, u.Name) {
+			st.Inputs = append(st.Inputs, u.Name)
+		}
+	}
+	return nil
 }
 
-// Template is the part of a chain a custom template rewrites, as written in YAML: the run form and the first LLM
-// step's messages.
-type Template struct {
-	UserInputs []Input   `json:"userInputs" yaml:"userInputs"`
-	Messages   []Message `json:"messages" yaml:"messages"`
+// PromptTemplate is an AI edit prompt template as written: a Semantic Kernel prompt document without
+// execution_settings (a template's model is a setting of its own, outside the document). Template replaces the
+// template of its chain's first step; InputVariables pick, by name, the chain's variables it reads (each as the
+// chain defines it).
+type PromptTemplate struct {
+	Name           string          `json:"name" yaml:"name"`
+	Description    string          `json:"description,omitempty" yaml:"description,omitempty"`
+	TemplateFormat string          `json:"template_format" yaml:"template_format"`
+	Template       string          `json:"template" yaml:"template"`
+	InputVariables []InputVariable `json:"input_variables" yaml:"input_variables"`
 }
 
-// Template returns the chain's own run form and first LLM step's messages.
-func (c Chain) Template() Template {
-	return Template{UserInputs: c.Spec.UserInputs, Messages: c.PromptStep().Messages}
+// InputVariable is a variable a template reads, by name.
+type InputVariable struct {
+	Name string `json:"name" yaml:"name"`
 }
 
-// YAML writes the template as the chain files do (multi-line contents as blocks).
-func (t Template) YAML() string {
+// ParsePromptTemplate reads a template written in YAML, rejecting unknown fields. It does not check it against a
+// chain (WithTemplate).
+func ParsePromptTemplate(text string) (PromptTemplate, error) {
+	var t PromptTemplate
+	dec := yaml.NewDecoder(strings.NewReader(text))
+	dec.KnownFields(true)
+	if err := dec.Decode(&t); err != nil {
+		return t, fmt.Errorf("YAML: %w", err)
+	}
+	if t.InputVariables == nil {
+		t.InputVariables = []InputVariable{}
+	}
+	return t, nil
+}
+
+// YAML writes the template as the chain files do (multi-line strings as blocks).
+func (t PromptTemplate) YAML() string {
 	var buf bytes.Buffer
 	enc := yaml.NewEncoder(&buf)
 	enc.SetIndent(2)
@@ -887,172 +713,72 @@ func (t Template) YAML() string {
 	return buf.String()
 }
 
-// UserInputsYAML writes the template's user inputs as a YAML list of their names without the root key, as a
-// template picks them from its chain (- hint).
-func (t Template) UserInputsYAML() string {
-	var buf strings.Builder
-	for _, in := range t.UserInputs {
-		buf.WriteString("- " + in.Name + "\n")
+// PromptTemplate is the chain as a template to clone: its first step's template, reading the variables it reads,
+// with the chain's name and description.
+func (c Chain) PromptTemplate() PromptTemplate {
+	st := c.PromptStep()
+	t := PromptTemplate{Name: c.Name, Description: c.Description, TemplateFormat: st.TemplateFormat, Template: st.Template, InputVariables: []InputVariable{}}
+	for _, in := range slices.Concat(c.Inputs, c.UserInputs) {
+		if slices.Contains(st.Inputs, in.Name) {
+			t.InputVariables = append(t.InputVariables, InputVariable{Name: in.Name})
+		}
 	}
-	return buf.String()
+	return t
 }
 
-// MessagesYAML writes the template's messages as a YAML list without the root key.
-func (t Template) MessagesYAML() string {
-	if len(t.Messages) == 0 {
-		return ""
+// WithTemplate returns the chain as the template runs it: its user inputs are those the template picks (in the
+// chain's order), and its first step's template is the template's, read with only the variables the template
+// picks. A name the chain does not have or a repeated name is refused.
+func (c Chain) WithTemplate(t PromptTemplate) (Chain, error) {
+	if t.TemplateFormat != TemplateFormatJinja2 {
+		return c, fmt.Errorf("template_format is %s", TemplateFormatJinja2)
 	}
-	var buf bytes.Buffer
-	enc := yaml.NewEncoder(&buf)
-	enc.SetIndent(2)
-	if err := enc.Encode(t.Messages); err != nil {
-		return ""
+	picked := map[string]bool{}
+	for _, v := range t.InputVariables {
+		known := slices.ContainsFunc(slices.Concat(c.UserInputs, c.Inputs), func(in Input) bool { return in.Name == v.Name })
+		if !known {
+			return c, fmt.Errorf("input_variables: %s is not a variable of %s (it has %s)", v.Name, c.Name, strings.Join(c.variableNames(), ", "))
+		}
+		if picked[v.Name] {
+			return c, fmt.Errorf("input_variables: %s is there twice", v.Name)
+		}
+		picked[v.Name] = true
 	}
-	return buf.String()
-}
-
-// ParseTemplate reads a template written in YAML, rejecting unknown fields. It does not check it against a chain
-// (WithUserInputs, ValidateMessages).
-func ParseTemplate(text string) (Template, error) {
-	var t Template
-	dec := yaml.NewDecoder(strings.NewReader(text))
-	dec.KnownFields(true)
-	if err := dec.Decode(&t); err != nil {
-		return t, fmt.Errorf("YAML: %w", err)
+	out := c
+	out.UserInputs = []Input{}
+	for _, in := range c.UserInputs {
+		if picked[in.Name] {
+			out.UserInputs = append(out.UserInputs, in)
+		}
 	}
-	if t.UserInputs == nil {
-		t.UserInputs = []Input{}
-	}
-	return t, nil
-}
-
-// ParseUserInputsYAML reads user inputs written as a YAML list without the root key.
-func ParseUserInputsYAML(text string) ([]Input, error) {
-	text = strings.TrimSpace(text)
-	if text == "" {
-		return []Input{}, nil
-	}
-	var inputs []Input
-	dec := yaml.NewDecoder(strings.NewReader(text))
-	dec.KnownFields(true)
-	if err := dec.Decode(&inputs); err != nil {
-		return nil, fmt.Errorf("userInputs: %w", err)
-	}
-	if inputs == nil {
-		inputs = []Input{}
-	}
-	return inputs, nil
-}
-
-// ParseMessagesYAML reads messages written as a YAML list without the root key.
-func ParseMessagesYAML(text string) ([]Message, error) {
-	text = strings.TrimSpace(text)
-	if text == "" {
-		return []Message{}, nil
-	}
-	var messages []Message
-	dec := yaml.NewDecoder(strings.NewReader(text))
-	dec.KnownFields(true)
-	if err := dec.Decode(&messages); err != nil {
-		return nil, fmt.Errorf("messages: %w", err)
-	}
-	if messages == nil {
-		messages = []Message{}
-	}
-	return messages, nil
-}
-
-// typesBefore are the types of the chain's variables and of the outputs of its steps before step i.
-func (c Chain) typesBefore(i int) map[string]InputType {
+	out.Steps = slices.Clone(c.Steps)
+	out.Steps[0].Template = t.Template
 	types := map[string]InputType{}
-	for _, in := range slices.Concat(c.Spec.UserInputs, c.Spec.Inputs) {
-		types[in.Name] = in.Type.orString()
-	}
-	for _, st := range c.Spec.Steps[:i] {
-		if st.Output != "" {
-			types[st.Output] = st.outputType()
+	var names []string
+	for _, in := range slices.Concat(c.UserInputs, c.Inputs) {
+		if picked[in.Name] {
+			types[in.Name] = in.Type()
+			names = append(names, in.Name)
 		}
 	}
-	return types
+	used := map[string]bool{}
+	if err := out.Steps[0].compile(types, names, used); err != nil {
+		return c, err
+	}
+	for _, in := range c.Inputs {
+		if !used[in.Name] {
+			return c, fmt.Errorf("the template does not read %s; list it in input_variables and use it", in.Name)
+		}
+	}
+	return out, nil
 }
 
-// outputType is the type of the step's output: its function's for a function step, a string for an LLM step.
-func (st Step) outputType() InputType {
-	if st.Uses != "" {
-		return Functions[st.Uses].Output
+func (c Chain) variableNames() []string {
+	var names []string
+	for _, in := range slices.Concat(c.Inputs, c.UserInputs) {
+		names = append(names, in.Name)
 	}
-	return TypeString
-}
-
-// variables are the variables a step reads: its function's inputs and If, or what its messages use.
-func (st Step) variables() []string {
-	if st.Uses == "" {
-		return messageVariables(st.Messages)
-	}
-	vars := slices.Clone(Functions[st.Uses].Inputs)
-	if st.If != "" && !slices.Contains(vars, st.If) {
-		vars = append(vars, st.If)
-	}
-	return vars
-}
-
-// validate checks a step: the variables its messages use are chain variables or earlier outputs, If and Each name them,
-// Each a textList one.
-func (st Step) validate(types map[string]InputType, used map[string]bool) error {
-	if st.Uses != "" {
-		return st.validateFunction(types, used)
-	}
-	if st.If != "" {
-		return fmt.Errorf("if is for function steps; a message has its own if")
-	}
-	if st.Name == "" || len(st.Messages) == 0 {
-		return fmt.Errorf("name and messages are required")
-	}
-	if f := st.Format.OrText(); f != FormatJSON && f != FormatText {
-		return fmt.Errorf("unknown format %q", st.Format)
-	}
-	for _, name := range messageVariables(st.Messages) {
-		if _, ok := types[name]; !ok {
-			if name == "index" {
-				return fmt.Errorf("{index} can only be used in an each message")
-			}
-			return fmt.Errorf("{%s} is neither a variable nor an earlier output", name)
-		}
-		used[name] = true
-	}
-	for _, m := range st.Messages {
-		if m.Content == "" || (m.Role != "system" && m.Role != "user") {
-			return fmt.Errorf("invalid %q message", m.Role)
-		}
-		if m.Each != "" && types[m.Each] != TypeTextList {
-			return fmt.Errorf("each %q is not a textList variable", m.Each)
-		}
-	}
-	return nil
-}
-
-// validateFunction checks a function step: its function exists, its inputs and If are variables or earlier outputs
-// (If of any type, inputs of the type they are read as), it names an output, and it has no messages or format.
-func (st Step) validateFunction(types map[string]InputType, used map[string]bool) error {
-	fn, ok := Functions[st.Uses]
-	if !ok {
-		return fmt.Errorf("unknown function %q", st.Uses)
-	}
-	if st.Name == "" || st.Output == "" || len(st.Messages) > 0 || st.Format != "" {
-		return fmt.Errorf("a function step has a name and an output, and no messages or format")
-	}
-	for _, name := range st.variables() {
-		if _, ok := types[name]; !ok {
-			return fmt.Errorf("%s reads %q, which is neither a variable nor an earlier output", st.Uses, name)
-		}
-		used[name] = true
-	}
-	for _, name := range fn.Inputs {
-		if t := types[name]; t != TypeString && t != TypeText {
-			return fmt.Errorf("%s reads %q as a string, but it is %s", st.Uses, name, t)
-		}
-	}
-	return nil
+	return names
 }
 
 var (

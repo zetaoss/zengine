@@ -1,16 +1,16 @@
 # Chains
 
-goapp defines LLM work as chains, following LangChain. Types: `goapp/prompts/chain.go`; built-in chains are YAML files in `goapp/prompts/chains/`, one per chain (for example `doc-eval.yaml`), embedded into the binary.
+goapp defines LLM work as chains, following LangChain; each step's prompt is written as a [Semantic Kernel prompt](https://learn.microsoft.com/en-us/semantic-kernel/concepts/prompts/yaml-schema) with a jinja2 template. Types: `goapp/prompts/chain.go`; the template dialect: `goapp/prompts/jinja`; built-in chains are YAML files in `goapp/prompts/chains/`, one per chain (for example `doc-eval.yaml`), embedded into the binary.
 
-| Term | Example | Meaning | LangChain |
+| Term | Example | Meaning | Elsewhere |
 | :--- | :--- | :--- | :--- |
-| Chain | `doc-eval` | Steps run in order; a step's output feeds later steps | `RunnableSequence` |
-| Step | `doc-eval/rubric` | One LLM call: prompt, model, format, and an output name when a later step reads it | `prompt \| model \| parser` (three `steps` there, one here); output name like ADK `output_key` |
-| Prompt | | Messages (`system`, `user`) with `{name}` placeholders, each optionally sent only `if` a variable is given or once for `each` item of a list | `ChatPromptTemplate` (f-string); `if`/`each` like `MessagesPlaceholder` |
-| User inputs | `hint`, `texts` | What the requester gives in the run form; they reach the messages as they are | graph input schema (LangGraph) |
-| Inputs | `title`, `wikitext` | What the task running the chain fills | |
-| Format | `json` (`text` when omitted) | What the step asks the model to return; the response is read in it | `response_format` (OpenAI), output parser |
-| Version | `v2.0` | `v<major>.<minor>`, recorded with each call and result; a stored result of the same major is current | |
+| Chain | `doc-eval` | Steps run in order; a step's output feeds later steps | LangChain `RunnableSequence` |
+| Step | `doc-eval/rubric` | One LLM call: a template, rendered and sent to a model, its answer read in a format | LangChain `prompt \| model \| parser`; SK prompt function |
+| Template | | A jinja2 template of messages (`<message role="...">`) | SK `template` with `template_format` |
+| User inputs | `hint`, `texts`, `backlinks` | What the requester gives in the run form; they reach the template as they are | graph input schema (LangGraph) |
+| Inputs | `title`, `body` | What the task running the chain fills | |
+| Output variable | `rubrics`, `json` | The name a later step reads the answer under, and the format it is read in | ADK `output_key`; `response_format` |
+| Version | `v2.3` | `v<major>.<minor>`, recorded with each call and result; a stored result of the same major is current | |
 
 "System prompt" here is the system message; "user prompt" is not used.
 
@@ -23,86 +23,151 @@ goapp defines LLM work as chains, following LangChain. Types: `goapp/prompts/cha
 | `doc-create` | `doc-create.yaml` | `ai-edit`, request type `create` | `chains.docCreate` |
 | `doc-update` | `doc-update.yaml` | `ai-edit`, request type `update` | `chains.docUpdate` |
 
-The model picked in the chains tab comes first; see [Screen and API](#screen-and-api) and [config.md](config.md#goapp-config-file). For `doc-create` and `doc-update` the requester may pick an AI edit prompt template (`aiedit_prompts`), which runs with its own run form and messages: `user_inputs`, the chain's user inputs it picks by name, kept in the chain's order (the editor shows them as checkboxes and sends `- hint`; each runs as the chain defines it, and a name the chain does not have is refused on save and left out of a stored template, `aiedit.PickUserInputs`, `aiedit.TemplateUserInputs`; values reach the messages as they are; `useBacklinks` also has the task read the pages that link here) and `messages` in place of the step's (`Chain.ValidateMessages`, the rules of `Validate`). A template saved before it had messages runs its content in place of the step's unconditional messages, followed by the step's `if` and `each` messages (`aiedit.TemplateMessages`). Stored templates and run forms may still use older names: `{wikitext}` runs as `{body}`, `{backlinkTexts}` and `{backlinkTitles}` as `{backlinks}`, `readBacklinks` as `useBacklinks`, and `extraTexts` and `copiedTexts` as `texts`. The built-in chains no longer take `request`; a run that still sends it to a chain or template not declaring it runs without it (`aiedit.runInputs`).
+The model picked in the chains tab comes first; see [Screen and API](#screen-and-api) and [config.md](config.md#goapp-config-file). For `doc-create` and `doc-update` the requester may pick an AI edit prompt template (`aiedit_prompts`, see [Prompt templates](#prompt-templates)).
 
 ## Chain file
 
 ```yaml
 name: doc-create
-metadata:
-  version: v2.2
-  description: 새 문서의 위키텍스트를 작성한다.
-spec:
-  userInputs:                 # the run form
-    - name: hint
-      placeholder: "예시: 눈 → eye/snow, 밤 → night/chestnut"
-    - name: useBacklinks
-      type: bool
-    - name: texts
-      type: textList
-  inputs:                     # filled by the task
-    - name: title
-  steps:
-    - name: backlinks           # a function step: Go code, no model
-      uses: wiki/backlinkTitles
-      if: useBacklinks
-      output: backlinks
-    - name: generate
-      messages:
-        - role: system
-          content: |-
-            ...
-        - role: user
-          content: "### 문서 제목: {title}"
-        - role: user
-          if: hint
-          content: "### 힌트: {hint}"
-        - role: user
-          each: texts
-          content: |-
-            ### 자료 {index}:
-            {texts}
+description: 새 문서의 위키텍스트를 작성한다.
+version: v2.5
+user_inputs:                    # the run form
+  - name: hint
+    description: 제목이 무엇을 가리키는지 가늠하게 하는 짧은 말
+    ui: {placeholder: "예시: 눈 → eye/snow"}
+  - name: texts
+    json_schema: {type: array, items: {type: string}}
+    ui: {variant: longText}
+  - name: backlinks
+    json_schema: {type: array, items: {type: string}}
+inputs:                         # filled by the task
+  - title
+steps:
+  - name: generate
+    template_format: jinja2
+    template: |-
+      <message role="system">
+      ...
+      </message>
+      <message role="user">
+      # 변수
+
+      <title>
+      {{ title }}
+      </title>
+      {% if hint %}
+      <hint>
+      {{ hint }}
+      </hint>
+      {% endif %}
+      {% for t in texts %}
+      <texts>
+      {{ t }}
+      </texts>
+      {% endfor %}
+      </message>
 ```
 
-`metadata` describes the chain; `spec` is what decides its results. A variable's `type` is `string` (the default; one line), `text` (several lines), `textList` (a list of texts) or `bool`; a user input shows in the run form under its name (`useBacklinks` as Use backlinks), with an optional `placeholder` for its empty field; an input may be written as its name alone. A user input may also be `required` (a run without it, or with it blank, is refused; not for a `bool`), have a `default` (its value when the run form leaves it out: a string, or `true`/`false` for a `bool`; not for a `textList`), and be a `choice` with `options` (two or more, distinct; the run form shows them to pick one, and a default is one of them), like a GitHub Actions `workflow_dispatch` input. These are for user inputs only and are checked when a chain loads and when a custom template is saved (`Chain.WithUserInputs`). A task input with `from` is derived from another variable before a step renders (`Chain.Fill`), cut to `maxChars` characters: doc-define reads `bodyHead` (`from: wikitext`, `maxChars: 1000`) and doc-eval's judge `body` (2000), so the limits stand in the file rather than in service code. A step does not list its inputs: the variables its messages use (placeholders, `if`, `each`) are found when the chain loads, as LangChain finds a template's `input_variables`. A step names its `output` only when a later step reads it (doc-eval's `rubrics`), and writes `format: json` only when it takes JSON. A step with `uses` is a function step, like LangChain's `RunnableLambda` or a GitHub Actions step's `uses`: it calls a Go function with no model and no messages and saves its value under `output`; `if` runs it only when that variable is given, and otherwise its output is empty. The functions and their forms (the variables they read, the type of their value) are listed in `prompts.Functions` and checked when the chain loads; their code is given by the task that runs the chain (`Chain.RunFunctions`), so `prompts` does not depend on the services they call. `wiki/backlinkTitles` reads `title`. A custom template rewrites the messages of the first LLM step (`Chain.PromptStep`). The files are read at start with unknown fields rejected, and a missing file or step (`Chain.Step`) panics there. Go keeps what the services need beyond the file: the structs a response is parsed into, values that check results (`DocEvalSafetyPolicies`), and the code between steps.
+Keys follow Semantic Kernel (snake_case); variable names are camelCase and start with a letter (`loop` is taken). The files are read at start with unknown fields rejected, and a missing file or step (`Chain.Step`) panics there.
 
-## Chains and tasks
+### Variables
 
-A chain says what to ask a model: its prompts, formats, outputs and version, and which values the requester gives (user inputs) and the task fills (inputs). It does not pick targets, read the wiki, or store results; its model is picked per chain (`services/chainsvc`). A goapp task decides when to run a chain and on what: it picks the target, fills the inputs, runs the steps through its service, stores the result, handles failures, and decides from the chain version whether a stored result can be reused. See the table above for which task runs which chain.
+A variable's value has the shape of its `json_schema`, a closed subset of JSON Schema: a string (the default when it has none), a string with `enum` (a choice), a `boolean`, or an `array` of strings. `ui` tells the run form how to show it, with the names of [A2UI](https://github.com/a2ui-project/a2ui)'s `TextField`: `variant` `shortText` (one line, the default) or `longText` (several lines), and a `placeholder` for an empty field. Any other schema or `ui` is refused when the chain loads. A user input may also be `is_required` (a run without it, or with it blank, is refused; not for a boolean) and have a `default` (its value when the run form leaves it out; not for an array). A task input is a plain string written as its name alone (or with a `description`). In Go each variable has an `InputType` read from these (`string`, `text`, `choice`, `bool`, `textList`), which `GET /api/ai/chains` also sends as `type`.
 
-`ai-edit` fills `title` and, for doc-update, `body` (the page's wikitext as it stands in the editor, else the saved page), and runs the `backlinks` step: with `useBacklinks` on, `wiki/backlinkTitles` lists the titles of up to 10 main-namespace, non-redirect articles linking to the page (the page may not exist yet) as `backlinks` (`services/wikisvc`).
+### Steps
+
+A step has a `name`, an optional `description`, `template_format: jinja2` and a `template`; `output_variable` gives the `format` its answer is read in (`text` when omitted, or `json`) and a `name` when a later step reads it (doc-eval's `rubrics`). A step does not list its inputs: the variables its template reads are found when the chain loads, as LangChain finds a template's `input_variables`.
+
+Lengths stand in the template, not in service code: doc-define reads `{{ wikitext[:1000] }}` and doc-eval's judge `{{ wikitext[:2000] }}` (`prompts.DocEvalJudgeBodyChars` keeps the judge's cut for the code that quotes it). Go keeps what the services need beyond the file: the structs a response is parsed into, values that check results (`DocEvalSafetyPolicies`), and the code between steps.
+
+### Messages
+
+The template is split into messages first: lines `<message role="system">` or `<message role="user">` and `</message>` at the start of a line open and close each message, and only blank lines may stand between them. The split comes before any value is filled in, so a value holding `</message>` stays inside its message (`prompts.ParseChat`). Each message's body is then a jinja2 template; a message that renders blank is not sent. User messages list their variables in tags under `# 변수` (`<title>…</title>`), the form every built-in chain uses.
+
+## Template dialect
+
+`goapp/prompts/jinja` renders a small dialect of Jinja2 that lives with wikitext.
+
+| | Supported |
+| :--- | :--- |
+| Output | `{{ name }}`, `{{ loop.index }}`, `{{ name[start:end] }}` (by characters, negative bounds from the end); a list prints its items on lines of their own |
+| Tags | `{% if %}` / `{% elif %}` / `{% else %}` / `{% endif %}` with `not`, `and`, `or`; `{% for item in list %}` / `{% endfor %}` with `loop.index`, `loop.index0`, `loop.first`, `loop.last`; `{% raw %}` / `{% endraw %}` |
+| Other | `{# comments #}`, `-` whitespace markers (`{{- x -}}`, `{%- if x %}`) |
+| Settings | `trim_blocks` and `lstrip_blocks` on: a line holding only a tag leaves no blank line. Nothing is escaped; values are inserted as they are and never parsed again |
+
+Differences from Jinja2, and how wiki syntax gets through:
+
+- `{{ … }}` is output only when its inside reads as an expression: it starts with a variable of the template (then the rest must parse), or it is a dotted ASCII name alone. Anything else stays as text, so wiki templates pass: `{{풀기:사전링크}}`, `{{틀|a=1}}`, `{{{1}}}`, `{{#if:x}}`, `{{!}}`, and `{{틀|{{ title }}}}` keeps its outer braces around the title.
+- `{% … %}` is a tag only when a word follows `{%`; a word other than the tags above (`set`, `macro`, …) is an error.
+- A name the template is not given is an error rather than empty, so a typo (`{{ titel }}`) is caught on load or save. A wiki template that reads as a bare name (`{{PAGENAME}}`) is one too; put it inside `{% raw %}…{% endraw %}`.
+- A blank string is false for `if`, as are `false` and an empty list.
+- Filters, tests, comparisons, `set`, `macro`, `include` and `for … else` are not supported and are errors.
+
+Where the dialect and Jinja2 overlap, the output is the same as Jinja2's with `trim_blocks` and `lstrip_blocks` (checked against Jinja2 3.1).
 
 ## Rules
 
-`Chain.Validate` checks these at start (`mustLoad`), and in `chain_test.go`:
+`Chain.Compile` checks these at start (`mustLoad`), and in `chain_test.go`:
 
-- The variables a step's messages use are chain variables or earlier outputs. Every task input is used by some step, a source counting through what is derived from it; a user input need not be (`useBacklinks` only tells the task to read).
-- `each` names a `textList` variable, and inside its message `{name}` is the item and `{index}` its number from 1; a `textList` variable is a placeholder only there.
-- Variable names start with a letter (`backlinks`, `wikitext`). System messages are fixed; changing values go into user messages.
-- `Prompt.Render` skips a message whose `if` variable is not given (a blank string, false, an empty list), sends an `each` message per item, and inserts values as they are (a `{title}` inside a wikitext is not expanded); braces that are not variables stay: `{|`, JSON, and wiki templates, since a `{name}` right after another brace (`{{title}}`, `{{Infobox}}`, `{{{1}}}`) is not a placeholder, while one inside a template's parameter (`{{틀|{title}}}`) is.
+- Variable and output names are distinct; task inputs are plain strings.
+- Every step's template is jinja2, has system and user messages only, and reads only the chain's variables and the outputs of earlier steps; a `for` loops over an array.
+- Every task input is read by some step; a user input need not be.
 - `Format.Parse` strips a code fence around the whole response; `json` decodes into a struct, `text` trims. It checks the format only; the service checks what values mean.
 
 ## Running
 
 `llmsvc.RunStep(ctx, model, chain, step, vars, out)` renders and runs; `RunMessages` runs messages rendered earlier (AI edit stores them with the task). Either calls bob `/aigate` and parses; the chain names each call in the call history (`llm_calls`, see [goapp.md](goapp.md)). A failed parse is retried once; each attempt parses into a fresh value, `out` is set only on success, and the error keeps at most 500 characters of the response. When the retry call itself fails, its error keeps the parse error as `previous attempt`. The service code runs the steps in order and the code between them.
 
+`ai-edit` fills `title` and, for doc-update, `body` (the page's wikitext as it stands in the editor, else the saved page), takes the run form's values as they are (lists hold at most 20 items, and a value or item at most 100,000 characters), and renders the first step (`aiedit.Render`). Backlinks are a run form value: the run form's fetch button calls `GET /api/ai-edit/backlinks?title=`, which lists the titles of up to 10 main-namespace, non-redirect articles linking to the page (`services/wikisvc`), and the requester may edit the list before running.
+
+## Prompt templates
+
+An AI edit prompt template (`aiedit_prompts`) is a Semantic Kernel prompt document stored in `spec`, without `execution_settings`:
+
+```yaml
+name: doc-update-jmnote
+description: 기존 문서의 위키텍스트를 고쳐 쓴다.
+template_format: jinja2
+template: |-
+  <message role="system">
+  ...
+  </message>
+  <message role="user">
+  ...
+  </message>
+input_variables:
+  - name: title
+  - name: body
+  - name: texts
+```
+
+`input_variables` pick, by name, the variables of the request type's chain the template reads: its task inputs and any of its user inputs, each as the chain defines it (the run form shows the picked user inputs in the chain's order). The template replaces the template of the chain's first step and is checked by the chain's rules with only the picked variables (`Chain.WithTemplate`): a name the chain does not have, a repeated name, a variable read but not picked, or a task input not read is refused on save.
+
+The model a template runs on is a setting of its own, outside the spec (`aiedit_prompts.model`; empty runs it on its chain's model). `name` and `description` are copied to the `title` and `description` columns for listing. A change to the template or its `input_variables` bumps the version (`v1.0` on creation; minor by default, major when picked); a change of name, description or model does not. Each run records the version as `prompt_version`.
+
+Templates saved before specs (their `content`, `messages` and `user_inputs`) are converted by `tool migrate` after the SQL migrations (`aiedit.ConvertLegacyPrompts`): the instructions become the system message, with `{name}` placeholders as `{{ name }}` (older names take their names now: `wikitext` is `body`, `backlinkTexts`, `backlinkTitles`, `readBacklinks` and `useBacklinks` are `backlinks`, `extraTexts` and `copiedTexts` are `texts`) and wiki markup that would read as template syntax inside `{% raw %}`, and the user message lists in tags the variables the instructions do not already read. A template that cannot be converted is logged and left without a spec, and cannot run until it is fixed.
+
+## Chains and tasks
+
+A chain says what to ask a model: its templates, formats, outputs and version, and which values the requester gives (user inputs) and the task fills (inputs). It does not pick targets, read the wiki, or store results; its model is picked per chain (`services/chainsvc`). A goapp task decides when to run a chain and on what: it picks the target, fills the inputs, runs the steps through its service, stores the result, handles failures, and decides from the chain version whether a stored result can be reused. See the table above for which task runs which chain.
+
 ## Version
 
-`metadata.version` is `v<major>.<minor>`, recorded in full in `llm_calls` and with each stored result, so calls and results can be told apart by minor. A stored result is current when its major matches (`prompts.SameMajor`; a version written before minors, such as `v2`, counts as `v2.x`):
+`version` is `v<major>.<minor>`, recorded in full in `llm_calls` and with each stored result, so calls and results can be told apart by minor. A stored result is current when its major matches (`prompts.SameMajor`; a version written before minors, such as `v2`, counts as `v2.x`):
 
 - Minor (`v2.0 → v2.1`): most edits. Stored definitions, evaluations and rubrics stay current.
-- Major (`v2.1 → v3.0`): a change to the spec's shape (inputs, format, output), or an edit whose earlier results should all be redone. Every stored result of the chain becomes stale.
+- Major (`v2.1 → v3.0`): a change to the shape of the inputs, format or output, or an edit whose earlier results should all be redone. Every stored result of the chain becomes stale.
 
-The model is outside the spec and does not change the version. Any spec change needs a bump: `TestSpecVersions` (`goapp/prompts/builtin_test.go`) pins each chain's version to a hash of its spec and fails until the version and its entry there are updated. It cannot tell a minor change from a major one; that is the author's call, and review's. See [doc-eval.md](doc-eval.md) for what doc-define and doc-eval reuse.
+The model is outside the chain and does not change the version. Any change to the inputs or steps needs a bump: `TestSpecVersions` (`goapp/prompts/builtin_test.go`) pins each chain's version to a hash of its user inputs, inputs and steps, and fails until the version and its entry there are updated. It cannot tell a minor change from a major one; that is the author's call, and review's. See [doc-eval.md](doc-eval.md) for what doc-define and doc-eval reuse.
 
 ## Screen and API
 
-The chains tab (`/tool/ai/chains`, sysop-only) is a table with a row per built-in chain and per AI edit prompt template: owner (`-` for a built-in), name, description, model, runs and last use. `GET /api/ai/chains` returns each chain as in its file (`name`, `metadata`, `spec`) plus `model`, `uses` and `used_at` (the count and latest time of the successful calls of its last step in `llm_calls`).
+The chains tab (`/tool/ai/chains`, sysop-only) is a table with a row per built-in chain and per AI edit prompt template: owner (`-` for a built-in), name, description, model, runs and last use. `GET /api/ai/chains` returns each chain as in its file plus `model`, `uses` and `used_at` (the count and latest time of the successful calls of its last step in `llm_calls`) and `template` (the chain as a prompt template in YAML, which a clone starts from).
 
-- Built-in chains come first, on a gray background, most recently used first. `doc-create` and `doc-update` expand to the template editor, read-only, with the model picker and clone; the other chains expand to their version, user inputs (a working form to get the feel of it; nothing is kept), inputs and steps (inputs, format, output, and messages with their `if` and `each` and their variables marked), with the model picker.
-- Templates of `doc-create` and `doc-update` follow, most recently used first (`used_at`, recorded from this release on), then by use count; the requester's own are on light blue. A template runs on the model it picked (none: the chain's model). A row expands to the template editor as it is (read-only), with edit and delete (owner only) and clone.
-- The editor looks the same seen and edited; editing turns its title, description, model, system instructions and user inputs into fields in place. It is two rows, each pairing what a template holds (left) with what it renders (right): the system instructions beside the rendered system message, and the template's variables beside the rendered user message. The left side sets each row's height (the system field is a fixed height that scrolls); the rendered message beside it fills that height and scrolls within it. Two tables sit side by side: the variables every template has, `title`, `body` (doc-update) and `backlinks` (when `useBacklinks` is picked), with fixed preview values; and the chain's user inputs, each with a checkbox to pick it (they keep the chain's order) and a preview value. Preview values can be typed in either mode and are not kept. `POST /api/ai-prompts/check` renders the messages shortly after typing stops, or gives the error that would stop the save. Changing the user inputs or messages bumps the version (`v1.0` on creation; minor by default, major when picked); title, description and model do not. Each run records it as `prompt_version`. Closing a row or leaving the page with unsaved edits asks first.
-- Clone opens a new template at the top of the templates, being edited, filled with the source's values and the title with `-<user name>` in lower case, and creates it on save. Cloning a built-in chain starts from its user inputs and first step's system message (`template` in `GET /api/ai/chains`), with the chain's description and model. A template saved before it had messages has its content as its system instructions when edited.
+- Built-in chains come first, on a gray background, most recently used first. `doc-create` and `doc-update` expand to the template editor, read-only, with the model picker and clone; the other chains expand to their version, inputs and steps (the variables each reads, its format and output, and its template), with the model picker.
+- Templates of `doc-create` and `doc-update` follow, most recently used first (`used_at`), then by use count; the requester's own come before the built-in chains, on light blue. A template that cannot run is marked with its error. A row expands to the template editor as it is (read-only), with edit and delete (owner only) and clone.
+- The editor is the spec's YAML (left) beside what it renders (right). The template syntax the server read is marked over the YAML (`{{ }}` and `{% %}`), so it shows which braces are template and which are wiki markup. On the right, preview values for the task inputs (`title`, `body`) and the picked user inputs, which are not kept, and the rendered messages; `POST /api/ai-prompts/check` (`request_type`, `spec`, `preview_values`) returns the run form, the marks and the messages shortly after typing stops, or the error that would stop the save. Editing also offers the model (empty: the chain's) and, when the spec changed, a minor or major bump. Closing a row or leaving the page with unsaved edits asks first.
+- Clone opens a new template at the top of the templates, being edited, with the source's spec under the name `<source>-<user name>` in lower case and the model the source runs on now, and creates it on save (`POST /api/ai-prompts` with `request_type`, `spec`, `model` and, for an edit, `id` and `bump`).
 - `/tool/ai/prompts` and the old template pages redirect to the tab.
 
 Each chain runs on one model, picked in the chains tab (`services/chainsvc`, `app_settings` `chain_models`). Until a sysop picks one, the `GOAPP_CONFIG` file decides (`chains.<chain>.model`, then `chains.common.model`), then `config.DefaultModel`. Several chains may share a model; the models tab lists each model's chains.

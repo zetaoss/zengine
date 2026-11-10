@@ -22,8 +22,8 @@
     id: number
     user_id: number
     title: string
-    content: string
-    messages?: AIEditRenderedMessage[]
+    spec: string
+    error?: string
     user_inputs?: AIEditUserInput[]
     model: string
     request_type: string
@@ -39,7 +39,7 @@
 
   interface ChainItem {
     name: string
-    spec: { userInputs?: AIEditUserInput[] }
+    user_inputs?: AIEditUserInput[]
   }
 
   // The chain each request type runs; its user inputs make the run form.
@@ -94,9 +94,9 @@
           userId: currentPromptItem.user_id,
           title: currentPromptItem.title,
           requestType: currentPromptItem.request_type,
-          content: currentPromptItem.content,
+          spec: currentPromptItem.spec ?? '',
+          error: currentPromptItem.error,
           model: currentPromptItem.model ?? '',
-          messages: currentPromptItem.messages,
         }
       : null,
   )
@@ -186,7 +186,7 @@
       console.error(err)
       return
     }
-    userInputsByChain = Object.fromEntries((data ?? []).map((c) => [c.name, c.spec.userInputs ?? []]))
+    userInputsByChain = Object.fromEntries((data ?? []).map((c) => [c.name, c.user_inputs ?? []]))
   }
 
   async function refreshPromptList() {

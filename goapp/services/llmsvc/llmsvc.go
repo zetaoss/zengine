@@ -91,7 +91,7 @@ type StepResult struct {
 
 // RunStep renders the step's prompt with vars, derived inputs filled (Chain.Fill), and runs it (RunMessages).
 func (s *LLMService) RunStep(ctx context.Context, model string, chain prompts.Chain, st prompts.Step, vars prompts.Vars, out any) (StepResult, error) {
-	return s.RunMessages(ctx, model, chain, st, st.Render(chain.Fill(vars)), out)
+	return s.RunMessages(ctx, model, chain, st, st.Render(vars), out)
 }
 
 // RunMessages sends rendered messages of the step to the model and parses the response into out, a non-nil
@@ -113,7 +113,7 @@ func (s *LLMService) RunMessages(ctx context.Context, model string, chain prompt
 	record := func(start time.Time, resp client.ChatResponse, callErr error) {
 		if s.record != nil {
 			s.record(ctx, Call{
-				Chain: chain.Name, ChainVersion: chain.Metadata.Version, Step: st.Name,
+				Chain: chain.Name, ChainVersion: chain.Version, Step: st.Name,
 				Model: model, ResolvedModel: resp.Model, OK: callErr == nil, Err: callErr,
 				Usage: resp.Usage, Elapsed: time.Since(start),
 			})
@@ -134,12 +134,12 @@ func (s *LLMService) RunMessages(ctx context.Context, model string, chain prompt
 		res.Usage.CompletionTokens += resp.Usage.CompletionTokens
 		res.Usage.TotalTokens += resp.Usage.TotalTokens
 		fresh := reflect.New(target.Elem().Type())
-		if err = st.Format.Parse(resp.Content, fresh.Interface()); err == nil {
+		if err = st.Format().Parse(resp.Content, fresh.Interface()); err == nil {
 			record(start, resp, nil)
 			target.Elem().Set(fresh.Elem())
 			return res, nil
 		}
-		err = fmt.Errorf("invalid %s output: %w (raw: %s)", st.Format.OrText(), err, truncateRunes(resp.Content, maxRawInError))
+		err = fmt.Errorf("invalid %s output: %w (raw: %s)", st.Format(), err, truncateRunes(resp.Content, maxRawInError))
 		record(start, resp, err)
 	}
 	return res, err
