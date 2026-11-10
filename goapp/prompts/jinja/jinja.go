@@ -286,8 +286,9 @@ func (p *parser) lex() error {
 				continue
 			}
 			if strings.HasPrefix(rest, "{{{") {
-				addText("{", i)
-				i++
+				// A wiki parameter ({{{1}}}, {{{name|default}}}): its braces are text, and so is its name.
+				addText("{{{", i)
+				i += 3
 			} else {
 				addText("{{", i)
 				i += 2

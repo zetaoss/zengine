@@ -97,7 +97,8 @@ The template is split into messages first: lines `<message role="system">` or `<
 
 Differences from Jinja2, and how wiki syntax gets through:
 
-- `{{ … }}` is output only when its inside reads as an expression: it starts with a variable of the template (then the rest must parse), or it is a dotted ASCII name alone. Anything else stays as text, so wiki templates pass: `{{풀기:사전링크}}`, `{{틀|a=1}}`, `{{{1}}}`, `{{#if:x}}`, `{{!}}`, and `{{틀|{{ title }}}}` keeps its outer braces around the title.
+- `{{ … }}` is output only when its inside reads as an expression: it starts with a variable of the template (then the rest must parse), or it is a dotted ASCII name alone. Anything else stays as text, so wiki templates pass: `{{풀기:사전링크}}`, `{{틀|a=1}}`, `{{#if:x}}`, `{{!}}`, and `{{틀|{{ title }}}}` keeps its outer braces around the title.
+- `{{{` is always text, so wiki parameters pass with their names (`{{{1}}}`, `{{{title|기본}}}`); an output inside one still renders (`{{{1|{{ title }}}}}`).
 - `{% … %}` is a tag only when a word follows `{%`; a word other than the tags above (`set`, `macro`, …) is an error.
 - A name the template is not given is an error rather than empty, so a typo (`{{ titel }}`) is caught on load or save. A wiki template that reads as a bare name (`{{PAGENAME}}`) is one too; put it inside `{% raw %}…{% endraw %}`.
 - A blank string is false for `if`, as are `false` and an empty list.
@@ -145,7 +146,7 @@ input_variables:
 
 The model a template runs on is a setting of its own, outside the spec (`aiedit_prompts.model`; empty runs it on its chain's model). `name` and `description` are copied to the `title` and `description` columns for listing. A change to the template or its `input_variables` bumps the version (`v1.0` on creation; minor by default, major when picked); a change of name, description or model does not. Each run records the version as `prompt_version`.
 
-Templates saved before specs (their `content`, `messages` and `user_inputs`) are converted by `tool migrate` after the SQL migrations (`aiedit.ConvertLegacyPrompts`): the instructions become the system message, with `{name}` placeholders as `{{ name }}` (older names take their names now: `wikitext` is `body`, `backlinkTexts`, `backlinkTitles`, `readBacklinks` and `useBacklinks` are `backlinks`, `extraTexts` and `copiedTexts` are `texts`) and wiki markup that would read as template syntax inside `{% raw %}`, and the user message lists in tags the variables the instructions do not already read. A template that cannot be converted is logged and left without a spec, and cannot run until it is fixed.
+Templates saved before specs (their `content`, `messages` and `user_inputs`) are converted by `tool migrate` after the SQL migrations (`aiedit.ConvertLegacyPrompts`). Stored messages keep their roles and order, each `if` and `each` message becoming a block around it (`{index}` is `{{ loop.index }}`), and one conditioned on a variable the chain no longer has (`request`) is left out; a template saved before messages has its content as the system message. `{name}` placeholders become `{{ name }}` (older names take their names now: `wikitext` is `body`, `backlinkTexts`, `backlinkTitles`, `readBacklinks` and `useBacklinks` are `backlinks`, `extraTexts` and `copiedTexts` are `texts`, in the editor's `-----name-----` headings too) and wiki markup that would read as template syntax goes inside `{% raw %}`. The user message then lists in tags the variables the template does not already read, under `# 변수` only when one of them is sent. A template that cannot be converted is logged and left without a spec, and cannot run until it is fixed.
 
 ## Chains and tasks
 

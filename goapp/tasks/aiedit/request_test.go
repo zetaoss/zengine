@@ -142,7 +142,7 @@ func TestLegacySpecContent(t *testing.T) {
 }
 
 func TestLegacySpecMessages(t *testing.T) {
-	messages := `[{"role":"system","content":"지침 틀(` + "`{{…}}`" + `)"},{"role":"user","content":"-----title-----\n{title}"},{"role":"user","if":"backlinkTitles","content":"-----backlinkTitles-----\n{backlinkTitles}"}]`
+	messages := `[{"role":"system","content":"지침 틀(` + "`{{…}}`" + `)"},{"role":"user","content":"-----title-----\n{title}"},{"role":"user","if":"backlinkTitles","content":"-----backlinkTitles-----\n{backlinkTitles}"},{"role":"user","each":"extraTexts","content":"-----extraTexts {index}-----\n{extraTexts}"},{"role":"user","if":"request","content":"-----request-----\n{request}"}]`
 	inputs := `[{"name":"hint"},{"name":"readBacklinks","type":"bool"},{"name":"extraTexts","type":"textList"},{"name":"request","type":"text"}]`
 	spec, err := LegacySpec(legacyPrompt{ID: 8, Title: "내 템플릿", Description: "설명", RequestType: models.AIEditRequestCreate, Messages: ptr(messages), UserInputs: ptr(inputs), Model: "groq/x"})
 	if err != nil {
@@ -160,11 +160,28 @@ func TestLegacySpecMessages(t *testing.T) {
 		t.Errorf("older names take their names now and request is dropped: %v %+v", names, pt)
 	}
 	p := models.AIEditPrompt{RequestType: models.AIEditRequestCreate, Spec: spec}
-	r, err := Render(context.Background(), fakeWiki(t), Request{RequestType: models.AIEditRequestCreate, Title: "사과", Prompt: &p, UserInputs: map[string]any{"hint": "과일", "backlinks": []any{"과수"}}})
+	r, err := Render(context.Background(), fakeWiki(t), Request{RequestType: models.AIEditRequestCreate, Title: "사과", Prompt: &p, UserInputs: map[string]any{"hint": "과일", "backlinks": []any{"과수"}, "texts": []any{"가", "나"}}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if r.Messages[0].Content != "지침 틀(`{{…}}`)" || r.Messages[1].Content != "# 변수\n\n<title>\n사과\n</title>\n<hint>\n과일\n</hint>\n<backlinks>\n과수\n</backlinks>" {
-		t.Errorf("unexpected messages: %+v", r.Messages)
+	want := "-----title-----\n사과\n\n-----backlinks-----\n과수\n\n-----texts 1-----\n가\n\n-----texts 2-----\n나\n\n# 변수\n\n<hint>\n과일\n</hint>"
+	if len(r.Messages) != 2 || r.Messages[0].Content != "지침 틀(`{{…}}`)" || r.Messages[1].Content != want {
+		t.Errorf("messages are kept as they ran, and what they do not read is listed after:\n%+v\nwant user\n%s", r.Messages, want)
+	}
+}
+
+func TestLegacySpecUserInstructions(t *testing.T) {
+	messages := `[{"role":"user","content":"'{title}' 문서를 표로 정리한다.\n{wikitext}"},{"role":"user","each":"copiedTexts","content":"자료 {index}: {copiedTexts}"}]`
+	spec, err := LegacySpec(legacyPrompt{ID: 9, Title: "복제", RequestType: models.AIEditRequestUpdate, Messages: ptr(messages)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := models.AIEditPrompt{RequestType: models.AIEditRequestUpdate, Spec: spec}
+	r, err := Render(context.Background(), fakeWiki(t), Request{RequestType: models.AIEditRequestUpdate, Title: "자바", Prompt: &p, UserInputs: map[string]any{"texts": []any{"가"}}})
+	if err != nil {
+		t.Fatalf("%v\n%s", err, spec)
+	}
+	if len(r.Messages) != 1 || r.Messages[0].Role != "user" || r.Messages[0].Content != "'자바' 문서를 표로 정리한다.\n저장된 본문\n\n자료 1: 가" {
+		t.Errorf("instructions in a user message must survive: %+v\n%s", r.Messages, spec)
 	}
 }
