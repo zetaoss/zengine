@@ -57,6 +57,7 @@ var legacyRenames = map[string]string{
 
 var (
 	legacyPlaceholder = regexp.MustCompile(`\{([A-Za-z][A-Za-z0-9_]*)\}`)
+	legacyTripleWiki  = regexp.MustCompile(`\{\{\{[\s\S]*?\}\}\}`)
 	wikiBareName      = regexp.MustCompile(`\{\{\s*[A-Za-z][A-Za-z0-9_.]*\s*\}\}`)
 	jinjaTagStart     = regexp.MustCompile(`\{%|\{#`)
 	// legacyHeading is the start of a heading the editor wrote above a placeholder (-----wikitext-----).
@@ -96,10 +97,17 @@ func LegacySpec(r legacyPrompt) (string, error) {
 	// raw, and {name} placeholders as {{ name }} (inside an each message, the item as {{ item }} and {index} as
 	// {{ loop.index }}).
 	convert := func(s, each string) string {
+		// Keep complete triple-brace parameters out of the older placeholder rewrites.
+		var tripleWiki []string
+		s = legacyTripleWiki.ReplaceAllStringFunc(s, func(m string) string {
+			marker := fmt.Sprintf("\x00wiki-param-%d\x00", len(tripleWiki))
+			tripleWiki = append(tripleWiki, m)
+			return marker
+		})
 		s = legacyHeading.ReplaceAllStringFunc(s, func(m string) string { return "-----" + legacyName(m[5:]) })
 		s = jinjaTagStart.ReplaceAllStringFunc(s, func(m string) string { return "{% raw %}" + m + "{% endraw %}" })
 		s = wikiBareName.ReplaceAllStringFunc(s, func(m string) string { return "{% raw %}" + m + "{% endraw %}" })
-		return legacyPlaceholder.ReplaceAllStringFunc(s, func(m string) string {
+		s = legacyPlaceholder.ReplaceAllStringFunc(s, func(m string) string {
 			name := legacyName(m[1 : len(m)-1])
 			switch {
 			case each != "" && name == each:
@@ -112,6 +120,10 @@ func LegacySpec(r legacyPrompt) (string, error) {
 			used[name] = true
 			return "{{ " + name + " }}"
 		})
+		for i, original := range tripleWiki {
+			s = strings.ReplaceAll(s, fmt.Sprintf("\x00wiki-param-%d\x00", i), original)
+		}
+		return s
 	}
 
 	var systemParts, userParts []string
@@ -133,14 +145,15 @@ func LegacySpec(r legacyPrompt) (string, error) {
 				continue
 			}
 			part := convert(m.Content, each)
-			switch {
-			case m.Each != "":
+			if m.Each != "" {
 				used[each] = true
 				part = "{% for item in " + each + " %}\n" + part + "\n\n{% endfor %}\n"
-			case m.If != "":
+			}
+			if m.If != "" {
 				used[cond] = true
 				part = "{% if " + cond + " %}\n" + part + "\n\n{% endif %}\n"
-			default:
+			}
+			if m.If == "" && m.Each == "" {
 				part += "\n\n"
 			}
 			if m.Role == "system" {

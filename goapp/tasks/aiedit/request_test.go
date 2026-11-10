@@ -185,3 +185,42 @@ func TestLegacySpecUserInstructions(t *testing.T) {
 		t.Errorf("instructions in a user message must survive: %+v\n%s", r.Messages, spec)
 	}
 }
+
+func TestLegacySpecTripleBraceWikiParameter(t *testing.T) {
+	content := "Literal {{{title}}} and {title}"
+	spec, err := LegacySpec(legacyPrompt{ID: 10, Title: "이름", RequestType: models.AIEditRequestUpdate, Content: ptr(content)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := models.AIEditPrompt{RequestType: models.AIEditRequestUpdate, Spec: spec}
+	r, err := Render(context.Background(), fakeWiki(t), Request{RequestType: models.AIEditRequestUpdate, Title: "사과", Prompt: &p})
+	if err != nil {
+		t.Fatalf("%v\n%s", err, spec)
+	}
+	if got, want := r.Messages[0].Content, "Literal {{{title}}} and 사과"; got != want {
+		t.Errorf("triple-brace wiki parameters stay literal while normal placeholders render: %q, want %q", got, want)
+	}
+}
+
+func TestLegacySpecIfAndEach(t *testing.T) {
+	messages := `[{"role":"user","if":"hint","each":"extraTexts","content":"자료 {index}: {extraTexts}"}]`
+	spec, err := LegacySpec(legacyPrompt{ID: 11, Title: "조건 반복", RequestType: models.AIEditRequestCreate, Messages: ptr(messages)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := models.AIEditPrompt{RequestType: models.AIEditRequestCreate, Spec: spec}
+	render := func(hint string) string {
+		t.Helper()
+		r, err := Render(context.Background(), fakeWiki(t), Request{RequestType: models.AIEditRequestCreate, Title: "사과", Prompt: &p, UserInputs: map[string]any{"hint": hint, "texts": []any{"A", "B"}}})
+		if err != nil {
+			t.Fatalf("%v\n%s", err, spec)
+		}
+		return r.Messages[0].Content
+	}
+	if got := render(""); strings.Contains(got, "자료 1: A") || strings.Contains(got, "자료 2: B") {
+		t.Errorf("each block must remain conditional on hint when it is absent: %q", got)
+	}
+	if got := render("yes"); !strings.Contains(got, "자료 1: A") || !strings.Contains(got, "자료 2: B") {
+		t.Errorf("each block must render when hint is present: %q", got)
+	}
+}
