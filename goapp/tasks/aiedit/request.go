@@ -2,10 +2,11 @@ package aiedit
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/zetaoss/zengine/goapp/app/config"
 	"github.com/zetaoss/zengine/goapp/models"
@@ -51,8 +52,8 @@ func ChainOf(requestType string) prompts.Chain {
 	return prompts.DocCreate
 }
 
-// Render fills the chain's variables (the user inputs as given; the title and the wikitext), runs its function
-// steps (with readBacklinks, the excerpts of the pages that link here) and renders its LLM step.
+// Render fills the chain's variables (the run form's values as given; the title and, for update, the wikitext as
+// body) and renders its first step. Backlinks are a run form value: the run form fetches them (Backlinks).
 func Render(ctx context.Context, cfg *config.Config, req Request) (Rendered, error) {
 	chain := ChainOf(req.RequestType)
 	if req.Prompt != nil {
@@ -65,89 +66,81 @@ func Render(ctx context.Context, cfg *config.Config, req Request) (Rendered, err
 	if err != nil {
 		return Rendered{}, InputError{err.Error()}
 	}
-	for _, in := range chain.Spec.Inputs {
-		if in.From != "" {
-			continue
-		}
+	if err := checkSizes(vars); err != nil {
+		return Rendered{}, InputError{err.Error()}
+	}
+	for _, in := range chain.Inputs {
 		switch in.Name {
 		case "title":
 			vars["title"] = req.Title
-		case "wikitext":
+		case "body":
 			var text string
 			if req.Wikitext != nil {
 				text = *req.Wikitext
 			} else if text, _, err = wikisvc.PageText(ctx, cfg, req.Title); err != nil {
 				return Rendered{}, fmt.Errorf("read page: %w", err)
 			}
-			vars["wikitext"] = text
+			vars["body"] = text
 		default:
 			return Rendered{}, fmt.Errorf("chain %s: no way to fill input %q", chain.Name, in.Name)
 		}
 	}
-	if vars, err = chain.RunFunctions(ctx, vars, functions(cfg)); err != nil {
-		return Rendered{}, err
-	}
-	vars = chain.Fill(vars)
 	messages := chain.PromptStep().Render(vars)
-	if len(messages) == 0 {
-		return Rendered{}, InputError{"보낼 메시지가 없습니다. 조건(if, each)이 걸린 입력을 채워 주세요."}
+	if !slices.ContainsFunc(messages, func(m prompts.Message) bool { return m.Role == "user" }) {
+		return Rendered{}, InputError{"보낼 user 메시지가 없습니다. 템플릿의 조건(if, for)이 걸린 입력을 채워 주세요."}
 	}
 	return Rendered{Chain: chain, Vars: vars, Messages: messages}, nil
 }
 
-// functions are the code of the function steps AI edit's chains use (prompts.Functions).
-func functions(cfg *config.Config) map[string]prompts.Func {
-	return map[string]prompts.Func{
-		"wiki/backlinkTexts": func(ctx context.Context, vars prompts.Vars) (any, error) {
-			title, _ := vars["title"].(string)
-			texts, err := wikisvc.BacklinkTexts(ctx, cfg, title)
-			if err != nil {
-				return nil, fmt.Errorf("read backlinks: %w", err)
+// Limits on run form values, which the requester's browser sends: the items of a list and the characters of an
+// item or a string.
+const (
+	MaxListItems  = 20
+	MaxValueChars = 100000
+)
+
+func checkSizes(vars prompts.Vars) error {
+	for name, v := range vars {
+		switch v := v.(type) {
+		case string:
+			if utf8.RuneCountInString(v) > MaxValueChars {
+				return fmt.Errorf("%s는 %d자까지 쓸 수 있습니다", name, MaxValueChars)
 			}
-			return texts, nil
-		},
-	}
-}
-
-// TemplateUserInputs are a template's run form: its own (aiedit_prompts.user_inputs) or its chain's. Values of a
-// user input reach the messages as they are; readBacklinks also has the task read the pages that link here.
-func TemplateUserInputs(p models.AIEditPrompt) []prompts.Input {
-	var own []prompts.Input
-	if strings.TrimSpace(p.UserInputs) != "" && json.Unmarshal([]byte(p.UserInputs), &own) == nil {
-		if own == nil {
-			own = []prompts.Input{}
+		case []string:
+			if len(v) > MaxListItems {
+				return fmt.Errorf("%s는 %d개까지 쓸 수 있습니다", name, MaxListItems)
+			}
+			for _, s := range v {
+				if utf8.RuneCountInString(s) > MaxValueChars {
+					return fmt.Errorf("%s의 항목은 %d자까지 쓸 수 있습니다", name, MaxValueChars)
+				}
+			}
 		}
-		return own
 	}
-	return ChainOf(p.RequestType).Spec.UserInputs
+	return nil
 }
 
-// TemplateChain is the chain a template runs as: its request type's chain with the template's user inputs and,
-// for the LLM step, its messages.
+// Backlinks lists the titles of the pages that link to title, for the run form's backlinks field.
+func Backlinks(ctx context.Context, cfg *config.Config, title string) ([]string, error) {
+	return wikisvc.BacklinkTitles(ctx, cfg, title)
+}
+
+// TemplatePrompt reads a template's document (aiedit_prompts.spec, prompts.PromptTemplate).
+func TemplatePrompt(p models.AIEditPrompt) (prompts.PromptTemplate, error) {
+	if strings.TrimSpace(p.Spec) == "" {
+		return prompts.PromptTemplate{}, errors.New("the template has no spec")
+	}
+	return prompts.ParsePromptTemplate(p.Spec)
+}
+
+// TemplateChain is the chain a template runs as: its request type's chain with the template's run form and
+// template (prompts.Chain.WithTemplate).
 func TemplateChain(p models.AIEditPrompt) (prompts.Chain, error) {
-	chain, err := ChainOf(p.RequestType).WithUserInputs(TemplateUserInputs(p))
+	t, err := TemplatePrompt(p)
 	if err != nil {
-		return chain, err
+		return prompts.Chain{}, err
 	}
-	chain.Spec.Steps[chain.PromptIndex()].Messages = TemplateMessages(p)
-	return chain, nil
-}
-
-// TemplateMessages are the messages a template runs with: its own (aiedit_prompts.messages) or, for a template
-// saved before it had them, its content in place of the chain step's unconditional messages (the instructions
-// and the page) followed by the step's messages that carry the run form's values (If, Each).
-func TemplateMessages(p models.AIEditPrompt) []prompts.Message {
-	var own []prompts.Message
-	if strings.TrimSpace(p.Messages) != "" && json.Unmarshal([]byte(p.Messages), &own) == nil && len(own) > 0 {
-		return own
-	}
-	messages := []prompts.Message{{Role: "user", Content: p.Content}}
-	for _, m := range ChainOf(p.RequestType).PromptStep().Messages {
-		if m.If != "" || m.Each != "" {
-			messages = append(messages, m)
-		}
-	}
-	return messages
+	return ChainOf(p.RequestType).WithTemplate(t)
 }
 
 // MessagesText joins rendered messages for people to read (aiedit_tasks.llm_input).

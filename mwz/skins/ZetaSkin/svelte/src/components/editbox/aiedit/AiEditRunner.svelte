@@ -63,9 +63,10 @@
   let saveAsTitle = $state('')
   let savingPromptAs = $state(false)
 
-  let hasPromptContent = $derived(prompt.content.trim().length > 0)
+  let hasPromptContent = $derived(prompt.spec.trim().length > 0 && !prompt.error)
   let trimmedTitle = $derived(title.trim())
-  let requiredFilled = $derived(userInputs.every((input) => !input.required || filled(values[input.name])))
+  let requiredFilled = $derived(userInputs.every((input) => !input.is_required || filled(values[input.name])))
+  let fetchingBacklinks = $state(false)
   let canSubmit = $derived(hasPromptContent && trimmedTitle.length > 0 && requiredFilled && !submitting)
 
   // An input starts at its default; a value kept from another template that fits it stays.
@@ -93,7 +94,24 @@
     values = { ...values, [name]: items }
   }
 
-  // A user input's name as the run form shows it: readBacklinks as "Read backlinks".
+  // backlinks is filled by asking the wiki which pages link to the title; the list can then be edited.
+  async function fetchBacklinks(name: string) {
+    if (!trimmedTitle) return
+    fetchingBacklinks = true
+    try {
+      const [data, err] = await httpy.get<{ titles: string[] }>('/api/ai-edit/backlinks', { title: trimmedTitle })
+      if (err) {
+        showToast(err.message || '역링크를 가져오지 못했습니다.')
+        return
+      }
+      setTexts(name, data?.titles ?? [])
+      if (!data?.titles?.length) showToast('이 문서를 가리키는 문서가 없습니다.')
+    } finally {
+      fetchingBacklinks = false
+    }
+  }
+
+  // A user input's name as the run form shows it: someName as "Some name".
   function inputLabel(name: string) {
     const words = name.replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase()
     return words.charAt(0).toUpperCase() + words.slice(1)
@@ -104,7 +122,7 @@
   function fits(input: AIEditUserInput, v: AIEditUserInputValue | undefined) {
     if (input.type === 'bool') return typeof v === 'boolean'
     if (input.type === 'textList') return Array.isArray(v)
-    if (input.type === 'choice') return typeof v === 'string' && (input.options ?? []).includes(v)
+    if (input.type === 'choice') return typeof v === 'string' && (input.json_schema?.enum ?? []).includes(v)
     return typeof v === 'string'
   }
 
@@ -179,6 +197,11 @@
     saveAsModalOpen = true
   }
 
+  // The spec with its name replaced; a JSON string is a YAML double-quoted scalar.
+  function renamedSpec(spec: string, name: string) {
+    return spec.replace(/^name:.*$/m, `name: ${JSON.stringify(name)}`)
+  }
+
   async function savePromptAs() {
     const newTitle = saveAsTitle.trim()
     if (!newTitle) return
@@ -186,11 +209,8 @@
     savingPromptAs = true
     try {
       const [, err] = await httpy.post('/api/ai-prompts', {
-        title: newTitle,
         request_type: prompt.requestType,
-        content: prompt.content,
-        messages: prompt.messages,
-        user_inputs: userInputs,
+        spec: renamedSpec(prompt.spec, newTitle),
         model: prompt.model,
       })
       if (err) {
@@ -222,14 +242,16 @@
 
   <div class="flex min-h-0 flex-1 flex-col gap-3 border bg-a-gray-100 p-4">
     {@render promptHeader?.()}
-    {#if !hasPromptContent}
+    {#if prompt.error}
+      <div class="rounded border border-a-amber-200 bg-a-amber-50 px-3 py-2 text-sm text-a-amber-700">이 템플릿은 실행할 수 없습니다: {prompt.error}</div>
+    {:else if !hasPromptContent}
       <div class="rounded border border-a-amber-200 bg-a-amber-50 px-3 py-2 text-sm text-a-amber-700">프롬프트 내용이 없습니다.</div>
     {/if}
 
     <div class="relative">
       <pre
         id="ai-edit-runner-prompt"
-        class="max-h-60 overflow-auto whitespace-pre-wrap rounded border bg-a-gray-50 p-3 font-mono text-xs leading-relaxed">{prompt.content}</pre>
+        class="max-h-60 overflow-auto whitespace-pre-wrap rounded border bg-a-gray-50 p-3 font-mono text-xs leading-relaxed">{prompt.spec}</pre>
       <div class="absolute right-5 top-1 flex items-center">
         {#if displayedTaskStatus}
           <div class="flex items-center rounded-lg bg-a-gray-500/20 px-2 py-1 text-xs text-a-slate-500">
@@ -284,8 +306,9 @@
     {#if userInputs.length > 0}
       <div class="flex min-h-0 flex-col gap-3 overflow-auto text-sm">
         {#each userInputs as input (input.name)}
-          {@const label = inputLabel(input.name) + (input.required ? ' *' : '')}
-          <div class="flex flex-col gap-1">
+          {@const label = inputLabel(input.name) + (input.is_required ? ' *' : '')}
+          {@const placeholder = input.ui?.placeholder}
+          <div class="flex flex-col gap-1" title={input.description}>
           {#if input.type === 'bool'}
             <label class="flex items-center gap-2">
               <input
@@ -303,7 +326,7 @@
                     <ZTextarea
                       id={`ai-edit-input-${input.name}-${i}`}
                       modelValue={item}
-                      placeholder={input.placeholder ?? `${label} ${i + 1}`}
+                      placeholder={placeholder ?? `${label} ${i + 1}`}
                       maxHeight={240}
                       onUpdateModelValue={(v: string) => setTexts(input.name, textsValue(input.name).map((x, j) => (j === i ? v : x)))}
                     />
@@ -319,11 +342,25 @@
                   </CButton>
                 </div>
               {/each}
-              <div>
+              <div class="flex items-center gap-1">
                 <CButton type="button" variant="outline" size="small" onclick={() => setTexts(input.name, [...textsValue(input.name), ''])}>
                   <ZIcon path={mdiPlus} />
                   {label}
                 </CButton>
+                {#if input.name === 'backlinks'}
+                  <CButton
+                    type="button"
+                    variant="outline"
+                    size="small"
+                    disabled={!trimmedTitle || fetchingBacklinks}
+                    onclick={() => void fetchBacklinks(input.name)}
+                  >
+                    {#if fetchingBacklinks}
+                      <ZSpinner size="0.875rem" extraClass="mr-1" />
+                    {/if}
+                    역링크 가져오기
+                  </CButton>
+                {/if}
               </div>
             </div>
           {:else}
@@ -339,9 +376,9 @@
                   onchange={(e) => setText(input.name, e.currentTarget.value)}
                 >
                   {#if input.default === undefined}
-                    <option value="">{input.placeholder ?? '선택'}</option>
+                    <option value="">{placeholder ?? '선택'}</option>
                   {/if}
-                  {#each input.options ?? [] as option (option)}
+                  {#each input.json_schema?.enum ?? [] as option (option)}
                     <option value={option}>{option}</option>
                   {/each}
                 </select>
@@ -349,7 +386,7 @@
                 <ZTextarea
                   id={`ai-edit-input-${input.name}`}
                   modelValue={textValue(input.name)}
-                  placeholder={input.placeholder}
+                  {placeholder}
                   maxHeight={160}
                   onUpdateModelValue={(v: string) => setText(input.name, v)}
                 />
@@ -357,7 +394,7 @@
                 <input
                   id={`ai-edit-input-${input.name}`}
                   class="border-border h-8 rounded border bg-background px-2"
-                  placeholder={input.placeholder}
+                  {placeholder}
                   value={textValue(input.name)}
                   oninput={(e) => setText(input.name, e.currentTarget.value)}
                 />

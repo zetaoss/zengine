@@ -160,7 +160,7 @@ func Store(c *serverctx.Context) {
 		RequestType:   req.RequestType,
 		PromptID:      promptID(prompt),
 		PromptVersion: promptVersion(prompt),
-		ChainVersion:  r.Chain.Metadata.Version,
+		ChainVersion:  r.Chain.Version,
 		Inputs:        string(inputsJSON),
 		LLMMessages:   string(messagesJSON),
 		LLMOutput:     "",
@@ -206,7 +206,30 @@ func Preview(c *serverctx.Context) {
 	if !ok {
 		return
 	}
-	c.JSON(app.H{"chain": r.Chain.Name, "version": r.Chain.Metadata.Version, "messages": r.Messages})
+	c.JSON(app.H{"chain": r.Chain.Name, "version": r.Chain.Version, "messages": r.Messages})
+}
+
+// Backlinks lists the titles of the pages that link to ?title=, for the run form's backlinks field
+// (aiedit.Backlinks: up to 10 main-namespace articles, redirects left out).
+func Backlinks(c *serverctx.Context) {
+	if user, ok := c.User(); !ok || user.ID < 1 {
+		c.JSONError(http.StatusUnauthorized, "Unauthenticated")
+		return
+	}
+	title := strings.TrimSpace(c.R.URL.Query().Get("title"))
+	if title == "" {
+		c.JSONError(http.StatusUnprocessableEntity, "제목이 필요합니다.")
+		return
+	}
+	titles, err := aiedit.Backlinks(c.R.Context(), c.Cfg, title)
+	if err != nil {
+		c.InternalError()
+		return
+	}
+	if titles == nil {
+		titles = []string{}
+	}
+	c.JSON(app.H{"titles": titles})
 }
 
 // request checks the payload and loads its template, answering 422 (or 500) itself when it returns false.

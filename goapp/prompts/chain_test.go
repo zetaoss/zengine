@@ -1,14 +1,11 @@
 package prompts
 
 import (
-	"context"
 	"reflect"
-	"regexp"
+	"slices"
 	"strings"
 	"testing"
 )
-
-var versionRe = regexp.MustCompile(`^v[0-9]+\.[0-9]+$`)
 
 func TestBuiltinChains(t *testing.T) {
 	seen := map[string]bool{}
@@ -17,82 +14,102 @@ func TestBuiltinChains(t *testing.T) {
 			t.Fatalf("invalid or duplicate chain: %q", c.Name)
 		}
 		seen[c.Name] = true
-		if !versionRe.MatchString(c.Metadata.Version) {
-			t.Errorf("%s: version %q is not v<major>.<minor>", c.Name, c.Metadata.Version)
-		}
-		if err := c.Validate(); err != nil {
+		if err := c.Compile(); err != nil {
 			t.Errorf("%s: %v", c.Name, err)
 		}
 	}
 }
 
-func testChain(messages ...Message) Chain {
-	return Chain{Name: "t", Spec: Spec{
-		UserInputs: []Input{{Name: "hint"}, {Name: "flag", Type: TypeBool}, {Name: "notes", Type: TypeTextList}},
-		Inputs:     []Input{{Name: "title"}},
-		Steps:      []Step{{Name: "s", Prompt: Prompt{Inputs: []string{"title", "hint", "notes"}, Messages: messages}, Output: "out"}},
-	}}
+const testTemplate = `<message role="system">
+고정 지침 {"id": 1} {{틀}} {| class="wikitable"
+</message>
+<message role="user">
+<title>
+{{ title }}
+</title>
+{% if hint %}
+<hint>
+{{ hint }}
+</hint>
+{% endif %}
+{% for n in notes %}
+<notes>
+{{ loop.index }}. {{ n }}
+</notes>
+{% endfor %}
+</message>`
+
+func testChain(template string) Chain {
+	return Chain{
+		Name: "t", Version: "v1.0",
+		UserInputs: []Input{
+			{Name: "hint"},
+			{Name: "flag", JSONSchema: &JSONSchema{Type: "boolean"}},
+			{Name: "notes", JSONSchema: &JSONSchema{Type: "array", Items: &JSONSchema{Type: "string"}}},
+		},
+		Inputs: []Input{{Name: "title"}},
+		Steps:  []Step{{Name: "s", TemplateFormat: "jinja2", Template: template, OutputVariable: &OutputVariable{Name: "out"}}},
+	}
 }
 
-func TestValidate(t *testing.T) {
-	ok := testChain(
-		Message{Role: "user", Content: "{title}"},
-		Message{Role: "user", If: "hint", Content: "{hint}"},
-		Message{Role: "user", Each: "notes", Content: "{index}: {notes}"},
-	)
-	if err := ok.Validate(); err != nil {
+func compiled(t *testing.T, c Chain) Chain {
+	t.Helper()
+	if err := c.Compile(); err != nil {
 		t.Fatalf("valid chain rejected: %v", err)
 	}
-	for name, c := range map[string]Chain{
-		"undeclared placeholder": testChain(Message{Role: "user", Content: "{title} {hint} {notes} {other}"}),
-		"textList outside each":  testChain(Message{Role: "user", Content: "{title} {hint} {notes}"}),
-		"each on a string":       testChain(Message{Role: "user", Each: "hint", Content: "{title} {notes}"}),
-		"index outside each":     testChain(Message{Role: "user", Content: "{title} {index}"}, Message{Role: "user", If: "hint", Each: "notes", Content: "{notes}"}),
-		"unknown role":           testChain(Message{Role: "assistant", Content: "{title} {hint}"}, Message{Role: "user", Each: "notes", Content: "{notes}"}),
+	return c
+}
+
+func TestCompile(t *testing.T) {
+	c := compiled(t, testChain(testTemplate))
+	if got := c.Steps[0].Inputs; !reflect.DeepEqual(got, []string{"title", "hint", "notes"}) {
+		t.Errorf("Inputs = %v", got)
+	}
+	for name, tpl := range map[string]string{
+		"undeclared variable": "<message role=\"user\">\n{{ title }} {{ other }}\n</message>",
+		"for over a string":   "<message role=\"user\">\n{{ title }}{% for h in hint %}{% endfor %}\n</message>",
+		"assistant message":   "<message role=\"assistant\">\n{{ title }}\n</message>",
+		"title unused":        "<message role=\"user\">\n{{ hint }}\n</message>",
+		"text outside":        "x\n<message role=\"user\">\n{{ title }}\n</message>",
 	} {
-		if err := c.Validate(); err == nil {
+		if c := testChain(tpl); c.Compile() == nil {
 			t.Errorf("%s: expected an error", name)
 		}
 	}
-	unused := ok
-	unused.Spec.Inputs = append(unused.Spec.Inputs, Input{Name: "wikitext"})
-	if err := unused.Validate(); err == nil {
-		t.Error("an unused task input must be rejected")
+	other := testChain(testTemplate)
+	other.Steps[0].TemplateFormat = "handlebars"
+	if err := other.Compile(); err == nil {
+		t.Error("a template format other than jinja2 must be rejected")
 	}
-	dup := ok
-	dup.Spec.Inputs = []Input{{Name: "title"}, {Name: "hint"}}
-	if err := dup.Validate(); err == nil {
+	dup := testChain(testTemplate)
+	dup.Inputs = []Input{{Name: "title"}, {Name: "hint"}}
+	if err := dup.Compile(); err == nil {
 		t.Error("a duplicate variable must be rejected")
+	}
+	noVersion := testChain(testTemplate)
+	noVersion.Version = "v2"
+	if err := noVersion.Compile(); err == nil {
+		t.Error("a version without a minor must be rejected")
 	}
 }
 
 func TestRender(t *testing.T) {
-	p := Prompt{
-		Inputs: []string{"title", "body", "hint", "notes"},
-		Messages: []Message{
-			{Role: "system", Content: `fixed {"id": 1} {{틀}} {| class="wikitable"`},
-			{Role: "user", Content: "{title}: {body}"},
-			{Role: "user", If: "hint", Content: "hint {hint}"},
-			{Role: "user", Each: "notes", Content: "{index}. {notes} ({title})"},
-		},
-	}
-	got := p.Render(Vars{"title": "T", "body": "{title} {{틀}}", "hint": " ", "notes": []string{"a", "b {index}"}})
+	c := compiled(t, testChain(testTemplate))
+	got := c.Steps[0].Render(Vars{"title": "T", "hint": " ", "notes": []string{"a", "b {{ title }}"}})
 	want := []Message{
-		{Role: "system", Content: `fixed {"id": 1} {{틀}} {| class="wikitable"`},
-		{Role: "user", Content: "T: {title} {{틀}}"},
-		{Role: "user", Content: "1. a (T)"},
-		{Role: "user", Content: "2. b {index} (T)"},
+		{Role: "system", Content: `고정 지침 {"id": 1} {{틀}} {| class="wikitable"`},
+		{Role: "user", Content: "<title>\nT\n</title>\n<notes>\n1. a\n</notes>\n<notes>\n2. b {{ title }}\n</notes>"},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("unexpected render:\n%+v\nwant\n%+v", got, want)
 	}
-	if got := p.Render(Vars{"title": "T", "hint": "x"}); len(got) != 3 || got[2].Content != "hint x" {
+	if got := c.Steps[0].Render(Vars{"title": "T", "hint": "x"}); len(got) != 2 || got[1].Content != "<title>\nT\n</title>\n<hint>\nx\n</hint>" {
 		t.Fatalf("a given hint and no notes: %+v", got)
 	}
 }
 
 func TestUserVars(t *testing.T) {
-	c := testChain()
+	c := compiled(t, testChain(testTemplate))
 	vars, err := c.UserVars(map[string]any{"hint": "apple", "flag": true, "notes": []any{"a", "  ", "b"}})
 	if err != nil {
 		t.Fatal(err)
@@ -103,6 +120,136 @@ func TestUserVars(t *testing.T) {
 	for _, raw := range []map[string]any{{"other": "x"}, {"hint": 1}, {"flag": "yes"}, {"notes": "a"}, {"notes": []any{1}}} {
 		if _, err := c.UserVars(raw); err == nil {
 			t.Errorf("expected an error for %v", raw)
+		}
+	}
+}
+
+func TestInputTypes(t *testing.T) {
+	str := &JSONSchema{Type: "string"}
+	for want, in := range map[InputType]Input{
+		TypeString:   {Name: "a"},
+		TypeText:     {Name: "a", JSONSchema: str, UI: &UI{Variant: "longText"}},
+		TypeChoice:   {Name: "a", JSONSchema: &JSONSchema{Type: "string", Enum: []string{"x", "y"}}},
+		TypeBool:     {Name: "a", JSONSchema: &JSONSchema{Type: "boolean"}},
+		TypeTextList: {Name: "a", JSONSchema: &JSONSchema{Type: "array", Items: str}, UI: &UI{Variant: "longText"}},
+	} {
+		if err := in.validateUser(); err != nil || in.Type() != want {
+			t.Errorf("%+v: type %s, err %v; want %s", in, in.Type(), err, want)
+		}
+	}
+	for name, in := range map[string]Input{
+		"number":                 {Name: "x", JSONSchema: &JSONSchema{Type: "number"}},
+		"array of booleans":      {Name: "x", JSONSchema: &JSONSchema{Type: "array", Items: &JSONSchema{Type: "boolean"}}},
+		"array without items":    {Name: "x", JSONSchema: &JSONSchema{Type: "array"}},
+		"choice with one value":  {Name: "x", JSONSchema: &JSONSchema{Type: "string", Enum: []string{"a"}}},
+		"duplicate enum":         {Name: "x", JSONSchema: &JSONSchema{Type: "string", Enum: []string{"a", "a"}}},
+		"default not in enum":    {Name: "x", JSONSchema: &JSONSchema{Type: "string", Enum: []string{"a", "b"}}, Default: "c"},
+		"string default on bool": {Name: "x", JSONSchema: &JSONSchema{Type: "boolean"}, Default: "true"},
+		"default on an array":    {Name: "x", JSONSchema: &JSONSchema{Type: "array", Items: str}, Default: "a"},
+		"required bool":          {Name: "x", JSONSchema: &JSONSchema{Type: "boolean"}, IsRequired: true},
+		"unknown variant":        {Name: "x", UI: &UI{Variant: "obscured"}},
+		"ui on a bool":           {Name: "x", JSONSchema: &JSONSchema{Type: "boolean"}, UI: &UI{Placeholder: "p"}},
+		"reserved name":          {Name: "loop"},
+	} {
+		if err := in.validateUser(); err == nil {
+			t.Errorf("%s: expected an error", name)
+		}
+	}
+	tone := Input{Name: "tone", JSONSchema: &JSONSchema{Type: "string", Enum: []string{"존댓말", "반말"}}, Default: "존댓말"}
+	topic := Input{Name: "topic", IsRequired: true}
+	c := testChain(testTemplate)
+	c.UserInputs = append(c.UserInputs, tone, topic)
+	c = compiled(t, c)
+	if got, err := c.UserVars(map[string]any{"topic": "사과"}); err != nil || got["tone"] != "존댓말" || got["topic"] != "사과" {
+		t.Fatalf("default and required: %v %v", err, got)
+	}
+	for name, raw := range map[string]map[string]any{
+		"required missing": {},
+		"required blank":   {"topic": "  "},
+		"not an option":    {"topic": "사과", "tone": "평어"},
+	} {
+		if _, err := c.UserVars(raw); err == nil {
+			t.Errorf("%s: expected an error", name)
+		}
+	}
+	task := testChain(testTemplate)
+	task.Inputs = []Input{{Name: "title", IsRequired: true}}
+	if err := task.Compile(); err == nil {
+		t.Error("is_required is for user inputs")
+	}
+}
+
+func TestBuiltinInputs(t *testing.T) {
+	if DocEval.Inputs[0].Name != "title" || DocCreate.UserInputs[0].UI.Placeholder == "" {
+		t.Fatalf("inputs written as a name and as a mapping must both load: %+v %+v", DocEval.Inputs, DocCreate.UserInputs)
+	}
+	for _, c := range []Chain{DocCreate, DocUpdate} {
+		for _, name := range []string{"texts", "backlinks"} {
+			i := slices.IndexFunc(c.UserInputs, func(in Input) bool { return in.Name == name })
+			if i < 0 || c.UserInputs[i].Type() != TypeTextList {
+				t.Errorf("%s: %s must be an array of strings", c.Name, name)
+			}
+		}
+	}
+}
+
+func TestPromptTemplate(t *testing.T) {
+	pt := DocCreate.PromptTemplate()
+	if pt.Name != "doc-create" || pt.TemplateFormat != "jinja2" || pt.Template != DocCreate.Steps[0].Template {
+		t.Fatalf("clone of doc-create: %+v", pt)
+	}
+	var names []string
+	for _, v := range pt.InputVariables {
+		names = append(names, v.Name)
+	}
+	if strings.Join(names, ",") != "title,hint,texts,backlinks" {
+		t.Errorf("input_variables = %v", names)
+	}
+	back, err := ParsePromptTemplate(pt.YAML())
+	if err != nil || !reflect.DeepEqual(back, pt) {
+		t.Fatalf("YAML round trip: %v\n%s", err, pt.YAML())
+	}
+	if !strings.Contains(pt.YAML(), "template: |-\n") {
+		t.Errorf("the template must be a block: %s", pt.YAML())
+	}
+	if _, err := ParsePromptTemplate("name: x\nunknown: 1\n"); err == nil {
+		t.Error("an unknown field must be rejected")
+	}
+}
+
+func TestWithTemplate(t *testing.T) {
+	tpl := PromptTemplate{
+		Name: "mine", TemplateFormat: "jinja2",
+		Template:       "<message role=\"system\">\n지침 {{풀기:사전링크}}\n</message>\n<message role=\"user\">\n{{ title }}\n{% if hint %}{{ hint }}{% endif %}\n</message>",
+		InputVariables: []InputVariable{{Name: "hint"}, {Name: "title"}},
+	}
+	c, err := DocCreate.WithTemplate(tpl)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(c.UserInputs) != 1 || c.UserInputs[0].Name != "hint" {
+		t.Errorf("picked user inputs: %+v", c.UserInputs)
+	}
+	got := c.PromptStep().Render(Vars{"title": "눈", "hint": "snow"})
+	if len(got) != 2 || got[0].Content != "지침 {{풀기:사전링크}}" || got[1].Content != "눈\nsnow" {
+		t.Errorf("render: %+v", got)
+	}
+	if DocCreate.PromptStep().Template == tpl.Template {
+		t.Error("WithTemplate must not change the built-in chain")
+	}
+	for name, mutate := range map[string]func(*PromptTemplate){
+		"unknown variable":   func(p *PromptTemplate) { p.InputVariables = append(p.InputVariables, InputVariable{Name: "body"}) },
+		"repeated variable":  func(p *PromptTemplate) { p.InputVariables = append(p.InputVariables, InputVariable{Name: "hint"}) },
+		"undeclared use":     func(p *PromptTemplate) { p.InputVariables = []InputVariable{{Name: "title"}} },
+		"title not read":     func(p *PromptTemplate) { p.Template = "<message role=\"user\">\nx\n</message>" },
+		"other format":       func(p *PromptTemplate) { p.TemplateFormat = "liquid" },
+		"wiki name as a var": func(p *PromptTemplate) { p.Template = "<message role=\"user\">\n{{ title }} {{PAGENAME}}\n</message>" },
+	} {
+		p := tpl
+		p.InputVariables = slices.Clone(tpl.InputVariables)
+		mutate(&p)
+		if _, err := DocCreate.WithTemplate(p); err == nil {
+			t.Errorf("%s: expected an error", name)
 		}
 	}
 }
@@ -146,12 +293,6 @@ func TestMajor(t *testing.T) {
 	}
 }
 
-func TestInputYAML(t *testing.T) {
-	if !strings.Contains(DocEval.Spec.Inputs[0].Name, "title") || DocCreate.Spec.UserInputs[0].Placeholder == "" {
-		t.Fatalf("inputs written as a name and as a mapping must both load: %+v %+v", DocEval.Spec.Inputs, DocCreate.Spec.UserInputs)
-	}
-}
-
 func TestNextVersion(t *testing.T) {
 	for _, c := range []struct {
 		v     string
@@ -161,180 +302,6 @@ func TestNextVersion(t *testing.T) {
 		if got := NextVersion(c.v, c.major); got != c.want {
 			t.Errorf("NextVersion(%q, %v) = %q, want %q", c.v, c.major, got, c.want)
 		}
-	}
-}
-
-func TestTemplateYAML(t *testing.T) {
-	tpl := DocCreate.Template()
-	text := tpl.YAML()
-	if !strings.Contains(text, "userInputs:") || !strings.Contains(text, "content: |-") {
-		t.Fatalf("template YAML should read like the chain files:\n%s", text)
-	}
-	back, err := ParseTemplate(text)
-	if err != nil || !reflect.DeepEqual(back, tpl) {
-		t.Fatalf("round trip: %v\n%+v", err, back)
-	}
-	if _, err := ParseTemplate("messages: []\nsteps: []\n"); err == nil {
-		t.Error("unknown fields must be rejected")
-	}
-}
-
-func TestWikiBraces(t *testing.T) {
-	p := Prompt{Inputs: []string{"title"}, Messages: []Message{{Role: "user", Content: "{title} {{title}} {{Infobox}} {{{1}}} {{틀|{title}}}"}}}
-	got := p.Render(Vars{"title": "Apple"})[0].Content
-	if got != "Apple {{title}} {{Infobox}} {{{1}}} {{틀|Apple}}" {
-		t.Fatalf("wiki braces must stay: %q", got)
-	}
-	c := testChain(
-		Message{Role: "user", Content: "{title} {{Infobox}} {{{1}}} {{other}}"},
-		Message{Role: "user", If: "hint", Content: "{hint}"},
-		Message{Role: "user", Each: "notes", Content: "{notes}"},
-	)
-	if err := c.Validate(); err != nil {
-		t.Fatalf("wiki markup is not a placeholder: %v", err)
-	}
-}
-
-func TestMagicWords(t *testing.T) {
-	c := testChain(
-		Message{Role: "user", Content: "{title} 끝에 {{reflist}}, 연도는 {{CURRENTYEAR}}"},
-		Message{Role: "user", If: "hint", Content: "{hint}"},
-		Message{Role: "user", Each: "notes", Content: "{notes}"},
-	)
-	if err := c.Validate(); err != nil {
-		t.Fatalf("parameterless templates and magic words are wiki markup: %v", err)
-	}
-}
-
-func TestFill(t *testing.T) {
-	long := strings.Repeat("가", 1500)
-	if got := DocDefine.Fill(Vars{"wikitext": long})["lead"].(string); len([]rune(got)) != 1000 {
-		t.Fatalf("lead is cut to 1000 characters, got %d", len([]rune(got)))
-	}
-	if got := DocEval.Fill(Vars{"wikitext": "짧은 본문"})["body"]; got != "짧은 본문" {
-		t.Fatalf("a short body is kept whole, got %q", got)
-	}
-	bad := Chain{Name: "t", Spec: Spec{Inputs: []Input{{Name: "lead", From: "missing"}}, Steps: []Step{{Name: "s", Prompt: Prompt{Messages: []Message{{Role: "user", Content: "{lead}"}}}}}}}
-	if err := bad.Validate(); err == nil {
-		t.Error("from must name a variable")
-	}
-	cut := Chain{Name: "t", Spec: Spec{Inputs: []Input{{Name: "text"}, {Name: "lead", From: "text", MaxChars: 3}}, Steps: []Step{{Name: "s", Prompt: Prompt{Messages: []Message{{Role: "user", Content: "{lead}"}}}}}}}
-	if err := cut.Validate(); err != nil {
-		t.Errorf("a source used only through its cut counts as used: %v", err)
-	}
-}
-
-func functionChain(fn Step) Chain {
-	return Chain{Name: "t", Spec: Spec{
-		UserInputs: []Input{{Name: "flag", Type: TypeBool}},
-		Inputs:     []Input{{Name: "title"}},
-		Steps: []Step{fn, {Name: "s", Prompt: Prompt{Messages: []Message{
-			{Role: "user", Content: "{title}"},
-			{Role: "user", Each: "links", Content: "{index}: {links}"},
-		}}}},
-	}}
-}
-
-func TestFunctionSteps(t *testing.T) {
-	ok := functionChain(Step{Name: "f", Uses: "wiki/backlinkTexts", If: "flag", Output: "links"})
-	if err := ok.Validate(); err != nil {
-		t.Fatalf("valid chain rejected: %v", err)
-	}
-	if ok.PromptIndex() != 1 || ok.PromptStep().Name != "s" {
-		t.Fatalf("prompt step: %d %q", ok.PromptIndex(), ok.PromptStep().Name)
-	}
-	for name, st := range map[string]Step{
-		"unknown function": {Name: "f", Uses: "wiki/nothing", Output: "links"},
-		"no output":        {Name: "f", Uses: "wiki/backlinkTexts"},
-		"messages":         {Name: "f", Uses: "wiki/backlinkTexts", Output: "links", Prompt: Prompt{Messages: []Message{{Role: "user", Content: "x"}}}},
-		"undeclared if":    {Name: "f", Uses: "wiki/backlinkTexts", If: "other", Output: "links"},
-		"output clash":     {Name: "f", Uses: "wiki/backlinkTexts", Output: "title"},
-	} {
-		if err := functionChain(st).Validate(); err == nil {
-			t.Errorf("%s: expected an error", name)
-		}
-	}
-	if err := (Chain{Name: "t", Spec: Spec{Inputs: []Input{{Name: "title"}}, Steps: []Step{{Name: "f", Uses: "wiki/backlinkTexts", Output: "links"}}}}).Validate(); err == nil {
-		t.Error("a chain without an LLM step must be rejected")
-	}
-	if err := ok.ValidateMessages([]Message{{Role: "user", Each: "links", Content: "{links}"}}); err != nil {
-		t.Errorf("a template may read an earlier function step's output: %v", err)
-	}
-
-	calls := 0
-	funcs := map[string]Func{"wiki/backlinkTexts": func(_ context.Context, vars Vars) (any, error) {
-		calls++
-		return []string{"from " + vars["title"].(string)}, nil
-	}}
-	got, err := ok.RunFunctions(context.Background(), Vars{"title": "A", "flag": true}, funcs)
-	if err != nil || calls != 1 || !reflect.DeepEqual(got["links"], []string{"from A"}) {
-		t.Fatalf("run: %v %d %v", err, calls, got)
-	}
-	got, err = ok.RunFunctions(context.Background(), Vars{"title": "A"}, funcs)
-	if err != nil || calls != 1 || !reflect.DeepEqual(got["links"], []string{}) {
-		t.Fatalf("skipped run: %v %d %v", err, calls, got)
-	}
-	if _, err := ok.RunFunctions(context.Background(), Vars{"title": "A", "flag": true}, nil); err == nil {
-		t.Error("a function without code must fail")
-	}
-}
-
-func TestUserInputAttributes(t *testing.T) {
-	tone := Input{Name: "tone", Type: TypeChoice, Options: []string{"존댓말", "반말"}, Default: "존댓말"}
-	topic := Input{Name: "topic", Required: true}
-	c := testChain(Message{Role: "user", Content: "{title} {hint} {tone} {topic}"}, Message{Role: "user", Each: "notes", Content: "{notes}"})
-	c.Spec.UserInputs = append(c.Spec.UserInputs, tone, topic)
-	if err := c.Validate(); err != nil {
-		t.Fatalf("valid chain rejected: %v", err)
-	}
-
-	got, err := c.UserVars(map[string]any{"topic": "사과"})
-	if err != nil || got["tone"] != "존댓말" || got["topic"] != "사과" {
-		t.Fatalf("default and required: %v %v", err, got)
-	}
-	if got, err := c.UserVars(map[string]any{"topic": "사과", "tone": "반말"}); err != nil || got["tone"] != "반말" {
-		t.Fatalf("a picked option: %v %v", err, got)
-	}
-	for name, raw := range map[string]map[string]any{
-		"required missing": {},
-		"required blank":   {"topic": "  "},
-		"not an option":    {"topic": "사과", "tone": "평어"},
-	} {
-		if _, err := c.UserVars(raw); err == nil {
-			t.Errorf("%s: expected an error", name)
-		}
-	}
-
-	for name, in := range map[string]Input{
-		"choice without options": {Name: "x", Type: TypeChoice},
-		"choice with one option": {Name: "x", Type: TypeChoice, Options: []string{"a"}},
-		"duplicate options":      {Name: "x", Type: TypeChoice, Options: []string{"a", "a"}},
-		"options on a string":    {Name: "x", Options: []string{"a", "b"}},
-		"default not an option":  {Name: "x", Type: TypeChoice, Options: []string{"a", "b"}, Default: "c"},
-		"string default on bool": {Name: "x", Type: TypeBool, Default: "true"},
-		"default on a textList":  {Name: "x", Type: TypeTextList, Default: "a"},
-		"required bool":          {Name: "x", Type: TypeBool, Required: true},
-		"from on a user input":   {Name: "x", From: "title"},
-	} {
-		if _, err := c.WithUserInputs([]Input{in}); err == nil {
-			t.Errorf("%s: expected an error", name)
-		}
-	}
-	if _, err := c.WithUserInputs([]Input{{Name: "x", Type: TypeBool, Default: true}, tone}); err != nil {
-		t.Errorf("a bool default and a choice are valid: %v", err)
-	}
-	task := c
-	task.Spec.Inputs = []Input{{Name: "title", Required: true}}
-	if err := task.Validate(); err == nil {
-		t.Error("required is for user inputs")
-	}
-
-	var parsed Template
-	if parsed, err = ParseTemplate("userInputs:\n  - name: tone\n    type: choice\n    options: [존댓말, 반말]\n    default: 반말\n  - name: short\n    type: bool\n    default: true\nmessages: []\n"); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := c.WithUserInputs(parsed.UserInputs); err != nil || parsed.UserInputs[0].Default != "반말" || parsed.UserInputs[1].Default != true {
-		t.Errorf("YAML attributes: %v %+v", err, parsed.UserInputs)
 	}
 }
 

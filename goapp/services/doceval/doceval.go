@@ -96,9 +96,9 @@ func (e *Evaluator) Evaluate(ctx context.Context, page Page, definition, wikitex
 	}
 	rubricsJSON, _ := json.Marshal(rubrics)
 
-	// The judge reads the wikitext cut as doc-eval's body input says; errors are quoted from that same text.
+	// The judge reads the wikitext cut as its template does; errors are quoted from that same text.
 	vars := prompts.Vars{"title": displayTitle, "rubrics": string(rubricsJSON), "wikitext": wikitext}
-	body, _ := prompts.DocEval.Fill(vars)["body"].(string)
+	body := prompts.DocEvalJudgeBody(wikitext)
 
 	var judgment Judgment
 	resp, err := run(prompts.DocEvalJudge, vars, &judgment)
@@ -132,7 +132,7 @@ func (e *Evaluator) Evaluate(ctx context.Context, page Page, definition, wikitex
 		AccuracyContradicted: contradicted,
 		Summary:              truncateRunes(judgment.Summary, 500),
 		Rubrics:              string(rubricsJSON),
-		ChainVersion:         prompts.DocEval.Metadata.Version,
+		ChainVersion:         prompts.DocEval.Version,
 		RawJSON:              string(judgmentJSON),
 		Model:                resp.Model,
 		PromptTokens:         uint(promptTokens),

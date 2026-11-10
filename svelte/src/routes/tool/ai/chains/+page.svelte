@@ -10,8 +10,6 @@
   import { showConfirm } from '$shared/ui/confirm/confirm'
   import { showToast } from '$shared/ui/toast/toast'
   import ZIcon from '$shared/ui/ZIcon.svelte'
-  import ZModal from '$shared/ui/ZModal.svelte'
-  import ZTextarea from '$shared/ui/ZTextarea.svelte'
   import httpy from '$shared/utils/httpy'
   import { getAge } from '$shared/utils/time'
 
@@ -20,59 +18,70 @@
   interface ChainMessage {
     role: string
     content: string
-    if?: string
-    each?: string
   }
 
-  // A step with uses is a function step (no model, no messages); if runs it only when that variable is given.
+  // A step: a jinja2 template of messages, read in its output variable's format (prompts.Step).
   interface ChainStep {
     name: string
-    description: string
-    uses?: string
-    if?: string
+    description?: string
+    template_format: string
+    template: string
+    output_variable?: { name?: string; format?: string }
     inputs: string[]
-    messages: ChainMessage[]
-    format?: string
-    output?: string
   }
 
-  // A variable (prompts.Input). A user input may be required, have a default, and as a choice list its options.
+  // A variable (prompts.Input); type is read by the server from json_schema and ui.
   interface ChainInput {
     name: string
-    placeholder?: string
-    type?: string
-    required?: boolean
+    description?: string
+    type: 'string' | 'text' | 'textList' | 'bool' | 'choice'
+    json_schema?: { type: string; enum?: string[] }
+    ui?: { variant?: string; placeholder?: string }
+    is_required?: boolean
     default?: string | boolean
-    options?: string[]
-    from?: string
-    maxChars?: number
   }
 
   interface Chain {
     name: string
-    metadata: { version: string; description: string }
-    spec: { userInputs?: ChainInput[]; inputs: ChainInput[]; steps: ChainStep[] }
+    description: string
+    version: string
+    user_inputs?: ChainInput[]
+    inputs: ChainInput[]
+    steps: ChainStep[]
     model: string
     uses: number
     used_at?: string | null
+    // The chain as an AI edit prompt template in YAML, which a clone starts from.
     template: string
   }
 
-  // A user input's name as the run form shows it: readBacklinks as "Read backlinks" (as in the skin's AiEditRunner).
+  interface PromptItem {
+    id: number
+    user_id: number
+    user_name: string
+    title: string
+    description: string
+    request_type: string
+    use_count: number
+    spec: string
+    user_inputs: ChainInput[]
+    error?: string
+    version: string
+    model: string
+    used_at?: string | null
+    updated_at?: string
+  }
+
+  // A user input's name as the run form shows it: someName as "Some name" (as in the skin's AiEditRunner).
   function humanize(name: string) {
     const words = name.replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase()
     return words.charAt(0).toUpperCase() + words.slice(1)
   }
 
-  function inputLabel(input: ChainInput) {
-    const type = input.type && input.type !== 'string' ? `: ${input.type}` : ''
-    const from = input.from ? ` ← ${input.from}${input.maxChars ? `, ${input.maxChars}자까지` : ''}` : ''
-    return `${input.name}${type}${from}`
-  }
-
   type PreviewValue = string | boolean | string[]
 
-  // Values typed into a user inputs preview, by name, to see the messages they make. Kept on screen only.
+  // Values typed into a preview, by name: the run form's and the task's (title, body). Kept on screen only; one
+  // left out takes the server's sample.
   let previewValues = $state<Record<string, PreviewValue>>({})
 
   function previewTexts(name: string): string[] {
@@ -82,45 +91,6 @@
 
   function setPreview(name: string, v: PreviewValue) {
     previewValues = { ...previewValues, [name]: v }
-  }
-
-  // A message's content split at its {name} placeholders, as prompts' placeholders finds them (one right after
-  // another brace is wiki markup), to show the variables.
-  const placeholderRe = /\{([A-Za-z][A-Za-z0-9_]*)\}/g
-
-  function parts(content: string): Array<{ text?: string; name?: string }> {
-    const out: Array<{ text?: string; name?: string }> = []
-    let last = 0
-    for (const m of content.matchAll(placeholderRe)) {
-      const at = m.index ?? 0
-      if (at > 0 && content[at - 1] === '{') continue
-      out.push({ text: content.slice(last, at) }, { name: m[1] })
-      last = at + m[0].length
-    }
-    out.push({ text: content.slice(last) })
-    return out
-  }
-
-  function messageHeader(m: ChainMessage) {
-    return [m.role, m.if && `if ${m.if}`, m.each && `each ${m.each}`].filter(Boolean).join(' · ')
-  }
-
-  interface PromptItem {
-    id: number
-    user_id: number
-    user_name: string
-    title: string
-    request_type: string
-    use_count: number
-    content: string
-    messages: ChainMessage[]
-    user_inputs: ChainInput[]
-    spec: string
-    description: string
-    version: string
-    model: string
-    used_at?: string | null
-    updated_at?: string
   }
 
   // The AI edit request type whose prompt templates a chain runs.
@@ -133,7 +103,6 @@
   let savingChain = $state('')
   let expanded = $state<string | null>(null)
   let deletingPromptId = $state<number | null>(null)
-  let savingPromptId = $state<number | null>(null)
   const now = Date.now()
   const userInfo = useAuthStore().userInfo
 
@@ -185,45 +154,29 @@
     }
     showToast('삭제 완료')
     prompts = prompts.filter((p) => p.id !== item.id)
+    if (expanded === `prompt:${item.id}`) {
+      expanded = null
+      draft = null
+    }
   }
 
   function modelOptions(chain: Chain): string[] {
     return modelIds.includes(chain.model) ? modelIds : [chain.model, ...modelIds]
   }
 
-  function toggle(key: string) {
-    expanded = expanded === key ? null : key
-  }
-
-  async function setPromptModel(item: PromptItem, model: string) {
-    savingPromptId = item.id
-    const [, err] = await httpy.post('/api/ai-prompts', {
-      id: item.id,
-      title: item.title,
-      description: item.description,
-      request_type: item.request_type,
-      content: item.content,
-      model,
-    })
-    savingPromptId = null
-    if (err) {
-      showToast(err.message || '모델 저장에 실패했습니다.')
-      return
-    }
-    item.model = model
-    showToast('저장했습니다')
-  }
-
+  // A template as the editor shows it: an open row (key) seen as it is, or being edited. id is the template's, 0
+  // for a new one (a clone) and -1 for a built-in chain, which is only seen. spec is the template's YAML; model,
+  // outside it, is the model it runs on ('' for its chain's).
   interface TemplateDraft {
+    key: string
+    editing: boolean
     id: number
-    title: string
-    description: string
+    owner: string
+    source: string
     request_type: string
-    // The run form and messages as YAML (prompts.Template).
     spec: string
     model: string
     version: string
-    // The spec when editing began; changing it bumps the version on save.
     original: string
     bump: 'minor' | 'major'
   }
@@ -238,75 +191,149 @@
   let draftError = $state('')
   let savingDraft = $state(false)
 
-  function openEdit(item: PromptItem) {
-    draftError = ''
-    draft = {
-      id: item.id,
-      title: item.title,
-      description: item.description,
-      request_type: item.request_type,
-      spec: item.spec,
-      model: item.model,
-      version: item.version,
-      original: item.spec,
-      bump: 'minor',
-    }
-    expanded = `prompt:${item.id}`
-  }
-
-  // A clone takes the model its source runs on as a value, so later changes to the source do not follow.
-  function openClone(item: PromptItem, chain: Chain) {
-    draftError = ''
-    draft = {
-      id: 0,
-      title: `${item.title} (복제본)`,
-      description: item.description,
-      request_type: item.request_type,
-      spec: item.spec,
-      model: item.model || chain.model,
-      version: 'v1.0',
-      original: item.spec,
-      bump: 'minor',
-    }
-  }
-
-  // A template cloned from a built-in chain starts with its run form and step messages as they are; its model is the
-  // chain's, as a value.
-  function openCloneChain(chain: Chain, requestType: string) {
-    draftError = ''
-    draft = {
-      id: 0,
-      title: `${chain.name} (복제본)`,
-      description: chain.metadata.description,
-      request_type: requestType,
-      spec: chain.template,
-      model: chain.model,
-      version: 'v1.0',
-      original: chain.template,
-      bump: 'minor',
-    }
-  }
-
-  function closeDraft() {
-    if (!savingDraft) draft = null
+  function draftState(d: Pick<TemplateDraft, 'spec' | 'model'>) {
+    return JSON.stringify([d.spec, d.model])
   }
 
   function draftChanged(d: TemplateDraft) {
-    return d.spec !== d.original
+    return draftState(d) !== d.original
   }
 
-  function setDraftSpec(value: string) {
-    if (draft) draft.spec = value
+  // The version moves with the spec only; a change of model does not bump it.
+  function specChanged(d: TemplateDraft) {
+    return JSON.parse(d.original)[0] !== d.spec
+  }
+
+  function newDraft(d: Omit<TemplateDraft, 'original' | 'bump'>): TemplateDraft {
+    return { ...d, original: draftState(d), bump: 'minor' }
+  }
+
+  function promptDraft(item: PromptItem, chain: Chain): TemplateDraft {
+    return newDraft({
+      key: `prompt:${item.id}`,
+      editing: false,
+      id: item.id,
+      owner: item.user_name,
+      source: chain.name,
+      request_type: item.request_type,
+      spec: item.spec ?? '',
+      model: item.model ?? '',
+      version: item.version,
+    })
+  }
+
+  function chainDraft(chain: Chain, requestType: string): TemplateDraft {
+    return newDraft({
+      key: chain.name,
+      editing: false,
+      id: -1,
+      owner: '',
+      source: '',
+      request_type: requestType,
+      spec: chain.template,
+      model: chain.model,
+      version: chain.version,
+    })
+  }
+
+  // The draft an open row shows: a template's, or a built-in chain's that templates clone (doc-create, doc-update).
+  function draftFor(key: string): TemplateDraft | null {
+    const item = prompts.find((p) => `prompt:${p.id}` === key)
+    const chain = item ? chainOf(item.request_type) : chains.find((c) => c.name === key)
+    if (item && chain) return promptDraft(item, chain)
+    const requestType = chain && promptTypeOf[chain.name]
+    return chain && requestType ? chainDraft(chain, requestType) : null
+  }
+
+  async function confirmDiscard() {
+    return !draft?.editing || !draftChanged(draft) || (await showConfirm('저장하지 않은 변경을 버리시겠습니까?'))
+  }
+
+  async function toggle(key: string) {
+    if (savingDraft || !(await confirmDiscard())) return
+    draftError = ''
+    expanded = expanded === key ? null : key
+    draft = expanded ? draftFor(expanded) : null
+  }
+
+  function startEdit() {
+    if (draft) draft.editing = true
+  }
+
+  async function cancelEdit() {
+    if (savingDraft || !(await confirmDiscard())) return
+    draftError = ''
+    if (draft?.id === 0) {
+      expanded = null
+      draft = null
+    } else {
+      draft = expanded ? draftFor(expanded) : null
+    }
+  }
+
+  // A clone's name: its source's with the cloning user's name in lower case (doc-update-jmnote).
+  function cloneName(name: string) {
+    const user = ($userInfo?.name ?? '').toLowerCase()
+    return user ? `${name}-${user}` : name
+  }
+
+  // The spec's top-level name, as YAML writes it plainly or quoted.
+  function specName(spec: string) {
+    const m = spec.match(/^name:\s*(.*)$/m)
+    if (!m) return ''
+    const v = m[1].trim()
+    try {
+      return v.startsWith('"') ? JSON.parse(v) : v.replace(/^'(.*)'$/, '$1')
+    } catch {
+      return v
+    }
+  }
+
+  // The spec with its name replaced; a JSON string is a YAML double-quoted scalar.
+  function renamed(spec: string, name: string) {
+    return spec.replace(/^name:.*$/m, `name: ${JSON.stringify(name)}`)
+  }
+
+  // A clone opens as a new template being edited, at the top of the templates.
+  async function openClone(source: TemplateDraft) {
+    if (savingDraft || !(await confirmDiscard())) return
+    draftError = ''
+    const chain = chainOf(source.request_type)
+    draft = {
+      ...source,
+      key: 'new',
+      editing: true,
+      id: 0,
+      owner: $userInfo?.name ?? '',
+      source: chain?.name ?? '',
+      version: 'v1.0',
+      spec: renamed(source.spec, cloneName(specName(source.spec))),
+      // A clone takes the model its source runs on now as a value of its own, so later changes do not follow.
+      model: source.model || chain?.model || '',
+      original: '',
+      bump: 'minor',
+    }
+    expanded = 'new'
+  }
+
+  // Template syntax the server read in the spec: a line from 1 and a column range from 1, in characters.
+  interface Span {
+    line: number
+    start: number
+    end: number
+    kind: 'output' | 'tag' | 'comment'
   }
 
   interface SpecCheck {
     ok: boolean
     error?: string
     user_inputs?: ChainInput[]
-    messages?: ChainMessage[]
+    spans?: Span[]
+    rendered_messages?: ChainMessage[]
+    preview_error?: string
   }
 
-  // The editor's YAML as the server reads it on save (POST /api/ai-prompts/check), shortly after typing stops.
+  // The spec as the server reads it on save (POST /api/ai-prompts/check), shortly after typing stops.
   let specCheck = $state<SpecCheck | null>(null)
   $effect(() => {
     const d = draft
@@ -316,35 +343,80 @@
     }
     const spec = d.spec
     const requestType = d.request_type
+    const values = $state.snapshot(previewValues)
+    let active = true
     const timer = setTimeout(async () => {
-      const [data] = await httpy.post<SpecCheck>('/api/ai-prompts/check', { request_type: requestType, spec })
-      if (draft?.spec === spec && data) specCheck = data
+      const [data] = await httpy.post<SpecCheck>('/api/ai-prompts/check', { request_type: requestType, spec, preview_values: values })
+      if (active && data) specCheck = data
     }, 400)
-    return () => clearTimeout(timer)
+    return () => {
+      active = false
+      clearTimeout(timer)
+    }
   })
 
+  // The spec's lines split at the spans the server found, to mark them over the editor.
+  function highlighted(spec: string, spans: Span[]) {
+    const byLine: Record<number, Span[]> = {}
+    for (const s of spans) byLine[s.line] = [...(byLine[s.line] ?? []), s]
+    return spec.split('\n').map((line, i) => {
+      const chars = [...line]
+      const parts: Array<{ text: string; kind?: Span['kind'] }> = []
+      let at = 0
+      for (const s of (byLine[i + 1] ?? []).sort((a, b) => a.start - b.start)) {
+        if (s.start - 1 < at) continue
+        parts.push({ text: chars.slice(at, s.start - 1).join('') }, { text: chars.slice(s.start - 1, s.end - 1).join(''), kind: s.kind })
+        at = s.end - 1
+      }
+      parts.push({ text: chars.slice(at).join('') })
+      return parts
+    })
+  }
+
+  const newline = '\n'
+  let backdrop = $state<HTMLPreElement | null>(null)
+
+  function syncScroll(e: Event) {
+    const ta = e.currentTarget as HTMLTextAreaElement
+    if (backdrop) {
+      backdrop.scrollTop = ta.scrollTop
+      backdrop.scrollLeft = ta.scrollLeft
+    }
+  }
+
   async function saveDraft() {
-    if (!draft || !draft.title.trim()) return
+    if (!draft) return
     savingDraft = true
-    const body: Record<string, unknown> = {
+    const submitted = draft
+    const [data, err] = await httpy.post<PromptItem>('/api/ai-prompts', {
       id: draft.id,
-      title: draft.title.trim(),
-      description: draft.description,
       request_type: draft.request_type,
       spec: draft.spec,
+      model: draft.model,
       bump: draft.bump,
-    }
-    if (draft.id === 0) body.model = draft.model
-    const [, err] = await httpy.post('/api/ai-prompts', body)
-    savingDraft = false
-    if (err) {
-      draftError = err.message || '저장 실패'
+    })
+    if (err || !data) {
+      savingDraft = false
+      draftError = err?.message || '저장 실패'
       return
     }
-    showToast(draft.id === 0 ? '복제했습니다' : '저장했습니다')
-    draft = null
+    showToast(submitted.id === 0 ? '복제했습니다' : '저장했습니다')
     await fetchPrompts()
+    savingDraft = false
+    // Rows stay as they are while saving (toggle and clone wait), so the saved template opens as it now is.
+    if (draft === submitted) {
+      expanded = `prompt:${data.id}`
+      draft = draftFor(expanded)
+    }
   }
+
+  // Leaving the page with unsaved edits asks first, as closing a row does.
+  $effect(() => {
+    if (!draft?.editing || !draftChanged(draft)) return
+    const warn = (e: BeforeUnloadEvent) => e.preventDefault()
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  })
 
   onMount(() => {
     fetchChains()
@@ -368,170 +440,253 @@
 {/snippet}
 
 {#snippet templateEditor(chain: Chain, d: TemplateDraft)}
-  <div class="space-y-4 text-xs">
-    <div class="flex flex-wrap items-center gap-2">
-      <label class="flex min-w-0 flex-1 items-center gap-2">
-        <span class="font-medium">제목</span>
-        <input class="h-8 w-full max-w-72 rounded border bg-background px-2.5" bind:value={d.title} />
-      </label>
-      {#if d.id === 0}
-        <label class="flex items-center gap-2">
-          <span class="font-medium">모델</span>
-          <select class="h-8 max-w-72 rounded border bg-background px-2.5" bind:value={d.model}>
-            {#each modelOptions(chain) as id (id)}
-              <option value={id}>{formatModelLabel(id)}</option>
-            {/each}
-          </select>
-        </label>
-      {/if}
-      {#if d.id > 0 && draftChanged(d)}
-        <label class="flex items-center gap-2">
-          <span class="font-medium">버전</span>
-          <select class="h-8 rounded border bg-background px-2.5" bind:value={d.bump}>
-            <option value="minor">마이너 {d.version} → {nextVersion(d.version, false)}</option>
-            <option value="major">메이저 {d.version} → {nextVersion(d.version, true)}</option>
-          </select>
-        </label>
-      {/if}
-      {#if d.id > 0}
-        <CButton variant="default" size="small" disabled={!d.title.trim() || savingDraft} onclick={() => void saveDraft()}>
-          {savingDraft ? '저장 중...' : '저장'}
-        </CButton>
-        <CButton variant="outline" size="small" disabled={savingDraft} onclick={closeDraft}>취소</CButton>
-      {/if}
+  {@const item = prompts.find((p) => p.id === d.id)}
+  {@const own = !!item && item.user_id === $userInfo?.id}
+  <div class="space-y-3 text-xs">
+    <div class="flex flex-wrap items-start gap-3">
+      <div class="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1 text-muted-foreground">
+        {#if d.owner}
+          <span>소유자 <span class="text-foreground">{d.owner}</span></span>
+        {/if}
+        <span class="flex items-center gap-1.5">
+          버전 <span class="font-mono text-foreground">{d.version}</span>
+          {#if d.editing && d.id > 0 && specChanged(d)}
+            →
+            <select class="h-7 rounded border bg-background px-1.5 text-foreground" aria-label="버전 올리기" bind:value={d.bump}>
+              <option value="minor">마이너 {nextVersion(d.version, false)}</option>
+              <option value="major">메이저 {nextVersion(d.version, true)}</option>
+            </select>
+          {/if}
+        </span>
+        {#if d.source}
+          <span>원본 <span class="font-mono text-foreground">{d.source}</span></span>
+        {/if}
+        {#if d.id === -1}
+          <label class="flex items-center gap-1.5">
+            모델
+            <select
+              class="h-7 max-w-72 rounded border bg-background px-1.5 text-foreground"
+              value={chain.model}
+              disabled={savingChain === chain.name}
+              onchange={(e) => setModel(chain, e.currentTarget.value)}
+            >
+              {#each modelOptions(chain) as id (id)}
+                <option value={id}>{formatModelLabel(id)}</option>
+              {/each}
+            </select>
+          </label>
+        {:else if d.editing}
+          <label class="flex items-center gap-1.5">
+            모델
+            <select class="h-7 max-w-72 rounded border bg-background px-1.5 text-foreground" bind:value={d.model}>
+              <option value="">체인 모델 ({formatModelLabel(chain.model)})</option>
+              {#each modelOptions(chain) as id (id)}
+                <option value={id}>{formatModelLabel(id)}</option>
+              {/each}
+            </select>
+          </label>
+        {:else}
+          <span>모델 <span class="text-foreground">{d.model ? formatModelLabel(d.model) : `체인 모델 (${formatModelLabel(chain.model)})`}</span></span>
+        {/if}
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        {#if d.editing}
+          <CButton variant="outline" size="small" disabled={savingDraft} onclick={() => void cancelEdit()}>취소</CButton>
+          <CButton
+            variant="default"
+            size="small"
+            disabled={savingDraft || !specCheck?.ok || (d.id > 0 && !draftChanged(d))}
+            onclick={() => void saveDraft()}
+          >
+            {savingDraft ? '저장 중...' : d.id === 0 ? '만들기' : '저장'}
+          </CButton>
+        {:else}
+          {#if own}
+            <CButton variant="outline" size="small" onclick={startEdit}>
+              <ZIcon path={mdiPencil} class="mr-1" />
+              편집
+            </CButton>
+          {/if}
+          <CButton variant="outline" size="small" onclick={() => void openClone(d)}>
+            <ZIcon path={mdiContentCopy} class="mr-1" />
+            복제
+          </CButton>
+          {#if own && item}
+            <CButton variant="outline" size="small" disabled={deletingPromptId === item.id} onclick={() => void delPrompt(item)}>
+              <ZIcon path={mdiTrashCanOutline} class="mr-1" />
+              삭제
+            </CButton>
+          {/if}
+        {/if}
+      </div>
     </div>
-    <label class="flex items-center gap-2">
-      <span class="font-medium">설명</span>
-      <input class="h-8 w-full rounded border bg-background px-2.5" bind:value={d.description} />
-    </label>
-    {#if d.id > 0 && draftChanged(d) && d.bump === 'major'}
+    {#if d.editing && d.id > 0 && specChanged(d) && d.bump === 'major'}
       <div class="text-muted-foreground">메이저 범프: 이 틀로 돈 이전 결과와 다른 것으로 구분합니다(AI 편집은 다시 돌리는 대상이 없습니다).</div>
     {/if}
     {#if draftError}
       <div class="text-destructive">{draftError}</div>
     {/if}
-    <div class="space-y-1">
-      <div class="grid gap-3 md:grid-cols-2">
-        <div class="min-w-0 font-mono text-[11px]">
-          <ZTextarea id={`ai-template-${d.id}`} modelValue={d.spec} placeholder={undefined} maxHeight={720} onUpdateModelValue={setDraftSpec} />
+    <div class="text-muted-foreground">
+      <a class="underline" href="https://learn.microsoft.com/en-us/semantic-kernel/concepts/prompts/yaml-schema" target="_blank" rel="noopener noreferrer"
+        >Semantic Kernel 프롬프트 YAML</a
+      >
+      형식입니다. template은 jinja2(<code>{'{{ 변수 }}'}</code>, <code>{'{% if %}'}</code>, <code>{'{% for %}'}</code>)이며, 위키 틀(<code
+        >{'{{틀|…}}'}</code
+      >)은 그대로 둡니다. 변수처럼 보이는 위키 문법은 <code>{'{% raw %}…{% endraw %}'}</code>로 감쌉니다.
+    </div>
+    <!-- The spec (left) beside what it renders with the preview values (right). -->
+    <div class="grid items-start gap-3 md:grid-cols-2 md:items-stretch">
+      <div class="relative min-w-0">
+        <span class="pointer-events-none absolute -top-px right-[13px] z-10 rounded px-1.5 py-0.5 font-mono text-muted-foreground/70">YAML</span>
+        <div class={`relative h-[36rem] overflow-hidden rounded border ${d.editing ? 'bg-background' : 'bg-muted/30'}`}>
+          <pre
+            bind:this={backdrop}
+            aria-hidden="true"
+            class="spec-layer pointer-events-none absolute inset-0 overflow-hidden text-foreground">{#each highlighted(d.spec, specCheck?.ok ? (specCheck.spans ?? []) : []) as line, i (i)}{#each line as part, k (k)}{#if part.kind}<mark
+                  class={`syntax ${part.kind}`}>{part.text}</mark
+                >{:else}{part.text}{/if}{/each}{newline}{/each}</pre>
+          <textarea
+            id={`ai-template-spec-${d.key}`}
+            aria-label="템플릿 YAML"
+            spellcheck="false"
+            class="spec-layer absolute inset-0 resize-none overflow-auto bg-transparent text-transparent caret-foreground focus:outline-none"
+            readonly={!d.editing}
+            bind:value={d.spec}
+            onscroll={syncScroll}
+          ></textarea>
         </div>
-        <div class="min-w-0 space-y-2">
-          {#if specCheck && !specCheck.ok}
-            <div class="rounded border border-destructive/40 p-2 text-destructive">{specCheck.error}</div>
-          {:else if specCheck?.ok}
-            {#if specCheck.user_inputs?.length}
-              {@render runForm(specCheck.user_inputs)}
-            {/if}
-            {@render messagesView(specCheck.messages ?? [])}
+      </div>
+      <div class="relative min-w-0 space-y-2 md:max-h-[36rem] md:overflow-auto">
+        {#if specCheck && !specCheck.ok}
+          <div class="rounded border border-destructive/40 p-2 whitespace-pre-wrap text-destructive">{specCheck.error}</div>
+        {:else if specCheck?.ok}
+          {@render previewForm(chain, specCheck.user_inputs ?? [])}
+          {#if specCheck.preview_error}
+            <div class="rounded border border-destructive/40 p-2 text-destructive">{specCheck.preview_error}</div>
+          {:else}
+            {#each specCheck.rendered_messages ?? [] as message, i (i)}
+              <div class="relative overflow-hidden rounded border bg-muted/30">
+                <span class="pointer-events-none absolute -top-px right-[13px] rounded px-1.5 py-0.5 font-mono text-muted-foreground/70">{message.role}</span>
+                <pre class="max-h-80 overflow-auto whitespace-pre-wrap p-3 pr-16 text-[11px]">{message.content}</pre>
+              </div>
+            {/each}
           {/if}
-        </div>
+        {/if}
       </div>
     </div>
   </div>
 {/snippet}
 
-{#snippet runForm(inputs: ChainInput[])}
-  <div class="rounded border bg-background p-3 text-xs text-foreground">
-    <div class="mb-2 text-muted-foreground">사용자 입력</div>
-    <div class="grid grid-cols-[auto_auto_minmax(0,1fr)] items-start gap-x-4 gap-y-2">
+{#snippet previewForm(chain: Chain, inputs: ChainInput[])}
+  <fieldset class="rounded border bg-background p-3">
+    <legend class="px-1 text-muted-foreground">미리보기 값 (저장되지 않음)</legend>
+    <div class="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-1.5">
+      {#each chain.inputs as input (input.name)}
+        <div class="pt-1 font-mono" title="작업이 채우는 값">{input.name}</div>
+        <textarea
+          class="min-h-8 w-full rounded border bg-background px-2 py-1"
+          placeholder={input.name === 'title' ? 'Hello World' : '문서 시작했다\n문서 끝났다'}
+          value={typeof previewValues[input.name] === 'string' ? (previewValues[input.name] as string) : ''}
+          oninput={(e) => setPreview(input.name, e.currentTarget.value)}
+        ></textarea>
+      {/each}
       {#each inputs as input (input.name)}
-        {@const label = humanize(input.name)}
-        {@const given = previewValues[input.name] ?? input.default}
-        <div class="pt-1.5"><code class="var">{input.name}</code></div>
-        <div class="pt-1.5 font-medium">{label}{input.required ? ' *' : ''}</div>
-        <div class="min-w-0">
-          {#if input.type === 'bool'}
-            <input
-              class="mt-2"
-              type="checkbox"
-              aria-label={label}
-              checked={given === true}
-              onchange={(e) => setPreview(input.name, e.currentTarget.checked)}
-            />
-          {:else if input.type === 'textList'}
-            <div class="space-y-1">
-              {#each previewTexts(input.name) as item, i (i)}
-                <div class="flex items-center gap-1">
-                  <textarea
-                    class="min-h-16 min-w-0 flex-1 rounded border bg-background px-2.5 py-1.5"
-                    placeholder={input.placeholder ?? `${label} ${i + 1}`}
-                    value={item}
-                    oninput={(e) => setPreview(input.name, previewTexts(input.name).map((x, j) => (j === i ? e.currentTarget.value : x)))}
-                  ></textarea>
-                  <button
-                    type="button"
-                    class="rounded px-1.5 text-muted-foreground hover:bg-muted"
-                    aria-label={`${label} ${i + 1} 빼기`}
-                    onclick={() => setPreview(input.name, previewTexts(input.name).filter((_, j) => j !== i))}>✕</button
-                  >
-                </div>
-              {/each}
-              <button
-                type="button"
-                class="rounded border px-2 py-1 text-muted-foreground hover:bg-muted"
-                onclick={() => setPreview(input.name, [...previewTexts(input.name), ''])}>+ {label}</button
-              >
-            </div>
-          {:else}
-            {@const value = typeof given === 'string' ? given : ''}
-            {#if input.type === 'choice'}
-              <select class="h-8 w-full rounded border bg-background px-2.5" {value} onchange={(e) => setPreview(input.name, e.currentTarget.value)}>
-                {#if input.default === undefined}
-                  <option value="">{input.placeholder ?? '선택'}</option>
-                {/if}
-                {#each input.options ?? [] as option (option)}
-                  <option value={option}>{option}</option>
-                {/each}
-              </select>
-            {:else if input.type === 'text'}
-              <textarea
-                class="min-h-16 w-full rounded border bg-background px-2.5 py-1.5"
-                placeholder={input.placeholder ?? ''}
-                {value}
-                oninput={(e) => setPreview(input.name, e.currentTarget.value)}
-              ></textarea>
-            {:else}
-              <input
-                class="h-8 w-full rounded border bg-background px-2.5"
-                placeholder={input.placeholder ?? ''}
-                {value}
-                oninput={(e) => setPreview(input.name, e.currentTarget.value)}
-              />
-            {/if}
-          {/if}
-        </div>
-      {:else}
-        <div class="col-span-3 text-muted-foreground">없음</div>
+        <div class="pt-1 font-mono" title={input.description}>{input.name}{input.is_required ? ' *' : ''}</div>
+        <div class="min-w-0">{@render inputField(input)}</div>
       {/each}
     </div>
-  </div>
+  </fieldset>
 {/snippet}
 
-{#snippet messagesView(messages: ChainMessage[])}
-  {#each messages as m, i (i)}
-    <div class="rounded border">
-      <div class="border-b bg-muted/50 px-3 py-1 font-mono text-muted-foreground">{messageHeader(m)}</div>
-      <pre class="max-h-80 overflow-auto whitespace-pre-wrap bg-muted/30 p-3 text-[11px]">{#each parts(m.content) as part, k (k)}{#if part.name !== undefined}<code
-              class="var">{part.name}</code
-            >{:else}{part.text}{/if}{/each}</pre>
+{#snippet inputField(input: ChainInput)}
+  {@const label = humanize(input.name)}
+  {@const given = previewValues[input.name] ?? input.default}
+  {@const placeholder = input.ui?.placeholder ?? ''}
+  {#if input.type === 'bool'}
+    <input class="mt-1" type="checkbox" aria-label={label} checked={given === true} onchange={(e) => setPreview(input.name, e.currentTarget.checked)} />
+  {:else if input.type === 'textList'}
+    <div class="space-y-1">
+      {#each previewTexts(input.name) as item, i (i)}
+        <div class="flex items-center gap-1">
+          <textarea
+            class="min-h-8 min-w-0 flex-1 rounded border bg-background px-2 py-1"
+            placeholder={placeholder || `${label} ${i + 1}`}
+            value={item}
+            oninput={(e) => setPreview(input.name, previewTexts(input.name).map((x, j) => (j === i ? e.currentTarget.value : x)))}
+          ></textarea>
+          <button
+            type="button"
+            class="rounded px-1.5 text-muted-foreground hover:bg-muted"
+            aria-label={`${label} ${i + 1} 빼기`}
+            onclick={() => setPreview(input.name, previewTexts(input.name).filter((_, j) => j !== i))}>✕</button
+          >
+        </div>
+      {/each}
+      <button type="button" class="rounded border px-2 py-0.5 text-muted-foreground hover:bg-muted" onclick={() => setPreview(input.name, [...previewTexts(input.name), ''])}
+        >+ {label}</button
+      >
     </div>
-  {/each}
+  {:else}
+    {@const value = typeof given === 'string' ? given : ''}
+    {#if input.type === 'choice'}
+      <select class="h-7 w-full rounded border bg-background px-2" {value} onchange={(e) => setPreview(input.name, e.currentTarget.value)}>
+        {#if input.default === undefined}
+          <option value="">{placeholder || '선택'}</option>
+        {/if}
+        {#each input.json_schema?.enum ?? [] as option (option)}
+          <option value={option}>{option}</option>
+        {/each}
+      </select>
+    {:else if input.type === 'text'}
+      <textarea class="min-h-12 w-full rounded border bg-background px-2 py-1" {placeholder} {value} oninput={(e) => setPreview(input.name, e.currentTarget.value)}></textarea>
+    {:else}
+      <input class="h-7 w-full rounded border bg-background px-2" {placeholder} {value} oninput={(e) => setPreview(input.name, e.currentTarget.value)} />
+    {/if}
+  {/if}
 {/snippet}
 
-{#snippet stepView(st: ChainStep, n: number, messages: ChainMessage[])}
+{#snippet stepView(st: ChainStep, n: number)}
   <div class="space-y-1.5 text-xs min-w-0">
     <div>
       <span class="text-muted-foreground">{n + 1}.</span>
       <span class="font-mono font-medium">{st.name}</span>
-      {#if st.uses}
-        <span class="ml-1 font-mono text-muted-foreground">{st.if ? `if ${st.if}: ` : ''}{st.inputs.filter((i) => i !== st.if).join(', ')} → {st.uses} → {st.output}</span>
-      {:else}
-        <span class="ml-1 font-mono text-muted-foreground">{st.inputs.join(', ')} → {st.format ?? 'text'}{st.output ? ` → ${st.output}` : ''}</span>
-      {/if}
+      <span class="ml-1 font-mono text-muted-foreground"
+        >{st.inputs.join(', ')} → {st.output_variable?.format ?? 'text'}{st.output_variable?.name ? ` → ${st.output_variable.name}` : ''}</span
+      >
       <span class="ml-2 text-muted-foreground">{st.description}</span>
     </div>
-    {@render messagesView(messages)}
+    <pre class="max-h-96 overflow-auto whitespace-pre-wrap rounded border bg-muted/30 p-3 text-[11px]">{st.template}</pre>
   </div>
+{/snippet}
+
+{#snippet promptRows(items: PromptItem[])}
+  {#each items as item (item.id)}
+    {@const chain = chainOf(item.request_type)}
+    {#if chain}
+      {@const key = `prompt:${item.id}`}
+      {@const itemExpanded = expanded === key}
+      {@const own = item.user_id === $userInfo?.id}
+      <tr
+        class={['transition cursor-pointer', own ? 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/40' : 'hover:bg-muted/30']}
+        onclick={() => toggle(key)}
+      >
+        <td class="p-3 whitespace-nowrap text-muted-foreground">{item.user_name}</td>
+        <td class="p-3 whitespace-nowrap">{item.title}{#if item.error}<span class="ml-1 text-destructive" title={item.error}>⚠</span>{/if}</td>
+        <td class="p-3 text-muted-foreground">{item.description}</td>
+        <td class="p-3 text-xs">{formatModelLabel(item.model || chain.model)}</td>
+        <td class="p-3 text-center text-muted-foreground tabular-nums">{item.use_count || '-'}</td>
+        <td class="p-3 whitespace-nowrap text-xs text-muted-foreground">{item.used_at ? getAge(item.used_at, now) : '-'}</td>
+        <td class="p-3 text-center">
+          {@render expandButton(key, itemExpanded)}
+        </td>
+      </tr>
+      {#if itemExpanded && draft?.key === key}
+        <tr class="bg-muted/10">
+          <td colspan="7" class="p-4">{@render templateEditor(chain, draft)}</td>
+        </tr>
+      {/if}
+    {/if}
+  {/each}
 {/snippet}
 
 <div class="container mx-auto p-4 md:p-6 max-w-6xl space-y-6">
@@ -555,13 +710,26 @@
           {#if loading}
             <tr><td colspan="7" class="p-8 text-center text-muted-foreground">불러오는 중...</td></tr>
           {/if}
+          {#if draft?.key === 'new'}
+            {@const chain = chainOf(draft.request_type)}
+            {#if chain}
+              <tr class="bg-blue-50 dark:bg-blue-950/40">
+                <td class="p-3 whitespace-nowrap text-muted-foreground">{draft.owner}</td>
+                <td class="p-3 whitespace-nowrap">{specName(draft.spec) || '새 템플릿'}</td>
+                <td class="p-3 text-muted-foreground" colspan="5">새 템플릿</td>
+              </tr>
+              <tr class="bg-muted/10">
+                <td colspan="7" class="p-4">{@render templateEditor(chain, draft)}</td>
+              </tr>
+            {/if}
+          {/if}
+          {@render promptRows(prompts.filter((item) => item.user_id === $userInfo?.id))}
           {#each chains as chain (chain.name)}
             {@const isExpanded = expanded === chain.name}
-            {@const promptType = promptTypeOf[chain.name]}
             <tr class="bg-muted/50 hover:bg-muted transition cursor-pointer" onclick={() => toggle(chain.name)}>
               <td class="p-3 text-muted-foreground">-</td>
               <td class="p-3 whitespace-nowrap">{chain.name}</td>
-              <td class="p-3 text-muted-foreground">{chain.metadata.description}</td>
+              <td class="p-3 text-muted-foreground">{chain.description}</td>
               <td class="p-3 text-xs">{formatModelLabel(chain.model)}</td>
               <td class="p-3 text-center text-muted-foreground tabular-nums" title="이 체인이 끝까지 돈 횟수(프롬프트 틀로 돈 것 포함)">{chain.uses || '-'}</td>
               <td class="p-3 whitespace-nowrap text-xs text-muted-foreground">{chain.used_at ? getAge(chain.used_at, now) : '-'}</td>
@@ -572,149 +740,67 @@
             {#if isExpanded}
               <tr class="bg-muted/10">
                 <td colspan="7" class="p-4">
-                  <div class="space-y-4">
-                    <div class="flex flex-wrap items-center gap-2 text-xs">
-                      <label class="flex min-w-0 flex-1 items-center gap-2">
-                        <span class="font-medium">모델</span>
-                        <select
-                          class="h-8 w-full max-w-72 rounded border bg-background px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-                          value={chain.model}
-                          disabled={savingChain === chain.name}
-                          onchange={(e) => setModel(chain, e.currentTarget.value)}
-                        >
-                          {#each modelOptions(chain) as id (id)}
-                            <option value={id}>{formatModelLabel(id)}</option>
-                          {/each}
-                        </select>
-                      </label>
-                      <CButton variant="outline" size="small" disabled={!promptType} onclick={() => promptType && openCloneChain(chain, promptType)}>
-                        <ZIcon path={mdiContentCopy} class="mr-1" />
-                        {promptType ? '복제' : '복제 불가'}
-                      </CButton>
+                  {#if draft?.key === chain.name}
+                    {@render templateEditor(chain, draft)}
+                  {:else}
+                    <div class="space-y-4">
+                      <div class="flex flex-wrap items-center gap-2 text-xs">
+                        <label class="flex min-w-0 flex-1 items-center gap-2">
+                          <span class="font-medium">모델</span>
+                          <select
+                            class="h-8 w-full max-w-72 rounded border bg-background px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                            value={chain.model}
+                            disabled={savingChain === chain.name}
+                            onchange={(e) => setModel(chain, e.currentTarget.value)}
+                          >
+                            {#each modelOptions(chain) as id (id)}
+                              <option value={id}>{formatModelLabel(id)}</option>
+                            {/each}
+                          </select>
+                        </label>
+                      </div>
+                      <div class="space-y-1 text-xs text-muted-foreground">
+                        <div>버전: <span class="font-mono">{chain.version}</span></div>
+                        <div>task 입력: <span class="font-mono">{chain.inputs.map((i) => i.name).join(', ')}</span></div>
+                      </div>
+                      {#each chain.steps as st, n (st.name)}
+                        {@render stepView(st, n)}
+                      {/each}
                     </div>
-                    <div class="space-y-1 text-xs text-muted-foreground">
-                      <div>버전: <span class="font-mono">{chain.metadata.version}</span></div>
-                      {#if chain.spec.userInputs?.length}
-                        {@render runForm(chain.spec.userInputs)}
-                      {/if}
-                      <div>task 입력: <span class="font-mono">{chain.spec.inputs.map(inputLabel).join(', ')}</span></div>
-                    </div>
-                    {#each chain.spec.steps as st, n (st.name)}
-                      {@render stepView(st, n, st.messages)}
-                    {/each}
-                  </div>
+                  {/if}
                 </td>
               </tr>
             {/if}
           {/each}
-          {#each prompts as item (item.id)}
-            {@const chain = chainOf(item.request_type)}
-            {#if chain}
-                {@const key = `prompt:${item.id}`}
-                {@const itemExpanded = expanded === key}
-                {@const editing = draft?.id === item.id}
-                {@const own = item.user_id === $userInfo?.id}
-                <tr
-                  class={[
-                    'transition cursor-pointer',
-                    own ? 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/40' : 'hover:bg-muted/30',
-                  ]}
-                  onclick={() => toggle(key)}
-                >
-                  <td class="p-3 whitespace-nowrap text-muted-foreground">{item.user_name}</td>
-                  <td class="p-3 whitespace-nowrap">{item.title}</td>
-                  <td class="p-3 text-muted-foreground">{item.description}</td>
-                  <td class="p-3 text-xs">{formatModelLabel(item.model || chain.model)}</td>
-                  <td class="p-3 text-center text-muted-foreground tabular-nums">{item.use_count || '-'}</td>
-                  <td class="p-3 whitespace-nowrap text-xs text-muted-foreground">{item.used_at ? getAge(item.used_at, now) : '-'}</td>
-                  <td class="p-3 text-center">
-                    {@render expandButton(key, itemExpanded)}
-                  </td>
-                </tr>
-                {#if itemExpanded}
-                  <tr class="bg-muted/10">
-                    <td colspan="7" class="p-4">
-                      {#if editing && draft}
-                        {@render templateEditor(chain, draft)}
-                      {:else}
-                        <div class="space-y-4">
-                          <div class="flex flex-wrap items-center gap-2 text-xs">
-                            <label class="flex min-w-0 flex-1 items-center gap-2">
-                              <span class="font-medium">모델</span>
-                              <select
-                                class="h-8 w-full max-w-72 rounded border bg-background px-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-                                value={item.model || chain.model}
-                                disabled={!own || savingPromptId === item.id}
-                                title={own ? '' : '만든 사람만 바꿀 수 있습니다'}
-                                onchange={(e) => setPromptModel(item, e.currentTarget.value)}
-                              >
-                                {#each modelOptions(chain) as id (id)}
-                                  <option value={id}>{formatModelLabel(id)}</option>
-                                {/each}
-                              </select>
-                            </label>
-                            {#if own}
-                              <CButton variant="outline" size="small" onclick={() => openEdit(item)}>
-                                <ZIcon path={mdiPencil} class="mr-1" />
-                                편집
-                              </CButton>
-                            {/if}
-                            <CButton variant="outline" size="small" onclick={() => openClone(item, chain)}>
-                              <ZIcon path={mdiContentCopy} class="mr-1" />
-                              복제
-                            </CButton>
-                            {#if own}
-                              <CButton variant="outline" size="small" disabled={deletingPromptId === item.id} onclick={() => void delPrompt(item)}>
-                                <ZIcon path={mdiTrashCanOutline} class="mr-1" />
-                                삭제
-                              </CButton>
-                            {/if}
-                          </div>
-                          <div class="space-y-1 text-xs text-muted-foreground">
-                            <div>버전: <span class="font-mono">{item.version}</span> · 원본: <span class="font-mono">{chain.name}</span></div>
-                            {#if item.user_inputs.length}
-                              {@render runForm(item.user_inputs)}
-                            {/if}
-                          </div>
-                          {#each chain.spec.steps as st, n (st.name)}
-                            {@render stepView(st, n, st.uses ? [] : item.messages)}
-                          {/each}
-                        </div>
-                      {/if}
-                    </td>
-                  </tr>
-                {/if}
-            {/if}
-          {/each}
+          {@render promptRows(prompts.filter((item) => item.user_id !== $userInfo?.id))}
         </tbody>
       </table>
     </div>
   </div>
 </div>
 
-<ZModal
-  show={draft !== null && draft.id === 0}
-  title="프롬프트 틀 복제"
-  okText={savingDraft ? '저장 중...' : '저장'}
-  okVariant="default"
-  okDisabled={!draft?.title.trim() || savingDraft}
-  closable={!savingDraft}
-  backdropClosable={!savingDraft}
-  panelClass="max-w-[calc(100vw-2rem)] md:max-w-4xl"
-  onOk={saveDraft}
-  onCancel={closeDraft}
->
-  {#if draft && draft.id === 0 && chainOf(draft.request_type)}
-    {@render templateEditor(chainOf(draft.request_type)!, draft)}
-  {/if}
-</ZModal>
-
 <style>
-  .var {
-    padding: 0.125em 0.25em;
-    border: 1px solid var(--color-border);
-    border-radius: 0.25rem;
-    background: light-dark(oklch(0.96 0.05 85), oklch(0.32 0.05 85));
-    color: var(--color-code-foreground);
+  .spec-layer {
+    margin: 0;
+    padding: 0.75rem;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 11px;
+    line-height: 1.5;
+    white-space: pre;
+    tab-size: 2;
+    border: 0;
+  }
+  .syntax {
+    border-radius: 0.2rem;
+    color: inherit;
+  }
+  .syntax.output {
+    background: light-dark(oklch(0.92 0.08 85), oklch(0.38 0.08 85));
+  }
+  .syntax.tag {
+    background: light-dark(oklch(0.92 0.06 250), oklch(0.36 0.07 250));
+  }
+  .syntax.comment {
+    background: light-dark(oklch(0.93 0.01 250), oklch(0.32 0.01 250));
   }
 </style>

@@ -62,6 +62,7 @@ func RegisterRoutes(mux *http.ServeMux, serverCtx *serverctx.Context, components
 	r.GET("/api/ai-edit/{id}", aiedit.Show, r.OwnerOrSysop(models.AIEdit{}))
 	r.POST("/api/ai-edit", aiedit.Store, r.Unblocked())
 	r.POST("/api/ai-edit/preview", aiedit.Preview, r.Unblocked())
+	r.GET("/api/ai-edit/backlinks", aiedit.Backlinks, r.Unblocked())
 
 	r.GET("/api/ai-prompts", aiprompts.Index, r.Sysop())
 	r.GET("/api/ai-prompts/exists", aiprompts.Exists, r.Sysop())

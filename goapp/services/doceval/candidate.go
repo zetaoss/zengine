@@ -26,7 +26,7 @@ var currentDefinitionSQL = `d.page_id = p.page_id AND d.revid = p.page_latest AN
 
 // defineMajorArg binds @defineMajor in currentDefinitionSQL.
 func defineMajorArg() sql.NamedArg {
-	return sql.Named("defineMajor", prompts.Major(prompts.DocDefine.Metadata.Version))
+	return sql.Named("defineMajor", prompts.Major(prompts.DocDefine.Version))
 }
 
 // PickCandidate selects an article to evaluate by strategy: one with a current definition and no evaluation of
@@ -40,7 +40,7 @@ func PickCandidate(ctx context.Context, db *gorm.DB, strategy string) (*Candidat
 		  WHERE e.page_id = p.page_id AND e.revid = p.page_latest AND `+majorSQL("e.chain_version")+` = @evalMajor
 		)`,
 		defineMajorArg(),
-		sql.Named("evalMajor", prompts.Major(prompts.DocEval.Metadata.Version)))
+		sql.Named("evalMajor", prompts.Major(prompts.DocEval.Version)))
 }
 
 // PickUndefined selects an article to define by strategy: one without a current definition (none, or one of

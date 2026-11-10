@@ -97,6 +97,28 @@ func PageText(ctx context.Context, cfg *config.Config, title string) (string, bo
 	return pages[0].content(), true, nil
 }
 
+// BacklinkTitles returns up to maxBacklinks main-namespace, non-redirect titles linking to title.
+func BacklinkTitles(ctx context.Context, cfg *config.Config, title string) ([]string, error) {
+	var result struct {
+		Query struct {
+			Backlinks []struct {
+				Title string `json:"title"`
+			} `json:"backlinks"`
+		} `json:"query"`
+	}
+	err := query(ctx, cfg, url.Values{"list": {"backlinks"}, "bltitle": {title}, "blnamespace": {"0"}, "blfilterredir": {"nonredirects"}, "bllimit": {strconv.Itoa(maxBacklinks)}}, &result)
+	if err != nil {
+		return nil, err
+	}
+	titles := make([]string, 0, len(result.Query.Backlinks))
+	for _, b := range result.Query.Backlinks {
+		if b.Title != "" {
+			titles = append(titles, b.Title)
+		}
+	}
+	return titles, nil
+}
+
 // BacklinkTexts returns, for up to maxBacklinks articles that link to title (main namespace, no redirects; the
 // page may not exist yet), the article's title and the text around its first link to title, with references and
 // comments removed. When the link comes from a template and is not in the text, the beginning of the article

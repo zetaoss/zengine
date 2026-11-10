@@ -31,14 +31,21 @@ func newServer(t *testing.T, contents ...string) (*httptest.Server, *atomic.Int3
 	return ts, &calls
 }
 
-var testChain = prompts.Chain{Name: "test-chain", Metadata: prompts.Metadata{Version: "v9"}}
+var testChain = func() prompts.Chain {
+	c := prompts.Chain{
+		Name: "test-chain", Version: "v9.0", Inputs: []prompts.Input{{Name: "title"}},
+		Steps: []prompts.Step{{
+			Name: "test", TemplateFormat: "jinja2", Template: "<message role=\"user\">\n{{ title }}\n</message>",
+			OutputVariable: &prompts.OutputVariable{Name: "result", Format: prompts.FormatJSON},
+		}},
+	}
+	if err := c.Compile(); err != nil {
+		panic(err)
+	}
+	return c
+}()
 
-var testStep = prompts.Step{
-	Name:   "test",
-	Prompt: prompts.Prompt{Inputs: []string{"title"}, Messages: []prompts.Message{{Role: "user", Content: "{title}"}}},
-	Format: prompts.FormatJSON,
-	Output: "result",
-}
+var testStep = testChain.Steps[0]
 
 type testOutput struct {
 	Violated bool   `json:"violated"`
@@ -121,7 +128,7 @@ func TestRunStepRecordsEachCall(t *testing.T) {
 	if first.OK || first.Err == nil || !strings.Contains(first.Err.Error(), "invalid json output") {
 		t.Fatalf("expected the unparsable answer recorded as a failure, got %+v", first)
 	}
-	if !second.OK || second.Err != nil || second.Chain != "test-chain" || second.ChainVersion != "v9" || second.Step != "test" ||
+	if !second.OK || second.Err != nil || second.Chain != "test-chain" || second.ChainVersion != "v9.0" || second.Step != "test" ||
 		second.Model != "test/model" || second.ResolvedModel != "test/model" || second.Usage.PromptTokens != 10 {
 		t.Fatalf("unexpected recorded success: %+v", second)
 	}

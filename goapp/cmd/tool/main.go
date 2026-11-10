@@ -8,6 +8,7 @@ import (
 	"github.com/zetaoss/zengine/goapp/app/config"
 	"github.com/zetaoss/zengine/goapp/app/database"
 	appredis "github.com/zetaoss/zengine/goapp/app/redis"
+	"github.com/zetaoss/zengine/goapp/tasks/aiedit"
 	"github.com/zetaoss/zengine/goapp/worker/registry"
 
 	"github.com/hibiken/asynq"
@@ -35,7 +36,7 @@ func run(cfg *config.Config, reg *registry.Registry, args []string) error {
 	}
 	switch args[0] {
 	case "migrate":
-		return database.RunMigrate(cfg)
+		return runMigrate(cfg)
 	case "stat-interpolate-daily":
 		return runStatInterpolateDaily(cfg, args[1:])
 	case "tasks":
@@ -70,4 +71,27 @@ func withInspector(cfg *config.Config, fn func(*asynq.Inspector) error) error {
 		return err
 	}
 	return closeErr
+}
+
+// runMigrate applies the SQL migrations, then converts the data that needs Go to convert: AI edit prompt
+// templates saved before they had a spec (aiedit.ConvertLegacyPrompts).
+func runMigrate(cfg *config.Config) error {
+	if err := database.RunMigrate(cfg); err != nil {
+		return err
+	}
+	db, err := database.Open(cfg)
+	if err != nil {
+		return err
+	}
+	if sqlDB, err := db.DB(); err == nil {
+		defer func() { _ = sqlDB.Close() }()
+	}
+	n, err := aiedit.ConvertLegacyPrompts(db)
+	if err != nil {
+		return fmt.Errorf("convert AI edit prompt templates: %w", err)
+	}
+	if n > 0 {
+		fmt.Fprintf(os.Stderr, "[worker:migrate] converted %d AI edit prompt templates\n", n)
+	}
+	return nil
 }

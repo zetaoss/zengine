@@ -202,14 +202,14 @@ func TestRubricPromptCarriesDefinition(t *testing.T) {
 	if _, err := newEvaluator(ts.URL).Evaluate(context.Background(), Page{ID: 1, Title: "자바_(섬)", Revid: 1}, "자바는 인도네시아의 섬이다.", "본문", "", ""); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(rubricUser, "문서 제목: 자바 (섬)") || !strings.Contains(rubricUser, "대상 정의: 자바는 인도네시아의 섬이다.") {
+	if !strings.Contains(rubricUser, "<title>\n자바 (섬)\n</title>") || !strings.Contains(rubricUser, "<definition>\n자바는 인도네시아의 섬이다.\n</definition>") {
 		t.Fatalf("rubric prompt must carry the display title and the definition, got %q", rubricUser)
 	}
 }
 
 func TestDefinitionCurrent(t *testing.T) {
 	page := Page{ID: 1, Title: "자바", Revid: 10}
-	d := &models.DocDefinition{PageID: 1, PageTitle: "자바", Revid: 10, ChainVersion: prompts.DocDefine.Metadata.Version}
+	d := &models.DocDefinition{PageID: 1, PageTitle: "자바", Revid: 10, ChainVersion: prompts.DocDefine.Version}
 	if !definitionCurrent(d, page) {
 		t.Fatal("expected a definition of the same revision, title and major version to be current")
 	}
@@ -218,7 +218,7 @@ func TestDefinitionCurrent(t *testing.T) {
 			t.Errorf("expected another %s to make the definition stale", name)
 		}
 	}
-	major := prompts.Major(prompts.DocDefine.Metadata.Version)
+	major := prompts.Major(prompts.DocDefine.Version)
 	for _, v := range []string{major, major + ".0", major + ".99"} {
 		same := *d
 		same.ChainVersion = v
@@ -234,7 +234,7 @@ func TestDefinitionCurrent(t *testing.T) {
 }
 
 func TestDefineMajorArg(t *testing.T) {
-	if arg := defineMajorArg(); arg.Name != "defineMajor" || arg.Value != prompts.Major(prompts.DocDefine.Metadata.Version) {
+	if arg := defineMajorArg(); arg.Name != "defineMajor" || arg.Value != prompts.Major(prompts.DocDefine.Version) {
 		t.Fatalf("unexpected arg %+v", arg)
 	}
 	if !strings.Contains(currentDefinitionSQL, "SUBSTRING_INDEX(d.chain_version, '.', 1) = @defineMajor") {
