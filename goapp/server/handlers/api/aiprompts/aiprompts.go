@@ -30,6 +30,9 @@ type promptView struct {
 
 func newPromptView(p models.AIEditPrompt) promptView {
 	v := promptView{AIEditPrompt: p, UserInputs: []prompts.Input{}}
+	if spec, err := aiedit.TemplatePrompt(p); err == nil {
+		v.Spec = spec.YAML()
+	}
 	if chain, err := aiedit.TemplateChain(p); err != nil {
 		v.Error = err.Error()
 	} else {
@@ -146,7 +149,7 @@ func Store(c *serverctx.Context) {
 		Title:       spec.Name,
 		Description: strings.TrimSpace(spec.Description),
 		RequestType: requestType,
-		Spec:        body.Spec,
+		Spec:        spec.YAML(),
 		Model:       model,
 		UpdatedAt:   now,
 	}
