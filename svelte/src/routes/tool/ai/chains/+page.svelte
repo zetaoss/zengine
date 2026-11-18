@@ -20,12 +20,26 @@
     content: string
   }
 
-  // A step: a jinja2 template of messages, read in its output variable's format (prompts.Step).
+  // A step's messages as written, a jinja2 template per role (prompts.MessageTemplates).
+  interface MessageTemplates {
+    system?: string
+    user?: string
+  }
+
+  const messageRoles = ['system', 'user'] as const
+
+  interface PromptEditorState {
+    name: string
+    description: string
+    message: Required<MessageTemplates>
+    input_variables: string[]
+  }
+
+  // A step: a jinja2 template per message, read in its output variable's format (prompts.Step).
   interface ChainStep {
     name: string
     description?: string
-    template_format: string
-    template: string
+    message: MessageTemplates
     output_variable?: { name?: string; format?: string }
     inputs: string[]
   }
@@ -115,7 +129,10 @@
     }
     // Most recently used first; chains never run keep their order (that of goapp/prompts) after them.
     const usedAt = (c: Chain) => (c.used_at ? new Date(c.used_at).getTime() : 0)
-    chains = (data ?? []).map((c, i) => ({ c, i })).sort((a, b) => usedAt(b.c) - usedAt(a.c) || a.i - b.i).map(({ c }) => c)
+    chains = (data ?? [])
+      .map((c, i) => ({ c, i }))
+      .sort((a, b) => usedAt(b.c) - usedAt(a.c) || a.i - b.i)
+      .map(({ c }) => c)
   }
 
   // Templates, most recently used first; those not run since used_at was recorded follow by use count.
@@ -183,7 +200,10 @@
 
   // nextVersion is prompts.NextVersion: the minor, or with major the major with the minor back to 0.
   function nextVersion(version: string, major: boolean) {
-    const [m, n] = version.replace(/^v/, '').split('.').map((x) => Number(x) || 0)
+    const [m, n] = version
+      .replace(/^v/, '')
+      .split('.')
+      .map((x) => Number(x) || 0)
     return major ? `v${m + 1}.0` : `v${m}.${(n ?? 0) + 1}`
   }
 
@@ -254,6 +274,7 @@
     draftError = ''
     expanded = expanded === key ? null : key
     draft = expanded ? draftFor(expanded) : null
+    promptEditor = null
   }
 
   function startEdit() {
@@ -269,6 +290,7 @@
     } else {
       draft = expanded ? draftFor(expanded) : null
     }
+    promptEditor = null
   }
 
   // A clone's name: its source's with the cloning user's name in lower case (doc-update-jmnote).
@@ -313,28 +335,62 @@
       original: '',
       bump: 'minor',
     }
+    promptEditor = null
     expanded = 'new'
-  }
-
-  // Template syntax the server read in the spec: a line from 1 and a column range from 1, in characters.
-  interface Span {
-    line: number
-    start: number
-    end: number
-    kind: 'output' | 'tag' | 'comment'
   }
 
   interface SpecCheck {
     ok: boolean
     error?: string
     user_inputs?: ChainInput[]
-    spans?: Span[]
+    editor?: {
+      name: string
+      description: string
+      message: MessageTemplates
+      input_variables: Array<{ name: string }>
+    }
     rendered_messages?: ChainMessage[]
     preview_error?: string
   }
 
   // The spec as the server reads it on save (POST /api/ai-prompts/check), shortly after typing stops.
   let specCheck = $state<SpecCheck | null>(null)
+  let promptEditor = $state<PromptEditorState | null>(null)
+
+  function quoteYaml(value: string) {
+    return JSON.stringify(value)
+  }
+
+  // A message as a YAML block under message: its lines indented by four, with the indentation given when its first
+  // line starts with a space (YAML would read it from that line otherwise).
+  function messageBlock(role: string, content: string) {
+    const indicator = /^(\s*\n)*[ \t]/.test(content) ? '|2-' : '|-'
+    const lines = content.split('\n').map((line) => (line ? `    ${line}` : ''))
+    return `  ${role}: ${indicator}\n${lines.join('\n')}`
+  }
+
+  function writeEditorSpec(editor: PromptEditorState) {
+    const blocks = messageRoles.filter((role) => editor.message[role].trim()).map((role) => messageBlock(role, editor.message[role]))
+    const message = blocks.length ? `message:\n${blocks.join('\n')}` : 'message: {}'
+    const inputVariables = editor.input_variables.length
+      ? editor.input_variables.map((name) => `  - name: ${quoteYaml(name)}`).join('\n')
+      : '[]'
+    const description = editor.description.trim() ? `description: ${quoteYaml(editor.description)}\n` : ''
+    const variables = inputVariables === '[]' ? ' []' : `\n${inputVariables}`
+    return `name: ${quoteYaml(editor.name)}\n${description}${message}\ninput_variables:${variables}\n`
+  }
+
+  function updatePromptEditor(patch: Partial<PromptEditorState>) {
+    if (!draft || !promptEditor) return
+    promptEditor = { ...promptEditor, ...patch }
+    draft.spec = writeEditorSpec(promptEditor)
+  }
+
+  function editorInputs(chain: Chain): ChainInput[] {
+    const all = [...chain.inputs, ...(chain.user_inputs ?? [])]
+    return all.filter((input, index) => all.findIndex((candidate) => candidate.name === input.name) === index)
+  }
+
   $effect(() => {
     const d = draft
     if (!d) {
@@ -347,42 +403,23 @@
     let active = true
     const timer = setTimeout(async () => {
       const [data] = await httpy.post<SpecCheck>('/api/ai-prompts/check', { request_type: requestType, spec, preview_values: values })
-      if (active && data) specCheck = data
+      if (active && data) {
+        specCheck = data
+        if (!promptEditor && data.ok && data.editor) {
+          promptEditor = {
+            name: data.editor.name,
+            description: data.editor.description,
+            message: { system: data.editor.message.system ?? '', user: data.editor.message.user ?? '' },
+            input_variables: data.editor.input_variables.map((input) => input.name),
+          }
+        }
+      }
     }, 400)
     return () => {
       active = false
       clearTimeout(timer)
     }
   })
-
-  // The spec's lines split at the spans the server found, to mark them over the editor.
-  function highlighted(spec: string, spans: Span[]) {
-    const byLine: Record<number, Span[]> = {}
-    for (const s of spans) byLine[s.line] = [...(byLine[s.line] ?? []), s]
-    return spec.split('\n').map((line, i) => {
-      const chars = [...line]
-      const parts: Array<{ text: string; kind?: Span['kind'] }> = []
-      let at = 0
-      for (const s of (byLine[i + 1] ?? []).sort((a, b) => a.start - b.start)) {
-        if (s.start - 1 < at) continue
-        parts.push({ text: chars.slice(at, s.start - 1).join('') }, { text: chars.slice(s.start - 1, s.end - 1).join(''), kind: s.kind })
-        at = s.end - 1
-      }
-      parts.push({ text: chars.slice(at).join('') })
-      return parts
-    })
-  }
-
-  const newline = '\n'
-  let backdrop = $state<HTMLPreElement | null>(null)
-
-  function syncScroll(e: Event) {
-    const ta = e.currentTarget as HTMLTextAreaElement
-    if (backdrop) {
-      backdrop.scrollTop = ta.scrollTop
-      backdrop.scrollLeft = ta.scrollLeft
-    }
-  }
 
   async function saveDraft() {
     if (!draft) return
@@ -407,6 +444,7 @@
     if (draft === submitted) {
       expanded = `prompt:${data.id}`
       draft = draftFor(expanded)
+      promptEditor = null
     }
   }
 
@@ -486,7 +524,10 @@
             </select>
           </label>
         {:else}
-          <span>모델 <span class="text-foreground">{d.model ? formatModelLabel(d.model) : `체인 모델 (${formatModelLabel(chain.model)})`}</span></span>
+          <span
+            >모델 <span class="text-foreground">{d.model ? formatModelLabel(d.model) : `체인 모델 (${formatModelLabel(chain.model)})`}</span
+            ></span
+          >
         {/if}
       </div>
       <div class="flex flex-wrap items-center gap-2">
@@ -502,12 +543,12 @@
           </CButton>
         {:else}
           {#if own}
-            <CButton variant="outline" size="small" onclick={startEdit}>
+            <CButton variant="outline" size="small" disabled={!promptEditor} onclick={startEdit}>
               <ZIcon path={mdiPencil} class="mr-1" />
               편집
             </CButton>
           {/if}
-          <CButton variant="outline" size="small" onclick={() => void openClone(d)}>
+          <CButton variant="outline" size="small" disabled={!promptEditor} onclick={() => void openClone(d)}>
             <ZIcon path={mdiContentCopy} class="mr-1" />
             복제
           </CButton>
@@ -521,42 +562,114 @@
       </div>
     </div>
     {#if d.editing && d.id > 0 && specChanged(d) && d.bump === 'major'}
-      <div class="text-muted-foreground">메이저 범프: 이 틀로 돈 이전 결과와 다른 것으로 구분합니다(AI 편집은 다시 돌리는 대상이 없습니다).</div>
+      <div class="text-muted-foreground">
+        메이저 범프: 이 틀로 돈 이전 결과와 다른 것으로 구분합니다(AI 편집은 다시 돌리는 대상이 없습니다).
+      </div>
     {/if}
     {#if draftError}
       <div class="text-destructive">{draftError}</div>
     {/if}
-    <div class="text-muted-foreground">
-      <a class="underline" href="https://learn.microsoft.com/en-us/semantic-kernel/concepts/prompts/yaml-schema" target="_blank" rel="noopener noreferrer"
-        >Semantic Kernel 프롬프트 YAML</a
-      >
-      형식입니다. template은 jinja2(<code>{'{{ 변수 }}'}</code>, <code>{'{% if %}'}</code>, <code>{'{% for %}'}</code>)이며, 위키 틀(<code
-        >{'{{틀|…}}'}</code
-      >)은 그대로 둡니다. 변수처럼 보이는 위키 문법은 <code>{'{% raw %}…{% endraw %}'}</code>로 감쌉니다.
-    </div>
-    <!-- The spec (left) beside what it renders with the preview values (right). -->
     <div class="grid items-start gap-3 md:grid-cols-2 md:items-stretch">
-      <div class="relative min-w-0">
-        <span class="pointer-events-none absolute -top-px right-[13px] z-10 rounded px-1.5 py-0.5 font-mono text-muted-foreground/70">YAML</span>
-        <div class={`relative h-[36rem] overflow-hidden rounded border ${d.editing ? 'bg-background' : 'bg-muted/30'}`}>
-          <pre
-            bind:this={backdrop}
-            aria-hidden="true"
-            class="spec-layer pointer-events-none absolute inset-0 overflow-hidden text-foreground">{#each highlighted(d.spec, specCheck?.ok ? (specCheck.spans ?? []) : []) as line, i (i)}{#each line as part, k (k)}{#if part.kind}<mark
-                  class={`syntax ${part.kind}`}>{part.text}</mark
-                >{:else}{part.text}{/if}{/each}{newline}{/each}</pre>
-          <textarea
-            id={`ai-template-spec-${d.key}`}
-            aria-label="템플릿 YAML"
-            spellcheck="false"
-            class="spec-layer absolute inset-0 resize-none overflow-auto bg-transparent text-transparent caret-foreground focus:outline-none"
-            readonly={!d.editing}
-            bind:value={d.spec}
-            onscroll={syncScroll}
-          ></textarea>
-        </div>
+      <div class="min-w-0 space-y-3">
+        {#if promptEditor && !d.editing}
+          <div class="space-y-3">
+            <div class="space-y-1">
+              <div class="font-medium">{promptEditor.name}</div>
+              {#if promptEditor.description}
+                <div class="text-muted-foreground">{promptEditor.description}</div>
+              {/if}
+            </div>
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="text-muted-foreground">입력값</span>
+              {#each editorInputs(chain).filter((input) => promptEditor?.input_variables.includes(input.name)) as input (input.name)}
+                <code class="rounded bg-muted px-1.5 py-0.5" title={input.description}>{input.name}</code>
+              {/each}
+            </div>
+            {#each messageRoles.filter((role) => promptEditor?.message[role].trim()) as role (role)}
+              <div class="relative overflow-hidden rounded border bg-muted/30">
+                <span class="pointer-events-none absolute -top-px right-[13px] rounded px-1.5 py-0.5 font-mono text-muted-foreground/70"
+                  >{role}</span
+                >
+                <pre class="max-h-[36rem] overflow-auto whitespace-pre-wrap p-3 pr-24 font-mono text-xs leading-relaxed">{promptEditor
+                    .message[role]}</pre>
+              </div>
+            {/each}
+          </div>
+        {:else if promptEditor}
+          <div class="space-y-3">
+            <div class="grid gap-2 sm:grid-cols-2">
+              <label class="space-y-1">
+                <span class="block text-muted-foreground">템플릿 이름</span>
+                <input
+                  class="h-8 w-full rounded border bg-background px-2"
+                  value={promptEditor.name}
+                  oninput={(e) => updatePromptEditor({ name: e.currentTarget.value })}
+                />
+              </label>
+              <label class="space-y-1">
+                <span class="block text-muted-foreground">설명</span>
+                <input
+                  class="h-8 w-full rounded border bg-background px-2"
+                  value={promptEditor.description}
+                  oninput={(e) => updatePromptEditor({ description: e.currentTarget.value })}
+                />
+              </label>
+            </div>
+            <fieldset class="rounded border bg-background p-3">
+              <legend class="px-1 text-muted-foreground">사용할 입력값</legend>
+              <p class="mb-2 text-muted-foreground">작업 입력값은 필수입니다. 사용자 입력값은 본문에서 쓸 때 선택하세요.</p>
+              <div class="flex flex-wrap gap-x-4 gap-y-2">
+                {#each editorInputs(chain) as input (input.name)}
+                  <label class="flex items-center gap-1.5" title={input.description}>
+                    <input
+                      type="checkbox"
+                      checked={promptEditor.input_variables.includes(input.name)}
+                      disabled={chain.inputs.some((required) => required.name === input.name)}
+                      onchange={(e) => {
+                        const selected = new Set(promptEditor?.input_variables ?? [])
+                        if (e.currentTarget.checked) selected.add(input.name)
+                        else selected.delete(input.name)
+                        updatePromptEditor({ input_variables: [...selected] })
+                      }}
+                    />
+                    <span>{humanize(input.name)}</span>
+                    <code class="text-muted-foreground">{input.name}</code>
+                  </label>
+                {/each}
+              </div>
+            </fieldset>
+            {#each messageRoles as role (role)}
+              <section class="overflow-hidden rounded border bg-background">
+                <header class="border-b bg-muted/30 px-3 py-2 font-mono text-muted-foreground">{role}</header>
+                <textarea
+                  class="min-h-64 w-full resize-y bg-background p-3 font-mono text-xs leading-relaxed focus:outline-none"
+                  aria-label={`${role} 메시지 내용`}
+                  value={promptEditor.message[role]}
+                  oninput={(e) => {
+                    if (promptEditor) updatePromptEditor({ message: { ...promptEditor.message, [role]: e.currentTarget.value } })
+                  }}
+                ></textarea>
+              </section>
+            {/each}
+            <details class="rounded border px-3 py-2 text-muted-foreground">
+              <summary class="cursor-pointer">본문에서 변수와 조건을 쓰는 방법</summary>
+              <div class="mt-2 space-y-1">
+                <div><code>{'{{ title }}'}</code>처럼 입력값을 넣습니다.</div>
+                <div><code>{'{% if backlinks %}…{% endif %}'}</code>처럼 조건을 붙입니다.</div>
+                <div>
+                  대문자와 숫자로 된 MediaWiki 변수(예: <code>{'{{CURRENTDAY2}}'}</code>)와 콜론형 위키 문법은 그대로 둡니다. 알려지지 않은
+                  소문자 이름을 글자로 남길 때는 <code>{'{% raw %}…{% endraw %}'}</code>를 씁니다.
+                </div>
+              </div>
+            </details>
+          </div>
+        {:else if specCheck && !specCheck.ok}
+          <pre class="max-h-[36rem] overflow-auto whitespace-pre-wrap rounded border bg-muted/30 p-3 font-mono text-[11px]">{d.spec}</pre>
+        {:else}
+          <div class="rounded border p-3 text-muted-foreground">작성 화면을 준비하고 있습니다…</div>
+        {/if}
       </div>
-      <div class="relative min-w-0 space-y-2 md:max-h-[36rem] md:overflow-auto">
+      <div class="relative min-w-0 space-y-2">
         {#if specCheck && !specCheck.ok}
           <div class="rounded border border-destructive/40 p-2 whitespace-pre-wrap text-destructive">{specCheck.error}</div>
         {:else if specCheck?.ok}
@@ -566,7 +679,9 @@
           {:else}
             {#each specCheck.rendered_messages ?? [] as message, i (i)}
               <div class="relative overflow-hidden rounded border bg-muted/30">
-                <span class="pointer-events-none absolute -top-px right-[13px] rounded px-1.5 py-0.5 font-mono text-muted-foreground/70">{message.role}</span>
+                <span class="pointer-events-none absolute -top-px right-[13px] rounded px-1.5 py-0.5 font-mono text-muted-foreground/70"
+                  >{message.role}</span
+                >
                 <pre class="max-h-80 overflow-auto whitespace-pre-wrap p-3 pr-16 text-[11px]">{message.content}</pre>
               </div>
             {/each}
@@ -603,7 +718,13 @@
   {@const given = previewValues[input.name] ?? input.default}
   {@const placeholder = input.ui?.placeholder ?? ''}
   {#if input.type === 'bool'}
-    <input class="mt-1" type="checkbox" aria-label={label} checked={given === true} onchange={(e) => setPreview(input.name, e.currentTarget.checked)} />
+    <input
+      class="mt-1"
+      type="checkbox"
+      aria-label={label}
+      checked={given === true}
+      onchange={(e) => setPreview(input.name, e.currentTarget.checked)}
+    />
   {:else if input.type === 'textList'}
     <div class="space-y-1">
       {#each previewTexts(input.name) as item, i (i)}
@@ -612,18 +733,28 @@
             class="min-h-8 min-w-0 flex-1 rounded border bg-background px-2 py-1"
             placeholder={placeholder || `${label} ${i + 1}`}
             value={item}
-            oninput={(e) => setPreview(input.name, previewTexts(input.name).map((x, j) => (j === i ? e.currentTarget.value : x)))}
+            oninput={(e) =>
+              setPreview(
+                input.name,
+                previewTexts(input.name).map((x, j) => (j === i ? e.currentTarget.value : x)),
+              )}
           ></textarea>
           <button
             type="button"
             class="rounded px-1.5 text-muted-foreground hover:bg-muted"
             aria-label={`${label} ${i + 1} 빼기`}
-            onclick={() => setPreview(input.name, previewTexts(input.name).filter((_, j) => j !== i))}>✕</button
+            onclick={() =>
+              setPreview(
+                input.name,
+                previewTexts(input.name).filter((_, j) => j !== i),
+              )}>✕</button
           >
         </div>
       {/each}
-      <button type="button" class="rounded border px-2 py-0.5 text-muted-foreground hover:bg-muted" onclick={() => setPreview(input.name, [...previewTexts(input.name), ''])}
-        >+ {label}</button
+      <button
+        type="button"
+        class="rounded border px-2 py-0.5 text-muted-foreground hover:bg-muted"
+        onclick={() => setPreview(input.name, [...previewTexts(input.name), ''])}>+ {label}</button
       >
     </div>
   {:else}
@@ -638,9 +769,19 @@
         {/each}
       </select>
     {:else if input.type === 'text'}
-      <textarea class="min-h-12 w-full rounded border bg-background px-2 py-1" {placeholder} {value} oninput={(e) => setPreview(input.name, e.currentTarget.value)}></textarea>
+      <textarea
+        class="min-h-12 w-full rounded border bg-background px-2 py-1"
+        {placeholder}
+        {value}
+        oninput={(e) => setPreview(input.name, e.currentTarget.value)}
+      ></textarea>
     {:else}
-      <input class="h-7 w-full rounded border bg-background px-2" {placeholder} {value} oninput={(e) => setPreview(input.name, e.currentTarget.value)} />
+      <input
+        class="h-7 w-full rounded border bg-background px-2"
+        {placeholder}
+        {value}
+        oninput={(e) => setPreview(input.name, e.currentTarget.value)}
+      />
     {/if}
   {/if}
 {/snippet}
@@ -651,11 +792,20 @@
       <span class="text-muted-foreground">{n + 1}.</span>
       <span class="font-mono font-medium">{st.name}</span>
       <span class="ml-1 font-mono text-muted-foreground"
-        >{st.inputs.join(', ')} → {st.output_variable?.format ?? 'text'}{st.output_variable?.name ? ` → ${st.output_variable.name}` : ''}</span
+        >{st.inputs.join(', ')} → {st.output_variable?.format ?? 'text'}{st.output_variable?.name
+          ? ` → ${st.output_variable.name}`
+          : ''}</span
       >
       <span class="ml-2 text-muted-foreground">{st.description}</span>
     </div>
-    <pre class="max-h-96 overflow-auto whitespace-pre-wrap rounded border bg-muted/30 p-3 text-[11px]">{st.template}</pre>
+    {#each messageRoles.filter((role) => st.message[role]) as role (role)}
+      <div class="relative overflow-hidden rounded border bg-muted/30">
+        <span class="pointer-events-none absolute -top-px right-[13px] rounded px-1.5 py-0.5 font-mono text-muted-foreground/70"
+          >{role}</span
+        >
+        <pre class="max-h-96 overflow-auto whitespace-pre-wrap p-3 pr-16 text-[11px]">{st.message[role]}</pre>
+      </div>
+    {/each}
   </div>
 {/snippet}
 
@@ -667,11 +817,16 @@
       {@const itemExpanded = expanded === key}
       {@const own = item.user_id === $userInfo?.id}
       <tr
-        class={['transition cursor-pointer', own ? 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/40' : 'hover:bg-muted/30']}
+        class={[
+          'transition cursor-pointer',
+          own ? 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/40' : 'hover:bg-muted/30',
+        ]}
         onclick={() => toggle(key)}
       >
         <td class="p-3 whitespace-nowrap text-muted-foreground">{item.user_name}</td>
-        <td class="p-3 whitespace-nowrap">{item.title}{#if item.error}<span class="ml-1 text-destructive" title={item.error}>⚠</span>{/if}</td>
+        <td class="p-3 whitespace-nowrap"
+          >{item.title}{#if item.error}<span class="ml-1 text-destructive" title={item.error}>⚠</span>{/if}</td
+        >
         <td class="p-3 text-muted-foreground">{item.description}</td>
         <td class="p-3 text-xs">{formatModelLabel(item.model || chain.model)}</td>
         <td class="p-3 text-center text-muted-foreground tabular-nums">{item.use_count || '-'}</td>
@@ -731,7 +886,9 @@
               <td class="p-3 whitespace-nowrap">{chain.name}</td>
               <td class="p-3 text-muted-foreground">{chain.description}</td>
               <td class="p-3 text-xs">{formatModelLabel(chain.model)}</td>
-              <td class="p-3 text-center text-muted-foreground tabular-nums" title="이 체인이 끝까지 돈 횟수(프롬프트 틀로 돈 것 포함)">{chain.uses || '-'}</td>
+              <td class="p-3 text-center text-muted-foreground tabular-nums" title="이 체인이 끝까지 돈 횟수(프롬프트 틀로 돈 것 포함)"
+                >{chain.uses || '-'}</td
+              >
               <td class="p-3 whitespace-nowrap text-xs text-muted-foreground">{chain.used_at ? getAge(chain.used_at, now) : '-'}</td>
               <td class="p-3 text-center">
                 {@render expandButton(chain.name, isExpanded)}
@@ -778,29 +935,3 @@
     </div>
   </div>
 </div>
-
-<style>
-  .spec-layer {
-    margin: 0;
-    padding: 0.75rem;
-    font-family: var(--font-mono, ui-monospace, monospace);
-    font-size: 11px;
-    line-height: 1.5;
-    white-space: pre;
-    tab-size: 2;
-    border: 0;
-  }
-  .syntax {
-    border-radius: 0.2rem;
-    color: inherit;
-  }
-  .syntax.output {
-    background: light-dark(oklch(0.92 0.08 85), oklch(0.38 0.08 85));
-  }
-  .syntax.tag {
-    background: light-dark(oklch(0.92 0.06 250), oklch(0.36 0.07 250));
-  }
-  .syntax.comment {
-    background: light-dark(oklch(0.93 0.01 250), oklch(0.32 0.01 250));
-  }
-</style>

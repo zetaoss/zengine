@@ -44,6 +44,7 @@
       supported?: number
       contradictory?: number
       no_rad?: number
+      unknown?: number
       errors?: Array<{ sentence: string; reason: string }>
     }
   }
@@ -605,7 +606,7 @@
                             <div class="px-2.5 py-1 rounded bg-muted/70 font-semibold text-foreground">정확성</div>
                             <div class="text-muted-foreground pt-0.5">
                               맞음 {judgment.accuracy.supported ?? 0} · 틀림 {judgment.accuracy.contradictory ?? 0} · 사실 주장 없음 {judgment
-                                .accuracy.no_rad ?? 0}
+                                .accuracy.no_rad ?? 0} · 확인 불가 {judgment.accuracy.unknown ?? 0}
                             </div>
                             {#if judgment.accuracy.errors && judgment.accuracy.errors.length > 0}
                               <ul class="list-none pl-0 space-y-1 text-muted-foreground pt-1">
