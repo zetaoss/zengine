@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"strconv"
 	"strings"
 	"testing"
 )
@@ -12,10 +11,10 @@ import (
 // specVersions pins each built-in chain's version to a hash of its spec, so a spec change fails here until the
 // version is bumped and the entry updated: a minor bump keeps stored results, a major bump makes them stale.
 var specVersions = map[string]string{
-	"doc-define": "v2.3 d4e35d9cdf90",
-	"doc-eval":   "v2.3 98e1cd44b79c",
-	"doc-create": "v2.5 b985a5f59f81",
-	"doc-update": "v2.5 22cb61eb7137",
+	"doc-define": "v2.6 a35a00347434",
+	"doc-eval":   "v2.6 9bbc9cf0e073",
+	"doc-create": "v2.8 2e6750143fa9",
+	"doc-update": "v2.7 691c7c5d0014",
 }
 
 func specHash(c Chain) string {
@@ -41,8 +40,23 @@ func TestSpecVersions(t *testing.T) {
 	}
 }
 
-func system(st Step) string {
-	return st.Render(Vars{})[0].Content
+func user(st Step) string {
+	return st.Render(Vars{})[1].Content
+}
+
+func TestBuiltinRolesAndInputs(t *testing.T) {
+	for _, st := range []Step{DocCreate.PromptStep(), DocUpdate.PromptStep(), DocDefineStep, DocEvalRubric, DocEvalJudge} {
+		messages := st.Render(Vars{"title": "제목", "wikitext": "본문", "body": "본문", "definition": "정의", "rubrics": "기준"})
+		if len(messages) != 2 || messages[0].Role != "system" || messages[1].Role != "user" {
+			t.Fatalf("%s: unexpected roles: %+v", st.Name, messages)
+		}
+		if strings.Contains(messages[0].Content, "## 과제") || strings.Contains(messages[0].Content, "## 출력") {
+			t.Errorf("%s: task instructions must be in the user message", st.Name)
+		}
+		if !strings.Contains(messages[1].Content, "## 출력") || !strings.Contains(messages[1].Content, "제목") {
+			t.Errorf("%s: user message must include input and output instructions", st.Name)
+		}
+	}
 }
 
 func TestDocEvalPrompts(t *testing.T) {
@@ -51,20 +65,20 @@ func TestDocEvalPrompts(t *testing.T) {
 	}
 
 	for _, kw := range []string{"general_quality", "text_quality", "Coherence", "Fluency", "최신성", "길이로 감점"} {
-		if !strings.Contains(system(DocEvalRubric), kw) {
-			t.Errorf("rubric system message missing expected keyword %q", kw)
+		if !strings.Contains(user(DocEvalRubric), kw) {
+			t.Errorf("rubric user message missing expected keyword %q", kw)
 		}
 	}
 
 	judgeKeywords := []string{"general_quality", "text_quality", "safety", "accuracy", "supported", "contradictory", "no_rad"}
 	judgeKeywords = append(judgeKeywords, DocEvalSafetyPolicies...)
 	for _, kw := range judgeKeywords {
-		if !strings.Contains(system(DocEvalJudge), kw) {
-			t.Errorf("judge system message missing expected keyword %q", kw)
+		if !strings.Contains(user(DocEvalJudge), kw) {
+			t.Errorf("judge user message missing expected keyword %q", kw)
 		}
 	}
 
-	if got := DocEvalRubric.Render(Vars{"title": "테스트 문서", "definition": "테스트 문서는 시험용 문서이다."}); got[1].Content != "# 변수\n\n<title>\n테스트 문서\n</title>\n<definition>\n테스트 문서는 시험용 문서이다.\n</definition>" {
+	if got := DocEvalRubric.Render(Vars{"title": "테스트 문서", "definition": "테스트 문서는 시험용 문서이다."}); !strings.Contains(got[1].Content, "<definition>\n테스트 문서는 시험용 문서이다.\n</definition>") || !strings.Contains(got[1].Content, "제목이 '테스트 문서'인 문서") {
 		t.Errorf("rubric user message rendered incorrectly: %s", got[1].Content)
 	}
 
@@ -74,13 +88,10 @@ func TestDocEvalPrompts(t *testing.T) {
 		"wikitext": "== 개요 ==\n테스트 내용" + strings.Repeat("가", 3000),
 	})
 	user := got[1].Content
-	if !strings.Contains(DocEvalJudge.Template, "{{ wikitext[:"+strconv.Itoa(DocEvalJudgeBodyChars)+"] }}") {
-		t.Errorf("the judge template must cut the wikitext at DocEvalJudgeBodyChars")
+	if want := "<body>\n" + "== 개요 ==\n테스트 내용" + strings.Repeat("가", 3000) + "\n</body>"; !strings.Contains(user, want) {
+		t.Error("judge must receive the full wikitext")
 	}
-	if want := "<body>\n" + DocEvalJudgeBody("== 개요 ==\n테스트 내용"+strings.Repeat("가", 3000)) + "\n</body>"; !strings.Contains(user, want) {
-		t.Errorf("judge must read the first %d characters of the wikitext", DocEvalJudgeBodyChars)
-	}
-	if !strings.Contains(user, "<title>\n테스트 문서\n</title>") || !strings.Contains(user, `{"general_quality":[]}`) || !strings.Contains(user, "테스트 내용") {
+	if !strings.Contains(user, "제목이 '테스트 문서'인 문서의 본문") || !strings.Contains(user, `{"general_quality":[]}`) || !strings.Contains(user, "테스트 내용") {
 		t.Errorf("judge user message rendered incorrectly: %s", user)
 	}
 }
@@ -90,10 +101,10 @@ func TestDocDefinePrompt(t *testing.T) {
 		t.Fatal("doc-define needs a version: each definition records it")
 	}
 	got := DocDefineStep.Render(Vars{"title": "자바", "wikitext": "'''자바'''는 인도네시아의 섬이다."})
-	if !strings.Contains(got[1].Content, "<title>\n자바\n</title>\n<bodyHead>\n") || !strings.Contains(got[1].Content, "인도네시아의 섬") {
+	if !strings.Contains(got[1].Content, "## 입력\n\n<bodyHead>\n") || !strings.Contains(got[1].Content, "제목이 '자바'인 문서") || !strings.Contains(got[1].Content, "인도네시아의 섬") {
 		t.Errorf("define user message rendered incorrectly: %s", got[1].Content)
 	}
-	if !strings.Contains(system(DocDefineStep), `"definition"`) {
-		t.Error("define system message must ask for the definition JSON key")
+	if !strings.Contains(user(DocDefineStep), `"definition"`) {
+		t.Error("define user message must ask for the definition JSON key")
 	}
 }

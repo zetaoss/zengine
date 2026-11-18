@@ -10,6 +10,7 @@
   import { subscribeWikiEditorContent } from '../wikiEditor'
   import AiEditRunner from './AiEditRunner.svelte'
   import type {
+    AIEditMessageTemplates,
     AIEditPromptForRunner,
     AIEditRenderedMessage,
     AIEditRequestPayload,
@@ -35,6 +36,10 @@
   interface PromptSelectItem {
     value: string
     label: string
+  }
+
+  interface PromptTemplateCheck {
+    editor?: { message: AIEditMessageTemplates }
   }
 
   interface ChainItem {
@@ -67,6 +72,7 @@
   let promptTitle = $state('')
   let promptListLoading = $state(false)
   let mwEditorContent = $state('')
+  let runnerMessage = $state<AIEditMessageTemplates>({})
 
   const promptStorageKeyPrefix = 'ai-edit-prompt:'
 
@@ -123,6 +129,20 @@
 
     if (!sortedPromptItems.some((p) => p.title === promptTitle)) {
       selectPreferredPrompt(currentRequestType)
+    }
+  })
+
+  $effect(() => {
+    const item = currentPromptItem
+    runnerMessage = {}
+    if (!item?.spec || !isAIEditRequestType(item.request_type)) return
+
+    let active = true
+    void httpy.post<PromptTemplateCheck>('/api/ai-prompts/check', { request_type: item.request_type, spec: item.spec }).then(([data]) => {
+      if (active) runnerMessage = data?.editor?.message ?? {}
+    })
+    return () => {
+      active = false
     }
   })
 
@@ -248,6 +268,7 @@
 {#if currentRunnerPrompt}
   <AiEditRunner
     prompt={currentRunnerPrompt}
+    message={runnerMessage}
     {title}
     {pageId}
     editorContent={mwEditorContent}

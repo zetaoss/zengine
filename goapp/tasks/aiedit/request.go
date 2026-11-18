@@ -55,6 +55,15 @@ func ChainOf(requestType string) prompts.Chain {
 // Render fills the chain's variables (the run form's values as given; the title and, for update, the wikitext as
 // body) and renders its first step. Backlinks are a run form value: the run form fetches them (Backlinks).
 func Render(ctx context.Context, cfg *config.Config, req Request) (Rendered, error) {
+	return render(ctx, cfg, req, true)
+}
+
+// RenderPreview renders a request for the editor preview, even if its conditions leave no user message.
+func RenderPreview(ctx context.Context, cfg *config.Config, req Request) (Rendered, error) {
+	return render(ctx, cfg, req, false)
+}
+
+func render(ctx context.Context, cfg *config.Config, req Request, requireUserMessage bool) (Rendered, error) {
 	chain := ChainOf(req.RequestType)
 	if req.Prompt != nil {
 		var err error
@@ -62,7 +71,13 @@ func Render(ctx context.Context, cfg *config.Config, req Request) (Rendered, err
 			return Rendered{}, fmt.Errorf("template %d: %w", req.Prompt.ID, err)
 		}
 	}
-	vars, err := chain.UserVars(req.UserInputs)
+	var vars prompts.Vars
+	var err error
+	if requireUserMessage {
+		vars, err = chain.UserVars(req.UserInputs)
+	} else {
+		vars, err = chain.UserVarsForPreview(req.UserInputs)
+	}
 	if err != nil {
 		return Rendered{}, InputError{err.Error()}
 	}
@@ -86,7 +101,7 @@ func Render(ctx context.Context, cfg *config.Config, req Request) (Rendered, err
 		}
 	}
 	messages := chain.PromptStep().Render(vars)
-	if !slices.ContainsFunc(messages, func(m prompts.Message) bool { return m.Role == "user" }) {
+	if requireUserMessage && !slices.ContainsFunc(messages, func(m prompts.Message) bool { return m.Role == "user" }) {
 		return Rendered{}, InputError{"보낼 user 메시지가 없습니다. 템플릿의 조건(if, for)이 걸린 입력을 채워 주세요."}
 	}
 	return Rendered{Chain: chain, Vars: vars, Messages: messages}, nil

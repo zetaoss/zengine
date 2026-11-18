@@ -15,7 +15,7 @@ import (
 )
 
 // Chain is a pipeline of steps, following LangChain. Each step is a Semantic Kernel style prompt (a jinja2
-// template of messages); a step's output is saved under its output variable's name and can be read by later
+// template per message); a step's output is saved under its output variable's name and can be read by later
 // steps. Built-in chains are YAML files in chains/, embedded and loaded at start, and listed read-only in the AI
 // tool's chains tab (the AI edit prompt templates are stored in the database and editable).
 //
@@ -192,6 +192,15 @@ func present(v any) bool { return jinja.Truthy(v) }
 // choice, one of its options), a bool, or a list of strings whose blank items are dropped. A missing user input
 // takes its Default or is left out; a required one that is missing or blank is refused.
 func (c Chain) UserVars(raw map[string]any) (Vars, error) {
+	return c.userVars(raw, true)
+}
+
+// UserVarsForPreview accepts missing required values so conditional prompt messages can still be inspected.
+func (c Chain) UserVarsForPreview(raw map[string]any) (Vars, error) {
+	return c.userVars(raw, false)
+}
+
+func (c Chain) userVars(raw map[string]any, requireRequired bool) (Vars, error) {
 	vars := Vars{}
 	for name := range raw {
 		if !slices.ContainsFunc(c.UserInputs, func(in Input) bool { return in.Name == name }) {
@@ -204,7 +213,7 @@ func (c Chain) UserVars(raw map[string]any) (Vars, error) {
 			v = in.Default
 		}
 		if v == nil {
-			if in.IsRequired {
+			if in.IsRequired && requireRequired {
 				return nil, fmt.Errorf("user input %s is required", in.Name)
 			}
 			continue
@@ -249,17 +258,16 @@ func (c Chain) UserVars(raw map[string]any) (Vars, error) {
 	return vars, nil
 }
 
-// Step is one LLM call of a chain, LangChain's prompt | model | parser: its Template, a jinja2 template of
-// messages (ParseChat), is rendered and sent to the model, and the response is read in its output variable's
-// Format. The output's Name is given only when a later step reads it (like ADK's output_key). Inputs are the
-// variables the template reads, found when the chain loads, like LangChain's input_variables.
+// Step is one LLM call of a chain, LangChain's prompt | model | parser: its Message, a jinja2 template per role
+// (ParseChat), is rendered and sent to the model, and the response is read in its output variable's Format. The
+// output's Name is given only when a later step reads it (like ADK's output_key). Inputs are the variables the
+// messages read, found when the chain loads, like LangChain's input_variables.
 type Step struct {
-	Name           string          `json:"name" yaml:"name"`
-	Description    string          `json:"description,omitempty" yaml:"description,omitempty"`
-	TemplateFormat string          `json:"template_format" yaml:"template_format"`
-	Template       string          `json:"template" yaml:"template"`
-	OutputVariable *OutputVariable `json:"output_variable,omitempty" yaml:"output_variable,omitempty"`
-	Inputs         []string        `json:"inputs" yaml:"-"`
+	Name           string           `json:"name" yaml:"name"`
+	Description    string           `json:"description,omitempty" yaml:"description,omitempty"`
+	Message        MessageTemplates `json:"message" yaml:"message"`
+	OutputVariable *OutputVariable  `json:"output_variable,omitempty" yaml:"output_variable,omitempty"`
+	Inputs         []string         `json:"inputs" yaml:"-"`
 	chat           ChatTemplate
 }
 
@@ -268,9 +276,6 @@ type OutputVariable struct {
 	Name   string `json:"name,omitempty" yaml:"name,omitempty"`
 	Format Format `json:"format,omitempty" yaml:"format,omitempty"`
 }
-
-// TemplateFormatJinja2 is the only template format: the dialect of package jinja.
-const TemplateFormatJinja2 = "jinja2"
 
 // Output is the name the step's value is saved under, or "".
 func (st Step) Output() string {
@@ -577,10 +582,9 @@ var (
 	versionRe = regexp.MustCompile(`^v[0-9]+\.[0-9]+$`)
 )
 
-// Compile checks the chain and parses its steps' templates. Variable names are distinct and start with a
-// letter; task inputs are plain strings; each step's template is jinja2, its messages are system or user
-// messages and read only the chain's variables and earlier outputs, a for loops over an array; every task input
-// is read by some step.
+// Compile checks the chain and parses its steps' messages. Variable names are distinct and start with a
+// letter; task inputs are plain strings; each step's messages read only the chain's variables and earlier
+// outputs, a for loops over an array; every task input is read by some step.
 func (c *Chain) Compile() error {
 	if !versionRe.MatchString(c.Version) {
 		return fmt.Errorf("version %q is not v<major>.<minor>", c.Version)
@@ -637,22 +641,14 @@ func (st *Step) compile(types map[string]InputType, names []string, used map[str
 	if st.Name == "" {
 		return fmt.Errorf("a step needs a name")
 	}
-	if st.TemplateFormat != TemplateFormatJinja2 {
-		return fmt.Errorf("template_format is %s", TemplateFormatJinja2)
-	}
 	if st.OutputVariable != nil {
 		if f := st.OutputVariable.Format.OrText(); f != FormatJSON && f != FormatText {
 			return fmt.Errorf("unknown format %q", st.OutputVariable.Format)
 		}
 	}
-	chat, err := ParseChat(st.Template, names)
+	chat, err := ParseChat(st.Message, names)
 	if err != nil {
 		return err
-	}
-	for _, m := range chat.Messages {
-		if m.Role != "system" && m.Role != "user" {
-			return fmt.Errorf("a %s message; a step has system and user messages", m.Role)
-		}
 	}
 	for _, u := range chat.Uses() {
 		if u.Kind == jinja.UseLoop && types[u.Name] != TypeTextList {
@@ -671,15 +667,14 @@ func (st *Step) compile(types map[string]InputType, names []string, used map[str
 }
 
 // PromptTemplate is an AI edit prompt template as written: a Semantic Kernel prompt document without
-// execution_settings (a template's model is a setting of its own, outside the document). Template replaces the
-// template of its chain's first step; InputVariables pick, by name, the chain's variables it reads (each as the
+// execution_settings (a template's model is a setting of its own, outside the document). Message replaces the
+// messages of its chain's first step; InputVariables pick, by name, the chain's variables it reads (each as the
 // chain defines it).
 type PromptTemplate struct {
-	Name           string          `json:"name" yaml:"name"`
-	Description    string          `json:"description,omitempty" yaml:"description,omitempty"`
-	TemplateFormat string          `json:"template_format" yaml:"template_format"`
-	Template       string          `json:"template" yaml:"template"`
-	InputVariables []InputVariable `json:"input_variables" yaml:"input_variables"`
+	Name           string           `json:"name" yaml:"name"`
+	Description    string           `json:"description,omitempty" yaml:"description,omitempty"`
+	Message        MessageTemplates `json:"message" yaml:"message"`
+	InputVariables []InputVariable  `json:"input_variables" yaml:"input_variables"`
 }
 
 // InputVariable is a variable a template reads, by name.
@@ -713,11 +708,11 @@ func (t PromptTemplate) YAML() string {
 	return buf.String()
 }
 
-// PromptTemplate is the chain as a template to clone: its first step's template, reading the variables it reads,
+// PromptTemplate is the chain as a template to clone: its first step's messages, reading the variables it reads,
 // with the chain's name and description.
 func (c Chain) PromptTemplate() PromptTemplate {
 	st := c.PromptStep()
-	t := PromptTemplate{Name: c.Name, Description: c.Description, TemplateFormat: st.TemplateFormat, Template: st.Template, InputVariables: []InputVariable{}}
+	t := PromptTemplate{Name: c.Name, Description: c.Description, Message: st.Message, InputVariables: []InputVariable{}}
 	for _, in := range slices.Concat(c.Inputs, c.UserInputs) {
 		if slices.Contains(st.Inputs, in.Name) {
 			t.InputVariables = append(t.InputVariables, InputVariable{Name: in.Name})
@@ -727,12 +722,9 @@ func (c Chain) PromptTemplate() PromptTemplate {
 }
 
 // WithTemplate returns the chain as the template runs it: its user inputs are those the template picks (in the
-// chain's order), and its first step's template is the template's, read with only the variables the template
+// chain's order), and its first step's messages are the template's, read with only the variables the template
 // picks. A name the chain does not have or a repeated name is refused.
 func (c Chain) WithTemplate(t PromptTemplate) (Chain, error) {
-	if t.TemplateFormat != TemplateFormatJinja2 {
-		return c, fmt.Errorf("template_format is %s", TemplateFormatJinja2)
-	}
 	picked := map[string]bool{}
 	for _, v := range t.InputVariables {
 		known := slices.ContainsFunc(slices.Concat(c.UserInputs, c.Inputs), func(in Input) bool { return in.Name == v.Name })
@@ -752,7 +744,7 @@ func (c Chain) WithTemplate(t PromptTemplate) (Chain, error) {
 		}
 	}
 	out.Steps = slices.Clone(c.Steps)
-	out.Steps[0].Template = t.Template
+	out.Steps[0].Message = t.Message
 	types := map[string]InputType{}
 	var names []string
 	for _, in := range slices.Concat(c.UserInputs, c.Inputs) {

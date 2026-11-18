@@ -38,6 +38,12 @@ export interface AIEditRequestPayload {
   userInputs: Record<string, AIEditUserInputValue>
 }
 
+// A template's messages as written, a jinja2 template per role (prompts.MessageTemplates).
+export interface AIEditMessageTemplates {
+  system?: string
+  user?: string
+}
+
 export interface AIEditRenderedMessage {
   role: string
   content: string

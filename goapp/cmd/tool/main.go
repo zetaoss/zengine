@@ -74,7 +74,8 @@ func withInspector(cfg *config.Config, fn func(*asynq.Inspector) error) error {
 }
 
 // runMigrate applies the SQL migrations, then converts the data that needs Go to convert: AI edit prompt
-// templates saved before they had a spec (aiedit.ConvertLegacyPrompts).
+// templates saved before they had a spec (aiedit.ConvertLegacyPrompts), then specs still written as tagged
+// messages (aiedit.ConvertMessageSpecs).
 func runMigrate(cfg *config.Config) error {
 	if err := database.RunMigrate(cfg); err != nil {
 		return err
@@ -92,6 +93,13 @@ func runMigrate(cfg *config.Config) error {
 	}
 	if n > 0 {
 		fmt.Fprintf(os.Stderr, "[worker:migrate] converted %d AI edit prompt templates\n", n)
+	}
+	n, err = aiedit.ConvertMessageSpecs(db)
+	if err != nil {
+		return fmt.Errorf("rewrite AI edit prompt template specs: %w", err)
+	}
+	if n > 0 {
+		fmt.Fprintf(os.Stderr, "[worker:migrate] rewrote %d AI edit prompt template specs with message keys\n", n)
 	}
 	return nil
 }

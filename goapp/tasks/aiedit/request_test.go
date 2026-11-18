@@ -49,8 +49,8 @@ func TestRenderCreate(t *testing.T) {
 	if r.Messages[0].Role != "system" || len(r.Messages) != 2 {
 		t.Fatalf("unexpected messages %+v", r.Messages)
 	}
-	want := "# 변수\n\n<title>\n사과\n</title>\n<hint>\napple\n</hint>\n<texts>\n자료 하나\n</texts>\n<backlinks>\n과일\n과수\n</backlinks>"
-	if got := r.Messages[1].Content; got != want {
+	want := "<texts>\n<text>\n자료 하나\n</text>\n</texts>\n<backlinks>\n과일\n과수\n</backlinks>\n\n## 과제\n제목이 '사과'인 새 문서를 한국어 MediaWiki 위키텍스트로 쓴다. 제목이 가리키는 뜻의 단서는 'apple'이다.\n"
+	if got := r.Messages[1].Content; !strings.Contains(got, want) {
 		t.Errorf("user message:\n%s\nwant\n%s", got, want)
 	}
 }
@@ -61,7 +61,7 @@ func TestRenderUpdateVariables(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(r.Messages) != 2 || r.Messages[1].Content != "# 변수\n\n<title>\n사과\n</title>\n<body>\n저장된 본문\n</body>" {
+	if len(r.Messages) != 2 || !strings.Contains(r.Messages[1].Content, "## 입력\n\n<body>\n저장된 본문\n</body>") || !strings.Contains(r.Messages[1].Content, "제목이 '사과'인 기존 문서") {
 		t.Fatalf("unexpected update messages: %+v", r.Messages)
 	}
 	if _, err := Render(context.Background(), cfg, Request{RequestType: models.AIEditRequestUpdate, Title: "자바", UserInputs: map[string]any{"hint": "x"}}); !IsInputError(err) {
@@ -86,17 +86,14 @@ func TestRenderLimits(t *testing.T) {
 }
 
 const ownSpec = `name: 짧은 문서
-template_format: jinja2
-template: |-
-  <message role="system">
-  규칙 {{풀기:사전링크}}
-  </message>
-  <message role="user">
-  {{ title }}
-  {% for t in texts %}
-  {{ loop.index }}) {{ t }}
-  {% endfor %}
-  </message>
+message:
+  system: |-
+    규칙 {{풀기:사전링크}}
+  user: |-
+    {{ title }}
+    {% for t in texts %}
+    {{ loop.index }}) {{ t }}
+    {% endfor %}
 input_variables:
   - name: title
   - name: texts
@@ -123,20 +120,29 @@ func TestRenderTemplate(t *testing.T) {
 func ptr(s string) *string { return &s }
 
 func TestLegacySpecContent(t *testing.T) {
-	content := "# 목표\n'{title}' 문서를 고쳐라.\n{wikitext}\n\n{추가 정보}\n{{풀기:사전링크}} {{PAGENAME}} {% x"
+	content := "# 목표\n'{title}' 문서를 고쳐라.\n{wikitext}\n\n{추가 정보}\n{{풀기:사전링크}} {{PAGENAME}} {{#if:x}} {% x\n{# 추가 정보:code}"
 	spec, err := LegacySpec(legacyPrompt{ID: 2, Title: "개선", RequestType: models.AIEditRequestUpdate, Content: ptr(content)})
 	if err != nil {
 		t.Fatal(err)
+	}
+	if strings.Contains(spec, "{% raw %}{{PAGENAME}}") {
+		t.Errorf("known MediaWiki variable was wrapped as raw: %s", spec)
+	}
+	if !strings.Contains(spec, "{% raw %}{# 추가 정보:code}{% endraw %}") {
+		t.Errorf("wiki comment-like markup should be protected as a whole raw block:\n%s", spec)
+	}
+	if !strings.Contains(spec, "{{#if:x}}") {
+		t.Errorf("a wiki parser function should stay unmodified:\n%s", spec)
 	}
 	p := models.AIEditPrompt{ID: 2, RequestType: models.AIEditRequestUpdate, Spec: spec}
 	r, err := Render(context.Background(), fakeWiki(t), Request{RequestType: models.AIEditRequestUpdate, Title: "자바", Prompt: &p, UserInputs: map[string]any{"texts": []any{"자료"}}})
 	if err != nil {
 		t.Fatalf("%v\n%s", err, spec)
 	}
-	if want := "# 목표\n'자바' 문서를 고쳐라.\n저장된 본문\n\n{추가 정보}\n{{풀기:사전링크}} {{PAGENAME}} {% x"; r.Messages[0].Content != want {
+	if want := "# 목표\n'자바' 문서를 고쳐라.\n저장된 본문\n\n{추가 정보}\n{{풀기:사전링크}} {{PAGENAME}} {{#if:x}} {% x\n{# 추가 정보:code}"; r.Messages[0].Content != want {
 		t.Errorf("system:\n%s\nwant\n%s", r.Messages[0].Content, want)
 	}
-	if want := "# 변수\n\n<texts>\n자료\n</texts>\n# 대상 문서\n<title>\n자바\n</title>"; r.Messages[1].Content != want {
+	if want := "## 입력\n\n<texts>\n<text>\n자료\n</text>\n</texts>\n# 대상 문서\n<title>\n자바\n</title>"; r.Messages[1].Content != want {
 		t.Errorf("the user message lists what the instructions do not read:\n%s\nwant\n%s", r.Messages[1].Content, want)
 	}
 }
@@ -164,7 +170,7 @@ func TestLegacySpecMessages(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := "-----title-----\n사과\n\n-----backlinks-----\n과수\n\n-----texts 1-----\n가\n\n-----texts 2-----\n나\n\n# 변수\n\n<hint>\n과일\n</hint>"
+	want := "-----title-----\n사과\n\n-----backlinks-----\n과수\n\n-----texts 1-----\n가\n\n-----texts 2-----\n나\n\n## 입력\n\n<hint>\n과일\n</hint>"
 	if len(r.Messages) != 2 || r.Messages[0].Content != "지침 틀(`{{…}}`)" || r.Messages[1].Content != want {
 		t.Errorf("messages are kept as they ran, and what they do not read is listed after:\n%+v\nwant user\n%s", r.Messages, want)
 	}
@@ -255,5 +261,24 @@ func TestLegacySpecContentKeepsUserMessageWhenOptionalInputsAreEmpty(t *testing.
 	}
 	if len(r.Messages) != 2 || r.Messages[1].Role != "user" || !strings.Contains(r.Messages[1].Content, "<title>\n자바\n</title>") {
 		t.Errorf("converted template has a nonempty user message with the target title: %+v", r.Messages)
+	}
+}
+
+func TestLegacySpecConvertsPlaceholdersInParserFunctions(t *testing.T) {
+	content := "{{#if:{title}|있음|없음}} {{#switch:{{PAGENAME}}|a=b}}\n{wikitext}"
+	spec, err := LegacySpec(legacyPrompt{ID: 13, Title: "조건", RequestType: models.AIEditRequestUpdate, Content: ptr(content)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := models.AIEditPrompt{RequestType: models.AIEditRequestUpdate, Spec: spec}
+	r, err := Render(context.Background(), fakeWiki(t), Request{RequestType: models.AIEditRequestUpdate, Title: "자바", Prompt: &p})
+	if err != nil {
+		t.Fatalf("%v\n%s", err, spec)
+	}
+	if want := "{{#if:자바|있음|없음}} {{#switch:{{PAGENAME}}|a=b}}\n저장된 본문"; r.Messages[0].Content != want {
+		t.Errorf("system:\n%s\nwant\n%s", r.Messages[0].Content, want)
+	}
+	if strings.Contains(spec, "## 입력\n\n<title>") {
+		t.Errorf("title is read inside the parser function, so it is not listed as unread:\n%s", spec)
 	}
 }

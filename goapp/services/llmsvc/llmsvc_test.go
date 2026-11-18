@@ -35,7 +35,7 @@ var testChain = func() prompts.Chain {
 	c := prompts.Chain{
 		Name: "test-chain", Version: "v9.0", Inputs: []prompts.Input{{Name: "title"}},
 		Steps: []prompts.Step{{
-			Name: "test", TemplateFormat: "jinja2", Template: "<message role=\"user\">\n{{ title }}\n</message>",
+			Name: "test", Message: prompts.MessageTemplates{User: "{{ title }}"},
 			OutputVariable: &prompts.OutputVariable{Name: "result", Format: prompts.FormatJSON},
 		}},
 	}

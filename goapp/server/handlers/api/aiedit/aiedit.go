@@ -127,7 +127,7 @@ func Store(c *serverctx.Context) {
 	var r aiedit.Rendered
 	if body.LLMInput != "" && body.UserInputs == nil && prompt == nil {
 		r = aiedit.Rendered{Chain: aiedit.ChainOf(req.RequestType), Messages: []prompts.Message{{Role: "user", Content: strings.TrimSpace(body.LLMInput)}}}
-	} else if r, ok = render(c, req); !ok {
+	} else if r, ok = render(c, req, true); !ok {
 		return
 	}
 	messagesJSON, _ := json.Marshal(r.Messages)
@@ -202,7 +202,7 @@ func Preview(c *serverctx.Context) {
 	if !ok {
 		return
 	}
-	r, ok := render(c, req)
+	r, ok := render(c, req, false)
 	if !ok {
 		return
 	}
@@ -267,8 +267,14 @@ func request(c *serverctx.Context, body *storePayload) (aiedit.Request, *models.
 	return aiedit.Request{RequestType: requestType, Title: title, Wikitext: body.Wikitext, Prompt: prompt, UserInputs: body.UserInputs}, prompt, true
 }
 
-func render(c *serverctx.Context, req aiedit.Request) (aiedit.Rendered, bool) {
-	r, err := aiedit.Render(c.R.Context(), c.Cfg, req)
+func render(c *serverctx.Context, req aiedit.Request, requireUserMessage bool) (aiedit.Rendered, bool) {
+	var r aiedit.Rendered
+	var err error
+	if requireUserMessage {
+		r, err = aiedit.Render(c.R.Context(), c.Cfg, req)
+	} else {
+		r, err = aiedit.RenderPreview(c.R.Context(), c.Cfg, req)
+	}
 	if err != nil {
 		if aiedit.IsInputError(err) {
 			c.JSONError(http.StatusUnprocessableEntity, err.Error())

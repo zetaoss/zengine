@@ -8,7 +8,7 @@ Two chains ([chain.md](chain.md)) run in `goapp/services/doceval`. `doc-define` 
 | :--- | :--- | :--- | :--- |
 | `doc-define` | `define` | `title`, `lead` (the wikitext's first 1000 characters; 1500 bytes up to v2.0) | `definition`: the article's subject as a noun phrase without the title |
 | `doc-eval` | `rubric` | `title`, `definition` | `rubrics`: 5–8 general quality and 3–5 text quality criteria |
-| `doc-eval` | `judge` | `title`, `rubrics`, `body` (the wikitext's first 2000 characters; 6000 bytes up to v2.0) | `judgment`: verdicts, safety, accuracy, summary |
+| `doc-eval` | `judge` | `title`, `rubrics`, `body` (the full wikitext since v2.4; the first 2000 characters in v2.1–v2.3) | `judgment`: verdicts, safety, accuracy, summary |
 
 ## Items
 

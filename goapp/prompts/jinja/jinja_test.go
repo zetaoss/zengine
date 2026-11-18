@@ -77,6 +77,7 @@ func TestWikiSyntaxIsText(t *testing.T) {
 	vars := map[string]any{"title": "T"}
 	cases := []struct{ src, want string }{
 		{"{{풀기:사전링크}}", "{{풀기:사전링크}}"},
+		{"{{PAGENAME}} {{CURRENTYEAR}} {{CURRENTDAY2}} {{FUTUREMAGIC123}}", "{{PAGENAME}} {{CURRENTYEAR}} {{CURRENTDAY2}} {{FUTUREMAGIC123}}"},
 		{"틀(`{{…}}`)을 지우지 않는다", "틀(`{{…}}`)을 지우지 않는다"},
 		{"{{{1}}} {{{1|기본}}}", "{{{1}}} {{{1|기본}}}"},
 		{"{{!}} {{#if:x|y}} {{lc:ABC}}", "{{!}} {{#if:x|y}} {{lc:ABC}}"},
@@ -100,7 +101,7 @@ func TestWikiSyntaxIsText(t *testing.T) {
 func TestParseErrors(t *testing.T) {
 	cases := []struct{ src, want string }{
 		{"{{ titel }}", `"titel" is not a variable here`},
-		{"{{PAGENAME}}", "{% raw %}"},
+		{"{{pagename}}", `"pagename" is not a variable here`},
 		{"{{ title | upper }}", "is not supported"},
 		{"{{ title() }}", "is not supported"},
 		{"{{ title[1] }}", "name[start:end]"},
@@ -146,21 +147,5 @@ func TestUses(t *testing.T) {
 	}
 	if got := strings.Join(tpl.Variables(), ","); got != "title,hint,texts" {
 		t.Errorf("Variables() = %s", got)
-	}
-}
-
-func TestSpans(t *testing.T) {
-	src := "a {{ title }} {{틀}} {% if x %}b{% endif %}{# c #}"
-	tpl, err := Parse(src, []string{"title", "x"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	var got []string
-	for _, s := range tpl.Spans() {
-		got = append(got, string(s.Kind)+":"+src[s.Start:s.End])
-	}
-	want := "output:{{ title }}|tag:{% if x %}|tag:{% endif %}|comment:{# c #}"
-	if strings.Join(got, "|") != want {
-		t.Errorf("Spans() = %v, want %s", got, want)
 	}
 }

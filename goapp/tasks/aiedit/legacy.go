@@ -10,6 +10,7 @@ import (
 
 	"github.com/zetaoss/zengine/goapp/models"
 	"github.com/zetaoss/zengine/goapp/prompts"
+	"github.com/zetaoss/zengine/goapp/prompts/jinja"
 	"gorm.io/gorm"
 )
 
@@ -58,6 +59,8 @@ var legacyRenames = map[string]string{
 var (
 	legacyPlaceholder = regexp.MustCompile(`\{([A-Za-z][A-Za-z0-9_]*)\}`)
 	legacyTripleWiki  = regexp.MustCompile(`\{\{\{[\s\S]*?\}\}\}`)
+	legacyWikiParser  = regexp.MustCompile(`\{\{#[\s\S]*?\}\}`)
+	legacyWikiComment = regexp.MustCompile(`\{#[^}\n]*\}`)
 	wikiBareName      = regexp.MustCompile(`\{\{\s*[A-Za-z][A-Za-z0-9_.]*\s*\}\}`)
 	rawEndNewline     = regexp.MustCompile(`\{% endraw %\}(\r?\n)`)
 	jinjaTagStart     = regexp.MustCompile(`\{%|\{#`)
@@ -68,8 +71,8 @@ var (
 // LegacySpec builds a spec for a template saved before specs. Its messages are kept in their roles and order,
 // each if and each message becoming a block around it (a template saved before messages has its content as the
 // system message), with {name} placeholders as {{ name }} and wiki markup that would read as template syntax
-// ({{PAGENAME}}, {%, {#) inside raw. The user message then lists in tags the variables the template does not
-// already read, in the chain's order, as the built-in chains do.
+// ({%, {#) inside raw. Known uppercase MediaWiki variables such as {{PAGENAME}} remain literal. The user message
+// then lists in tags the variables the template does not already read, in the chain's order, as built-in chains do.
 func LegacySpec(r legacyPrompt) (string, error) {
 	chain := ChainOf(r.RequestType)
 	picked := map[string]bool{}
@@ -105,11 +108,32 @@ func LegacySpec(r legacyPrompt) (string, error) {
 			tripleWiki = append(tripleWiki, m)
 			return marker
 		})
+		var wikiParserFunctions []string
+		s = legacyWikiParser.ReplaceAllStringFunc(s, func(m string) string {
+			marker := fmt.Sprintf("\x00wiki-parser-%d\x00", len(wikiParserFunctions))
+			wikiParserFunctions = append(wikiParserFunctions, m)
+			return marker
+		})
+		var wikiComments []string
+		s = legacyWikiComment.ReplaceAllStringFunc(s, func(m string) string {
+			marker := fmt.Sprintf("\x00wiki-comment-%d\x00", len(wikiComments))
+			wikiComments = append(wikiComments, m)
+			return marker
+		})
 		s = legacyHeading.ReplaceAllStringFunc(s, func(m string) string { return "-----" + legacyName(m[5:]) })
 		s = jinjaTagStart.ReplaceAllStringFunc(s, func(m string) string { return "{% raw %}" + m + "{% endraw %}" })
-		s = wikiBareName.ReplaceAllStringFunc(s, func(m string) string { return "{% raw %}" + m + "{% endraw %}" })
-		// trim_blocks consumes a newline right after endraw; leave an extra one so the source newline survives.
-		s = rawEndNewline.ReplaceAllString(s, "{% endraw %}\n$1")
+		s = wikiBareName.ReplaceAllStringFunc(s, func(m string) string {
+			name := strings.TrimSpace(m[2 : len(m)-2])
+			if jinja.IsMWVariable(name) {
+				return m
+			}
+			return "{% raw %}" + m + "{% endraw %}"
+		})
+		// A parser function is kept out of the raw rewrites above ({{#if: is not a comment), but the placeholders
+		// inside it are the template's own and are converted like any other ({{#if:{title}|…}}).
+		for i, original := range wikiParserFunctions {
+			s = strings.ReplaceAll(s, fmt.Sprintf("\x00wiki-parser-%d\x00", i), original)
+		}
 		s = legacyPlaceholder.ReplaceAllStringFunc(s, func(m string) string {
 			name := legacyName(m[1 : len(m)-1])
 			switch {
@@ -126,6 +150,11 @@ func LegacySpec(r legacyPrompt) (string, error) {
 		for i, original := range tripleWiki {
 			s = strings.ReplaceAll(s, fmt.Sprintf("\x00wiki-param-%d\x00", i), original)
 		}
+		for i, original := range wikiComments {
+			s = strings.ReplaceAll(s, fmt.Sprintf("\x00wiki-comment-%d\x00", i), "{% raw %}"+original+"{% endraw %}")
+		}
+		// trim_blocks consumes a newline right after endraw; leave an extra one so the source newline survives.
+		s = rawEndNewline.ReplaceAllString(s, "{% endraw %}\n$1")
 		return s
 	}
 
@@ -174,7 +203,7 @@ func LegacySpec(r legacyPrompt) (string, error) {
 	}
 	system := strings.Join(systemParts, "")
 
-	// The user message ends with the variables the template does not read yet, in tags under "# 변수"; the heading
+	// The user message ends with the variables the template does not read yet, in tags under "## 입력"; the heading
 	// stands only when one of them is sent.
 	var blocks []string
 	var conds []string
@@ -193,31 +222,28 @@ func LegacySpec(r legacyPrompt) (string, error) {
 		case in.Name == "backlinks":
 			blocks = append(blocks, "{% if backlinks %}\n<backlinks>\n{% for b in backlinks %}\n{{ b }}\n{% endfor %}\n</backlinks>\n{% endif %}")
 		case in.Type() == prompts.TypeTextList:
-			blocks = append(blocks, "{% for t in "+in.Name+" %}\n<"+in.Name+">\n{{ t }}\n</"+in.Name+">\n{% endfor %}")
+			blocks = append(blocks, "{% if "+in.Name+" %}\n<"+in.Name+">\n{% for t in "+in.Name+" %}\n<text>\n{{ t }}\n</text>\n{% endfor %}\n</"+in.Name+">\n{% endif %}")
 		default:
 			blocks = append(blocks, "{% if "+in.Name+" %}\n<"+in.Name+">\n{{ "+in.Name+" }}\n</"+in.Name+">\n{% endif %}")
 		}
 	}
 	if len(blocks) > 0 {
-		heading := "# 변수\n\n"
+		heading := "## 입력\n\n"
 		if !always {
-			heading = "{% if " + strings.Join(conds, " or ") + " %}\n# 변수\n\n{% endif %}\n"
+			heading = "{% if " + strings.Join(conds, " or ") + " %}\n## 입력\n\n{% endif %}\n"
 		}
 		userParts = append(userParts, heading+strings.Join(blocks, "\n"))
 	}
 	if !hasUnconditionalUserMessage && (strings.TrimSpace(system) != "" || len(userParts) > 0) {
 		userParts = append(userParts, "# 대상 문서\n<title>\n{{ title }}\n</title>")
 	}
-	var tpl strings.Builder
-	if s := strings.TrimSpace(system); s != "" {
-		tpl.WriteString("<message role=\"system\">\n" + s + "\n</message>\n")
-	}
-	tpl.WriteString("<message role=\"user\">\n" + strings.TrimSpace(strings.Join(userParts, "")) + "\n</message>")
 	t := prompts.PromptTemplate{
-		Name:           r.Title,
-		Description:    r.Description,
-		TemplateFormat: prompts.TemplateFormatJinja2,
-		Template:       tpl.String(),
+		Name:        r.Title,
+		Description: r.Description,
+		Message: prompts.MessageTemplates{
+			System: strings.TrimSpace(system),
+			User:   strings.TrimSpace(strings.Join(userParts, "")),
+		},
 	}
 	for _, in := range slices.Concat(chain.Inputs, chain.UserInputs) {
 		if picked[in.Name] || used[in.Name] || slices.ContainsFunc(chain.Inputs, func(x prompts.Input) bool { return x.Name == in.Name }) {
