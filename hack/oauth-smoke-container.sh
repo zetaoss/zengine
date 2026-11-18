@@ -2,16 +2,16 @@ set -Eeuo pipefail
 trap 'for log in /tmp/install.log /tmp/update.log /tmp/eval.log /tmp/server.log; do if [[ -f "$log" ]]; then echo "--- $log ---" >&2; tail -n 50 "$log" >&2; fi; done' ERR
 cd /var/www/html
 mkdir -p /tmp/mwdb
-env -u MW_OAUTH2_PRIVATE_KEY -u MW_OAUTH2_PUBLIC_KEY php -r '
+php -r '
 function wfLoadExtension($name) { global $loaded; $loaded[] = $name; }
 require "/tmp/BaseExtensionSettings.php";
-if (!in_array("OAuth", $loaded, true) || $wgOAuth2PrivateKey !== "" || $wgOAuth2PublicKey !== "") { exit(1); }
+if (!in_array("OAuth", $loaded, true) || $wgOAuth2PrivateKey !== "/run/secrets/oauth2/private.key" || $wgOAuth2PublicKey !== "/run/secrets/oauth2/public.key") { exit(1); }
 '
 php maintenance/install.php --dbtype sqlite --dbpath /tmp/mwdb --server http://127.0.0.1:8080 --scriptpath /w --lang en --pass TemporaryPass123 'Test Wiki' TestAdmin >/tmp/install.log
-openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out /tmp/oauth-private.pem 2>/dev/null
-openssl rsa -in /tmp/oauth-private.pem -pubout -out /tmp/oauth-public.pem 2>/dev/null
-export MW_OAUTH2_PRIVATE_KEY="$(cat /tmp/oauth-private.pem)"
-export MW_OAUTH2_PUBLIC_KEY="$(cat /tmp/oauth-public.pem)"
+mkdir -p /run/secrets/oauth2
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out /run/secrets/oauth2/private.key 2>/dev/null
+openssl rsa -in /run/secrets/oauth2/private.key -pubout -out /run/secrets/oauth2/public.key 2>/dev/null
+chmod 0600 /run/secrets/oauth2/*.key
 # The base image contains external extensions; the production image adds ZetaExtension later.
 mkdir -p extensions/ZetaExtension
 printf '%s\n' '{"name":"ZetaExtension","version":"test","manifest_version":2}' > extensions/ZetaExtension/extension.json

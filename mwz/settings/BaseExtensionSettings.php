@@ -46,8 +46,8 @@ wfLoadExtension('SimpleMermaid');
 wfLoadExtension('TemplateStyles');
 wfLoadExtension('ZetaExtension');
 
-$wgOAuth2PrivateKey = getenv('MW_OAUTH2_PRIVATE_KEY') ?: '';
-$wgOAuth2PublicKey = getenv('MW_OAUTH2_PUBLIC_KEY') ?: '';
+$wgOAuth2PrivateKey = '/run/secrets/oauth2/private.key';
+$wgOAuth2PublicKey = '/run/secrets/oauth2/public.key';
 $wgGroupPermissions['user']['mwoauthproposeconsumer'] = true;
 $wgGroupPermissions['user']['mwoauthupdateownconsumer'] = true;
 
