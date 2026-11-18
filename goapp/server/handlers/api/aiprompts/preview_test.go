@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/zetaoss/zengine/goapp/models"
 	"github.com/zetaoss/zengine/goapp/prompts"
 	"github.com/zetaoss/zengine/goapp/server/serverctx"
 )
@@ -15,7 +16,6 @@ type checkResponse struct {
 	Error        string            `json:"error"`
 	PreviewError string            `json:"preview_error"`
 	UserInputs   []prompts.Input   `json:"user_inputs"`
-	Spans        []span            `json:"spans"`
 	Messages     []prompts.Message `json:"rendered_messages"`
 }
 
@@ -32,20 +32,17 @@ func check(t *testing.T, body map[string]any) checkResponse {
 }
 
 const updateSpec = `name: 고치기
-template_format: jinja2
-template: |-
-  <message role="system">
-  규칙 {{풀기:사전링크}}
-  </message>
-  <message role="user">
-  {{ title }}: {{ body }}
-  {% for t in texts %}
-  {{ loop.index }}: {{ t }}
-  {% endfor %}
-  {% if backlinks %}
-  {{ backlinks }}
-  {% endif %}
-  </message>
+message:
+  system: |-
+    규칙 {{풀기:사전링크}} {{ title }}
+  user: |-
+    {{ title }}: {{ body }}
+    {% for t in texts %}
+    {{ loop.index }}: {{ t }}
+    {% endfor %}
+    {% if backlinks %}
+    {{ backlinks }}
+    {% endif %}
 input_variables:
   - name: title
   - name: body
@@ -61,7 +58,7 @@ func TestCheckRendersPreview(t *testing.T) {
 	if !got.OK || got.PreviewError != "" {
 		t.Fatalf("preview failed: %s %s", got.Error, got.PreviewError)
 	}
-	want := []string{"규칙 {{풀기:사전링크}}", "새 제목: \n1: 하나\n2: 둘\n첫째\n둘째"}
+	want := []string{"규칙 {{풀기:사전링크}} 새 제목", "새 제목: \n1: 하나\n2: 둘\n첫째\n둘째"}
 	if len(got.Messages) != len(want) {
 		t.Fatalf("messages: %+v", got.Messages)
 	}
@@ -75,20 +72,10 @@ func TestCheckRendersPreview(t *testing.T) {
 	}
 }
 
-func TestCheckSamplesAndSpans(t *testing.T) {
+func TestCheckSamples(t *testing.T) {
 	got := check(t, map[string]any{"request_type": "update", "spec": updateSpec})
 	if !got.OK || len(got.Messages) != 2 || !strings.HasPrefix(got.Messages[1].Content, "Hello World: 문서 시작했다") {
 		t.Fatalf("title and body take samples: %+v", got)
-	}
-	lines := strings.Split(updateSpec, "\n")
-	var marked []string
-	for _, s := range got.Spans {
-		r := []rune(lines[s.Line-1])
-		marked = append(marked, string(r[s.Start-1:s.End-1]))
-	}
-	want := "{{ title }}|{{ body }}|{% for t in texts %}|{{ loop.index }}|{{ t }}|{% endfor %}|{% if backlinks %}|{{ backlinks }}|{% endif %}"
-	if strings.Join(marked, "|") != want {
-		t.Errorf("spans mark %v", marked)
 	}
 }
 
@@ -98,10 +85,27 @@ func TestCheckErrors(t *testing.T) {
 		"unknown variable":    updateSpec + "  - name: hint\n",
 		"no name":             strings.Replace(updateSpec, "name: 고치기\n", "", 1),
 		"unknown field":       updateSpec + "extra: 1\n",
-		"wiki name":           strings.Replace(updateSpec, "규칙", "규칙 {{PAGENAME}}", 1),
+		"variable typo":       strings.Replace(updateSpec, "규칙", "규칙 {{titel}}", 1),
 	} {
 		if got := check(t, map[string]any{"request_type": "update", "spec": spec}); got.OK || got.Error == "" {
 			t.Errorf("%s: expected an error, got %+v", name, got)
 		}
+	}
+}
+
+func TestPromptViewFormatsQuotedTemplateAsBlock(t *testing.T) {
+	quoted := `name: 고치기
+message:
+  system: "규칙 {{풀기:사전링크}}\n둘째 줄"
+  user: "{{ title }}"
+input_variables:
+  - name: title
+`
+	view := newPromptView(models.AIEditPrompt{RequestType: "update", Spec: quoted})
+	if !strings.Contains(view.Spec, "system: |-\n") {
+		t.Fatalf("a multi-line message should be displayed as a YAML block scalar:\n%s", view.Spec)
+	}
+	if strings.Contains(view.Spec, `\n`) || !strings.Contains(view.Spec, "    규칙 {{풀기:사전링크}}\n    둘째 줄") {
+		t.Errorf("message lines should be kept as they are: %q", view.Spec)
 	}
 }

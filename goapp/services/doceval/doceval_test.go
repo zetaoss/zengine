@@ -38,7 +38,7 @@ func newServer(t *testing.T, rubrics, judgment string, calls *atomic.Int32) *htt
 		}
 		_ = json.NewDecoder(r.Body).Decode(&req)
 		w.Header().Set("Content-Type", "application/json")
-		if strings.Contains(req.Messages[0].Content, "평가 기준(루브릭)을 만든다") {
+		if strings.Contains(req.Messages[1].Content, "평가 기준(루브릭)을 만든다") {
 			_, _ = w.Write(llmPayload(rubrics))
 			return
 		}
@@ -107,6 +107,25 @@ func TestEvaluateReusesCachedRubrics(t *testing.T) {
 	}
 	if res.GeneralQuality != 0 || res.TextQuality != 0 {
 		t.Fatalf("unexpected pass rates: %d / %d", res.GeneralQuality, res.TextQuality)
+	}
+}
+
+func TestEvaluatePreservesUnknownAndQuotesFromEnd(t *testing.T) {
+	judgment := `{"accuracy":{"unknown":2,"contradictory":1,"errors":[{"sentence":"마지막 사실","reason":"오류"}]}}`
+	var calls atomic.Int32
+	ts := newServer(t, "", judgment, &calls)
+	defer ts.Close()
+	body := strings.Repeat("가", 2100) + " 마지막 사실"
+	res, err := newEvaluator(ts.URL).Evaluate(context.Background(), Page{ID: 1, Title: "제목", Revid: 1}, "정의", body, "", testRubrics)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got Judgment
+	if err := json.Unmarshal([]byte(res.RawJSON), &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Accuracy.Unknown != 2 || res.AccuracyContradicted != 1 {
+		t.Fatalf("unexpected accuracy: %+v", got.Accuracy)
 	}
 }
 
@@ -190,7 +209,7 @@ func TestRubricPromptCarriesDefinition(t *testing.T) {
 			Messages []client.Message `json:"messages"`
 		}
 		_ = json.NewDecoder(r.Body).Decode(&req)
-		if strings.Contains(req.Messages[0].Content, "평가 기준(루브릭)을 만든다") {
+		if strings.Contains(req.Messages[1].Content, "평가 기준(루브릭)을 만든다") {
 			rubricUser = req.Messages[1].Content
 			_, _ = w.Write(llmPayload(testGeneratedRubrics))
 			return
@@ -202,7 +221,7 @@ func TestRubricPromptCarriesDefinition(t *testing.T) {
 	if _, err := newEvaluator(ts.URL).Evaluate(context.Background(), Page{ID: 1, Title: "자바_(섬)", Revid: 1}, "자바는 인도네시아의 섬이다.", "본문", "", ""); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(rubricUser, "<title>\n자바 (섬)\n</title>") || !strings.Contains(rubricUser, "<definition>\n자바는 인도네시아의 섬이다.\n</definition>") {
+	if !strings.Contains(rubricUser, "제목이 '자바 (섬)'인 문서") || !strings.Contains(rubricUser, "<definition>\n자바는 인도네시아의 섬이다.\n</definition>") {
 		t.Fatalf("rubric prompt must carry the display title and the definition, got %q", rubricUser)
 	}
 }

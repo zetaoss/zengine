@@ -48,6 +48,7 @@ type Judgment struct {
 		Supported     uint            `json:"supported"`
 		Contradictory uint            `json:"contradictory"`
 		NoRad         uint            `json:"no_rad"`
+		Unknown       uint            `json:"unknown"`
 		Errors        []AccuracyError `json:"errors"`
 	} `json:"accuracy"`
 	Summary string `json:"summary"`
@@ -96,9 +97,8 @@ func (e *Evaluator) Evaluate(ctx context.Context, page Page, definition, wikitex
 	}
 	rubricsJSON, _ := json.Marshal(rubrics)
 
-	// The judge reads the wikitext cut as its template does; errors are quoted from that same text.
+	// The judge reads the full wikitext; errors are checked against the same text.
 	vars := prompts.Vars{"title": displayTitle, "rubrics": string(rubricsJSON), "wikitext": wikitext}
-	body := prompts.DocEvalJudgeBody(wikitext)
 
 	var judgment Judgment
 	resp, err := run(prompts.DocEvalJudge, vars, &judgment)
@@ -109,7 +109,7 @@ func (e *Evaluator) Evaluate(ctx context.Context, page Page, definition, wikitex
 
 	policies := validPolicies(judgment.Safety.Policies)
 	safetyViolated := judgment.Safety.Violated || len(policies) > 0
-	judgment.Accuracy.Errors = quotedErrors(judgment.Accuracy.Errors, body)
+	judgment.Accuracy.Errors = quotedErrors(judgment.Accuracy.Errors, wikitext)
 	contradicted := uint(len(judgment.Accuracy.Errors))
 	judgment.Accuracy.Contradictory = contradicted
 	judgmentJSON, _ := json.Marshal(judgment)

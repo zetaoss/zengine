@@ -5,8 +5,8 @@ goapp defines LLM work as chains, following LangChain; each step's prompt is wri
 | Term | Example | Meaning | Elsewhere |
 | :--- | :--- | :--- | :--- |
 | Chain | `doc-eval` | Steps run in order; a step's output feeds later steps | LangChain `RunnableSequence` |
-| Step | `doc-eval/rubric` | One LLM call: a template, rendered and sent to a model, its answer read in a format | LangChain `prompt \| model \| parser`; SK prompt function |
-| Template | | A jinja2 template of messages (`<message role="...">`) | SK `template` with `template_format` |
+| Step | `doc-eval/rubric` | One LLM call: its messages, rendered and sent to a model, its answer read in a format | LangChain `prompt \| model \| parser`; SK prompt function |
+| Message | `message.system`, `message.user` | A jinja2 template per role | SK `template` (jinja2 only, so no `template_format`), split by role |
 | User inputs | `hint`, `texts`, `backlinks` | What the requester gives in the run form; they reach the template as they are | graph input schema (LangGraph) |
 | Inputs | `title`, `body` | What the task running the chain fills | |
 | Output variable | `rubrics`, `json` | The name a later step reads the answer under, and the format it is read in | ADK `output_key`; `response_format` |
@@ -30,11 +30,11 @@ The model picked in the chains tab comes first; see [Screen and API](#screen-and
 ```yaml
 name: doc-create
 description: 새 문서의 위키텍스트를 작성한다.
-version: v2.5
+version: v2.8
 user_inputs:                    # the run form
   - name: hint
     description: 제목이 무엇을 가리키는지 가늠하게 하는 짧은 말
-    ui: {placeholder: "예시: 눈 → eye/snow"}
+    ui: {placeholder: "예시: 제목이 '눈'이면 snow, '밤'이면 chestnut"}
   - name: texts
     json_schema: {type: array, items: {type: string}}
     ui: {variant: longText}
@@ -44,28 +44,24 @@ inputs:                         # filled by the task
   - title
 steps:
   - name: generate
-    template_format: jinja2
-    template: |-
-      <message role="system">
-      ...
-      </message>
-      <message role="user">
-      # 변수
+    message:
+      system: |-
+        ...
+      user: |-
+        {% if texts %}
+        <texts>
+        {% for t in texts %}
+        <text>
+        {{ t }}
+        </text>
+        {% endfor %}
+        </texts>
+        {% endif %}
+        ...
 
-      <title>
-      {{ title }}
-      </title>
-      {% if hint %}
-      <hint>
-      {{ hint }}
-      </hint>
-      {% endif %}
-      {% for t in texts %}
-      <texts>
-      {{ t }}
-      </texts>
-      {% endfor %}
-      </message>
+        ## 과제
+        제목이 '{{ title }}'인 새 문서를 한국어 MediaWiki 위키텍스트로 쓴다.{% if hint %} 제목이 가리키는 뜻의 단서는 '{{ hint }}'이다.{% endif %}
+        ...
 ```
 
 Keys follow Semantic Kernel (snake_case); variable names are camelCase and start with a letter (`loop` is taken). The files are read at start with unknown fields rejected, and a missing file or step (`Chain.Step`) panics there.
@@ -76,13 +72,13 @@ A variable's value has the shape of its `json_schema`, a closed subset of JSON S
 
 ### Steps
 
-A step has a `name`, an optional `description`, `template_format: jinja2` and a `template`; `output_variable` gives the `format` its answer is read in (`text` when omitted, or `json`) and a `name` when a later step reads it (doc-eval's `rubrics`). A step does not list its inputs: the variables its template reads are found when the chain loads, as LangChain finds a template's `input_variables`.
+A step has a `name`, an optional `description` and its `message`; `output_variable` gives the `format` its answer is read in (`text` when omitted, or `json`) and a `name` when a later step reads it (doc-eval's `rubrics`). A step does not list its inputs: the variables its messages read are found when the chain loads, as LangChain finds a template's `input_variables`.
 
-Lengths stand in the template, not in service code: doc-define reads `{{ wikitext[:1000] }}` and doc-eval's judge `{{ wikitext[:2000] }}` (`prompts.DocEvalJudgeBodyChars` keeps the judge's cut for the code that quotes it). Go keeps what the services need beyond the file: the structs a response is parsed into, values that check results (`DocEvalSafetyPolicies`), and the code between steps.
+The doc-define template reads `{{ wikitext[:1000] }}`; doc-eval's judge reads the full wikitext, and the service checks quoted errors against that same text. Long documents therefore use more model context and tokens. Go keeps what the services need beyond the file: the structs a response is parsed into, values that check results (`DocEvalSafetyPolicies`), and the code between steps.
 
 ### Messages
 
-The template is split into messages first: lines `<message role="system">` or `<message role="user">` and `</message>` at the start of a line open and close each message, and only blank lines may stand between them. The split comes before any value is filled in, so a value holding `</message>` stays inside its message (`prompts.ParseChat`). Each message's body is then a jinja2 template; a message that renders blank is not sent. User messages list their variables in tags under `# 변수` (`<title>…</title>`), the form every built-in chain uses.
+A step's `message` has a `system` and a `user` key, each a jinja2 template written as a YAML block (`|-`). Either may be left out, but not both; they are sent system first. Each is parsed on its own (`prompts.ParseChat`), so a value can never move text into the other role, and an error names the key (`message.user: line 3, column 1: …`). A message that renders blank is not sent. Two messages of one role, or an assistant message, cannot be written; no chain needs them. Built-in steps name the page in the task sentence (`제목이 '{{ title }}'인 문서…`, doc-create's hint likewise) and put the data they read at the top of the user message, in tags under `## 입력` (`<body>…</body>`); an optional one is left out when empty, and a list holds one tag per item (`<texts>` holding a `<text>` each). The title is one line and is what the task is about, so it reads best in the sentence; `제목이 '…'인` also needs no particle chosen by the title's last letter. Each built-in step puts the task and output instructions after its inputs in the user message; its system message supplies the role and context.
 
 ## Template dialect
 
@@ -97,10 +93,10 @@ The template is split into messages first: lines `<message role="system">` or `<
 
 Differences from Jinja2, and how wiki syntax gets through:
 
-- `{{ … }}` is output only when its inside reads as an expression: it starts with a variable of the template (then the rest must parse), or it is a dotted ASCII name alone. Anything else stays as text, so wiki templates pass: `{{풀기:사전링크}}`, `{{틀|a=1}}`, `{{#if:x}}`, `{{!}}`, and `{{틀|{{ title }}}}` keeps its outer braces around the title.
+- `{{ … }}` is output only when its inside reads as an expression: it starts with a variable of the template (then the rest must parse), or it is a dotted ASCII name alone. Standard MediaWiki magic-word variables in uppercase, such as `{{PAGENAME}}`, stay as text. Anything else stays as text too, so wiki syntax passes: `{{풀기:사전링크}}`, `{{틀|a=1}}`, `{{#if:x}}`, `{{!}}`, and `{{틀|{{ title }}}}` keeps its outer braces around the title.
 - `{{{` is always text, so wiki parameters pass with their names (`{{{1}}}`, `{{{title|기본}}}`); an output inside one still renders (`{{{1|{{ title }}}}}`).
 - `{% … %}` is a tag only when a word follows `{%`; a word other than the tags above (`set`, `macro`, …) is an error.
-- A name the template is not given is an error rather than empty, so a typo (`{{ titel }}`) is caught on load or save. A wiki template that reads as a bare name (`{{PAGENAME}}`) is one too; put it inside `{% raw %}…{% endraw %}`.
+- A name the template is not given is an error rather than empty, so a typo (`{{ titel }}`) is caught on load or save. Only the standard uppercase MediaWiki variable names are exempt; lowercase or unknown ASCII names remain errors.
 - A blank string is false for `if`, as are `false` and an empty list.
 - Filters, tests, comparisons, `set`, `macro`, `include` and `for … else` are not supported and are errors.
 
@@ -111,7 +107,7 @@ Where the dialect and Jinja2 overlap, the output is the same as Jinja2's with `t
 `Chain.Compile` checks these at start (`mustLoad`), and in `chain_test.go`:
 
 - Variable and output names are distinct; task inputs are plain strings.
-- Every step's template is jinja2, has system and user messages only, and reads only the chain's variables and the outputs of earlier steps; a `for` loops over an array.
+- Every step's messages are jinja2, at least one of `system` and `user` is written, and they read only the chain's variables and the outputs of earlier steps; a `for` loops over an array.
 - Every task input is read by some step; a user input need not be.
 - `Format.Parse` strips a code fence around the whole response; `json` decodes into a struct, `text` trims. It checks the format only; the service checks what values mean.
 
@@ -128,25 +124,24 @@ An AI edit prompt template (`aiedit_prompts`) is a Semantic Kernel prompt docume
 ```yaml
 name: doc-update-jmnote
 description: 기존 문서의 위키텍스트를 고쳐 쓴다.
-template_format: jinja2
-template: |-
-  <message role="system">
-  ...
-  </message>
-  <message role="user">
-  ...
-  </message>
+message:
+  system: |-
+    ...
+  user: |-
+    ...
 input_variables:
   - name: title
   - name: body
   - name: texts
 ```
 
-`input_variables` pick, by name, the variables of the request type's chain the template reads: its task inputs and any of its user inputs, each as the chain defines it (the run form shows the picked user inputs in the chain's order). The template replaces the template of the chain's first step and is checked by the chain's rules with only the picked variables (`Chain.WithTemplate`): a name the chain does not have, a repeated name, a variable read but not picked, or a task input not read is refused on save.
+`input_variables` pick, by name, the variables of the request type's chain the template reads: its task inputs and any of its user inputs, each as the chain defines it (the run form shows the picked user inputs in the chain's order). Its `message` replaces the messages of the chain's first step and is checked by the chain's rules with only the picked variables (`Chain.WithTemplate`): a name the chain does not have, a repeated name, a variable read but not picked, or a task input not read is refused on save.
 
-The model a template runs on is a setting of its own, outside the spec (`aiedit_prompts.model`; empty runs it on its chain's model). `name` and `description` are copied to the `title` and `description` columns for listing. A change to the template or its `input_variables` bumps the version (`v1.0` on creation; minor by default, major when picked); a change of name, description or model does not. Each run records the version as `prompt_version`.
+The model a template runs on is a setting of its own, outside the spec (`aiedit_prompts.model`; empty runs it on its chain's model). `name` and `description` are copied to the `title` and `description` columns for listing. A change to its messages or `input_variables` bumps the version (`v1.0` on creation; minor by default, major when picked); a change of name, description or model does not. Each run records the version as `prompt_version`.
 
-Templates saved before specs (their `content`, `messages` and `user_inputs`) are converted by `tool migrate` after the SQL migrations (`aiedit.ConvertLegacyPrompts`). Stored messages keep their roles and order, each `if` and `each` message becoming a block around it (`{index}` is `{{ loop.index }}`), and one conditioned on a variable the chain no longer has (`request`) is left out; a template saved before messages has its content as the system message. `{name}` placeholders become `{{ name }}` (older names take their names now: `wikitext` is `body`, `backlinkTexts`, `backlinkTitles`, `readBacklinks` and `useBacklinks` are `backlinks`, `extraTexts` and `copiedTexts` are `texts`, in the editor's `-----name-----` headings too) and wiki markup that would read as template syntax goes inside `{% raw %}`. The user message then lists in tags the variables the template does not already read, under `# 변수` only when one of them is sent. A template that cannot be converted is logged and left without a spec, and cannot run until it is fixed.
+Templates saved before specs (their `content`, `messages` and `user_inputs`) are converted by `tool migrate` after the SQL migrations (`aiedit.ConvertLegacyPrompts`). Stored messages keep their roles and order, each `if` and `each` message becoming a block around it (`{index}` is `{{ loop.index }}`), and one conditioned on a variable the chain no longer has (`request`) is left out; a template saved before messages has its content as the system message. `{name}` placeholders become `{{ name }}` (older names take their names now: `wikitext` is `body`, `backlinkTexts`, `backlinkTitles`, `readBacklinks` and `useBacklinks` are `backlinks`, `extraTexts` and `copiedTexts` are `texts`, in the editor's `-----name-----` headings too) and wiki markup that would read as template syntax goes inside `{% raw %}`. The user message then lists in tags the variables the template does not already read, under `## 입력` only when one of them is sent. A template that cannot be converted is logged and left without a spec, and cannot run until it is fixed.
+
+Specs saved while a template was one `template` block of `<message role="...">` sections are rewritten to `message.system` and `message.user` by the SQL migration `202611150001_aiedit_prompt_message`, which reads them as the editor and `tool migrate` wrote them (two-space indented, a system then a user section). The same migration drops `template_format: jinja2`, the only format there was. A spec in another shape is left as it is and shows its error until it is fixed by hand.
 
 ## Chains and tasks
 
@@ -165,9 +160,9 @@ The model is outside the chain and does not change the version. Any change to th
 
 The chains tab (`/tool/ai/chains`, sysop-only) is a table with a row per built-in chain and per AI edit prompt template: owner (`-` for a built-in), name, description, model, runs and last use. `GET /api/ai/chains` returns each chain as in its file plus `model`, `uses` and `used_at` (the count and latest time of the successful calls of its last step in `llm_calls`) and `template` (the chain as a prompt template in YAML, which a clone starts from).
 
-- Built-in chains come first, on a gray background, most recently used first. `doc-create` and `doc-update` expand to the template editor, read-only, with the model picker and clone; the other chains expand to their version, inputs and steps (the variables each reads, its format and output, and its template), with the model picker.
+- Built-in chains come first, on a gray background, most recently used first. `doc-create` and `doc-update` expand to the template editor, read-only, with the model picker and clone; the other chains expand to their version, inputs and steps (the variables each reads, its format and output, and its messages), with the model picker.
 - Templates of `doc-create` and `doc-update` follow, most recently used first (`used_at`), then by use count; the requester's own come before the built-in chains, on light blue. A template that cannot run is marked with its error. A row expands to the template editor as it is (read-only), with edit and delete (owner only) and clone.
-- The editor is the spec's YAML (left) beside what it renders (right). The template syntax the server read is marked over the YAML (`{{ }}` and `{% %}`), so it shows which braces are template and which are wiki markup. On the right, preview values for the task inputs (`title`, `body`) and the picked user inputs, which are not kept, and the rendered messages; `POST /api/ai-prompts/check` (`request_type`, `spec`, `preview_values`) returns the run form, the marks and the messages shortly after typing stops, or the error that would stop the save. Editing also offers the model (empty: the chain's) and, when the spec changed, a minor or major bump. Closing a row or leaving the page with unsaved edits asks first.
+- The editor presents the template name, description, selected inputs and a `system` and a `user` message body beside the rendered preview; a body left empty is not written. There is no YAML editor: the form writes the spec. A spec the server cannot read shows its error and its YAML read-only, and cannot be edited or cloned (only deleted). On the right are temporary preview values for the task inputs (`title`, `body`) and selected user inputs, plus the rendered messages. `POST /api/ai-prompts/check` (`request_type`, `spec`, `preview_values`) returns these editor fields, the run form and rendered messages shortly after typing stops, or the error that would stop the save. Editing also offers the model (empty: the chain's) and, when the spec changed, a minor or major bump. Closing a row or leaving the page with unsaved edits asks first.
 - Clone opens a new template at the top of the templates, being edited, with the source's spec under the name `<source>-<user name>` in lower case and the model the source runs on now, and creates it on save (`POST /api/ai-prompts` with `request_type`, `spec`, `model` and, for an edit, `id` and `bump`).
 - `/tool/ai/prompts` and the old template pages redirect to the tab.
 

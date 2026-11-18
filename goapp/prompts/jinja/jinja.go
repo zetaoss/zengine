@@ -9,8 +9,8 @@
 // dialect, and {% ... %} is a tag only when it starts with a word. So {{틀|a}}, {{{1}}}, {{#if:x}} and {{!}} stay
 // as they are, while {{ title }} is a variable. An expression naming a variable the template was not given, or
 // using a feature this dialect lacks (filters, tests, set, macro), is an error, so a mistake is caught when the
-// template is parsed instead of reaching the model; a wiki template that reads as a bare name ({{PAGENAME}}) goes
-// inside {% raw %}.
+// template is parsed instead of reaching the model; uppercase MediaWiki-style names, including names with digits,
+// such as {{PAGENAME}} and {{CURRENTDAY2}}, are kept as text.
 package jinja
 
 import (
@@ -26,7 +26,6 @@ import (
 type Template struct {
 	nodes []node
 	uses  []Use
-	spans []Span
 }
 
 // UseKind tells how a template uses a variable.
@@ -42,22 +41,6 @@ const (
 type Use struct {
 	Name string
 	Kind UseKind
-}
-
-// SpanKind tells what a span of template source is.
-type SpanKind string
-
-const (
-	SpanOutput  SpanKind = "output"
-	SpanTag     SpanKind = "tag"
-	SpanComment SpanKind = "comment"
-)
-
-// Span is a byte range of the source read as template syntax rather than text, for highlighting.
-type Span struct {
-	Start int      `json:"start"`
-	End   int      `json:"end"`
-	Kind  SpanKind `json:"kind"`
 }
 
 // Error is a parse or render error at a line and column (from 1, in characters) of the source.
@@ -82,10 +65,26 @@ func (t *Template) Variables() []string {
 	return names
 }
 
-// Spans lists the parts of the source read as template syntax, in order.
-func (t *Template) Spans() []Span { return t.spans }
-
 var forItem = regexp.MustCompile(`\{%-?\s*for\s+([A-Za-z][A-Za-z0-9_]*)\s+in\b`)
+
+// IsMWVariable reports whether name looks like an uppercase MediaWiki magic-word variable. MediaWiki adds magic
+// words over time, so accept uppercase ASCII names with optional digits rather than maintaining a registry.
+func IsMWVariable(name string) bool {
+	if name == "" {
+		return false
+	}
+	if name[0] < 'A' || name[0] > 'Z' {
+		return false
+	}
+	for i := 0; i < len(name); i++ {
+		c := name[i]
+		if c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' {
+			continue
+		}
+		return false
+	}
+	return true
+}
 
 type node any
 
@@ -150,7 +149,7 @@ func Parse(src string, vars []string) (*Template, error) {
 	if end != nil {
 		return nil, p.errAt(end.pos, "unexpected {%% %s %%}", end.word)
 	}
-	return &Template{nodes: nodes, uses: p.uses, spans: p.spans}, nil
+	return &Template{nodes: nodes, uses: p.uses}, nil
 }
 
 type parser struct {
@@ -161,7 +160,6 @@ type parser struct {
 	toks      []token
 	i         int
 	uses      []Use
-	spans     []Span
 }
 
 type tokKind int
@@ -249,13 +247,12 @@ func (p *parser) lex() error {
 		text.Reset()
 		text.WriteString(s[:k])
 	}
-	block := func(start, end int, kind SpanKind, leftTrim, rightTrim bool) {
+	block := func(start int, leftTrim, rightTrim bool) {
 		if leftTrim {
 			trimPrev()
 		} else {
 			lstrip(start)
 		}
-		p.spans = append(p.spans, Span{Start: start, End: end, Kind: kind})
 		trimNext = rightTrim
 		afterBlock = !rightTrim
 	}
@@ -280,7 +277,6 @@ func (p *parser) lex() error {
 				afterBlock = false
 				flush()
 				p.toks = append(p.toks, token{kind: tokOutput, text: inner, pos: i})
-				p.spans = append(p.spans, Span{Start: i, End: i + end, Kind: SpanOutput})
 				trimNext = rt
 				i += end
 				continue
@@ -308,7 +304,7 @@ func (p *parser) lex() error {
 				if err != nil {
 					return err
 				}
-				block(i, i+end, SpanTag, lt, rt)
+				block(i, lt, rt)
 				afterBlock = false
 				if body := src[bodyStart:bodyEnd]; body != "" {
 					if endLT {
@@ -316,11 +312,11 @@ func (p *parser) lex() error {
 					}
 					addText(body, bodyStart)
 				}
-				block(bodyEnd, rawEnd, SpanTag, endLT, endRT)
+				block(bodyEnd, endLT, endRT)
 				i = rawEnd
 				continue
 			}
-			block(i, i+end, SpanTag, lt, rt)
+			block(i, lt, rt)
 			flush()
 			p.toks = append(p.toks, token{kind: tokTag, pos: i, word: word, rest: args})
 			i += end
@@ -332,7 +328,7 @@ func (p *parser) lex() error {
 			end := k + 4
 			lt := strings.HasPrefix(rest, "{#-")
 			rt := strings.HasSuffix(rest[:end], "-#}")
-			block(i, i+end, SpanComment, lt, rt)
+			block(i, lt, rt)
 			i += end
 		default:
 			addText("{", i)
@@ -367,7 +363,7 @@ func (p *parser) readOutput(s string) (end int, inner string, lt, rt, ok bool) {
 
 // looksLikeExpr reports whether the inside of {{ }} is meant as an expression: it starts with a variable of the
 // template (then the rest must parse), or it is a dotted ASCII name alone (then an unknown name is an error).
-// Anything else, such as a wiki template with parameters ({{틀|a}}, {{lc:x}}), is text.
+// Uppercase MediaWiki-style names and other wiki syntax are text.
 func (p *parser) looksLikeExpr(s string) bool {
 	w := 0
 	for w < len(s) && (isNameChar(s[w]) || s[w] == '.') {
@@ -375,6 +371,9 @@ func (p *parser) looksLikeExpr(s string) bool {
 	}
 	head := s[:w]
 	if head == "" || !isNameStart(head[0]) {
+		return false
+	}
+	if w == len(s) && IsMWVariable(head) {
 		return false
 	}
 	first, _, _ := strings.Cut(head, ".")
