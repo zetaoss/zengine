@@ -140,17 +140,19 @@
     values = { ...values, [name]: items }
   }
 
-  // backlinks is filled by asking the wiki which pages link to the title; the list can then be edited.
+  // backlinks is filled by asking the wiki which pages link to the title; the list can then be edited. The answer
+  // is dropped when the title or the list changed while it was on its way, so it never replaces what was typed.
   async function fetchBacklinks(name: string, pageTitle: string) {
     if (!pageTitle) return
     fetchingBacklinks = true
+    const before = JSON.stringify(textsValue(name))
     try {
       const [data, err] = await httpy.get<{ titles: string[] }>('/api/ai-edit/backlinks', { title: pageTitle })
       if (err) {
         showToast(err.message || '역링크를 가져오지 못했습니다.')
         return
       }
-      if (pageTitle !== trimmedTitle) return
+      if (pageTitle !== trimmedTitle || JSON.stringify(textsValue(name)) !== before) return
       setTexts(name, data?.titles ?? [])
     } finally {
       fetchingBacklinks = false

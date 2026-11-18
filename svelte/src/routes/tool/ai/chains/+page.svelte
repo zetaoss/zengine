@@ -543,7 +543,7 @@
           </CButton>
         {:else}
           {#if own}
-            <CButton variant="outline" size="small" disabled={!promptEditor} onclick={startEdit}>
+            <CButton variant="outline" size="small" disabled={!promptEditor && !(specCheck && !specCheck.ok)} onclick={startEdit}>
               <ZIcon path={mdiPencil} class="mr-1" />
               편집
             </CButton>
@@ -662,6 +662,20 @@
                 </div>
               </div>
             </details>
+          </div>
+        {:else if specCheck && !specCheck.ok && d.editing}
+          <div class="space-y-2">
+            <p class="text-muted-foreground">
+              이 템플릿은 지금 형식으로 읽을 수 없어 YAML 원문을 고칩니다. 읽을 수 있게 되면 작성 화면으로 바뀝니다.
+            </p>
+            <textarea
+              class="min-h-[36rem] w-full resize-y rounded border bg-background p-3 font-mono text-[11px] leading-relaxed focus:outline-none"
+              aria-label="템플릿 YAML 원문"
+              value={d.spec}
+              oninput={(e) => {
+                if (draft) draft.spec = e.currentTarget.value
+              }}
+            ></textarea>
           </div>
         {:else if specCheck && !specCheck.ok}
           <pre class="max-h-[36rem] overflow-auto whitespace-pre-wrap rounded border bg-muted/30 p-3 font-mono text-[11px]">{d.spec}</pre>

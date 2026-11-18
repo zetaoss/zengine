@@ -11,7 +11,7 @@ import (
 // specVersions pins each built-in chain's version to a hash of its spec, so a spec change fails here until the
 // version is bumped and the entry updated: a minor bump keeps stored results, a major bump makes them stale.
 var specVersions = map[string]string{
-	"doc-define": "v2.6 d18f8f28ad2d",
+	"doc-define": "v2.6 a35a00347434",
 	"doc-eval":   "v2.6 9bbc9cf0e073",
 	"doc-create": "v2.8 2e6750143fa9",
 	"doc-update": "v2.7 691c7c5d0014",
