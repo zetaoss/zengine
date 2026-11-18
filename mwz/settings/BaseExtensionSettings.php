@@ -38,12 +38,18 @@ wfLoadExtension('CharInsert');
 wfLoadExtension('CrawlerProtection');
 wfLoadExtension('EmbedVideo');
 wfLoadExtension('MsUpload');
+wfLoadExtension('OAuth');
 wfLoadExtension('SimpleMaps');
 wfLoadExtension('SimpleMarkdown');
 wfLoadExtension('SimpleMathJax');
 wfLoadExtension('SimpleMermaid');
 wfLoadExtension('TemplateStyles');
 wfLoadExtension('ZetaExtension');
+
+$wgOAuth2PrivateKey = '/run/secrets/oauth2/private.key';
+$wgOAuth2PublicKey = '/run/secrets/oauth2/public.key';
+$wgGroupPermissions['user']['mwoauthproposeconsumer'] = true;
+$wgGroupPermissions['user']['mwoauthupdateownconsumer'] = true;
 
 $wgVisualEditorUseSingleEditTab            = true;
 $wgDefaultUserOptions['visualeditor-tabs'] = 'prefer-wt';
