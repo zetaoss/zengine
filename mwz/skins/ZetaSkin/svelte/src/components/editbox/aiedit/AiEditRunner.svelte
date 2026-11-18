@@ -78,6 +78,9 @@
   let canPreview = $derived(hasPromptContent && trimmedTitle.length > 0 && !submitting && !polling && !previewLoading)
   let fetchingBacklinks = $state(false)
   let backlinksFetchStartedFor = $state('')
+  // The backlinks list as it was last filled from the wiki (JSON), so a new title refreshes a list that was only
+  // filled, never one the requester edited.
+  let backlinksFilled = $state<string | null>(null)
   let canSubmit = $derived(hasPromptContent && trimmedTitle.length > 0 && requiredFilled && !submitting)
 
   // An input starts at its default; a value kept from another template that fits it stays.
@@ -91,12 +94,15 @@
   $effect(() => {
     const pageTitle = trimmedTitle
     if (!pageTitle || !userInputs.some((input) => input.name === 'backlinks') || backlinksFetchStartedFor === pageTitle) return
-    if (textsValue('backlinks').some((value) => value.trim())) {
+    const current = textsValue('backlinks')
+    const edited = current.some((value) => value.trim()) && JSON.stringify(current) !== backlinksFilled
+    const timer = setTimeout(() => {
       backlinksFetchStartedFor = pageTitle
-      return
-    }
-    backlinksFetchStartedFor = pageTitle
-    void fetchBacklinks('backlinks', pageTitle)
+      if (edited) return
+      if (current.length) setTexts('backlinks', [])
+      void fetchBacklinks('backlinks', pageTitle)
+    }, 300)
+    return () => clearTimeout(timer)
   })
 
   $effect(() => {
@@ -153,7 +159,9 @@
         return
       }
       if (pageTitle !== trimmedTitle || JSON.stringify(textsValue(name)) !== before) return
-      setTexts(name, data?.titles ?? [])
+      const titles = data?.titles ?? []
+      setTexts(name, titles)
+      backlinksFilled = JSON.stringify(titles)
     } finally {
       fetchingBacklinks = false
     }

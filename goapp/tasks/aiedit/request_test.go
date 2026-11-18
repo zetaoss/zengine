@@ -263,3 +263,22 @@ func TestLegacySpecContentKeepsUserMessageWhenOptionalInputsAreEmpty(t *testing.
 		t.Errorf("converted template has a nonempty user message with the target title: %+v", r.Messages)
 	}
 }
+
+func TestLegacySpecConvertsPlaceholdersInParserFunctions(t *testing.T) {
+	content := "{{#if:{title}|있음|없음}} {{#switch:{{PAGENAME}}|a=b}}\n{wikitext}"
+	spec, err := LegacySpec(legacyPrompt{ID: 13, Title: "조건", RequestType: models.AIEditRequestUpdate, Content: ptr(content)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := models.AIEditPrompt{RequestType: models.AIEditRequestUpdate, Spec: spec}
+	r, err := Render(context.Background(), fakeWiki(t), Request{RequestType: models.AIEditRequestUpdate, Title: "자바", Prompt: &p})
+	if err != nil {
+		t.Fatalf("%v\n%s", err, spec)
+	}
+	if want := "{{#if:자바|있음|없음}} {{#switch:{{PAGENAME}}|a=b}}\n저장된 본문"; r.Messages[0].Content != want {
+		t.Errorf("system:\n%s\nwant\n%s", r.Messages[0].Content, want)
+	}
+	if strings.Contains(spec, "## 입력\n\n<title>") {
+		t.Errorf("title is read inside the parser function, so it is not listed as unread:\n%s", spec)
+	}
+}

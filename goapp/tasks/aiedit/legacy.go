@@ -129,6 +129,11 @@ func LegacySpec(r legacyPrompt) (string, error) {
 			}
 			return "{% raw %}" + m + "{% endraw %}"
 		})
+		// A parser function is kept out of the raw rewrites above ({{#if: is not a comment), but the placeholders
+		// inside it are the template's own and are converted like any other ({{#if:{title}|…}}).
+		for i, original := range wikiParserFunctions {
+			s = strings.ReplaceAll(s, fmt.Sprintf("\x00wiki-parser-%d\x00", i), original)
+		}
 		s = legacyPlaceholder.ReplaceAllStringFunc(s, func(m string) string {
 			name := legacyName(m[1 : len(m)-1])
 			switch {
@@ -144,9 +149,6 @@ func LegacySpec(r legacyPrompt) (string, error) {
 		})
 		for i, original := range tripleWiki {
 			s = strings.ReplaceAll(s, fmt.Sprintf("\x00wiki-param-%d\x00", i), original)
-		}
-		for i, original := range wikiParserFunctions {
-			s = strings.ReplaceAll(s, fmt.Sprintf("\x00wiki-parser-%d\x00", i), original)
 		}
 		for i, original := range wikiComments {
 			s = strings.ReplaceAll(s, fmt.Sprintf("\x00wiki-comment-%d\x00", i), "{% raw %}"+original+"{% endraw %}")
