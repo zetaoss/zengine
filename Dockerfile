@@ -52,21 +52,26 @@ RUN --mount=type=bind,from=mlocati/php-extension-installer:2.12.1,source=/usr/bi
     apt-get install -y --no-install-recommends nginx=1.31.9-1~trixie; \
     rm -rf /var/lib/apt/lists/*; \
     ## php extensions
+    ## PECL extensions are built from their GitHub tags because pecl.php.net often fails. The redis
+    ## clone includes the bundled liblzf submodule, which GitHub source tarballs omit.
+    git clone --quiet --depth 1 --branch 6.3.0 --recurse-submodules --shallow-submodules \
+        https://github.com/phpredis/phpredis.git /tmp/redis; \
     install-php-extensions \
         ## mediawiki-docker
-        apcu-5.1.28 \
+        krakjoe/apcu@v5.1.28 \
         calendar \
         intl \
-        luasandbox-4.1.2 \
+        wikimedia/mediawiki-php-luasandbox@4.1.2 \
         mbstring \
         mysqli \
         opcache \
         ## zengine
         pcntl \
         pdo_mysql \
-        redis-6.3.0 \
+        /tmp/redis \
         wikidiff2 \
-        zip
+        zip; \
+    rm -rf /tmp/redis
 
 RUN { \
         echo 'opcache.memory_consumption=128'; \
