@@ -38,9 +38,14 @@ RUN --mount=type=bind,from=mlocati/php-extension-installer:2.12.1,source=/usr/bi
     apt-get update; \
     apt-get install -y --no-install-recommends \
         ## mediawiki-docker
-        git librsvg2-bin imagemagick python3 \
+        git \
+        imagemagick \
+        librsvg2-bin \
+        python3 \
         ## zengine
-        ca-certificates curl gnupg; \
+        ca-certificates \
+        curl \
+        gnupg; \
     curl -fsSL https://nginx.org/keys/nginx_signing.key | gpg --dearmor -o /usr/share/keyrings/nginx-archive-keyring.gpg; \
     echo 'deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] https://nginx.org/packages/mainline/debian trixie nginx' > /etc/apt/sources.list.d/nginx.list; \
     apt-get update; \
