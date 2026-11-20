@@ -27,8 +27,8 @@ COPY hack/extensions.mjs hack/
 COPY mwz/extensions.yaml mwz/extensions.lock mwz/
 RUN EXTENSIONS_DIR=/extensions node hack/extensions.mjs install
 
-# https://hub.docker.com/_/mediawiki
-FROM mediawiki:1.43.11-fpm@sha256:dea5d77a5421a6192407d9005af176093d8e6a5d757bd43b5b8c28b9c01f7a30 AS base
+# https://github.com/wikimedia/mediawiki-docker/blob/main/1.43/fpm/Dockerfile
+FROM php:8.3.37-fpm AS base
 
 # install-php-extensions comes from a pinned image and is mounted only for this step, so builds are
 # reproducible and it does not stay in the image.
@@ -36,18 +36,25 @@ RUN --mount=type=bind,from=mlocati/php-extension-installer:2.12.1,source=/usr/bi
     set -eux; \
     ## system packages
     apt-get update; \
-    apt-get install -y --no-install-recommends ca-certificates curl gnupg; \
+    apt-get install -y --no-install-recommends ca-certificates curl gnupg git librsvg2-bin imagemagick python3; \
     curl -fsSL https://nginx.org/keys/nginx_signing.key | gpg --dearmor -o /usr/share/keyrings/nginx-archive-keyring.gpg; \
     echo 'deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] https://nginx.org/packages/mainline/debian trixie nginx' > /etc/apt/sources.list.d/nginx.list; \
     apt-get update; \
     apt-get install -y --no-install-recommends nginx=1.31.9-1~trixie; \
     rm -rf /var/lib/apt/lists/*; \
-    ## php extensions (luasandbox is pre-installed in the upstream mediawiki base image)
+    ## php extensions
     ## redis is built from the GitHub tag instead of PECL (deprecated); the clone includes the
     ## bundled liblzf submodule, which GitHub source tarballs omit.
     git clone --quiet --depth 1 --branch 6.3.0 --recurse-submodules --shallow-submodules \
         https://github.com/phpredis/phpredis.git /tmp/phpredis; \
     install-php-extensions \
+        apcu-5.1.28 \
+        calendar \
+        intl \
+        luasandbox-4.1.2 \
+        mbstring \
+        mysqli \
+        opcache \
         pcntl \
         pdo_mysql \
         /tmp/phpredis \
@@ -55,16 +62,21 @@ RUN --mount=type=bind,from=mlocati/php-extension-installer:2.12.1,source=/usr/bi
         zip; \
     rm -rf /tmp/phpredis
 
-# Release archive verified against Wikimedia release manager Sam Reed's signing key.
+RUN { \
+        echo 'opcache.memory_consumption=128'; \
+        echo 'opcache.interned_strings_buffer=8'; \
+        echo 'opcache.max_accelerated_files=4000'; \
+        echo 'opcache.revalidate_freq=60'; \
+    } > /usr/local/etc/php/conf.d/opcache-recommended.ini
+
+ENV MEDIAWIKI_MAJOR_VERSION=1.43
 ENV MEDIAWIKI_VERSION=1.43.12
 RUN set -eux; \
-    curl -fsSL "https://releases.wikimedia.org/mediawiki/1.43/mediawiki-${MEDIAWIKI_VERSION}.tar.gz" -o /tmp/mediawiki.tar.gz; \
+    curl -fsSL "https://releases.wikimedia.org/mediawiki/${MEDIAWIKI_MAJOR_VERSION}/mediawiki-${MEDIAWIKI_VERSION}.tar.gz" -o /tmp/mediawiki.tar.gz; \
     echo 'ff2b4361425a0634e8be21c6fa6531b96bb96b7b4c291979908d98b1da59dd90  /tmp/mediawiki.tar.gz' | sha256sum -c -; \
-    cd /var/www/html; \
-    find . -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +; \
-    tar -xzf /tmp/mediawiki.tar.gz --strip-components=1; \
+    tar -xzf /tmp/mediawiki.tar.gz -C /var/www/html --strip-components=1; \
     rm /tmp/mediawiki.tar.gz; \
-    chown -R www-data:www-data extensions skins cache images
+    chown -R www-data:www-data /var/www/html/extensions /var/www/html/skins /var/www/html/cache /var/www/html/images
 
 COPY --from=extensions /extensions/ /var/www/html/extensions/
 
