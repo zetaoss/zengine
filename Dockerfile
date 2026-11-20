@@ -28,7 +28,7 @@ COPY mwz/extensions.yaml mwz/extensions.lock mwz/
 RUN EXTENSIONS_DIR=/extensions node hack/extensions.mjs install
 
 # https://hub.docker.com/_/mediawiki
-FROM mediawiki:1.43.11-fpm@sha256:132e4b70d00a3acd7bd8c97c5c1b7e3664b1f2cb94e2291198ce7be169d360d7 AS base
+FROM mediawiki:1.43.11-fpm@sha256:dea5d77a5421a6192407d9005af176093d8e6a5d757bd43b5b8c28b9c01f7a30 AS base
 
 # install-php-extensions comes from a pinned image and is mounted only for this step, so builds are
 # reproducible and it does not stay in the image.
