@@ -55,6 +55,16 @@ RUN --mount=type=bind,from=mlocati/php-extension-installer:2.12.1,source=/usr/bi
         zip; \
     rm -rf /tmp/phpredis
 
+# Release archive verified against Wikimedia release manager Sam Reed's signing key.
+ENV MEDIAWIKI_VERSION=1.43.12
+ADD --checksum=sha256:ff2b4361425a0634e8be21c6fa6531b96bb96b7b4c291979908d98b1da59dd90 https://releases.wikimedia.org/mediawiki/1.43/mediawiki-1.43.12.tar.gz /tmp/mediawiki.tar.gz
+RUN set -eux; \
+    cd /var/www/html; \
+    find . -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +; \
+    tar -xzf /tmp/mediawiki.tar.gz --strip-components=1; \
+    rm /tmp/mediawiki.tar.gz; \
+    chown -R www-data:www-data extensions skins cache images
+
 COPY --from=extensions /extensions/ /var/www/html/extensions/
 
 # PHP dependencies of MediaWiki and the extensions above (composer.local.json merges
