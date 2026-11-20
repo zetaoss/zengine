@@ -36,7 +36,11 @@ RUN --mount=type=bind,from=mlocati/php-extension-installer:2.12.1,source=/usr/bi
     set -eux; \
     ## system packages
     apt-get update; \
-    apt-get install -y --no-install-recommends nginx; \
+    apt-get install -y --no-install-recommends ca-certificates curl gnupg; \
+    curl -fsSL https://nginx.org/keys/nginx_signing.key | gpg --dearmor -o /usr/share/keyrings/nginx-archive-keyring.gpg; \
+    echo 'deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] https://nginx.org/packages/mainline/debian trixie nginx' > /etc/apt/sources.list.d/nginx.list; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends nginx=1.31.9-1~trixie; \
     rm -rf /var/lib/apt/lists/*; \
     ## php extensions (luasandbox is pre-installed in the upstream mediawiki base image)
     ## redis is built from the GitHub tag instead of PECL (deprecated); the clone includes the
