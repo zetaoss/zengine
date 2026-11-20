@@ -36,7 +36,11 @@ RUN --mount=type=bind,from=mlocati/php-extension-installer:2.12.1,source=/usr/bi
     set -eux; \
     ## system packages
     apt-get update; \
-    apt-get install -y --no-install-recommends ca-certificates curl gnupg git librsvg2-bin imagemagick python3; \
+    apt-get install -y --no-install-recommends \
+        ## mediawiki-docker
+        git librsvg2-bin imagemagick python3 \
+        ## zengine
+        ca-certificates curl gnupg; \
     curl -fsSL https://nginx.org/keys/nginx_signing.key | gpg --dearmor -o /usr/share/keyrings/nginx-archive-keyring.gpg; \
     echo 'deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] https://nginx.org/packages/mainline/debian trixie nginx' > /etc/apt/sources.list.d/nginx.list; \
     apt-get update; \
@@ -48,6 +52,7 @@ RUN --mount=type=bind,from=mlocati/php-extension-installer:2.12.1,source=/usr/bi
     git clone --quiet --depth 1 --branch 6.3.0 --recurse-submodules --shallow-submodules \
         https://github.com/phpredis/phpredis.git /tmp/phpredis; \
     install-php-extensions \
+        ## mediawiki-docker
         apcu-5.1.28 \
         calendar \
         intl \
@@ -55,6 +60,7 @@ RUN --mount=type=bind,from=mlocati/php-extension-installer:2.12.1,source=/usr/bi
         mbstring \
         mysqli \
         opcache \
+        ## zengine
         pcntl \
         pdo_mysql \
         /tmp/phpredis \
