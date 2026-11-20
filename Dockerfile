@@ -36,7 +36,7 @@ RUN --mount=type=bind,from=mlocati/php-extension-installer:2.12.1,source=/usr/bi
     set -eux; \
     ## system packages
     apt-get update; \
-    apt-get install -y --no-install-recommends nginx; \
+    apt-get install -y --no-install-recommends nginx=1.26.3-3+deb13u11; \
     rm -rf /var/lib/apt/lists/*; \
     ## php extensions (luasandbox is pre-installed in the upstream mediawiki base image)
     ## redis is built from the GitHub tag instead of PECL (deprecated); the clone includes the
