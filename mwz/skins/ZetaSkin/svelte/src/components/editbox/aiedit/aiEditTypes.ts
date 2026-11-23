@@ -58,7 +58,9 @@ export interface AIEditStoreResult {
 export interface AIEditTaskResult {
   id: number
   phase: AIEditTaskPhase
+  request_type: AIEditRequestType
   llm_output: string | null
+  original_wikitext?: string
   last_error: string | null
   created_at: string
 }

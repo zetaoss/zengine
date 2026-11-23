@@ -39,9 +39,13 @@ type storePayload struct {
 	LLMInput    string         `json:"llm_input"`
 }
 
+type taskFields models.AIEdit
+
 type taskResponse struct {
-	models.AIEdit
-	Title string `json:"title"`
+	taskFields
+	Inputs           string `json:"inputs,omitempty"`
+	Title            string `json:"title"`
+	OriginalWikitext string `json:"original_wikitext,omitempty"`
 }
 
 func MyIndex(c *serverctx.Context) {
@@ -71,7 +75,7 @@ func MyIndex(c *serverctx.Context) {
 
 	rows := make([]models.AIEdit, 0, limit)
 	q := c.DB.Table("aiedit_tasks").
-		Select("id, user_id, user_name, page_id, page_title, request_type, phase, llm_output, llm_model, revid, error_count, last_error, created_at, updated_at").
+		Select("id, user_id, user_name, page_id, page_title, request_type, phase, inputs, llm_output, llm_model, revid, error_count, last_error, created_at, updated_at").
 		Where("user_id = ?", user.ID)
 
 	switch {
@@ -307,9 +311,24 @@ func retryAt(task models.AIEdit) *string {
 func newTaskResponse(task models.AIEdit) taskResponse {
 	task.RetryAt = retryAt(task)
 	return taskResponse{
-		AIEdit: task,
-		Title:  task.PageTitle,
+		taskFields:       taskFields(task),
+		Title:            task.PageTitle,
+		OriginalWikitext: originalWikitext(task.Inputs),
 	}
+}
+
+func originalWikitext(inputs string) string {
+	var values map[string]json.RawMessage
+	if json.Unmarshal([]byte(inputs), &values) != nil {
+		return ""
+	}
+	for _, key := range []string{"body", "wikitext"} {
+		var value string
+		if json.Unmarshal(values[key], &value) == nil {
+			return value
+		}
+	}
+	return ""
 }
 
 func taskResponses(tasks []models.AIEdit) []taskResponse {

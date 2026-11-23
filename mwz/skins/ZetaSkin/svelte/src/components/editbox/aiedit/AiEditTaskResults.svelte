@@ -13,6 +13,7 @@
   import httpy from '$shared/utils/httpy'
 
   import { replaceWikiEditorContent } from '../wikiEditor'
+  import { getAiEditWarnings } from './aiEditWarnings'
   import type { AIEditRequestType, AIEditTaskResult } from './aiEditTypes'
   import { selectedAiEditResult } from './selectedAiEditResult'
 
@@ -81,6 +82,10 @@
 
   let resultTasks = $derived(
     tasks.filter((task) => task.phase === 'Completed' && task.llm_output?.trim().length),
+  )
+  let selectedTask = $derived(resultTasks.find((task) => String(task.id) === selectedTaskId))
+  let resultWarnings = $derived(
+    getAiEditWarnings(selectedTask?.request_type ?? requestType, selectedTask?.original_wikitext, resultOutput),
   )
   let hasRecentResults = $derived(
     resultTasks.some((task) => {
@@ -264,6 +269,13 @@
     </div>
     {#if selectedTaskId && resultsExpanded}
       <div class="relative">
+        {#if resultWarnings.length > 0}
+          <ul class="mb-2 list-disc rounded border border-amber-400 bg-amber-50 px-4 py-2 text-sm text-amber-900" role="alert" aria-label="AI 작성본 확인 사항">
+            {#each resultWarnings as warning (warning)}
+              <li>{warning}</li>
+            {/each}
+          </ul>
+        {/if}
         <ZTextarea
           id="ai-edit-task-result-textarea"
           class="border-border p-1 min-h-40 bg-a-gray-50 font-mono text-xs leading-relaxed"
