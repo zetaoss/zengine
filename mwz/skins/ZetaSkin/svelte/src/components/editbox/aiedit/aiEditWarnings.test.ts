@@ -29,4 +29,16 @@ describe('getAiEditWarnings', () => {
   it('does not flag a category that remains in the result', () => {
     expect(getAiEditWarnings('update', '[[Category:A]]', 'Text\n[[Category:A]]')).toEqual([])
   })
+
+  it('does not treat preserved MediaWiki ordered and nested bullet lists as Markdown', () => {
+    const lists = '# First item\n## Nested item\n** Nested bullet'
+
+    expect(getAiEditWarnings('update', lists, lists)).toEqual([])
+  })
+
+  it('warns about new Markdown heading syntax without flagging unchanged list lines', () => {
+    expect(getAiEditWarnings('update', '# Existing list item', '# Existing list item\n# New heading')).toEqual([
+      '마크다운 제목(# )이 포함되어 있습니다.',
+    ])
+  })
 })
