@@ -27,11 +27,12 @@ fieldset {
   }
 }
 
-.mw-htmlform-submit {
-  @apply border rounded p-1 px-2 cursor-pointer;
-}
-
 #mw-content-text form {
+  input[type='submit'],
+  button[type='submit']:not(.oo-ui-buttonElement-button) {
+    @apply border rounded p-1 px-2 cursor-pointer;
+  }
+
   td {
     padding: 1px;
   }
