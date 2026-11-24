@@ -27,8 +27,11 @@
 
       <div class="flex-auto min-w-0">
         <div class="p-4 py-8 md:p-8">
+          {{#hasMeta}}<article>{{/hasMeta}}
           <div class="pt-4">
-            <h1>{{{ html-title }}}</h1>
+            <header>
+              <h1>{{{ html-title }}}</h1>
+            </header>
             {{#html-subtitle}}
             <div>{{{ html-subtitle }}}</div>
             {{/html-subtitle}}
@@ -72,6 +75,7 @@
           <div id="bodyContent" data-mw-ve-target-container class="py-6 pb-10">
           {{{ html-body-content }}}
           </div>
+          {{#hasMeta}}</article>{{/hasMeta}}
 
           <c-adsense-slot class="pb-4" index="1"></c-adsense-slot>
 
