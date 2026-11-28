@@ -1,6 +1,7 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
+  import { getWikiViewHref } from '$shared/utils/wikiLink'
   import { onMount } from 'svelte'
 
   import { page } from '$app/state'
@@ -16,7 +17,7 @@
       }
     }
 
-    return returnto.length > 0 ? `/wiki/${returnto}` : '/'
+    return returnto.length > 0 ? getWikiViewHref(returnto) : '/'
   }
 
   async function getCsrfToken(): Promise<[string, HttpyError | null]> {

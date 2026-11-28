@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { getWikiViewHref } from '$shared/utils/wikiLink'
   import { onMount } from 'svelte'
 
   import AvatarUser from '$lib/components/avatar/AvatarUser.svelte'
@@ -46,7 +47,7 @@
 
 {#each rows as r (r.id)}
   <div class="py-2">
-    <a href={`/wiki/${r.page_title}`} rel="external" data-sveltekit-reload>{r.page_title.replace(/_/g, ' ')}</a>
+    <a href={getWikiViewHref(r.page_title)} rel="external" data-sveltekit-reload>{r.page_title.replace(/_/g, ' ')}</a>
     <span class="ml-3">
       <AvatarUser user={{ id: r.user_id, name: r.user_name }} />
     </span>

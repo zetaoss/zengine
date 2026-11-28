@@ -1,6 +1,7 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
+  import { getWikiViewHref } from '$shared/utils/wikiLink'
   import { mdiTrashCanOutline } from '@mdi/js'
   import { SvelteURL } from 'svelte/reactivity'
   import { get } from 'svelte/store'
@@ -196,8 +197,8 @@
   }
 
   function getTitleHref(row: Row) {
-    if (mode === 'done') return `/wiki/${row.title}`
-    return `/w/index.php?search=${row.title}`
+    if (mode === 'done') return getWikiViewHref(row.title)
+    return `/w/index.php?search=${encodeURIComponent(row.title)}`
   }
 
   function getDateText(row: Row) {

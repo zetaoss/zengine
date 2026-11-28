@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { getWikiViewHref } from '$shared/utils/wikiLink'
   import { onMount } from 'svelte'
 
   import httpy from '$shared/utils/httpy'
@@ -39,7 +40,7 @@
 <ul>
   {#each rows as r (r.title)}
     <li>
-      <a href="/wiki/{r.title}" data-sveltekit-reload>{r.title}</a>
+      <a href={getWikiViewHref(r.title)} data-sveltekit-reload>{r.title}</a>
     </li>
   {/each}
 </ul>
