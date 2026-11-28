@@ -48,6 +48,8 @@ wfLoadExtension('ZetaExtension');
 
 $wgOAuth2PrivateKey = '/run/secrets/oauth2/private.key';
 $wgOAuth2PublicKey = '/run/secrets/oauth2/public.key';
+$wgMWOAuthSharedUserIDs = true;
+$wgMWOAuthSharedUserSource = 'local';
 $wgGroupPermissions['user']['mwoauthproposeconsumer'] = true;
 $wgGroupPermissions['user']['mwoauthupdateownconsumer'] = true;
 

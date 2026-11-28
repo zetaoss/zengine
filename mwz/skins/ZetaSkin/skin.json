@@ -27,7 +27,8 @@
         {
           "name": "zetaskin",
           "responsive": true,
-          "toc": false
+          "toc": false,
+          "menus": [ "associated-pages", "views", "actions", "user-menu" ]
         }
       ]
     }

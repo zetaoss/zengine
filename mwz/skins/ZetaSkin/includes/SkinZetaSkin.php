@@ -77,7 +77,7 @@ class SkinZetaSkin extends SkinMustache
     public static function onSkinTemplateNavigation__Universal($skinTemplate, &$links)
     {
         self::$menu['actions'] = $links['actions'];
-        self::$menu['namespaces'] = $links['namespaces'];
+        self::$menu['namespaces'] = $links['associated-pages'] ?? [];
         self::$menu['usermenu'] = $links['user-menu'];
         self::$menu['views'] = $links['views'];
     }
