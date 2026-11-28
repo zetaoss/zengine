@@ -36,7 +36,8 @@
   let revisions: Revision[] = []
   let aiEditVisible = false
   let loadSelectItems: LoadSelectItem[]
-  const isSysop = (getRLCONF()?.wgUserGroups || []).includes('sysop')
+  const aiEditEnabled = false
+  const showAiEdit = aiEditEnabled && (getRLCONF()?.wgUserGroups || []).includes('sysop')
   const aiEditVisibleStorageKey = 'ai-edit-visible'
 
   $: loadSelectItems = [
@@ -94,7 +95,7 @@
     originalContent = getWikiEditorContent()
     void fetchRevisions()
 
-    if (isSysop) {
+    if (showAiEdit) {
       try {
         aiEditVisible = window.localStorage.getItem(aiEditVisibleStorageKey) === 'true'
       } catch {
@@ -191,7 +192,7 @@
 </script>
 
 <div class="wikiEditor-ui-toolbar px-2 border-b border-[#ccc]">
-  <div class:grid-cols-2={isSysop} class:grid-cols-1={!isSysop} class="grid gap-3">
+  <div class:grid-cols-2={showAiEdit} class:grid-cols-1={!showAiEdit} class="grid gap-3">
     <div class="flex items-center gap-2">
       <CButton size="small" variant="outline" aria-label="원복" onclick={handleReset}>원복</CButton>
       <ZNativeSelect
@@ -203,7 +204,7 @@
       />
     </div>
 
-    {#if isSysop}
+    {#if showAiEdit}
       <div id="zeta-ai-edit-button" class="flex items-center justify-end gap-2">
         <span class="text-sm text-a-slate-700">AI</span>
         <ZToggle checked={aiEditVisible} label="AI" onchange={handleAiEditToggle} />

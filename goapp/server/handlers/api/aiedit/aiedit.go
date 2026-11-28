@@ -350,3 +350,7 @@ func resolvePageTitle(db *gorm.DB, cfg *config.Config, pageID int) string {
 	}
 	return strings.ReplaceAll(strings.TrimSpace(row.PageTitle), "_", " ")
 }
+
+func Disabled(c *serverctx.Context) {
+	c.JSONError(http.StatusGone, "AI edit has been disabled")
+}
