@@ -107,9 +107,6 @@ type chainView struct {
 	Model  string     `json:"model"`
 	Uses   int        `json:"uses"`
 	UsedAt *time.Time `json:"used_at"`
-	// Template is the chain as an AI edit prompt template in YAML (prompts.PromptTemplate), which a clone starts
-	// from.
-	Template string `json:"template"`
 }
 
 // Chains lists the built-in chains (goapp/prompts), each with its model and its runs: the successful calls of its
@@ -131,11 +128,10 @@ func Chains(c *serverctx.Context) {
 		model, _ := chainsvc.Resolve(saved, c.Cfg, chain.Name)
 		u := uses[chain.Name+"/"+chain.Steps[len(chain.Steps)-1].Name]
 		views = append(views, chainView{
-			Chain:    chain,
-			Model:    model,
-			Uses:     u.n,
-			UsedAt:   u.last,
-			Template: chain.PromptTemplate().YAML(),
+			Chain:  chain,
+			Model:  model,
+			Uses:   u.n,
+			UsedAt: u.last,
 		})
 	}
 	c.JSON(views)

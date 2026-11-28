@@ -3,10 +3,8 @@
 
   import getCurrentTitle from '$lib/utils/getCurrentTitle'
   import mwapi from '$lib/utils/mwapi'
-  import getRLCONF from '$lib/utils/rlconf'
   import CButton from '$shared/ui/CButton.svelte'
   import ZNativeSelect from '$lib/ui/ZNativeSelect.svelte'
-  import ZToggle from '$shared/ui/ZToggle.svelte'
   import { getAge } from '$shared/utils/time'
 
   import { getWikiEditorContent, replaceWikiEditorContent } from './wikiEditor'
@@ -27,18 +25,13 @@
 
   export let titles: string[] = []
   export let onSelect: (title: string) => void
-  export let onToggleAiEdit: (visible: boolean) => void
   export let autoApplyOnSelect = false
 
   let selectedValue = '' // e.g. "template:틀:..." or "revision:12345"
   let hasUserInteracted = false
   let originalContent = ''
   let revisions: Revision[] = []
-  let aiEditVisible = false
   let loadSelectItems: LoadSelectItem[]
-  const aiEditEnabled = false
-  const showAiEdit = aiEditEnabled && (getRLCONF()?.wgUserGroups || []).includes('sysop')
-  const aiEditVisibleStorageKey = 'ai-edit-visible'
 
   $: loadSelectItems = [
     ...titles.map((title) => ({ group: 'Templates', label: toBoilerplateLabel(title), value: `template:${title}` })),
@@ -94,15 +87,6 @@
   onMount(() => {
     originalContent = getWikiEditorContent()
     void fetchRevisions()
-
-    if (showAiEdit) {
-      try {
-        aiEditVisible = window.localStorage.getItem(aiEditVisibleStorageKey) === 'true'
-      } catch {
-        // Keep AI edit hidden when storage is unavailable.
-      }
-      onToggleAiEdit(aiEditVisible)
-    }
   })
 
   async function handleSelectChange(nextValue: string) {
@@ -166,16 +150,6 @@
     onSelect('')
   }
 
-  function handleAiEditToggle(event: { checked: boolean }) {
-    aiEditVisible = event.checked
-    try {
-      window.localStorage.setItem(aiEditVisibleStorageKey, String(aiEditVisible))
-    } catch {
-      // Continue with the in-memory setting when storage is unavailable.
-    }
-    onToggleAiEdit(aiEditVisible)
-  }
-
   function toBoilerplateLabel(title: string) {
     return title.replace(/^틀:새문서틀\s*/, '')
   }
@@ -192,23 +166,14 @@
 </script>
 
 <div class="wikiEditor-ui-toolbar px-2 border-b border-[#ccc]">
-  <div class:grid-cols-2={showAiEdit} class:grid-cols-1={!showAiEdit} class="grid gap-3">
-    <div class="flex items-center gap-2">
-      <CButton size="small" variant="outline" aria-label="원복" onclick={handleReset}>원복</CButton>
-      <ZNativeSelect
-        bind:value={selectedValue}
-        items={loadSelectItems}
-        placeholder="-- 불러오기 --"
-        class="w-full max-w-[150px] text-sm md:max-w-[320px]"
-        onchange={handleSelectChange}
-      />
-    </div>
-
-    {#if showAiEdit}
-      <div id="zeta-ai-edit-button" class="flex items-center justify-end gap-2">
-        <span class="text-sm text-a-slate-700">AI</span>
-        <ZToggle checked={aiEditVisible} label="AI" onchange={handleAiEditToggle} />
-      </div>
-    {/if}
+  <div class="flex items-center gap-2">
+    <CButton size="small" variant="outline" aria-label="원복" onclick={handleReset}>원복</CButton>
+    <ZNativeSelect
+      bind:value={selectedValue}
+      items={loadSelectItems}
+      placeholder="-- 불러오기 --"
+      class="w-full max-w-[150px] text-sm md:max-w-[320px]"
+      onchange={handleSelectChange}
+    />
   </div>
 </div>

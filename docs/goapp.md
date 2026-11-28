@@ -83,16 +83,10 @@ Use the `Router` middleware factory to keep `routes.go` declarative.
 
 ## Main subsystems
 
-### AIEdit
+### User profile
 
-- Route: `/api/ai-edit*` in `goapp/server/routes.go`
-- Handler: `goapp/server/handlers/api/aiedit/aiedit.go`
-- Model: `goapp/models/ai_edit.go`
-- Tasks: `goapp/tasks/aiedit/**`
-- Active phases include `Generating` and `Retrying`.
-- A single page-level timer refreshes the list and stops when the user leaves the list tab.
-
-`POST /api/ai-edit` renders the request on the `doc-create` or `doc-update` chain on the server (`tasks/aiedit/request.go`, [chain.md](chain.md#chains-and-tasks)): the page, an AI edit prompt template (`prompt_id`) or none, the page as it stands in the editor (`wikitext`, for update) and the run form's values (`user_inputs`). The task stores the template, the chain version, the filled variables (`inputs`) and the rendered messages (`llm_messages`, with `llm_input` as their text); `POST /api/ai-edit/preview` renders the same without storing. A skin loaded before this sends `llm_input`, run as one user message. The template is not edited before a run; the run form only adds values. The `ai-edit` task sends the stored messages with the template's model (`aiedit_prompts.model`), else the chain's model (chains tab, else `chains.docCreate` or `docUpdate`; [chain.md](chain.md#screen-and-api)), so bob does not fall back to another model; a failed call goes to the task's retries and is recorded in `llm_calls`. Request types are `create` (a page that does not exist yet) and `update` (rewrite an existing one), in `aiedit_tasks` and `aiedit_prompts` (`models.AIEditRequestCreate`, `AIEditRequestUpdate`). `update` was called `edit` until v0.9.60; the API still accepts `edit` from skins loaded before the rename. AIEdit prompts (`/api/ai-prompts*`) are sysop-only (`r.Sysop()`). The Activity tab calls the MediaWiki API directly through `mwapi` in Svelte. Contribution flags can be array values such as `"new"` and `"top"`.
+- Frontend: `svelte/src/routes/user/[user_name]/UserProfile.svelte`
+- The Activity tab calls the MediaWiki API directly through `mwapi` in Svelte. Contribution flags can be array values such as `"new"` and `"top"`.
 
 ### Write Request
 
@@ -228,8 +222,6 @@ On SIGINT or SIGTERM, active handlers are drained for up to 30 seconds.
 
 | Task type | Timeout | Retry | Schedule | Queue / trigger |
 | --- | ---: | ---: | --- | --- |
-| `ai-edit` | 10 min | 3 | - | API and nanny |
-| `ai-edit-nanny` | 1 min | 3 | `0 * * * *` | `default` |
 | `common-report` | 5 min | 3 | - | API and nanny, unique for 30 min |
 | `common-report-nanny` | 1 min | 3 | `0 * * * *` | `default` |
 | `doc-define-loop` | 2 min | 0 | - | `doc-eval`, reschedules itself |
@@ -252,7 +244,6 @@ The `daily` statistics tasks also run at 5 minutes past every hour; each task de
 cd /app/goapp
 go run ./cmd/tool tasks
 go run ./cmd/tool tasks --watch
-go run ./cmd/tool ai-edit '{"task_id":123}'
 go run ./cmd/tool flush active
 go run ./cmd/tool flush pending
 go run ./cmd/tool flush scheduled

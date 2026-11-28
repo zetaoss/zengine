@@ -13,7 +13,6 @@ import (
 	"github.com/zetaoss/zengine/goapp/app/appctx"
 	"github.com/zetaoss/zengine/goapp/app/taskctx"
 	docevalsvc "github.com/zetaoss/zengine/goapp/services/doceval"
-	"github.com/zetaoss/zengine/goapp/tasks/aiedit"
 	"github.com/zetaoss/zengine/goapp/tasks/commonreport"
 	docevaltask "github.com/zetaoss/zengine/goapp/tasks/doceval"
 	"github.com/zetaoss/zengine/goapp/tasks/inspire"
@@ -63,8 +62,6 @@ func New() *Registry {
 	register(r, "stat-mw-hourly", 5*time.Minute, mw.NewHourlyTask(), cron("5 * * * *"))
 	register(r, "common-report", 5*time.Minute, commonreport.NewCommonReportTask())
 	register(r, "common-report-nanny", time.Minute, commonreport.NewNannyTask(), cron("0 * * * *"))
-	register(r, "ai-edit", 10*time.Minute, aiedit.NewAIEditTask())
-	register(r, "ai-edit-nanny", time.Minute, aiedit.NewNannyTask(), cron("0 * * * *"))
 	register(r, "inspire", 5*time.Second, inspire.NewInspireTask())
 	register(r, "ping-db", 10*time.Second, pingdb.NewPingDBTask())
 	register(r, "ping-redis", 5*time.Second, pingredis.NewPingRedisTask())

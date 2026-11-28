@@ -12,13 +12,16 @@ func TestResolve(t *testing.T) {
 	for chain, want := range map[string][2]string{
 		"doc-define": {"cloudflare/c", SourceSaved},
 		"doc-eval":   {"groq/b", SourceConfig},
-		"doc-create": {"gemini/a", SourceConfig},
 	} {
 		if m, src := Resolve(saved, cfg, chain); m != want[0] || src != want[1] {
 			t.Errorf("%s: got %s %s, want %v", chain, m, src, want)
 		}
 	}
-	if m, src := Resolve(nil, nil, "doc-update"); m != config.DefaultModel || src != SourceDefault {
+	common := &config.Config{Chains: config.ChainsConfig{Common: config.CommonChainConfig{Model: "gemini/a"}}}
+	if m, src := Resolve(nil, common, "doc-define"); m != "gemini/a" || src != SourceConfig {
+		t.Errorf("common: got %s %s", m, src)
+	}
+	if m, src := Resolve(nil, nil, "doc-define"); m != config.DefaultModel || src != SourceDefault {
 		t.Errorf("default: got %s %s", m, src)
 	}
 }

@@ -2,7 +2,7 @@
   import { onMount } from 'svelte'
 
   import CButton from '$shared/ui/CButton.svelte'
-  import ZSelect from '$shared/ui/ZSelect.svelte'
+  import ZSelect from '$lib/ui/ZSelect.svelte'
 
   import type { ForumPostFormValue } from './types'
 

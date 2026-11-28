@@ -146,10 +146,9 @@ func TestLoadFileErrors(t *testing.T) {
 func TestLoadRejectsInvalidChainValues(t *testing.T) {
 	dir := t.TempDir()
 	for name, body := range map[string]string{
-		"model":                 "chains:\n  docEval:\n    model: gpt-oss\n",
-		"strategy":              "chains:\n  common:\n    strategy: shuffle\n",
-		"interval":              "chains:\n  docDefine:\n    interval: 500ms\n",
-		"interval in docCreate": "chains:\n  docCreate:\n    interval: 1h\n",
+		"model":    "chains:\n  docEval:\n    model: gpt-oss\n",
+		"strategy": "chains:\n  common:\n    strategy: shuffle\n",
+		"interval": "chains:\n  docDefine:\n    interval: 500ms\n",
 	} {
 		path := dir + "/" + strings.ReplaceAll(name, " ", "-") + ".yaml"
 		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
@@ -163,11 +162,11 @@ func TestLoadRejectsInvalidChainValues(t *testing.T) {
 }
 
 func TestModelOf(t *testing.T) {
-	c := ChainsConfig{Common: CommonChainConfig{Model: "gemini/a"}, DocUpdate: ModelChainConfig{Model: "groq/b"}}
-	if got := c.ModelOf("doc-update"); got != "groq/b" {
+	c := ChainsConfig{Common: CommonChainConfig{Model: "gemini/a"}, DocEval: ChainConfig{Model: "groq/b"}}
+	if got := c.ModelOf("doc-eval"); got != "groq/b" {
 		t.Errorf("own model: got %q", got)
 	}
-	if got := c.ModelOf("doc-create"); got != "gemini/a" {
+	if got := c.ModelOf("doc-define"); got != "gemini/a" {
 		t.Errorf("common model: got %q", got)
 	}
 	if got := (ChainsConfig{}).ModelOf("doc-eval"); got != "" {

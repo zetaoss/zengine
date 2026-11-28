@@ -5,9 +5,7 @@ import (
 	"time"
 
 	"github.com/zetaoss/zengine/goapp/models"
-	"github.com/zetaoss/zengine/goapp/server/handlers/api/aiedit"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/aimodels"
-	"github.com/zetaoss/zengine/goapp/server/handlers/api/aiprompts"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/articletpl"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/binder"
 	"github.com/zetaoss/zengine/goapp/server/handlers/api/comments"
@@ -57,19 +55,6 @@ func RegisterRoutes(mux *http.ServeMux, serverCtx *serverctx.Context, components
 	r.POST("/api/common-report/{id}/clone", commonreport.Clone, r.Unblocked())
 	r.POST("/api/common-report/{id}/rerun", commonreport.Rerun, r.OwnerOrSysop(models.CommonReport{}))
 	r.DELETE("/api/common-report/{id}", commonreport.Destroy, r.OwnerOrSysop(models.CommonReport{}))
-
-	r.GET("/api/my-ai-edits", aiedit.MyIndex, r.Unblocked())
-	r.GET("/api/ai-edit/{id}", aiedit.Show, r.OwnerOrSysop(models.AIEdit{}))
-	r.POST("/api/ai-edit", aiedit.Disabled)
-	r.POST("/api/ai-edit/preview", aiedit.Disabled)
-	r.GET("/api/ai-edit/backlinks", aiedit.Backlinks, r.Unblocked())
-
-	r.GET("/api/ai-prompts", aiprompts.Index, r.Sysop())
-	r.GET("/api/ai-prompts/exists", aiprompts.Exists, r.Sysop())
-	r.GET("/api/ai-prompts/{id}", aiprompts.Show, r.Sysop())
-	r.POST("/api/ai-prompts", aiprompts.Store, r.Sysop())
-	r.POST("/api/ai-prompts/check", aiprompts.Check, r.Sysop())
-	r.DELETE("/api/ai-prompts/{id}", aiprompts.Destroy, r.Sysop())
 
 	r.GET("/api/internal/profiles/{id}", internalprofile.Show, r.Internal())
 
