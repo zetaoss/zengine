@@ -36,7 +36,7 @@ User text is turned into HTML with links in two ways, depending on whether the i
 | Function | Location | Input | Links | Safety |
 | --- | --- | --- | --- | --- |
 | `linkifyText` | `svelte/src/shared/utils/linkifyText.ts` | plain text | `http(s)://` URLs, `[[wiki links]]` | escapes the whole text, then inserts only the links it builds; no sanitizer |
-| `linkify` | `svelte/src/lib/utils/linkify.ts` | HTML | URLs ([autolinker](https://github.com/gregjacobs/Autolinker.js)), `[[wiki links]]` | sanitizes the result with DOMPurify |
+| `linkify` | `svelte/src/lib/utils/linkify.ts` | HTML | in text outside links and code: `http(s)://` URLs, `[[wiki links]]` (by `linkifyTextOne`) | sanitizes with DOMPurify before and after |
 
 Imports, from the components that render user text down to the libraries:
 
@@ -61,7 +61,6 @@ flowchart LR
   end
 
   subgraph npm["npm (main app only)"]
-    autolinker["autolinker"]
     dompurify["dompurify"]
   end
 
@@ -73,9 +72,9 @@ flowchart LR
 
   linkifyText --> wikiLink
   linkifyText --> mediawiki
+  linkify --> linkifyText
   linkify --> wikiLink
   linkify --> mediawiki
-  linkify --> autolinker
   linkify --> dompurify
 ```
 
@@ -94,6 +93,11 @@ Page comments and onelines are stored as plain text (the API does not escape or 
 
 ### linkify
 
-Used only by the forum, where post bodies are HTML from the editor. autolinker and DOMPurify (about 80 KB minified) are dependencies of the main app only (`svelte/package.json`). The main app sets `ssr = false`, so it imports `dompurify` directly rather than `isomorphic-dompurify`, which adds jsdom for server rendering. The skin's `package.json` does not list them, so nothing in the skin can import them. The skin used them for page comments until v0.9.22, when its `app.js` went from 293 KB to 213 KB (gzip 108 KB to 77 KB).
+Used only by the forum, where post bodies are HTML from the editor.
+
+- DOMPurify sanitizes the post first. Then only text nodes outside `a`, `code` and `pre` (and `script`, `style`, `textarea`) are linked, each by `linkifyTextOne`, so links follow the rules above and markup and attributes are never rewritten. The result is sanitized again.
+- URLs and `[[links]]` inside code blocks and inline code stay as they are. Emails and phone numbers are not linked, as in `linkifyText`. Until v0.10.11 it used autolinker over the HTML as a string.
+- DOMPurify is a dependency of the main app only (`svelte/package.json`). The main app sets `ssr = false`, so it imports `dompurify` directly rather than `isomorphic-dompurify`, which adds jsdom for server rendering. The skin's `package.json` does not list it, so nothing in the skin can import it. The skin used autolinker and DOMPurify for page comments until v0.9.22, when its `app.js` went from 293 KB to 213 KB (gzip 108 KB to 77 KB).
+- Tests: `svelte/src/lib/utils/linkify.test.ts`.
 
 Forum replies are plain text but still go through `linkify`, because `renderPlainTextWithFences` first turns them into HTML with code blocks.
