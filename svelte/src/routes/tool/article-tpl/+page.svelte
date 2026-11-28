@@ -1,6 +1,7 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
+  import { getWikiViewHref } from '$shared/utils/wikiLink'
   import { mdiArrowDown, mdiArrowUp } from '@mdi/js'
   import { onMount } from 'svelte'
 
@@ -56,7 +57,7 @@
   })
 
   function toWikiPath(title: string) {
-    return `/wiki/${title.replaceAll(' ', '_')}`
+    return getWikiViewHref(title)
   }
 
   async function fetchTitles() {

@@ -1,6 +1,7 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
+  import { getWikiViewHref } from '$shared/utils/wikiLink'
   import { mdiAccount, mdiGithub, mdiGoogle, mdiLock } from '@mdi/js'
 
   import { page } from '$app/state'
@@ -39,7 +40,7 @@
     }
 
     if (returnto) {
-      window.location.href = `/wiki/${returnto}`
+      window.location.href = getWikiViewHref(returnto)
       return
     }
 
