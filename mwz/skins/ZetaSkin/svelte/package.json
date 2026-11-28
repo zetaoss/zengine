@@ -15,9 +15,6 @@
     "format": "prettier --check .",
     "format:fix": "prettier --write ."
   },
-  "dependencies": {
-    "tslib": "^2.8.1"
-  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@mdi/js": "^7.4.47",
