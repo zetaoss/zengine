@@ -1,6 +1,7 @@
 package stat
 
 import (
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -122,5 +123,17 @@ func TestBuildK8sDailyPayloadIncludesPVCStorage(t *testing.T) {
 	maxLevel, ok := payload["defender_max_level"].([]any)
 	if !ok || maxLevel[0] != float64(9) {
 		t.Fatalf("defender_max_level=%v", payload["defender_max_level"])
+	}
+}
+
+func TestParseDays(t *testing.T) {
+	t.Parallel()
+
+	for days, ok := range map[string]bool{"240": true, "28": false, "180": false, "365": false, "x": false} {
+		r := httptest.NewRequest("GET", "/api/stat/cf-analytics/daily/"+days, nil)
+		r.SetPathValue("days", days)
+		if got, gotOK := parseDays(r); gotOK != ok || (ok && got != 240) {
+			t.Errorf("parseDays(%q) = %d, %v; want ok=%v", days, got, gotOK, ok)
+		}
 	}
 }

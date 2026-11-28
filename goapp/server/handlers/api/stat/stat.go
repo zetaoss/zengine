@@ -16,7 +16,7 @@ import (
 
 func parseDays(r *http.Request) (int, bool) {
 	days, err := strconv.Atoi(r.PathValue("days"))
-	if err != nil || (days != 28 && days != 180) {
+	if err != nil || days != 240 {
 		return 0, false
 	}
 	return days, true
