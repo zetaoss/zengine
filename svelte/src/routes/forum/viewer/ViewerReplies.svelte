@@ -8,7 +8,7 @@
   import CMenuItem from '$shared/ui/CMenuItem.svelte'
   import ZIcon from '$shared/ui/ZIcon.svelte'
   import ZModal from '$shared/ui/ZModal.svelte'
-  import ZTextarea from '$shared/ui/ZTextarea.svelte'
+  import ZTextarea from '$lib/ui/ZTextarea.svelte'
   import httpy from '$shared/utils/httpy'
 
   import type { Reply } from '../types'

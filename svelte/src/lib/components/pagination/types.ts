@@ -2,7 +2,6 @@ export type PaginatePath =
   | '/forum'
   | '/onelines'
   | '/tool/common-report'
-  | '/tool/ai-prompts'
   | '/tool/write-request'
   | '/tool/write-request/done'
   | '/tool/write-request/todo'

@@ -39,7 +39,6 @@ This guide helps coding agents quickly understand the monorepo and choose where 
 ## Key Subsystems
 
 - **Common-Report**: Aggregated search results and statistics reporting.
-- **AIEdit**: AI-powered wiki editing agent.
 - **Forum**: Community discussion board for posts and replies.
 - **LLM Service**: Unified interface for LLM integrations.
 - **Write-Request**: User-driven requests for wiki content creation.

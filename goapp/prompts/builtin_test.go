@@ -11,14 +11,12 @@ import (
 // specVersions pins each built-in chain's version to a hash of its spec, so a spec change fails here until the
 // version is bumped and the entry updated: a minor bump keeps stored results, a major bump makes them stale.
 var specVersions = map[string]string{
-	"doc-define": "v2.6 a35a00347434",
-	"doc-eval":   "v2.6 9bbc9cf0e073",
-	"doc-create": "v2.8 2e6750143fa9",
-	"doc-update": "v2.7 691c7c5d0014",
+	"doc-define": "v2.6 5c4bdec67971",
+	"doc-eval":   "v2.6 277d5ea081ba",
 }
 
 func specHash(c Chain) string {
-	b, err := json.Marshal([]any{c.UserInputs, c.Inputs, c.Steps})
+	b, err := json.Marshal([]any{c.Inputs, c.Steps})
 	if err != nil {
 		panic(err)
 	}
@@ -45,7 +43,7 @@ func user(st Step) string {
 }
 
 func TestBuiltinRolesAndInputs(t *testing.T) {
-	for _, st := range []Step{DocCreate.PromptStep(), DocUpdate.PromptStep(), DocDefineStep, DocEvalRubric, DocEvalJudge} {
+	for _, st := range []Step{DocDefineStep, DocEvalRubric, DocEvalJudge} {
 		messages := st.Render(Vars{"title": "제목", "wikitext": "본문", "body": "본문", "definition": "정의", "rubrics": "기준"})
 		if len(messages) != 2 || messages[0].Role != "system" || messages[1].Role != "user" {
 			t.Fatalf("%s: unexpected roles: %+v", st.Name, messages)

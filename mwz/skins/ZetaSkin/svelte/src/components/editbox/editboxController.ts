@@ -6,7 +6,6 @@ import getRLCONF from '$lib/utils/rlconf'
 import { useRetrier } from '$shared/utils/retrier'
 import httpy from '$shared/utils/httpy'
 
-import AiEditPanel from './aiedit/AiEditPanel.svelte'
 import EditHeader from './EditHeader.svelte'
 import { replaceWikiEditorContent } from './wikiEditor'
 
@@ -27,21 +26,16 @@ interface EnabledArticleTplResp {
 }
 
 interface StartEditBoxOptions {
-  aiEditPanelMountElement: HTMLDivElement
-  editAreaMountElement: HTMLDivElement
   rootElement: HTMLDivElement
   editHeaderMountElement: HTMLDivElement
 }
 
-export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, rootElement, editHeaderMountElement }: StartEditBoxOptions) {
+export function startEditBox({ rootElement, editHeaderMountElement }: StartEditBoxOptions) {
   let editHeaderInstance: object | null = null
   let editHeaderPromise: Promise<boolean> | null = null
-  let aiEditPanelInstance: object | null = null
-  let toggleAiEdit: ((visible: boolean) => void) | null = null
   let isDisposed = false
   const boilerplateContentByTitle: Record<string, string> = {}
   let boilerplateRequestId = 0
-  const editFormLayoutClasses = ['flex-1', 'min-w-0']
 
   function isEditAction() {
     const { wgAction } = getRLCONF()
@@ -53,79 +47,20 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
     return !wgArticleId
   }
 
-  function findSaveButton() {
-    const selectors = [
-      '#wpSave',
-      'button[name="wpSave"]',
-      'input[name="wpSave"]',
-      '#wpSaveWidget button',
-      '.oo-ui-processDialog-actions-primary button',
-    ]
-
-    for (const selector of selectors) {
-      const saveButton = document.querySelector<HTMLInputElement | HTMLButtonElement>(selector)
-      if (saveButton) return saveButton
-    }
-    return null
-  }
-
   function findEditForm() {
     return document.querySelector<HTMLElement>('#editform')
-  }
-
-  function findWikiPreview() {
-    return document.querySelector<HTMLElement>('#wikiPreview')
   }
 
   function findWikiEditorTop() {
     return document.querySelector<HTMLElement>('.wikiEditor-ui-top')
   }
 
-  function toggleWikiPreview(visible: boolean) {
-    const wikiPreview = findWikiPreview()
-    if (!wikiPreview) return
-
-    if (!visible) {
-      if (wikiPreview.dataset.zetaPrevDisplay === undefined) {
-        wikiPreview.dataset.zetaPrevDisplay = wikiPreview.style.display
-      }
-      wikiPreview.style.display = 'none'
-      return
-    }
-
-    const prevDisplay = wikiPreview.dataset.zetaPrevDisplay
-    if (prevDisplay !== undefined) {
-      if (prevDisplay) wikiPreview.style.display = prevDisplay
-      else wikiPreview.style.removeProperty('display')
-      delete wikiPreview.dataset.zetaPrevDisplay
-    }
-  }
-
   function placeRootBeforeEditForm() {
     const editForm = findEditForm()
     if (!rootElement.parentElement || !editForm?.parentElement) return false
 
-    const targetNode = editForm.parentElement === editAreaMountElement ? editAreaMountElement : editForm
-    if (!targetNode.parentElement) return false
-
-    if (rootElement.parentElement !== targetNode.parentElement || rootElement.nextSibling !== targetNode) {
-      targetNode.parentElement.insertBefore(rootElement, targetNode)
-    }
-    return true
-  }
-
-  function placeEditAreaBeforeEditForm() {
-    const editForm = findEditForm()
-    if (!editAreaMountElement.parentElement || !editForm?.parentElement) return false
-
-    if (editForm.parentElement === editAreaMountElement) return true
-
-    if (editAreaMountElement.parentElement !== editForm.parentElement || editAreaMountElement.nextSibling !== editForm) {
-      editForm.parentElement.insertBefore(editAreaMountElement, editForm)
-    }
-    editAreaMountElement.appendChild(editForm)
-    for (const className of editFormLayoutClasses) {
-      editForm.classList.add(className)
+    if (rootElement.parentElement !== editForm.parentElement || rootElement.nextSibling !== editForm) {
+      editForm.parentElement.insertBefore(rootElement, editForm)
     }
     return true
   }
@@ -187,7 +122,6 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
     if (isDisposed || !isEditAction()) return false
     if (editHeaderInstance) return true
     if (editHeaderPromise) return false
-    if (!toggleAiEdit) return false
 
     editHeaderPromise = (async () => {
       const titles = await fetchEnabledBoilerplates()
@@ -198,7 +132,6 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
         target: editHeaderMountElement,
         props: {
           autoApplyOnSelect: isCreateAction(),
-          onToggleAiEdit: toggleAiEdit,
           onSelect: applyBoilerplate,
           titles,
         },
@@ -213,109 +146,26 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
     }
   }
 
-  function applyAiEditVisible(visible: boolean) {
-    aiEditPanelMountElement.classList.toggle('hidden', !visible)
-    toggleWikiPreview(!visible)
-  }
-
-  function ensureAiEditPanel() {
-    if (isDisposed || !isEditAction()) return null
-
-    placeEditAreaBeforeEditForm()
-
-    const editForm = findEditForm()
-    if (!editForm) return null
-
-    if (!aiEditPanelInstance) {
-      const { wgArticleId } = getRLCONF()
-      aiEditPanelInstance = mount(AiEditPanel, {
-        target: aiEditPanelMountElement,
-        props: {
-          pageId: wgArticleId || undefined,
-          requestType: isCreateAction() ? 'create' : 'update',
-          title: getCurrentTitle(),
-        },
-      })
-    }
-
-    return { editForm }
-  }
-
-  function injectAiEdit() {
-    ; (window as typeof window & { __aiEditDebug?: Record<string, unknown> }).__aiEditDebug = {
-      stage: 'inject:start',
-      action: getRLCONF().wgAction,
-      hasWpSave: !!document.querySelector('#wpSave'),
-      url: window.location.href,
-    }
-
-    if (!isEditAction()) return false
-
-    const saveButton = findSaveButton()
-    if (!saveButton) {
-      toggleAiEdit = null
-        ; (window as typeof window & { __aiEditDebug?: Record<string, unknown> }).__aiEditDebug = {
-          stage: 'inject:no-save-button',
-          action: getRLCONF().wgAction,
-          hasWpSave: false,
-          url: window.location.href,
-        }
-      return false
-    }
-
-    toggleAiEdit = (visible: boolean) => {
-      if (visible && !ensureAiEditPanel()) return
-      applyAiEditVisible(visible)
-    }
-      ; (window as typeof window & { __aiEditDebug?: Record<string, unknown> }).__aiEditDebug = {
-        stage: 'inject:done',
-        action: getRLCONF().wgAction,
-        hasWpSave: true,
-        buttonId: 'zeta-ai-edit-button',
-        url: window.location.href,
-      }
-    return true
-  }
-
   // Only edit pages have the edit form and WikiEditor; elsewhere the retries below would only search for them.
   if (!isEditAction()) return () => {}
-
-  let aiEditReady = false
-  let editHeaderReady = false
 
   const retrier = useRetrier(
     () => {
       if (isDisposed) return
       placeRootBeforeEditForm()
-      placeEditAreaBeforeEditForm()
-      const headerPlaced = placeEditHeader()
-      aiEditReady = injectAiEdit() || aiEditReady
-
-      if (headerPlaced) {
-        void injectEditHeader()
-          .then((mounted) => {
-            editHeaderReady = mounted || editHeaderReady
-            if (aiEditReady && editHeaderReady) {
-              retrier.clear()
-            } else {
-              retrier.schedule()
-            }
-          })
-          .catch((err) => {
-            console.error('Failed to inject edit header:', err)
-            if (aiEditReady && editHeaderReady) {
-              retrier.clear()
-            } else {
-              retrier.schedule()
-            }
-          })
-      } else {
-        if (aiEditReady && editHeaderReady) {
-          retrier.clear()
-        } else {
-          retrier.schedule()
-        }
+      if (!placeEditHeader()) {
+        retrier.schedule()
+        return
       }
+      void injectEditHeader()
+        .then((mounted) => {
+          if (mounted) retrier.clear()
+          else retrier.schedule()
+        })
+        .catch((err) => {
+          console.error('Failed to inject edit header:', err)
+          retrier.schedule()
+        })
     },
     100,
     5000,
@@ -328,28 +178,13 @@ export function startEditBox({ aiEditPanelMountElement, editAreaMountElement, ro
   return () => {
     isDisposed = true
     retrier.clear()
-    const editForm = findEditForm()
-    if (editForm && editAreaMountElement.parentElement) {
-      editAreaMountElement.parentElement.insertBefore(editForm, editAreaMountElement)
+    if (editHeaderMountElement.parentElement !== rootElement) {
+      rootElement.appendChild(editHeaderMountElement)
     }
-    if (editForm) {
-      for (const className of editFormLayoutClasses) {
-        editForm.classList.remove(className)
-      }
-    }
-    if (editHeaderMountElement.parentElement !== rootElement || rootElement.children[1] !== editHeaderMountElement) {
-      rootElement.insertBefore(editHeaderMountElement, rootElement.children[1] ?? null)
-    }
-    toggleWikiPreview(true)
     if (editHeaderInstance) {
       unmount(editHeaderInstance)
       editHeaderInstance = null
     }
     editHeaderPromise = null
-    if (aiEditPanelInstance) {
-      unmount(aiEditPanelInstance)
-      aiEditPanelInstance = null
-    }
-    toggleAiEdit = null
   }
 }

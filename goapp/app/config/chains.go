@@ -64,16 +64,13 @@ func ValidStrategy(s string) bool {
 	return false
 }
 
-// ChainsConfig is the chains section of the GOAPP_CONFIG file: run settings of the chains. The loops (docDefine,
-// docEval) take an interval, model and strategy; the on-demand chains (docCreate, docUpdate) take a model. A
-// model or strategy left unset falls back to common. Settings a sysop saves in the evaluation tab override the
-// loops' values.
+// ChainsConfig is the chains section of the GOAPP_CONFIG file: run settings of the chain loops (docDefine,
+// docEval), each an interval, model and strategy. A model or strategy left unset falls back to common. Settings
+// a sysop saves in the evaluation tab override the loops' values.
 type ChainsConfig struct {
 	Common    CommonChainConfig `yaml:"common"`
 	DocDefine ChainConfig       `yaml:"docDefine"`
 	DocEval   ChainConfig       `yaml:"docEval"`
-	DocCreate ModelChainConfig  `yaml:"docCreate"`
-	DocUpdate ModelChainConfig  `yaml:"docUpdate"`
 }
 
 // CommonChainConfig holds what the chains share. It has no interval: each loop runs at its own pace.
@@ -89,11 +86,6 @@ type ChainConfig struct {
 	Strategy string `yaml:"strategy"`
 }
 
-// ModelChainConfig is the run settings of a chain run on request.
-type ModelChainConfig struct {
-	Model string `yaml:"model"`
-}
-
 // Resolve returns c with its unset model and strategy taken from common.
 func (c ChainConfig) Resolve(common CommonChainConfig) ChainConfig {
 	if c.Model == "" {
@@ -105,14 +97,12 @@ func (c ChainConfig) Resolve(common CommonChainConfig) ChainConfig {
 	return c
 }
 
-// ModelOf returns the model the file sets for a chain, by chain name (doc-define, doc-eval, doc-create,
-// doc-update): the chain's own, else common's, else "" when neither is set.
+// ModelOf returns the model the file sets for a chain, by chain name (doc-define, doc-eval): the chain's own,
+// else common's, else "" when neither is set.
 func (c ChainsConfig) ModelOf(chain string) string {
 	own := map[string]string{
 		"doc-define": c.DocDefine.Model,
 		"doc-eval":   c.DocEval.Model,
-		"doc-create": c.DocCreate.Model,
-		"doc-update": c.DocUpdate.Model,
 	}[chain]
 	for _, m := range []string{own, c.Common.Model} {
 		if m = strings.TrimSpace(m); m != "" {
@@ -124,7 +114,7 @@ func (c ChainsConfig) ModelOf(chain string) string {
 
 // validate rejects a value that would otherwise fall back to a default unnoticed.
 func (c ChainsConfig) validate() error {
-	models := map[string]string{"common": c.Common.Model, "docDefine": c.DocDefine.Model, "docEval": c.DocEval.Model, "docCreate": c.DocCreate.Model, "docUpdate": c.DocUpdate.Model}
+	models := map[string]string{"common": c.Common.Model, "docDefine": c.DocDefine.Model, "docEval": c.DocEval.Model}
 	for name, m := range models {
 		if m == "" {
 			continue

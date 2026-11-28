@@ -25,7 +25,7 @@
   } from '@mdi/js'
   import type { Editor } from '@tiptap/core'
 
-  import ZSelect from '$shared/ui/ZSelect.svelte'
+  import ZSelect from '$lib/ui/ZSelect.svelte'
 
   import MenuItem from './MenuItem.svelte'
   import type { ItemData } from './types'
